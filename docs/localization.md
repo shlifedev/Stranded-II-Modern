@@ -1,10 +1,10 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"d10347ab9cad61ac3d63ebaee6290c53ff96f5c50c05d8996bd084cafa1c4e48"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"edd1b601e551ac4e609e7251e17c70581cf0290c0528e1992b320b167a3ccc62"} -->
 
 # Translating the game
 
 [English](localization.md) · [한국어](localization-ko.md)
 
-[Back to README](../README.md) · [Development guide](development.md) · [Font guide](fonts.md)
+[Back to README](../README.md) · [Development guide](development.md)
 
 **Edit `locales/<code>.tsv` for the language you want to translate.** English source text is in [locales/en.tsv](../locales/en.tsv); Korean translations are in [locales/ko.tsv](../locales/ko.tsv). Translation, language, and font changes do not require rebuilding the EXE.
 
@@ -37,10 +37,10 @@ Close the game you are testing and run these commands in **PowerShell from the r
 ```powershell
 .\dev.ps1 localize -Python .\.venv\Scripts\python.exe
 .\dev.ps1 check -Python .\.venv\Scripts\python.exe
-.\Play.cmd
+.\build\runtime\StrandedII.exe
 ```
 
-Select the language under **Settings → Graphics → Language**, apply, and restart the game. Visit the screens containing your changes and check missing characters, clipping, wrapping, and variable values. For missing-character errors, see [font setup](fonts.md).
+Select the language under **Settings → Graphics → Language**, apply, and restart the game. Visit the screens containing your changes and check missing characters, clipping, wrapping, and variable values. For missing-character errors, see [font setup](#choose-a-font).
 
 ## Add a new language
 
@@ -57,7 +57,17 @@ For example, Japanese uses `ja`. Language codes use lowercase letters, digits, a
 
 3. Follow `localize → check → launch` above. The new language appears in settings automatically.
 
-The default font is Noto Sans KR. To use another font, add `"font": "deps/fonts/MyFont.ttf"` to the JSON and provide that file. Font paths are relative to the repository root. Keep the bundled English and Korean packs. Japanese translations are not currently bundled.
+Keep the bundled English and Korean packs. Japanese translations are not currently bundled.
+
+## Choose a font
+
+The default font is Noto Sans KR. To use another font, put its `.ttf` or `.otf` file in `deps/fonts/` and add `"font": "deps/fonts/MyFont.ttf"` to the language's `locales/<code>.json`. Paths are relative to the repository root; no Windows font installation is needed.
+
+- After changes, follow `localize → check → launch` above. Remove the `font` field to restore the default font specified by the initial `setup --font`.
+- Missing characters fall back to the default Noto, then fonts specified by other language packs. If none contains a character, preparation stops, reports the character, `U+XXXX`, and translation key, and preserves the existing pack. Select a font containing it and rerun.
+- Variable fonts are supported, but `.ttc`, supplementary-plane emoji, complex shaping, and right-to-left layout are not.
+
+Previews are in `build/runtime/core/locales/<code>/preview.png`; font usage is recorded in `build/runtime/core/locales/fonts-report.json`. For Extended, look under `build/extended/runtime/`. Check the final appearance in the game.
 
 ## Edition-specific translations
 
@@ -75,11 +85,18 @@ Commands default to Classic. After [preparing Extended](development.md#classic-a
 ```powershell
 .\dev.ps1 localize -Python .\.venv\Scripts\python.exe --edition extended
 .\dev.ps1 check -Python .\.venv\Scripts\python.exe --edition extended
-.\Play-Extended.cmd
+.\build\extended\runtime\StrandedII-Extended.exe
 ```
 
 ## Share your translation
 
 For a translation contribution, share the edited TSV and, for a new language, its JSON. If you chose a separate font, include its download instructions and license information.
 
-To create a language pack players can install, see [distributing language packs](fonts.md#files-to-distribute). To connect new text in game code, see [localization for developers](development.md#localizing-new-text-and-resources).
+To distribute a pack to players, run `localize`, verify it, and bundle the edition's **entire `core/locales/` folder**: `build/runtime/core/locales/` for Classic, or `build/extended/runtime/core/locales/` for Extended.
+
+- Include `languages.dat`, TSV files, and each language's `glyphs.dat` and BMP pages. You may omit `preview.png` and `fonts-report.json`, which contains absolute paths from the development PC.
+- Check that the font permits image generation and distribution, and include required license notices. The default Noto notices are in [licenses/](../licenses/).
+
+Recipients should close the game, back up and replace their existing `core/locales/`, then select the language in the game and restart. They need an engine for the same edition that supports language packs; do not install them with an older EXE. No separate Python or original font installation is needed.
+
+To connect new text in game code, see [localization for developers](development.md#localizing-new-text-and-resources).

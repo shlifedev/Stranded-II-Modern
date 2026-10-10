@@ -76,6 +76,20 @@ class CIPackagingTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
 
+    def assert_player_entrypoint(self, members, edition):
+        from editions import Edition
+        profile = Edition(edition)
+        self.assertEqual(
+            [name for name in members if Path(name).suffix.lower() == '.exe'],
+            [f'{profile.archive_root}/{profile.executable}'])
+        self.assertFalse(any(Path(name).suffix.lower() in ('.cmd', '.bat', '.ps1')
+                             for name in members))
+        readme = members[f'{profile.archive_root}/README.txt'].decode('utf8')
+        self.assertIn(f'double-click {profile.executable}', readme)
+        self.assertIn(f'{profile.executable}를 더블클릭', readme)
+        self.assertNotIn('Play.cmd', readme)
+        self.assertIn('Settings > Graphics', readme)
+
     def bundle(self):
         archive = self.root / 'bundle.zip'
         checksum = ci.write_archive(archive, ci.dependency_members(
@@ -156,15 +170,15 @@ class CIPackagingTests(unittest.TestCase):
                      'preserved/private.txt', 'mods/Stranded II/saves/player.sav',
                      'mods/Stranded II/maps/custom.s2', 'mods/Stranded II/screen_00001.bmp',
                      'mods/Stranded II/sys/settings.cfg', 'core/locales/fonts-report.json',
-                     'core/locales/en/preview.png', 'mods/Stranded II/sys/gfx/ko_0_0.bmp'):
+                     'core/locales/en/preview.png', 'mods/Stranded II/sys/gfx/ko_0_0.bmp',
+                     'Play.cmd', 'debug.bat', 'setup.ps1', 'StrandedII-old.exe'):
             self.put(self.runtime / name, b'private or obsolete')
         members = ci.release_members(self.runtime, self.game)
         self.assertEqual(members['StrandedII/core/modern.ini'], b'fps=144\nlanguage=en\n')
         self.assertNotIn('StrandedII/mods/Stranded II/sys/settings.cfg', members)
         self.assertEqual(members['StrandedII/mods/Stranded II/sys/controls.cfg'], b'original controls')
         self.assertEqual(members['StrandedII/licenses/LICENSE.txt'], b'original license\r\n')
-        self.assertIn(b'cd /d "%~dp0"', members['StrandedII/Play.cmd'])
-        self.assertIn(b'"StrandedII.exe"', members['StrandedII/Play.cmd'])
+        self.assert_player_entrypoint(members, 'classic')
         self.assertTrue(members['StrandedII/README.txt'].startswith(b'Stranded II\n'))
         self.assertNotIn('StrandedII/StrandedII-Extended.exe', members)
         self.assertFalse(any(data == b'private or obsolete' for data in members.values()))
@@ -215,6 +229,7 @@ class CIPackagingTests(unittest.TestCase):
         runtime = profile.runtime(self.root)
         shutil.copytree(self.runtime, runtime)
         self.put(runtime / profile.executable, b'MZbuilt executable')
+        self.put(runtime / 'QolInput.dll', b'MZnative input bridge')
         self.put(self.root / profile.defaults, b'fps=60\nlanguage=ko\n')
         self.put(self.root / 'src/engine' / profile.entry, b'; extended entry\n')
         content = 'mods/Stranded II/sys/items_extended.inf'
@@ -228,8 +243,10 @@ class CIPackagingTests(unittest.TestCase):
             source_sha256=source_hashes(self.root, 'extended'))).encode())
         members = ci.release_members(runtime, self.game, 'extended')
         self.assertIn('StrandedII-Extended/StrandedII-Extended.exe', members)
+        self.assertEqual(members['StrandedII-Extended/QolInput.dll'], b'MZnative input bridge')
+        self.assertNotIn('StrandedII/QolInput.dll', baseline)
         self.assertNotIn('StrandedII-Extended/StrandedII.exe', members)
-        self.assertIn(b'"StrandedII-Extended.exe"', members['StrandedII-Extended/Play.cmd'])
+        self.assert_player_entrypoint(members, 'extended')
         self.assertTrue(members['StrandedII-Extended/README.txt'].startswith(b'Stranded II - Extended\n'))
         self.assertIn('StrandedII-Extended/' + content, members)
         self.assertEqual(members['StrandedII-Extended/core/modern.ini'], b'fps=60\nlanguage=ko\n')

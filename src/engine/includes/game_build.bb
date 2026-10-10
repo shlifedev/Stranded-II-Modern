@@ -9,7 +9,7 @@ Function game_build()
 	TCunit\player_lastattack=gt
 	;Scan for nearby buildplace
 	For Tobject.Tobject=Each Tobject
-		If EntityDistance(cam,Tobject\h)<75 Then
+		If EntityDistance(cam,Tobject\h)<75 And qol_build_accept(Tobject\id) Then
 			If get_state(Cstate_buildplace,Cclass_object,Tobject\id) Then
 				;Get State
 				If get_state(Cstate_buildplace,Cclass_object,Tobject\id)=0 Then Return 0
@@ -59,6 +59,7 @@ Function game_build()
 									pc_child=Tobject\id
 									in_focus=pc_typ
 									;Return
+									qol_build_result(Tobject\id,1)
 									Return 1
 								EndIf
 							EndIf
@@ -67,6 +68,7 @@ Function game_build()
 				Next
 				;Finished?
 				If total=complete Then
+					qol_build_result(Tobject\id,0)
 					;Finished MSG + Sound
 					if_msg(sm$(173),Cbmpf_green)
 					sfx_emit sfx_build_finish,cam
@@ -146,6 +148,7 @@ Function game_build()
 					;Return
 					Return 1
 				Else
+					qol_build_result(Tobject\id,0)
 					if_msg(sm$(174),Cbmpf_red)
 					sfx sfx_fail
 					;Build Process

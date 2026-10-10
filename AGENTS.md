@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"3395522cbf944c3acb2a859554d1c71ce78607075edd5761ec2df41d464a5802"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"292a9c3644dd2c026c5124d2225b13d010f32e3aee55248861fe02e7271e0fdc"} -->
 
 # Stranded II development instructions
 
@@ -6,7 +6,7 @@
 
 The architecture has Classic and Extended editions using a shared engine, edition-specific resources, and language packs selected at launch (EN/KO bundled). Communicate with the user in Korean.
 
-- The current separation provides the development foundation only; it adds no QOL or rebalancing. Extended-only changes must not alter Classic gameplay or content. Verify shared engine changes in both editions.
+- Extended provides individual Settings > QOL controls for recipe browsing, storage transfers, closing emptied corpses, display sorting, and held construction input. Extended-only changes must not alter Classic gameplay or content. Verify shared engine changes in both editions.
 - The entrypoints are `src/engine/StrandedII.bb` and `src/engine/StrandedIIExtended.bb`. Select implementations in `editions/<edition>/modules.bb`. When Extended behavior diverges, separate only the required modules rather than copying the whole engine.
 - Commands default to Classic when `--edition classic|extended` is omitted. Classic uses `build/runtime`; Extended uses `build/extended/runtime`. Do not share or automatically copy settings or saves.
 - Put edition resources in `resources/editions/<edition>/overrides/` and translations in `locales/editions/<edition>/<code>.tsv`. Shared resource/catalog changes affect both editions. Write Extended rebalancing only in its own paths.
@@ -29,9 +29,21 @@ The architecture has Classic and Extended editions using a shared engine, editio
 - The user requested removal of untracked local material unnecessary for development or running the game. Preserve dependencies and user data, and check paths and Git tracking before deletion. Do not commit, push, or rewrite history without a separate request.
 - Preserve original and third-party licenses. Verification procedures are in `docs/development.md`. Do not accumulate one-off execution or cleanup records in public guides. Local cleanup records are in `build/cleanup-report.json`.
 
+## Creating and updating documentation
+
+- When the user requests documentation creation or updates, or the current task changes implementation or usage and documentation needs updating, first read the latest [docs/auto-gen-please.json](docs/auto-gen-please.json) and create or update the necessary documents. Do not rewrite every listed document on every task.
+- For each entry in the `docs` array, `file-name` identifies the target file relative to `docs/`, `style` specifies the writing style and length, and `desc` defines the document's purpose and content scope. Follow these instructions and describe the current implementation and verified facts concisely. Process identical duplicate entries only once.
+- Follow the translation rules below for updated documents. The protection for `README-ko.md` also takes precedence over this configuration; recommend any changes to that file only in the conversation. This JSON guides agent work and is not a background document generation service.
+
 ## AI documentation translation
 
 Maintain project Markdown documents in the languages configured by the root `.dev-docs-ai-translation.json`. This is an agent workflow, not a background service or an AI API integration. Keep all document variants in Git. Documentation languages are independent of game catalogs and settings.
+
+### Exception for the user-maintained README
+
+- The user authors and edits `README-ko.md`. Edit it only when the user explicitly requests changes to that file, and only within the requested scope. Feature development or documentation synchronization requests alone do not authorize editing this file.
+- When additions or corrections are needed, recommend the reason and proposed content or wording in the conversation. Preserve the user's sentences, voice, and structure, and do not automatically apply suggestions to the file.
+- This exception takes precedence over the translation and synchronization rules below. Do not write to `README-ko.md`, including automatic translation, prose polishing, formatting, language navigation, metadata, or `syncedHash` updates. When synchronizing other README languages, use the Korean original as a read-only source and exempt its hash update from synchronization completion requirements. Do not propagate changes from other languages back into the Korean file.
 
 ### Configuration and document groups
 

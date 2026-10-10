@@ -1,16 +1,18 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"638889fd0d0a51763308156694b1e0d21eb37a028373da3ddabd9e55433c6bcc"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"e901e0586f52bb9f80287ab091f1ea6c5dc2f4a18c199e2cbf40f0d15061cae7"} -->
 
 # 개발 가이드
 
 [English](development.md) · [한국어](development-ko.md)
 
-[README로 돌아가기](../README-ko.md) · [실행 및 설정](playing-ko.md) · [현지화 가이드](localization-ko.md)
+[README로 돌아가기](../README-ko.md) · [현지화 가이드](localization-ko.md)
 
 처음이라면 **개발 환경 준비 → 최초 빌드** 순서로 진행하세요. 준비를 마쳤다면 [변경 후 실행](#변경-후-실행)에서 수정 내용에 맞는 명령을 고르면 됩니다. 번역만 기여하려면 [현지화 가이드](localization-ko.md)부터 읽으세요.
 
 ## 개발 환경 준비
 
 Windows 10 이상, Python 3.10 이상, [requirements.txt](../requirements.txt)의 Pillow와 fontTools가 필요합니다. Blitz의 파일 경로 처리를 고려해 `C:\Stranded II`처럼 영문 경로를 사용하세요. 경로에 공백은 있어도 됩니다.
+
+확장판을 빌드하려면 Visual Studio의 MSVC x86/x64 C++ 빌드 도구와 Windows SDK도 설치되어 있어야 합니다. `build --edition extended`가 `src/native/extended/qol_input.c`를 32비트 `QolInput.dll`로 컴파일합니다. 별도 C 런타임 설치는 필요하지 않으며 DLL은 확장판 배포 ZIP에 함께 포함됩니다. 기본판 빌드에는 이 도구가 필요하지 않습니다.
 
 아래 의존성은 저장소에 포함하지 않으므로 직접 준비합니다.
 
@@ -67,9 +69,11 @@ python -m venv .venv
 | 자동 검사 | `.\dev.ps1 check -Python .\.venv\Scripts\python.exe` |
 | 게임 실행 | `.\Play.cmd` |
 
-코드와 리소스를 함께 수정했다면 `setup → build → check → 실행` 순서로 진행합니다. 번역·새 언어·폰트만 수정했다면 `localize → check → 실행`으로 반영되며 EXE 재컴파일은 필요하지 않습니다. `setup`도 같은 언어팩 준비 과정을 포함합니다. 폰트 설정은 [폰트 가이드](fonts-ko.md)에 있습니다.
+저장소의 `Play.cmd`와 `Play-Extended.cmd`는 빌드된 실행 폴더를 여는 개발용 편의 스크립트입니다. 배포 ZIP에는 포함하지 않으며 플레이어는 해당 판의 EXE를 직접 실행합니다.
 
-`setup`은 기존 실행 폴더의 세이브, `.cfg`, `settings.inf`, `core/modern.ini`를 보존합니다. 따라서 `config/modern.ini`를 바꿔도 기존 실행본의 설정이 자동으로 바뀌지 않습니다. 개인 설정은 [실행 및 설정](playing-ko.md)에 따라 수정합니다.
+코드와 리소스를 함께 수정했다면 `setup → build → check → 실행` 순서로 진행합니다. 번역·새 언어·폰트만 수정했다면 `localize → check → 실행`으로 반영되며 EXE 재컴파일은 필요하지 않습니다. `setup`도 같은 언어팩 준비 과정을 포함합니다. 폰트 설정은 [현지화 가이드](localization-ko.md#폰트-지정)에 있습니다.
+
+`setup`은 기존 실행 폴더의 세이브, `.cfg`, `settings.inf`, `core/modern.ini`를 보존합니다. 따라서 `config/modern.ini`를 바꿔도 기존 실행본의 설정이 자동으로 바뀌지 않습니다. 개인 설정은 게임 메뉴에서 바꾸거나 게임을 종료한 뒤 실행 폴더의 `core/modern.ini`를 수정합니다.
 
 `build`는 임시 실행 파일을 컴파일한 뒤 `build/runtime/StrandedII.exe`를 교체합니다. 실행 중인 게임 때문에 교체에 실패했다면 게임을 종료하고 `build`를 다시 실행합니다.
 
@@ -107,7 +111,7 @@ resources/ 수정 → setup 명령 → build/runtime/의 리소스 갱신
 
 ## 기본판과 확장판
 
-`classic`은 기존 동작을 유지하는 기본판, `extended`는 별도 기능·콘텐츠를 개발할 확장판입니다. 현재는 분리 기반만 있으며 QOL·리밸런싱은 아직 추가하지 않았습니다. 공통 코드는 한 번 수정해 두 판에서 검증하고, 확장판 전용 변경은 해당 판의 코드·자료에만 작성합니다.
+`classic`은 기존 동작을 유지하는 기본판, `extended`는 인벤토리·보관함·건축 QOL을 제공하고 별도 기능·콘텐츠를 개발할 확장판입니다. QOL은 기존 제작·이동·건축 규칙을 호출하며 재료 비용이나 도구 속도를 바꾸지 않습니다. 공통 코드는 한 번 수정해 두 판에서 검증하고, 확장판 전용 변경은 해당 판의 코드·자료에만 작성합니다.
 
 `classic`은 내부 구분용입니다. 기본판 창 제목·실행 파일명은 `Stranded II`·`StrandedII.exe`로 유지하고, 확장판만 `Stranded II - Extended`·`StrandedII-Extended.exe`를 사용합니다. 빌드·실행·패키징은 이 이름을 함께 사용합니다.
 
@@ -129,7 +133,11 @@ build/runtime/                   기본판 실행·설정·세이브
 build/extended/runtime/          확장판 실행·설정·세이브
 ```
 
-두 `modules.bb`는 현재 같은 기존 구현을 포함합니다. 기능이 달라질 때만 확장판 폴더에 해당 모듈을 만들고 확장판의 `Include`를 바꿉니다. 컴파일은 직접 작성한 소스를 사용하며 Python이 엔진 코드를 생성하지 않습니다. 빌드 보고서는 해당 진입점의 실제 `Include` 그래프만 기록합니다. 다른 판의 전용 소스를 포함하면 검사에 실패합니다.
+두 `modules.bb`는 기존 UI·입력·건축 구현을 공유하고 판별 QOL 훅을 선택합니다. 기본판 `qol.bb`는 기존 동작을 유지하는 빈 훅이며, 확장판의 `qol.bb`, `qol_inventory.bb`, `qol_recipes.bb`, `qol_search.bb`가 설정·정렬·이동·도감·Unicode 검색을 구현합니다. 검색 입력은 Win32 Unicode EDIT와 IME를 사용하며 선언은 `config/userlibs/qol_*.decls`에 있습니다. 기능이 달라질 때만 필요한 모듈을 분리합니다. 컴파일은 직접 작성한 소스를 사용하며 Python이 엔진 코드를 생성하지 않습니다. 빌드 보고서는 해당 진입점의 실제 `Include` 그래프만 기록합니다. 다른 판의 전용 소스를 포함하면 검사에 실패합니다.
+
+조합법 도감은 로드된 `Tcom` 데이터를 읽습니다. 조리·물 사용 등의 안내는 확장판 변경분의 `mods/Stranded II/sys/qol_guides.inf`에 별도로 작성하며, `source`에 근거 스크립트와 이벤트를 기록합니다. 안내는 스크립트를 대신 실행하지 않습니다. 원본 이벤트를 수정할 때 안내의 조건·수량·확률 설명도 함께 확인하세요. QOL 설정은 해당 판의 `core/modern.ini`에만 저장합니다.
+
+검색창의 네이티브 연결부는 현재 게임 스레드의 해당 EDIT 컨트롤 메시지만 문자 변환 후 Unicode로 전달합니다. Blitz의 기본 메시지 루프에는 이 문자 변환이 없으므로 단순히 EDIT를 만드는 것만으로는 입력할 수 없습니다. 부모 창의 `WS_CLIPCHILDREN`으로 검색창을 게임 화면 출력에서 제외하고, 크기 변경 때만 위치를 갱신합니다. 매 프레임 `InvalidateRect`로 배경을 지우거나 다시 그리지 마세요. 검색창을 닫으면 메시지 훅과 추가한 창 스타일을 복원합니다.
 
 리소스는 공식 입력 → 현지화 준비 → 공통 변경분 → 선택한 판의 변경분 순서로 준비합니다. 판별 변경분은 실행 폴더 기준 `mods/Stranded II/...` 경로로 배치합니다. 아이템·조합·건축·능력치·맵·스크립트 리밸런싱은 확장판 변경분에 작성합니다. 설정·세이브·실행 파일은 리소스 변경분으로 덮어쓸 수 없습니다. `.s2` 지도 수정은 [리소스 현지화의 바이너리 규칙](#새-문구와-리소스-현지화)을 따릅니다. 판별 번역은 [현지화 가이드](localization-ko.md#기본판확장판-전용-번역)를 참고하세요.
 
@@ -186,11 +194,15 @@ msg "[[loc:quest.island1.arrival]]";
 | `build` | 실제 Blitz3D 컴파일, 실행 파일·소스 해시 | `build/build-report.json` |
 | `check` | 문구 참조·치환 변수·글꼴, 실제 Blitz 로더와 파서, 설정 보존, 시간 보정·프레임 대기, 저장 교체·잠금 실패·백업·5슬롯·저장 큐·계속하기 선택 | `build/check-*/report.json`과 같은 폴더의 상세 결과 |
 | `.\.venv\Scripts\python.exe -X utf8 scripts/verify_game.py` | 격리된 게임에서 실제 지도·저장·백업·빠른 저장/불러오기·자동 저장 상태 복구 | `build/game-smoke-*/report.json` |
+| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_qol_logic.py --language ko` | 실제 Blitz의 QOL 로직·제작·이동·정렬·설정 검사. 그래픽 엔티티와 스크립트는 대역 사용 | `build/extended/qol-logic-*/report.json` |
+| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_qol.py --language ko` | 복사한 확장판에서 실제 제작·이동·스크립트 거부·저장/불러오기 검사. 그래픽 장치 필요 | `build/extended/qol-smoke-*/report.json` |
 | `.\.venv\Scripts\python.exe -X utf8 scripts/verify_collisions.py --edition classic` | 격리된 Blitz 실행 환경에서 바위 메시 정리, 경사면 접근·후퇴, 점프·착지, 통로·수영, 제어 전환·투사체 충돌 | `build/collision-smoke-*/report.json` |
 
 이동·충돌 변경에는 `verify_collisions.py`를 두 에디션에서 실행합니다. Extended는 `--edition extended`를 사용하고 결과를 `build/extended/collision-smoke-*/`에 저장합니다. 이 검사는 실제 지형과 바위 모델에 60·120·144 Hz 및 100ms 시간 간격을 적용하며 GUI 입력을 보내지 않습니다. 실제 렌더링 FPS와 사용자가 보고한 장소는 별도로 확인합니다. `core/modern.ini`의 기존 `diagnostics=1` 옵션을 켜면 이동 요청·결과, 지형 보정량, 접촉점·법선과 이동 취소 여부가 `core/modern.log`에 최대 초당 4회 기록됩니다.
 
 `check`는 렌더링 없이 타이머·파서·저장 파일 처리 등을 검사합니다. 실제 렌더링 FPS, Alt-Tab, 화면의 부드러움과 전체 진행은 게임에서 따로 확인해야 합니다.
+
+확장판 `check`는 `verify_qol_logic.py`도 실행합니다. 이는 실제 엔진 함수를 컴파일하지만 엔티티·스크립트 대역을 사용하므로 화면, 실제 스크립트, 지도 저장, IME의 검증으로 간주하지 않습니다. `verify_qol.py --interactive`는 사용자 저장 파일을 복사하지 않는 별도 테스트 게임을 준비하며 자동 실행하지 않습니다. 이 복사본을 실행해 한글 조합·확정·취소, 검색창 포커스와 Alt-Tab, 긴 이름·상세 스크롤, Shift 클릭·R·Shift+R, 옵션별 켜기/끄기, 건축 반복 취소를 확인하세요. `--language en`으로 영어를, `--desktop`으로 전체 창을 확인할 수 있습니다. 시뮬레이션한 60·120·144 FPS 건축 간격 검사는 실제 렌더링 FPS 측정과 다릅니다.
 
 저장 동작을 바꿨다면 `scripts/verify_game.py`로 실제 지도 로딩과 저장·불러오기도 확인하세요. 실행 폴더의 복사본과 빈 세이브 폴더를 사용하며 사용자 게임·세이브에는 쓰지 않습니다. 그래픽 장치가 필요하고 UI 조작은 검사하지 않습니다. 기본은 800×600 창이며, `--desktop`은 모니터에 맞춘 전체 창, `--edition extended`는 확장판을 검사합니다. 확장판 보고서는 `build/extended/` 아래에 생성됩니다.
 
@@ -209,11 +221,15 @@ msg "[[loc:quest.island1.arrival]]";
 
 검증 결과를 공유할 때는 사용한 빌드, 화면 설정, 확인한 동작과 남은 항목을 함께 적습니다. 자동 검사 통과만으로 전체 플레이나 모든 PC의 화면 복귀를 검증했다고 간주하지 않습니다.
 
+확장판 기능과 단축키는 [확장판 추가 기능](extend-features-ko.md)을 참고하세요.
+
 ## 프로젝트 문서 수정
 
 영어 `.md` 또는 한국어 `-ko.md`를 직접 수정하세요. 새 한국어 문서는 `example-ko.md`처럼 이름을 붙입니다. AI 에이전트가 저장소 작업을 할 때 다른 언어에도 반영하며, 상시 실행되는 번역 서비스는 아닙니다.
 
 문서 언어는 [.dev-docs-ai-translation.json](../.dev-docs-ai-translation.json)에서 관리하며 게임 언어와는 별개입니다. 영어만 수정하면 영어를 기준으로, 두 언어를 모두 수정하면 한국어를 기준으로 동기화합니다. 문서 첫 줄의 해시는 직접 고치지 마세요. 세부 규칙은 [AGENTS-ko.md](../AGENTS-ko.md)에 있습니다.
+
+예외적으로 `README-ko.md`는 사용자가 직접 관리하며, 명시적인 편집 요청 없이는 에이전트가 변경하지 않습니다. 다른 언어 README는 한국어 원문을 기준으로 동기화합니다. 문서 작성·갱신 시에는 [auto-gen-please.json](auto-gen-please.json)의 문서별 목적·문체를 따르며 필요한 문서만 갱신합니다.
 
 ## GitHub CI와 배포 ZIP
 
@@ -276,9 +292,9 @@ gh release create ci-deps-v1 `
 
 ### 배포 ZIP 구성
 
-기본판 ZIP의 `StrandedII/`, 확장판 ZIP의 `StrandedII-Extended/` 폴더에는 빌드된 EXE, 원본 게임 리소스, 현지화 리소스, 언어별 비트맵 글꼴, 초기 설정과 라이선스가 포함됩니다. 전체 압축을 풀고 그 폴더의 `Play.cmd`를 실행합니다. EXE를 직접 실행하려면 기본판은 `StrandedII.exe`, 확장판은 `StrandedII-Extended.exe`를 사용합니다. 플레이어는 Python·Blitz3D·글꼴을 별도로 설치할 필요가 없습니다.
+기본판 ZIP의 `StrandedII/`, 확장판 ZIP의 `StrandedII-Extended/` 폴더에는 해당 판의 EXE 하나, 원본 게임 리소스, 현지화 리소스, 언어별 비트맵 글꼴, 초기 설정과 라이선스가 포함됩니다. 전체 압축을 풀고 기본판은 `StrandedII.exe`, 확장판은 `StrandedII-Extended.exe`를 더블클릭하면 됩니다. 실행용 CMD는 포함하지 않습니다. 플레이어는 Python·Blitz3D·글꼴을 별도로 설치할 필요가 없으며 화면·FPS·언어는 게임의 설정 메뉴에서 바꿉니다.
 
-패키징은 파일 목록을 사용하므로 사용한 개발 런타임에 있는 개인 세이브, 사용자 지도, 스크린샷, `preserved/`, 로그와 검사 보고서를 포함하지 않습니다. 키 설정은 원본 의존성에서, `core/modern.ini`는 저장소 초기 설정에서 가져옵니다. 개인 `sys/settings.cfg`도 제외하므로 새 설치의 그래픽 품질과 음량은 엔진의 초기값을 사용합니다. 초기값은 [실행 및 설정](playing-ko.md#그래픽-품질과-소리)에 설명되어 있습니다. 개발 런타임은 변경하지 않습니다. 로컬 패키징도 가능합니다.
+패키징은 파일 목록을 사용하므로 사용한 개발 런타임에 있는 개인 세이브, 사용자 지도, 스크린샷, `preserved/`, 로그와 검사 보고서를 포함하지 않습니다. 키 설정은 원본 의존성에서, `core/modern.ini`는 저장소 초기 설정에서 가져옵니다. 개인 `sys/settings.cfg`도 제외하므로 새 설치의 그래픽 품질과 음량은 엔진의 초기값을 사용합니다. 개발 런타임은 변경하지 않습니다. 로컬 패키징도 가능합니다.
 
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 scripts/ci.py package --game deps/game
@@ -292,4 +308,4 @@ gh release create ci-deps-v1 `
 
 `deps/`, `build/`, `.venv/`, Python 캐시와 로그는 [.gitignore](../.gitignore)로 제외합니다. 소스·번역·수정 리소스·스크립트·설정·문서·라이선스는 Git에서 관리합니다.
 
-`build/runtime/`에는 실행 결과뿐 아니라 실제 저장 파일과 사용자 설정도 있습니다. 폴더를 초기화하기 전에는 세이브·직접 만든 지도·스크린샷과 `preserved/`가 있다면 그 내용도 백업하세요. 위치는 [실행 및 설정](playing-ko.md)에 정리돼 있습니다.
+`build/runtime/`과 `build/extended/runtime/`에는 실행 결과뿐 아니라 실제 저장 파일과 사용자 설정도 있습니다. 폴더를 초기화하기 전에는 각 실행 폴더의 `mods/Stranded II/saves/`와 직접 만든 지도·스크린샷, `preserved/`가 있다면 그 내용도 백업하세요.

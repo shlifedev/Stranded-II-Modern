@@ -16,8 +16,8 @@ End Function
 
 ;### Menu Set
 Function menu_set(menu,save=1)
-	If menu>=50 And menu<=54 Then
-		If m_menu<50 Or m_menu>54 Then modern_settings_reset():loc_pending$=loc_saved$
+	If menu>=50 And menu<=55 Then
+		If m_menu<50 Or m_menu>55 Then modern_settings_reset():loc_pending$=loc_saved$:qol_settings_reset()
 	EndIf
 	;Save GUI Stuff @ Vars from current Menu
 	If save=1
@@ -317,7 +317,7 @@ Function menu()
 			EndIf
 			
 		;Options Input
-		Case Cmenu_set_in,Cmenu_set_gfx,Cmenu_set_sfx,Cmenu_set_inscript
+		Case Cmenu_set_in,Cmenu_set_gfx,Cmenu_set_sfx,Cmenu_set_inscript,55
 			;Buttons
 			If game_scriptkeys>0 Then
 				If gui_button(5,5,sm$(49)+" (1)") Then menu_set(Cmenu_set_in)
@@ -330,20 +330,22 @@ Function menu()
 				If gui_button(5,105,sm$(51)) Then menu_set(Cmenu_set_sfx)
 			EndIf
 			
+			qol_options_nav()
 			If gui_button(5,(set_scry)-100,sm$(3),1,Cicon_x) Then
 				menu_set(Cmenu_main,0)
 				loc_pending$=loc_saved$
-				modern_settings_reset()
+				modern_settings_reset():qol_settings_reset()
 				load_settings()
 				prepare_cache_viewranges()
 				set_reboot=0
 			EndIf
 			If gui_button(5,(set_scry)-50,sm$(4),1,Cicon_ok) Then
+				Local qol_restart=qol_settings_restart()
 				If modern_options_save() Then
 					menu_set(Cmenu_main)
 					save_settings()
 					prepare_cache_viewranges()
-					gui_msg("[[loc:modern.restart]]")
+					If qol_restart Then gui_msg("[[loc:modern.restart]]")
 				Else
 					gui_msg("[[loc:modern.settings_failed]]",Cbmpf_red)
 				EndIf
@@ -351,6 +353,7 @@ Function menu()
 			
 			;Window
 			Select m_menu
+				Case 55:qol_options_draw()
 				;Controls
 				Case Cmenu_set_in
 					DrawImage gfx_win,215,0

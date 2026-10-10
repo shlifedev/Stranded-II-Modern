@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"README.md","language":"ko","syncedHash":"b8dbce664973ce5ed153b6caa62bcd38ccbeb89204517e9bea61aaf34fbb0945"} -->
+<!-- dev-docs-ai-translation: {"document":"README.md","language":"ko","syncedHash":"d4ecddafc6c7f67c07df2a095b3122ef0c12a8e7f79e5d5c403af524c86c47d1"} -->
 
 # Stranded II : Modern
 
@@ -6,39 +6,33 @@
 
 <img width="2560" height="1440" alt="image" src="https://github.com/user-attachments/assets/d7553612-613b-4a5f-8ba7-77e4774af408" />
 
-Stranded II를 최신 Windows 환경에서 즐기기 위한 비공식 개선판입니다. Blitz3D 1.118로 빌드하며, 현재 개발 중입니다.
+Stranded II를 최신 Windows 환경에서 즐기기 위한 비공식 개선판입니다. Blitz3D 1.118로 빌드합니다.
 
 ## 시작하기
 
-- **게임 실행:** 배포 ZIP 전체를 풀고 안쪽 게임 폴더의 `Play.cmd`를 실행합니다. Windows 10 이상이 필요합니다.
+- **게임 실행:** 배포 ZIP 전체를 풀고 게임 폴더의 `StrandedII.exe`를 더블클릭합니다. 확장판은 `StrandedII-Extended.exe`를 실행합니다. Windows 10 이상이 필요하며 별도 설치는 없습니다.
 - **소스에서 빌드:** [개발 가이드](docs/development-ko.md)의 환경 준비와 최초 빌드를 따르세요. 소스 저장소에는 EXE와 원본 게임 리소스가 포함돼 있지 않습니다.
 - **번역 참여:** [현지화 가이드](docs/localization-ko.md)에 따라 `locales/<코드>.tsv`를 수정합니다.
 
-## 현재 제공하는 기능
+## 개선된 점
 
-- 60/120/144 FPS에서 게임 속도를 유지하는 시간 보정. 기본 목표는 144 FPS입니다.
-- 전체 창 모드, 해상도 선택, Alt-Tab 후 그래픽 깨짐 수정. 화면 설정은 재시작 후 적용됩니다.
-- 빠른 저장·불러오기 수정, 자동 저장 5개 슬롯, 이전 저장본 백업, 메인 메뉴의 계속하기.
-- 영어·한국어 선택과 사용자 언어팩·폰트 추가. 언어 전환은 실험 기능이며 재시작 후 적용됩니다.
-
-추가 언어와 안정판을 준비하고 있습니다. 언어 전환, 기존 세이브 호환성과 다양한 화면 환경은 추가 검증이 필요합니다.
+- 주사율 - 오리지널은 50Hz 로 게임이 구동되었지만 이제는 60Hz/120Hz/144Hz+ 를 지원합니다.
+- 디스플레이 - 전체 창 모드, 해상도 선택, Alt-Tab 후 그래픽 깨짐 수정. 화면 설정은 재시작 후 적용됩니다.
+- 저장 - 빠른 저장·불러오기 수정, 자동 저장 5개 슬롯, 이전 저장본 백업, 메인 메뉴의 계속하기.
+- 현지화 - 이제 손쉽게 유저가 직접 게임을 번역할 수 있습니다. (언어 추가 지원)
 
 ## 기본판과 확장판
 
-| 판 | 목적 | 소스 저장소 실행 명령 |
+| 판 | 목적 | 실행 파일 |
 | --- | --- | --- |
-| 기본판(Classic) | 원작의 게임플레이와 콘텐츠 유지 | `Play.cmd` |
-| 확장판(Extended) | 향후 별도 QOL·UI·콘텐츠·리밸런싱 개발 | `Play-Extended.cmd` |
-
-현재는 분리 기반만 구현했으며 **두 판의 게임플레이와 콘텐츠는 같습니다.** 공통 엔진을 사용하고 설정·세이브·버전·배포 ZIP은 분리합니다. 각 판을 준비하는 방법은 [개발 가이드](docs/development-ko.md#기본판과-확장판)에 있습니다. 배포 ZIP은 어느 판이든 안쪽 폴더의 `Play.cmd`로 실행합니다.
+| 기본판(Classic) | 위 개선을 유지하고, 원작의 게임플레이와 콘텐츠를 유지합니다. | `StrandedII.exe` |
+| 확장판(Extended, Beta) | 선택 가능한 인벤토리·보관함·건축 QOL과 향후 별도 콘텐츠를 개발합니다. 현재는 QoL 위주의 변경만 있습니다. 베타버전임을 감안해주세요.| `StrandedII-Extended.exe` |
 
 ## 필요한 안내 찾기
 
-| 하고 싶은 일 | 문서 |
+| 안내 | 문서 |
 | --- | --- |
-| 실행, 화면·언어 설정, 세이브 백업 | [실행 및 설정](docs/playing-ko.md) |
-| 기존 번역 수정 또는 새 언어 추가 | [현지화 가이드](docs/localization-ko.md) |
-| 글꼴 변경 또는 언어팩 배포 | [폰트 가이드](docs/fonts-ko.md) |
+| 번역, 언어 추가, 글꼴 변경, 언어팩 배포 | [현지화 가이드](docs/localization-ko.md) |
 | 빌드, 기능 개발, 검증, 배포 | [개발 가이드](docs/development-ko.md) |
 
 문서는 영어 또는 한국어 파일을 직접 수정해도 됩니다. [문서 수정 안내](docs/development-ko.md#프로젝트-문서-수정)를 참고하세요. 안정판 이전의 별도 기여 규칙은 아직 없습니다.
@@ -90,6 +84,11 @@ Stranded II를 최신 Windows 환경에서 즐기기 위한 비공식 개선판�
 
 **즐겁게 플레이하세요!**
 </details>
+
+
+### 버그 및 기능요청
+
+버그, 기능요청, 번역요청 등은 모두 Github에 제출해주세요.
 
 ## 저작권
 

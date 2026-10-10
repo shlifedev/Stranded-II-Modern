@@ -80,7 +80,7 @@ Function modern_options_save()
    If eq>0 Then key$=Lower(Trim(Left(line$,eq-1)))
    Select key$
     Case "fps","display","resolution","render_width","render_height","language"
-    Default:content$=content$+line$+Chr(13)+Chr(10)
+    Default:If Not qol_setting_owned(key$) Then content$=content$+line$+Chr(13)+Chr(10)
    End Select
   Wend
   CloseFile stream
@@ -93,11 +93,13 @@ Function modern_options_save()
  WriteLine stream,"render_width="+modern_pending_width
  WriteLine stream,"render_height="+modern_pending_height
  WriteLine stream,"language="+loc_pending$
+ qol_settings_write(stream)
  CloseFile stream
  If modern_commit_file(path$,path$+".tmp")=0 Then Return False
  modern_saved_fps=modern_pending_fps:modern_saved_borderless=modern_pending_borderless
  modern_saved_width=modern_pending_width:modern_saved_height=modern_pending_height:modern_saved_native=modern_pending_native
  loc_saved$=loc_pending$
+ qol_settings_apply()
  Return True
 End Function
 

@@ -1,0 +1,44 @@
+; Edition hooks: Classic retains the original controls, layout and rules.
+Function qol_settings_reset()
+End Function
+Function qol_setting_owned(key$)
+ Return False
+End Function
+Function qol_settings_write(stream)
+End Function
+Function qol_settings_apply()
+End Function
+Function qol_settings_restart()
+ Return True
+End Function
+Function qol_options_nav()
+End Function
+Function qol_options_draw()
+End Function
+Function qol_inventory_enabled()
+ Return False
+End Function
+Function qol_inventory_grid()
+ Return 0
+End Function
+Function qol_inventory_toolbar()
+End Function
+Function qol_storage_draw()
+ Return False
+End Function
+Function qol_recipe_draw()
+End Function
+Function qol_frame()
+End Function
+Function qol_present()
+End Function
+Function qol_shutdown()
+End Function
+Function qol_attack2()
+ Return in_keyhit(Ckey_attack2)
+End Function
+Function qol_build_accept(id)
+ Return True
+End Function
+Function qol_build_result(id,continuing)
+End Function

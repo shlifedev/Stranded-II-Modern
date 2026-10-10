@@ -36,12 +36,14 @@ While Not m_performquit
 	;	Delay 1
 	;Wend
 	modern_present()
+	qol_present()
 Wend
 
 
 
 ;############################################ SHUTDOWN
 
+qol_shutdown()
 e_clear()
 EndGraphics()
 End

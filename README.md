@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"63dc37adb72faf3ac25cb4371f0e48b4bf2d63a3b56387d8d401fdc94730472a"} -->
+<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"a76753ba7c30cbe26b581e866fbf6f9a93c56c068d6f59b21dd29f8c5feae174"} -->
 
 # Stranded II : Modern
 
@@ -10,35 +10,29 @@ An unofficial update of Stranded II for modern Windows systems. Built with Blitz
 
 ## Getting started
 
-- **Play:** extract the entire release ZIP and run `Play.cmd` inside its game folder. Windows 10 or later is required.
+- **Play:** extract the entire release ZIP and double-click `StrandedII.exe` in the game folder. For Extended, run `StrandedII-Extended.exe`. Windows 10 or later is required; no separate installation is needed.
 - **Build from source:** follow environment setup and the first build in the [development guide](docs/development.md). The source checkout does not include the EXE or original game resources.
 - **Translate:** edit `locales/<code>.tsv` following the [localization guide](docs/localization.md).
 
-## Available now
+## Improvements
 
-- Timing adjustments that preserve game speed at 60/120/144 FPS. The default target is 144 FPS.
-- Borderless mode, resolution selection, and fixes for corrupted graphics after Alt-Tab. Display settings apply after a restart.
-- Quick save/load fixes, five autosave slots, previous-save backups, and Continue on the main menu.
-- English/Korean selection and custom language packs and fonts. Language switching is experimental and applies after a restart.
-
-Additional languages and a stable release are planned. Language switching, compatibility with older saves, and different display environments need further verification.
+- Refresh rate - The original game ran at 50Hz; it now supports 60Hz/120Hz/144Hz+.
+- Display - Borderless mode, resolution selection, and fixes for corrupted graphics after Alt-Tab. Display settings apply after a restart.
+- Saving - Quick save/load fixes, five autosave slots, previous-save backups, and Continue on the main menu.
+- Localization - Players can now easily translate the game themselves. (Support for adding languages.)
 
 ## Classic and Extended
 
-| Edition | Purpose | Source checkout launcher |
+| Edition | Purpose | Executable |
 | --- | --- | --- |
-| Classic | Preserve original gameplay and content | `Play.cmd` |
-| Extended | Future separate QOL, UI, content, and balance changes | `Play-Extended.cmd` |
-
-Only the separation foundation is implemented; **both editions currently have the same gameplay and content.** They share engine code but have separate settings, saves, versions, and release ZIPs. See the [development guide](docs/development.md#classic-and-extended) to prepare each edition. Both editions' release ZIPs launch with `Play.cmd` inside their game folder.
+| Classic | Keep the improvements above while preserving the original gameplay and content. | `StrandedII.exe` |
+| Extended | Develop optional inventory, storage, and construction QOL, with separate content planned for the future. Current changes focus on QoL. | `StrandedII-Extended.exe` |
 
 ## Find the right guide
 
-| Task | Guide |
+| Topic | Guide |
 | --- | --- |
-| Launch, change display/language settings, or back up saves | [Playing and settings](docs/playing.md) |
-| Edit translations or add a language | [Localization guide](docs/localization.md) |
-| Change fonts or distribute language packs | [Font guide](docs/fonts.md) |
+| Translate, add languages, change fonts, or distribute language packs | [Localization guide](docs/localization.md) |
 | Build, develop features, verify, or publish | [Development guide](docs/development.md) |
 
 You can edit either the English or Korean documents directly; see [editing documentation](docs/development.md#editing-project-documentation). There are no separate contribution rules before the stable release yet.
@@ -46,63 +40,49 @@ You can edit either the English or Korean documents directly; see [editing docum
 The notes below describe the project's background and future ideas. Use the feature list above for what is currently implemented.
 
 <details>
-  <summary>
-    Developer Notes
-  </summary>
+  <summary>Developer notes</summary>
 
-  Hello everyone!
+Hello!
 
-I'm someone who absolutely loved playing **Stranded II** during my childhood. This game holds a very special place in my heart, and I have so many wonderful memories of it.
+I loved playing **Stranded II** as a child. This game means a lot to me, and I have many happy memories of it.
 
-Recently, I suddenly felt the urge to play a deserted island survival game again. But even in 2026, I couldn't find anything that captured the same feeling Stranded II gave me.
+Recently, I felt like playing a deserted island survival game again. But even in 2026, I couldn't find another game that felt quite like Stranded II.
 
-Unfortunately, when I tried running the game on a modern system, it didn't run very smoothly.
+Unfortunately, the game didn't run smoothly on modern systems. The 50 FPS limit felt awkward, and textures could become corrupted after switching away with Alt-Tab and returning. Other players in the community were experiencing similar problems.
 
-The game was locked at 50 FPS, which made it feel awkward on modern hardware. There were also issues such as textures becoming corrupted after switching away from the game with Alt+Tab and returning to it.
+The technical problems weren't especially difficult, but there were many places to change. For example, fixing the frame rate takes more than removing the `20ms` limit. Every entity's update timing also needs to work correctly at variable frame rates.
 
-I also discovered that many other players in the community were experiencing similar problems.
+Doing it manually would take considerable effort, and changing so much code could introduce new bugs. Recent advances in AI have made this work much easier.
 
-Technically, these issues weren't particularly difficult to solve. The real problem was the sheer number of changes required.
+### Future plans
 
-For example, fixing the framerate isn't as simple as removing the `20ms` frame limit. The update ticks of every entity also need to be adjusted to work correctly with variable framerates.
+I plan to maintain two separate versions.
 
-Doing all of this manually would require an enormous amount of effort, and modifying so many parts of the code would introduce a significant risk of new bugs.
+- **Original version:** Preserve the original gameplay and content.
+- **Expanded version:** Add quality-of-life improvements, balance changes, and new content.
 
-However, thanks to the recent advancements in AI, I was able to tackle these problems much more easily.
+I intend to preserve the original version's core experience while including these improvements.
 
-## Plans for the Future
+- **Language support:** Select a language and add your own translations.
+- **Unlocked frame rate:** Remove the frame limit and calculate entity update times correctly regardless of frame rate.
+- **Graphics settings:** Provide additional graphics options.
+- **Quick save/load fixes:** Fix quick saving and loading that did not work.
+- **Improved autosaving:** Keep at least three autosave slots and add a Continue button to the main menu.
 
-I'm planning to maintain two separate versions of the game:
+### Beyond the original
 
-- **Original Version:** Preserves the original gameplay and content.
-- **Expanded Version:** Builds upon the original game with quality-of-life improvements, balance adjustments, and additional content.
+In the longer term, I'd like to expand the game by modifying and extending its core source code rather than making a conventional `mod`.
 
-The Original Version will not change the core gameplay experience. However, it will include the following improvements:
+I haven't named this version yet. Here are some ideas for it.
 
-- **Language Support:** You can now select your preferred language and even add your own translations.
-- **Unlocked Framerate:** The framerate cap has been removed, and entity update ticks are now calculated correctly regardless of framerate.
-- **Graphics Settings:** Additional graphics options will be available.
-- **Quick Save / Quick Load Fixes:** Issues preventing quick saving and loading from working properly have been fixed.
-- **Improved Auto Save System:** At least three auto-save slots will be maintained, and a new "Continue" button will be added to the main menu.
+- **Quality-of-life improvements:** QOL features that can be toggled in settings.
+- **Rebalancing and new content:** Balance changes and additional content.
+- **Multiplayer:** Playing together.
+- **Improved random islands:** Make survival on randomly generated islands more enjoyable alongside the scenario mode.
 
-## Beyond the Original Game
+These are future ideas; features beyond the current improvements have not been finalized.
 
-In the future, I'd also like to expand upon the original game.
-
-This won't be a traditional `mod`. Instead, it will involve directly modifying and extending the game's original core source code.
-
-I haven't decided what to call this version yet, but here are some of the features I have in mind:
-
-- **Quality-of-Life Improvements:** Optional QoL features that can be enabled or disabled in the settings.
-- **Rebalancing and New Content:** Gameplay balance adjustments and additional content.
-- **Multiplayer Support:** Bringing multiplayer functionality to the game.
-- **Improved Random Island Experience:** Making survival on randomly generated islands more engaging and enjoyable, rather than focusing primarily on the scenario mode.
-
-That's all for now!
-
-Please keep in mind that these are just plans for the future, and nothing beyond the current improvements is guaranteed yet.
-
-**Have fun, and enjoy the game!**
+**Enjoy the game!**
 </details>
 
 ## Copyright

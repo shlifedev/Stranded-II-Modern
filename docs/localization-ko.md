@@ -1,10 +1,10 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"cde9f1a82eb5340c7b7e65fb54757fa10734bf33f1120d7feaef1ba9d1c8d49d"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"cdda56bc97e4be420f38815f3f6a0515cd517445af82faa7f935870add424c68"} -->
 
 # 게임 번역하기
 
 [English](localization.md) · [한국어](localization-ko.md)
 
-[README로 돌아가기](../README-ko.md) · [개발 가이드](development-ko.md) · [폰트 가이드](fonts-ko.md)
+[README로 돌아가기](../README-ko.md) · [개발 가이드](development-ko.md)
 
 **번역할 언어의 `locales/<코드>.tsv`를 수정하면 됩니다.** 영어 원문은 [locales/en.tsv](../locales/en.tsv), 한국어 번역은 [locales/ko.tsv](../locales/ko.tsv)에 있습니다. 번역·언어·폰트 변경에는 EXE 재빌드가 필요하지 않습니다.
 
@@ -37,10 +37,10 @@ quest.example.greeting<TAB>$name님, 환영합니다!
 ```powershell
 .\dev.ps1 localize -Python .\.venv\Scripts\python.exe
 .\dev.ps1 check -Python .\.venv\Scripts\python.exe
-.\Play.cmd
+.\build\runtime\StrandedII.exe
 ```
 
-**설정 → 그래픽 → 언어**에서 대상 언어를 선택하고 적용한 뒤 게임을 재시작합니다. 바꾼 문구가 나오는 화면에서 글자 누락, 잘림, 줄바꿈과 변수 값을 확인하세요. 글자가 없다는 오류가 나면 [폰트 지정](fonts-ko.md)을 확인합니다.
+**설정 → 그래픽 → 언어**에서 대상 언어를 선택하고 적용한 뒤 게임을 재시작합니다. 바꾼 문구가 나오는 화면에서 글자 누락, 잘림, 줄바꿈과 변수 값을 확인하세요. 글자가 없다는 오류가 나면 [폰트 지정](#폰트-지정)을 확인합니다.
 
 ## 새 언어 추가하기
 
@@ -57,7 +57,17 @@ quest.example.greeting<TAB>$name님, 환영합니다!
 
 3. 위의 `localize → check → 실행` 절차를 따릅니다. 새 언어는 설정 목록에 자동으로 나타납니다.
 
-기본 폰트는 Noto Sans KR입니다. 다른 폰트가 필요하면 JSON에 `"font": "deps/fonts/MyFont.ttf"`를 추가하고 해당 파일을 준비하세요. 폰트 경로는 저장소 루트 기준입니다. 기본 영어·한국어 팩은 유지합니다. 일본어 번역은 현재 기본 제공하지 않습니다.
+기본 영어·한국어 팩은 유지합니다. 일본어 번역은 현재 기본 제공하지 않습니다.
+
+## 폰트 지정
+
+기본 폰트는 Noto Sans KR입니다. 다른 폰트가 필요하면 `.ttf` 또는 `.otf` 파일을 `deps/fonts/`에 넣고, 대상 언어의 `locales/<코드>.json`에 `"font": "deps/fonts/MyFont.ttf"`를 추가합니다. 경로는 저장소 루트 기준이며 Windows에 설치할 필요는 없습니다.
+
+- 변경 후에는 위의 `localize → check → 실행` 절차를 따릅니다. `font` 필드를 삭제하면 최초 `setup --font`로 지정한 기본 폰트로 돌아갑니다.
+- 지정 폰트에 없는 글자는 기본 Noto, 다른 언어팩의 지정 폰트 순으로 보완합니다. 그래도 없으면 문자·`U+XXXX`·번역 키를 표시하고 적용을 중단하며 기존 언어팩을 유지합니다. 해당 글자가 있는 폰트를 지정해 다시 실행하세요.
+- 가변 폰트도 지원하지만 `.ttc`, 보조 평면 이모지, 복잡한 문자 결합과 오른쪽에서 왼쪽으로 쓰기는 지원하지 않습니다.
+
+미리보기는 `build/runtime/core/locales/<코드>/preview.png`, 사용한 폰트 정보는 `build/runtime/core/locales/fonts-report.json`에 있습니다. 확장판은 `build/extended/runtime/` 아래에서 확인합니다. 최종 표시는 게임에서 확인하세요.
 
 ## 기본판·확장판 전용 번역
 
@@ -75,11 +85,18 @@ quest.example.greeting<TAB>$name님, 환영합니다!
 ```powershell
 .\dev.ps1 localize -Python .\.venv\Scripts\python.exe --edition extended
 .\dev.ps1 check -Python .\.venv\Scripts\python.exe --edition extended
-.\Play-Extended.cmd
+.\build\extended\runtime\StrandedII-Extended.exe
 ```
 
 ## 번역 공유하기
 
 번역 기여에는 수정한 TSV와, 새 언어라면 JSON을 함께 전달하세요. 별도 폰트를 지정했다면 폰트 입수 방법과 라이선스도 알려주세요.
 
-플레이어가 바로 설치할 언어팩을 만들려면 [언어팩 배포](fonts-ko.md#배포할-파일)를 참고하세요. 게임 코드에 새 문구를 연결하는 방법은 [개발자용 현지화 안내](development-ko.md#새-문구와-리소스-현지화)에 있습니다.
+플레이어에게 배포하려면 `localize`와 확인을 마친 해당 판의 **`core/locales/` 전체**를 묶습니다. 기본판은 `build/runtime/core/locales/`, 확장판은 `build/extended/runtime/core/locales/`입니다.
+
+- `languages.dat`, TSV, 언어별 `glyphs.dat`와 BMP 페이지를 모두 포함합니다. `preview.png`와 개발 PC의 절대 경로가 담긴 `fonts-report.json`은 제외해도 됩니다.
+- 폰트의 이미지 생성·배포 허용 여부를 확인하고 필요한 라이선스 고지를 동봉합니다. 기본 Noto 고지는 [licenses/](../licenses/)에 있습니다.
+
+받는 사람은 게임을 종료하고 기존 `core/locales/`를 백업한 뒤 교체하고, 게임에서 언어를 선택해 재시작합니다. 같은 판의 언어팩 지원 엔진이 필요하며 구형 EXE에는 설치하지 않습니다. Python이나 원본 폰트를 별도로 설치할 필요는 없습니다.
+
+게임 코드에 새 문구를 연결하는 방법은 [개발자용 현지화 안내](development-ko.md#새-문구와-리소스-현지화)에 있습니다.

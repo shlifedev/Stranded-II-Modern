@@ -1,16 +1,18 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"488a7b2fd3930d8fd9201c751af48fcc34f2af4ec9882561595e09ab3a9e4ffa"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"929b9ba38f044a48312497714647eb6b11a2df1d4d57e4f2c4493fed87b77e4f"} -->
 
 # Development guide
 
 [English](development.md) · [한국어](development-ko.md)
 
-[Back to README](../README.md) · [Playing and settings](playing.md) · [Localization guide](localization.md)
+[Back to README](../README.md) · [Localization guide](localization.md)
 
 For a first build, follow **environment setup → first build**. Once set up, use [running after changes](#running-after-changes) to choose the command for your edit. To contribute translations only, start with the [localization guide](localization.md).
 
 ## Setting up the development environment
 
 You need Windows 10 or later, Python 3.10 or later, and Pillow and fontTools from [requirements.txt](../requirements.txt). Use an ASCII path such as `C:\Stranded II` because of Blitz's file-path handling. Spaces are allowed.
+
+Building Extended also requires Visual Studio's MSVC x86/x64 C++ build tools and a Windows SDK. `build --edition extended` compiles `src/native/extended/qol_input.c` into the 32-bit `QolInput.dll`. No separate C runtime installation is needed, and the DLL is included in the Extended release ZIP. Classic builds do not require these tools.
 
 These dependencies are not included in the repository; prepare them yourself:
 
@@ -67,9 +69,11 @@ Use the following commands from the repository root. Close the development game 
 | Automated checks | `.\dev.ps1 check -Python .\.venv\Scripts\python.exe` |
 | Launch the game | `.\Play.cmd` |
 
-For changes to both code and resources, use `setup → build → check → launch`. Translation, new-language, and font changes use `localize → check → launch` without recompiling the EXE. `setup` includes the same language-pack preparation. See the [font guide](fonts.md) for font settings.
+The repository's `Play.cmd` and `Play-Extended.cmd` are development shortcuts to the built runtime folders. They are excluded from release ZIPs; players launch their edition's EXE directly.
 
-`setup` preserves existing runtime saves, `.cfg` files, `settings.inf`, and `core/modern.ini`. Changing `config/modern.ini` therefore does not automatically change an existing runtime's settings. Edit personal settings as described in [playing and settings](playing.md).
+For changes to both code and resources, use `setup → build → check → launch`. Translation, new-language, and font changes use `localize → check → launch` without recompiling the EXE. `setup` includes the same language-pack preparation. See the [localization guide](localization.md#choose-a-font) for font settings.
+
+`setup` preserves existing runtime saves, `.cfg` files, `settings.inf`, and `core/modern.ini`. Changing `config/modern.ini` therefore does not automatically change an existing runtime's settings. Change personal settings in the game menu, or close the game and edit `core/modern.ini` in the runtime folder.
 
 `build` compiles a temporary executable, then replaces `build/runtime/StrandedII.exe`. If replacement fails because the game is running, close the game and run `build` again.
 
@@ -107,7 +111,7 @@ Changes to generated output may be overwritten by the next `setup` or `build`. K
 
 ## Classic and Extended
 
-`classic` preserves existing behavior; `extended` is the separate edition for new features and content. Only the separation foundation exists so far; QOL and rebalancing have not been added. Change shared code once and verify both editions; write Extended-only changes in that edition's code and resources.
+`classic` preserves existing behavior; `extended` provides inventory, storage, and construction QOL and is the separate edition for new features and content. QOL calls the existing crafting, transfer, and construction rules without changing material costs or tool speed. Change shared code once and verify both editions; write Extended-only changes in that edition's code and resources.
 
 `classic` is an internal identifier. The base edition keeps the window title `Stranded II` and executable `StrandedII.exe`; only Extended uses `Stranded II - Extended` and `StrandedII-Extended.exe`. Builds, launchers, and packaging use these names consistently.
 
@@ -129,7 +133,11 @@ build/runtime/                   Classic runtime, settings and saves
 build/extended/runtime/          Extended runtime, settings and saves
 ```
 
-Both `modules.bb` files currently include the same existing implementations. Only when behavior diverges, create the relevant module in the Extended folder and change its `Include`. Compilation uses directly authored sources; Python does not generate engine code. Build reports record only the selected entrypoint's actual `Include` graph. Including another edition's private source fails validation.
+Both `modules.bb` files share the existing UI, input, and construction implementations and select edition-specific QOL hooks. Classic's `qol.bb` contains no-op hooks that preserve existing behavior; Extended's `qol.bb`, `qol_inventory.bb`, `qol_recipes.bb`, and `qol_search.bb` implement settings, sorting, transfers, the recipe book, and Unicode search. Search uses a Win32 Unicode EDIT control and IME, with declarations in `config/userlibs/qol_*.decls`. Separate only the modules needed when behavior diverges. Compilation uses directly authored sources; Python does not generate engine code. Build reports record only the selected entrypoint's actual `Include` graph. Including another edition's private source fails validation.
+
+The recipe book reads loaded `Tcom` data. Guides for cooking, water use, and similar interactions are maintained separately in the Extended override `mods/Stranded II/sys/qol_guides.inf`; each `source` identifies the supporting script and event. Guides do not execute scripts on the player's behalf. When changing an original event, review the guide's conditions, quantities, and probability descriptions too. QOL settings are saved only in that edition's `core/modern.ini`.
+
+The native search bridge translates and dispatches Unicode messages only for that EDIT control on the current game thread. Blitz's default message loop lacks character translation, so simply creating an EDIT is insufficient for typing. The parent's `WS_CLIPCHILDREN` excludes the search field from game presentation; its position is updated only when dimensions change. Do not erase and repaint it every frame with `InvalidateRect`. Closing the search field removes the message hook and restores the added window style.
 
 Resources are prepared in this order: official input, localization preparation, shared overrides, then the selected edition's overrides. Place edition overrides at runtime-relative `mods/Stranded II/...` paths. Write item, recipe, building, stat, map, and script rebalancing in Extended overrides. Overrides cannot replace settings, saves, or executables. Follow the [resource localization binary rules](#localizing-new-text-and-resources) for `.s2` edits. See the [localization guide](localization.md#edition-specific-translations) for edition translations.
 
@@ -186,11 +194,15 @@ For game-code changes, run `build` and `check`, then verify the changed feature 
 | `build` | Actual Blitz3D compilation and executable/source hashes | `build/build-report.json` |
 | `check` | Text references, substitution variables, fonts, actual Blitz loader/parser, settings preservation, timing/frame waits, save replacement/locking failures/backups/five slots/queue/Continue selection | `build/check-*/report.json` and detailed results in that folder |
 | `.\.venv\Scripts\python.exe -X utf8 scripts/verify_game.py` | Actual map/save/backup/quick save/load/autosave state recovery in an isolated game | `build/game-smoke-*/report.json` |
+| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_qol_logic.py --language ko` | Actual Blitz QOL logic, crafting, transfers, sorting, and settings; uses graphics entity and script test doubles | `build/extended/qol-logic-*/report.json` |
+| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_qol.py --language ko` | Actual crafting, transfers, script vetoes, and save/load in a copied Extended runtime; requires a graphics device | `build/extended/qol-smoke-*/report.json` |
 | `.\.venv\Scripts\python.exe -X utf8 scripts/verify_collisions.py --edition classic` | Rock mesh sanitation, slope approach/retreat, jumping/landing, corridors/swimming, control transitions and projectile collisions in an isolated Blitz runtime | `build/collision-smoke-*/report.json` |
 
 For movement and collision changes, run `verify_collisions.py` for both editions. Extended uses `--edition extended` and writes results to `build/extended/collision-smoke-*/`. The check uses real terrain and rock models with 60/120/144 Hz and 100ms time steps and sends no GUI input. Actual rendering FPS and the user's reported location require separate verification. The existing `diagnostics=1` option in `core/modern.ini` logs requested/resolved movement, terrain correction, contact points/normals and rejected moves to `core/modern.log` at most four times per second.
 
 `check` tests timers, parsers, save-file handling, and related behavior without rendering. Actual rendering FPS, Alt-Tab, visual smoothness, and full progression require separate in-game checks.
+
+Extended `check` also runs `verify_qol_logic.py`. It compiles actual engine functions but substitutes entities and scripts, so it does not verify display, real scripts, map saves, or IME. `verify_qol.py --interactive` prepares a separate test game without copying personal saves and does not launch it automatically. Run that copy to check Korean composition/commit/cancel, search focus and Alt-Tab, long names and detail scrolling, Shift-click/R/Shift+R, each option on/off, and cancellation of held construction. Use `--language en` for English and `--desktop` for borderless mode. Construction interval checks at simulated 60/120/144 FPS do not measure actual rendering FPS.
 
 For save changes, also use `scripts/verify_game.py` to test actual map loading and saving/loading. It uses a copied runtime and an empty save folder without writing to the user's game or saves. It needs a graphics device and does not test UI interaction. The default is an 800×600 window; `--desktop` tests borderless mode fitted to the monitor, and `--edition extended` selects Extended. Extended reports are under `build/extended/`.
 
@@ -209,11 +221,15 @@ Choose relevant checks for the change and verify them in the game:
 
 When sharing results, include the build, display settings, actions checked, and remaining checks. Automated checks passing does not establish full-playthrough coverage or display recovery on every PC.
 
+See [Extended features](extend-features.md) for features and shortcuts exclusive to Extended.
+
 ## Editing project documentation
 
 Edit the English `.md` or Korean `-ko.md` directly. Name new Korean documents like `example-ko.md`. An AI agent updates the other languages during repository tasks; this is not a continuously running translation service.
 
 [.dev-docs-ai-translation.json](../.dev-docs-ai-translation.json) controls document languages, independently of game languages. English-only edits are synchronized from English; when both languages change, Korean takes priority. Do not manually change the hash on the first line. See [AGENTS.md](../AGENTS.md) for the full rules.
+
+As an exception, `README-ko.md` is maintained by the user and agents do not change it without an explicit editing request. Other README languages are synchronized from the Korean original. When creating or updating documentation, follow each document's purpose and style in [auto-gen-please.json](auto-gen-please.json), updating only the documents needed.
 
 ## GitHub CI and release ZIPs
 
@@ -276,9 +292,9 @@ Then manually run `Windows build and release` in Actions to download the game ZI
 
 ### Release ZIP contents
 
-Classic ZIPs use `StrandedII/` and Extended ZIPs use `StrandedII-Extended/`. Each folder includes the compiled EXE, original game resources, localized resources, per-language bitmap fonts, initial settings, and licenses. Extract the whole ZIP and run `Play.cmd` in that folder. To launch the EXE directly, use `StrandedII.exe` for the base edition or `StrandedII-Extended.exe` for Extended. Players do not need separate Python, Blitz3D, or font installations.
+Classic ZIPs use `StrandedII/` and Extended ZIPs use `StrandedII-Extended/`. Each folder includes one EXE for that edition, original game resources, localized resources, per-language bitmap fonts, initial settings, and licenses. Extract the whole ZIP and double-click `StrandedII.exe` for the base edition or `StrandedII-Extended.exe` for Extended. No launch CMD is included. Players do not need separate Python, Blitz3D, or font installations; display, FPS, and language are changed in the game's settings menu.
 
-Packaging uses an explicit file list, so a used development runtime's personal saves, custom maps, screenshots, `preserved/`, logs, and check reports are excluded. Key bindings come from the original dependencies; `core/modern.ini` comes from the repository's initial settings. Personal `sys/settings.cfg` is also excluded, so new installations use the engine's graphics quality and volume defaults, described in [playing and settings](playing.md#graphics-quality-and-sound). The development runtime is not modified. Local packaging is also available.
+Packaging uses an explicit file list, so a used development runtime's personal saves, custom maps, screenshots, `preserved/`, logs, and check reports are excluded. Key bindings come from the original dependencies; `core/modern.ini` comes from the repository's initial settings. Personal `sys/settings.cfg` is also excluded, so new installations use the engine's graphics quality and volume defaults. The development runtime is not modified. Local packaging is also available.
 
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 scripts/ci.py package --game deps/game
@@ -292,4 +308,4 @@ Output names are `build/release/StrandedII-<display version>-windows.zip` and `.
 
 [.gitignore](../.gitignore) excludes `deps/`, `build/`, `.venv/`, Python caches, and logs. Sources, translations, edited resources, scripts, settings, documents, and licenses are tracked in Git.
 
-`build/runtime/` contains real saves and user settings as well as build output. Before resetting the folder, back up saves, custom maps, screenshots, and the contents of `preserved/` if present. See [playing and settings](playing.md) for their locations.
+`build/runtime/` and `build/extended/runtime/` contain real saves and user settings as well as build output. Before resetting either folder, back up its `mods/Stranded II/saves/`, custom maps, screenshots, and the contents of `preserved/` if present.

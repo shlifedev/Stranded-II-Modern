@@ -314,7 +314,7 @@ Function game_input_normal()
 					If in_keydown(Ckey_attack1) Then
 						game_attack1()
 					;Weapon Attack 2
-					ElseIf in_keyhit(Ckey_attack2) Then
+					ElseIf qol_attack2() Then
 						game_attack2()
 					EndIf
 					

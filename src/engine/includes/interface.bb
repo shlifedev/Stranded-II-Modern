@@ -492,6 +492,9 @@ Function interface()
 					DrawImage gfx_icons,236,5,Cicon_bag
 					bmpf_txt(236+37,10,sm$(142))
 					
+					If qol_inventory_enabled() Then
+						selcount=qol_inventory_grid():selx=tmp_iselx:sely=tmp_isely
+					Else
 					;List
 					For x=0 To 10
 						For y=0 To 4
@@ -582,6 +585,7 @@ Function interface()
 					If in_mzs#<0. And y>225 Then in_scr_scr=in_scr_scr+11
 					
 						
+					EndIf
 					;Inventory Capacy State
 					x=0
 					For Titem.Titem=Each Titem
@@ -748,6 +752,10 @@ Function interface()
 					EndIf
 					
 					
+					qol_inventory_toolbar()
+
+				Case 28:qol_recipe_draw()
+
 				;Diary
 				Case Cmenu_if_diary
 					DrawImage gfx_icons,236,5,Cicon_dialog
@@ -1795,6 +1803,7 @@ Function interface()
 					
 				;Exchange
 				Case Cmenu_if_exchange
+					If Not qol_storage_draw() Then
 					DrawImage gfx_icons,236,5,Cicon_bag
 					Select in_ex_class
 						Case Cclass_object
@@ -2065,6 +2074,8 @@ Function interface()
 					;Okay
 					If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then m_menu=0					
 				
+					EndIf
+
 				;Map
 				Case Cmenu_if_map
 					if_map()

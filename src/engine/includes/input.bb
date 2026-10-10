@@ -228,6 +228,7 @@ Function getinput(gametimer=1)
 		If in_statefxf>=9 Then in_statefxf=1
 	EndIf
 	
+	qol_frame()
 End Function
 
 ;### End Input

@@ -1,0 +1,71 @@
+# Extended quality-of-life UI and interaction guides.
+qol.tab	QOL
+qol.recipes	Recipe book
+qol.storage	Quick storage transfers
+qol.autoclose	Close after looting a corpse
+qol.autosort	Automatic inventory sorting
+qol.hold_build	Hold to build
+qol.on	On
+qol.off	Off
+qol.settings_help	Changes apply immediately. Corpse auto-close requires quick storage transfers. Sorting puts quick slots first, then tools, weapons, ammo, food, potions, materials and miscellaneous items.
+qol.related	Related recipes
+qol.player_items	Your inventory
+qol.take_all	Take all [R]
+qol.deposit_matching	Store matching [Shift+R]
+qol.move_one	Move 1 [1]
+qol.move_stack	Stack [F]
+qol.close	Close
+qol.back	Back
+qol.moved	Moved $1 items.
+qol.remaining	Some items remain: check capacity and restrictions.
+qol.move_blocked	Cannot move this item: check capacity and storage restrictions.
+qol.transfer_help	Select, then 1: move one; F: move stack. Shift+click: move stack. Store matching protects equipped items and quick slots.
+qol.script_conditions	Materials shown here do not guarantee success. Existing progress, state and action conditions are checked when you craft.
+qol.search_unavailable	Text input unavailable. Use category and item filters.
+qol.clear_search	Clear search
+qol.clear_filters	All recipes
+qol.materials_ready	Materials ready
+qol.materials_missing	Materials missing
+qol.guide	Interaction guide
+qol.locked	Locked
+qol.no_results	No matching recipes. Clear the search or filters.
+qol.previous	Previous
+qol.next	Next
+qol.result_count	$1 recipes
+qol.kept	(kept)
+qol.result	Result:
+qol.find_recipe	Find how to make this
+qol.craft_one	Craft once
+qol.use_at_location	Follow the instructions at the location.
+qol.used_in	Used in
+qol.detail_scroll	Wheel: scroll details. Click an item to explore.
+qol.cat.all	All categories
+qol.cat.tools	Tools
+qol.cat.weapons	Weapons
+qol.cat.ammo	Ammo
+qol.cat.food	Food
+qol.cat.potions	Potions
+qol.cat.materials	Materials
+qol.cat.misc	Miscellaneous
+qol.cat.actions	Actions
+qol.condition.fire	Stand close to fire or eternal fire (within 50 game units).
+qol.condition.water	Stand near a fountain or freshwater source (within 50 game units), or in a freshwater area.
+qol.condition.anywhere	No nearby facility is required.
+qol.condition.torch	Stand close to fire. Move away from freshwater first: soaking a branch takes priority.
+qol.method.use	Select the ingredient in your inventory and press Use. The original action consumes one ingredient and produces the listed result.
+qol.method.clam	Use one clam in your inventory. It is consumed and yields either one pearl or one slime, not both.
+qol.method.bark	Use bark to search it. You may find a worm or slime, or nothing. The bark may break; the results below are alternatives.
+qol.guide.meat	Cook meat
+qol.guide.small_meat	Cook small meat
+qol.guide.fish	Cook fish
+qol.guide.bread	Bake bread
+qol.guide.cookies	Bake cookies
+qol.guide.dough_water	Make dough near freshwater
+qol.guide.branch_water	Soak a branch
+qol.guide.torch	Make a torch near fire
+qol.guide.harden_branch	Harden a bendable branch
+qol.guide.cord	Make cord from cotton / wool
+qol.guide.grain	Separate grain from a sheaf
+qol.guide.bottle	Fill a bottle
+qol.guide.clam	Open a clam
+qol.guide.bark	Search bark

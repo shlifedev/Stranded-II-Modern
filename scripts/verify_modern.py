@@ -98,6 +98,9 @@ End Function
     body += (includes / 'modern_files.bb').read_text('utf8') + '\n'
     body += (includes / 'modern_saves.bb').read_text('utf8') + '\n'
     body += function((includes / 'e_save_map.bb').read_text('utf8'), 'save_map') + '\n'
+    hooks = (includes.parent / 'editions/classic/qol.bb').read_text('utf8')
+    for name in ('qol_setting_owned', 'qol_settings_write', 'qol_settings_apply'):
+        body += function(hooks, name) + '\n'
     settings = (includes / 'modern_settings.bb').read_text('utf8')
     body += settings[:settings.index('Function ')]
     for name in ('modern_fit_resolution', 'modern_resolve_resolution', 'modern_capture_settings', 'modern_settings_reset',

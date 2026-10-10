@@ -198,6 +198,11 @@ def release_members(runtime, game, edition='classic'):
     if not exe.startswith(b'MZ'):
         raise ValueError(f'{profile.executable} is not a Windows executable')
     members[profile.executable] = exe
+    if edition == 'extended':
+        bridge = file_bytes(runtime, 'QolInput.dll')
+        if not bridge.startswith(b'MZ'):
+            raise ValueError('QolInput.dll is not a Windows DLL')
+        members['QolInput.dll'] = bridge
     report = read_json(profile.build_dir(ROOT) / 'build-report.json')
     sources = source_hashes(ROOT, edition)
     if (validate_info(report) != info or report['exe_sha256'] != digest(exe) or
@@ -233,16 +238,14 @@ def release_members(runtime, game, edition='classic'):
                 members[relative] = file_bytes(runtime, relative)
     members['core/modern.ini'] = file_bytes(ROOT, profile.defaults)
     members.update(license_members())
-    members['Play.cmd'] = (
-        '@echo off\r\ncd /d "%~dp0" || exit /b 1\r\n'
-        f'start "" "{profile.executable}" %*\r\n').encode('ascii')
     members['README.txt'] = (
         f'{profile.title}\n\n'
-        f'Windows 10 or later. Extract the entire ZIP, then run Play.cmd or {profile.executable}.\n'
-        'Blitz3D and Python are not needed to play.\n'
-        f'Windows 10 이상에서 ZIP 전체를 풀고 Play.cmd 또는 {profile.executable}를 실행하세요.\n'
-        '게임 실행에는 Blitz3D와 Python이 필요하지 않습니다.\n\n'
-        'Settings / 설정: core/modern.ini (language=ko|en; restart to apply / 재시작 후 적용).\n'
+        f'Extract the entire ZIP, then double-click {profile.executable} in the game folder.\n'
+        f'ZIP 전체를 풀고 게임 폴더의 {profile.executable}를 더블클릭하세요.\n\n'
+        'Windows 10 or later. No separate installation is required.\n'
+        'Windows 10 이상. 별도 설치는 필요하지 않습니다.\n\n'
+        'Display, FPS and language: Settings > Graphics; apply, close and reopen the game.\n'
+        '화면·FPS·언어: 설정 > 그래픽에서 적용한 뒤 게임을 종료하고 다시 실행하세요.\n'
         'Saves / 저장 파일: mods/Stranded II/saves/\n'
         'Original game / 원작: Peter Schauß / Unreal Software, https://www.unrealsoftware.de/\n'
         'This is an unofficial modified version. / 비공식 수정 버전입니다.\n'
