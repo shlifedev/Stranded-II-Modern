@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"edd1b601e551ac4e609e7251e17c70581cf0290c0528e1992b320b167a3ccc62"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"7171b0909e0490c657d58743527b3993650b9dc57612bba4266a1562ce604198"} -->
 
 # Translating the game
 

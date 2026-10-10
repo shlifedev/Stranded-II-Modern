@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"cdda56bc97e4be420f38815f3f6a0515cd517445af82faa7f935870add424c68"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"6f52c1e0600090609d28eb4f0ad1d9d2c9b5e8aaa21bedd9eaf899e4aaf8b1df"} -->
 
 # 게임 번역하기
 

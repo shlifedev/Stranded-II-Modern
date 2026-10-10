@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"292a9c3644dd2c026c5124d2225b13d010f32e3aee55248861fe02e7271e0fdc"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"82227922362c5ab204bdfa514557129c71741fa57a05ed32b689788a706046dc"} -->
 
 # Stranded II development instructions
 
@@ -10,7 +10,7 @@ The architecture has Classic and Extended editions using a shared engine, editio
 - The entrypoints are `src/engine/StrandedII.bb` and `src/engine/StrandedIIExtended.bb`. Select implementations in `editions/<edition>/modules.bb`. When Extended behavior diverges, separate only the required modules rather than copying the whole engine.
 - Commands default to Classic when `--edition classic|extended` is omitted. Classic uses `build/runtime`; Extended uses `build/extended/runtime`. Do not share or automatically copy settings or saves.
 - Put edition resources in `resources/editions/<edition>/overrides/` and translations in `locales/editions/<edition>/<code>.tsv`. Shared resource/catalog changes affect both editions. Write Extended rebalancing only in its own paths.
-- `main`/`dev` are stable/development channels. Pushes and PRs check both editions; publication requires selecting the edition and `publish=true` in the manual workflow. Do not publish a release without a request.
+- `main`/`dev` are stable/development channels. Pushes and PRs check both editions; a `main` push automatically publishes a Classic stable release after checks pass. Extended or development releases require selecting the edition and `publish=true` in the manual workflow. Do not publish a release or trigger one by pushing without a request.
 
 - Edit `src/engine/**/*.bb` directly. These files are tracked sources, not generated output. Do not run the old `src/ko-full` generators against the current engine.
 - Follow `scripts/dev.py setup|localize|build|run|check` and the directory structure in `docs/development.md`. Python handles preparation, fonts, and verification only; it does not regenerate engine code.

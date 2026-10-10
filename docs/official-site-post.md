@@ -1,3 +1,5 @@
+<!-- dev-docs-ai-translation: {"document":"docs/official-site-post.md","language":"en","syncedHash":"a2a33e3b99c40504daabb3c48c97f2ce3d2b2122fe9df0c86d609f574e8459f3"} -->
+
 # Draft post for the official site
 
 [English](official-site-post.md) · [한국어](official-site-post-ko.md)

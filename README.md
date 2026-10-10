@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"a76753ba7c30cbe26b581e866fbf6f9a93c56c068d6f59b21dd29f8c5feae174"} -->
+<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"07388d42c058057a19ee1ab8d99312e0a2c1a40375f1ed677da5508d1863d714"} -->
 
 # Stranded II : Modern
 
@@ -6,7 +6,7 @@
 
 <img width="2560" height="1440" alt="image" src="https://github.com/user-attachments/assets/d7553612-613b-4a5f-8ba7-77e4774af408" />
 
-An unofficial update of Stranded II for modern Windows systems. Built with Blitz3D 1.118 and currently under development.
+An unofficial update of Stranded II for modern Windows systems. Built with Blitz3D 1.118.
 
 ## Getting started
 
@@ -26,7 +26,7 @@ An unofficial update of Stranded II for modern Windows systems. Built with Blitz
 | Edition | Purpose | Executable |
 | --- | --- | --- |
 | Classic | Keep the improvements above while preserving the original gameplay and content. | `StrandedII.exe` |
-| Extended | Develop optional inventory, storage, and construction QOL, with separate content planned for the future. Current changes focus on QoL. | `StrandedII-Extended.exe` |
+| Extended (Beta) | Develop optional inventory, storage, and construction QOL, with separate content planned for the future. Current changes focus on QoL. Please keep its beta status in mind. | `StrandedII-Extended.exe` |
 
 ## Find the right guide
 
@@ -84,6 +84,10 @@ These are future ideas; features beyond the current improvements have not been f
 
 **Enjoy the game!**
 </details>
+
+### Bugs and feature requests
+
+Please submit bugs, feature requests, and translation requests on GitHub.
 
 ## Copyright
 

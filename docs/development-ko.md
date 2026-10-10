@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"e901e0586f52bb9f80287ab091f1ea6c5dc2f4a18c199e2cbf40f0d15061cae7"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"3f93a9b9b2919d5f4bcb518b8e3b95d1517c0ae8cf814fe51b4de7c5fb921880"} -->
 
 # 개발 가이드
 
@@ -233,16 +233,16 @@ msg "[[loc:quest.island1.arrival]]";
 
 ## GitHub CI와 배포 ZIP
 
-[Windows 워크플로](../.github/workflows/windows.yml)는 `main`·`dev` 푸시, PR, 수동 실행에서 두 판을 각각 빌드·검사하고 게임 ZIP과 SHA-256 파일을 산출물로 저장합니다. 푸시·PR은 `-local` 검증용 ZIP만 만들며 Release를 발행하거나 번호를 소모하지 않습니다.
+[Windows 워크플로](../.github/workflows/windows.yml)는 `main`·`dev` 푸시, PR, 수동 실행에서 두 판을 각각 빌드·검사하고 게임 ZIP과 SHA-256 파일을 산출물로 저장합니다. `main` 푸시는 두 판의 검사가 모두 성공하면 Classic 안정판 Release를 자동 발행하고 patch 번호를 올립니다. 이때 Extended는 `-local` 검증용 ZIP을 만듭니다. `dev` 푸시와 PR은 두 판 모두 검증용 ZIP만 만들며 Release를 발행하거나 번호를 소모하지 않습니다.
 
-출시할 때는 GitHub에서 다음 순서로 진행합니다.
+Extended·개발판을 출시하거나 Classic 출시를 수동 실행하려면 GitHub에서 다음 순서로 진행합니다.
 
 1. **Actions → Windows build and release → Run workflow**를 엽니다.
 2. 정식판은 `main`, 시험판은 `dev` 브랜치를 선택합니다.
 3. `edition`에서 `classic` 또는 `extended`를 선택하고 `publish`를 켭니다.
 4. 두 판의 빌드·검사가 모두 성공하면 선택한 판의 Release가 발행됩니다.
 
-`publish=false`는 ZIP 생성과 검증만 수행합니다. 다른 브랜치나 태그 푸시에서는 출시하지 않습니다.
+수동 실행의 `publish=false`는 ZIP 생성과 검증만 수행합니다. 다른 브랜치나 태그 푸시에서는 출시하지 않습니다.
 
 CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행합니다. `check`는 비그래픽 런타임 검사이며 실제 화면, 렌더링 FPS, Alt-Tab과 전체 플레이 검증을 대신하지 않습니다. 로컬 검사와 별도로 실제 GitHub Actions 실행도 확인해야 합니다.
 
@@ -262,7 +262,7 @@ CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → pa
 
 출시할 때 `dev`는 `main`에 있는 해당 판의 기준 파일을 읽고 그 커밋 SHA를 고정합니다. 정식 배포 전에는 기준 버전의 `-dev.1`부터 시작하며, 정식 배포가 있으면 다음 patch를 목표로 `dev.N` 순번을 올립니다. 개발 배포는 정식 patch를 소모하지 않습니다. `main`은 배포 대상 커밋의 기준 파일을 사용합니다. 확장판을 `dev`에서 처음 출시하기 전에 해당 기준 파일이 `main`에 있어야 합니다.
 
-출시 실행은 버전 계산부터 발행까지 직렬 처리합니다. 빌드·검사 실패는 태그를 만들지 않으므로 번호를 소모하지 않습니다. 발행 중 중단되면 번호가 예약될 수 있지만 같은 판·소스 커밋·채널로 재실행하면 태그와 초안을 복구합니다. 공개된 Release는 덮어쓰지 않으며 재실행 시 검증 후 기존 발행을 유지합니다. 다른 판의 태그와 `ci-deps-v1`은 번호 계산에 영향을 주지 않습니다. 개발판과 확장판은 기본판의 최신 정식 Release 표시를 대체하지 않습니다.
+자동·수동 출시 실행은 같은 대기열에서 버전 계산부터 발행까지 직렬 처리합니다. 빌드·검사 실패는 태그를 만들지 않으므로 번호를 소모하지 않습니다. 발행 중 중단되면 번호가 예약될 수 있지만 같은 판·소스 커밋·채널로 재실행하면 태그와 초안을 복구합니다. 공개된 Release는 덮어쓰지 않으며 재실행 시 검증 후 기존 발행을 유지합니다. 다른 판의 태그와 `ci-deps-v1`은 번호 계산에 영향을 주지 않습니다. 개발판과 확장판은 기본판의 최신 정식 Release 표시를 대체하지 않습니다.
 
 빌드는 `core/version.txt`와 `core/version.json`을 생성합니다. 게임은 표시값을 메인 메뉴에 표시합니다. `build-info.json`에는 배포판·버전·채널·소스 커밋·기준 파일 커밋과 실행 파일 해시가 포함됩니다. 패키징은 해당 판의 빌드 보고서·소스 그래프와 일치하는지 검사하며 판이 다른 실행 폴더나 오래된 리소스 변경분을 거부합니다. 기존 `Cversion="1.0.0.1"`은 맵·스크립트 호환성을 위해 유지합니다. 로컬 빌드는 `-local`로 표시합니다.
 

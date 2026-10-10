@@ -20,7 +20,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: windows-${{ github.event_name == 'workflow_dispatch' && inputs.publish && 'release' || github.ref }}
+  group: windows-${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' && inputs.publish) && 'release' || github.ref }}
   queue: max
   cancel-in-progress: false
 
@@ -64,7 +64,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_CHANNEL: ${{ github.ref_name }}
-          PUBLISH_RELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.publish && inputs.edition == matrix.edition }}
+          PUBLISH_RELEASE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.edition == 'classic' || github.event_name == 'workflow_dispatch' && inputs.publish && inputs.edition == matrix.edition }}
         run: |
           if ($env:PUBLISH_RELEASE -eq 'true') {
             python -X utf8 scripts/ci.py version --edition "$env:EDITION" --channel "$env:RELEASE_CHANNEL" --repo "$env:GH_REPO"
@@ -161,7 +161,7 @@ jobs:
 
   release:
     needs: build
-    if: github.event_name == 'workflow_dispatch' && inputs.publish
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' && inputs.publish
     runs-on: windows-2022
     timeout-minutes: 5
     permissions:
@@ -177,17 +177,17 @@ jobs:
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          name: version-context-${{ inputs.edition }}
+          name: version-context-${{ inputs.edition || 'classic' }}
           path: build/ci
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          name: StrandedII-${{ inputs.edition }}-windows
+          name: StrandedII-${{ inputs.edition || 'classic' }}-windows
           path: build/release
 
       - name: Publish selected immutable Release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          EDITION: ${{ inputs.edition }}
+          EDITION: ${{ inputs.edition || 'classic' }}
         run: python -X utf8 scripts/ci.py release --edition "$env:EDITION" --repo "$env:GH_REPO"

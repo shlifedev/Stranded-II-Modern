@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"929b9ba38f044a48312497714647eb6b11a2df1d4d57e4f2c4493fed87b77e4f"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"39b26a14f12c5eb7ef00b7d04e96af2dea1740f816a16e77e197bff6931f6755"} -->
 
 # Development guide
 
@@ -233,16 +233,16 @@ As an exception, `README-ko.md` is maintained by the user and agents do not chan
 
 ## GitHub CI and release ZIPs
 
-The [Windows workflow](../.github/workflows/windows.yml) builds and checks both editions on pushes to `main`/`dev`, pull requests, and manual runs, storing game ZIPs and SHA-256 files as artifacts. Pushes and PRs only produce `-local` verification ZIPs without publishing Releases or consuming version numbers.
+The [Windows workflow](../.github/workflows/windows.yml) builds and checks both editions on pushes to `main`/`dev`, pull requests, and manual runs, storing game ZIPs and SHA-256 files as artifacts. A `main` push automatically publishes a Classic stable Release and advances its patch number after both editions pass checks. Extended produces a `-local` verification ZIP in that run. Pushes to `dev` and PRs only produce verification ZIPs for both editions without publishing Releases or consuming version numbers.
 
-To publish, follow these steps on GitHub:
+To publish Extended or a development release, or manually publish Classic, follow these steps on GitHub:
 
 1. Open **Actions → Windows build and release → Run workflow**.
 2. Select `main` for a stable release or `dev` for a prerelease.
 3. Choose `classic` or `extended` under `edition` and enable `publish`.
 4. After both editions build and pass checks, a Release is published for the selected edition.
 
-`publish=false` only creates ZIPs and runs checks. Other branches and tag pushes do not publish.
+For manual runs, `publish=false` only creates ZIPs and runs checks. Other branches and tag pushes do not publish.
 
 CI runs `setup → build → check → package` on Windows Server 2022 with Python 3.13. `check` tests non-graphical runtime behavior; it does not replace actual graphics, rendering FPS, Alt-Tab, or full-playthrough verification. Actual GitHub Actions runs must also be checked separately from local tests.
 
@@ -262,7 +262,7 @@ Classic's baseline is in [config/version.json](../config/version.json) on `main`
 
 When publishing, `dev` reads the selected edition's baseline file from `main` and freezes its commit SHA. Before a stable release exists, development releases start at the baseline with `-dev.1`; otherwise they target the next patch and increment `dev.N`. Development releases do not consume stable patches. `main` uses the baseline file from the release commit. Before the first Extended release from `dev`, its baseline file must exist on `main`.
 
-Release runs are serialized from version allocation through publication. Build/check failures create no tags and consume no numbers. Publication interruptions may reserve a number, but rerunning the same edition, source commit, and channel recovers its tag and draft. Published Releases are never overwritten; reruns verify and retain the existing publication. Other editions' tags and `ci-deps-v1` do not affect number allocation. Development and Extended releases do not replace Classic's latest stable Release marker.
+Automatic and manual release runs share a queue and are serialized from version allocation through publication. Build/check failures create no tags and consume no numbers. Publication interruptions may reserve a number, but rerunning the same edition, source commit, and channel recovers its tag and draft. Published Releases are never overwritten; reruns verify and retain the existing publication. Other editions' tags and `ci-deps-v1` do not affect number allocation. Development and Extended releases do not replace Classic's latest stable Release marker.
 
 Builds generate `core/version.txt` and `core/version.json`. The game displays the label in the main menu. `build-info.json` includes the edition, version, channel, source commit, baseline-file commit, and executable hash. Packaging checks the selected edition's build report and source graph, rejecting another edition's runtime or stale resource overrides. The existing `Cversion="1.0.0.1"` remains unchanged for map/script compatibility. Local builds display `-local`.
 

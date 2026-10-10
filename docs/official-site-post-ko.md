@@ -1,3 +1,5 @@
+<!-- dev-docs-ai-translation: {"document":"docs/official-site-post.md","language":"ko","syncedHash":"afb6814342c1ebcd2919b55c5b30ca4bd663a2e295408b15a3fd29ddc1e9bd63"} -->
+
 # 공식 사이트 게시글 초안
 
 [English](official-site-post.md) · [한국어](official-site-post-ko.md)

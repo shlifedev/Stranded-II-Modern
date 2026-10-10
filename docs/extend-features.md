@@ -1,3 +1,5 @@
+<!-- dev-docs-ai-translation: {"document":"docs/extend-features.md","language":"en","syncedHash":"1cf96e87267af722bc46f855a28f8a37e19940df4aa4e2601e1822d636b9f373"} -->
+
 # Extended features
 
 [English](extend-features.md) · [한국어](extend-features-ko.md)

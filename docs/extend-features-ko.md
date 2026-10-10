@@ -1,3 +1,5 @@
+<!-- dev-docs-ai-translation: {"document":"docs/extend-features.md","language":"ko","syncedHash":"3ef10d26e5f15b8f0cda319e17b3c9e1349e8109f61be75b4298f29b49c267c6"} -->
+
 # 확장판 추가 기능
 
 [English](extend-features.md) · [한국어](extend-features-ko.md)
