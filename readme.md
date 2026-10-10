@@ -18,6 +18,6 @@
 
 ## 저작권
 
-- 이 소프트웨어 및 소스코드의 모든 권리는 [Unreal Software](UNREALsoftware.de)에 있습니다.
+- 이 소프트웨어 및 소스코드의 모든 권리는 [Unreal Software](https://UNREALsoftware.de)에 있습니다.
 - 원본 upstream은 [stranded 2 source](https://github.com/ttyborg/Stranded2) 입니다.
   
