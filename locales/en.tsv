@@ -1,0 +1,2594 @@
+# Stable key<TAB>text; escapes: \\, \n, \r, \t. UTF-8 without BOM.
+engine.02baca8b3656	Cheat - Give Item
+engine.0c4ca94aab31	Show last parsed Script
+engine.0ed0fcccb937	Debug Script
+engine.0f69fa8c94e4	Enter and execute a SII Script
+engine.0fc12ed14135	Spawn
+engine.12415a055a32	Using the maximum size of 4096x4096 pixels!
+engine.16e487609d4e	frequent
+engine.18326facba10	Execute '
+engine.1a03bd2fd107	Debug
+engine.1cd3737e5b2f	Buildplace Items
+engine.2064bc969386	Motion Blur Buffer Error
+engine.2235e70a1d90	Store required Items in next Buildplace
+engine.2bf8fb35dc4e	Reset Values
+engine.306756757c58	Initializing
+engine.317b32c14369	normal
+engine.34287c32b548	< remove states cheat >
+engine.37002f4c3232	< debug off >
+engine.38e5a46cbc5a	Score
+engine.40b7971c2870	 ) Angle (Yaw: 
+engine.429b9f7a9f1e	Loading Fonts
+engine.43e5e8b8a241	24 Bit
+engine.4f20e5ea4a1f	16 Bit
+engine.5193d83e23f6	Creating Terrain
+engine.54cf9ac9a1a9	very frequent
+engine.5cebc460f100	Give Item
+engine.5f75368293f2	Debug Mode
+engine.647e5a1db396	
+engine.65db93e004fb	Debug Sequences
+engine.7013af4c42fe	Setup
+engine.82d93516199d	Loading U.S.G.N. Serverlist
+engine.89822504c47c	Debug Times
+engine.946150f6405b	Remove all States of the Player
+engine.98025a5b1a8b	Execute Script
+engine.9f8a2bc261a7	Debug Map
+engine.a14bac75fafd	Dialogue
+engine.a258b30f88c3	Global
+engine.a3528dd378a6	Filling Island
+engine.a5d030c8ef01	 Commands
+engine.a6e49e671878	 Pixel
+engine.a7faadb65cd2	32 Bit
+engine.ada84842489e	 connected!
+engine.aef7de28d529	Server
+engine.b12c3a54ec24	0 Commands
+engine.b34e96a411e9	Using the minimum size of 8x8 pixels!
+engine.b80db5a99452	< reset values cheat >
+engine.bf761a5d541d	< change day >
+engine.c1f818833ef4	Default: 
+engine.d0942abe8ba5	Give an Item to the Player
+engine.d15e89d26d25	Camera Position (X: 
+engine.d28d2fe1eabe	Scaling Colormap
+engine.d38e8531ad5b	very rare
+engine.d50435432421	Generating Colormap
+engine.d9101cb28e60	< buildplace items cheat >
+engine.d9684930a271	Deaths
+engine.daf7578d3ee6	 joined the game!
+engine.dd097e77dd73	Search
+engine.dd7c8e12f442	Cheat - Execute Script
+engine.df45ad701fee	Loading Heightmap Image
+engine.e01829524d6f	< screenshot saved as '
+engine.e1c1b0f73f66	Adding Server to U.S.G.N. Serverlist
+engine.eea246820d9d	Cheats
+engine.eea47c9824fb	Find: 
+engine.f0473c018d9a	 found!
+engine.f1801168f556	1 Command
+engine.f2e50689aa63	Generating Terrain
+engine.f40b9c803f82	Preparing Heightmap Image
+engine.f8bf61fb6a53	Loading Materials
+engine.fdd75d9192bd	Remove States
+engine.fea55ac7ed0b	rare
+engine.fff56dec324d	Show Debugmap
+extra.029c809f7051	Mousebutton 4
+extra.053554faf645	Model Debugging Process:
+extra.09eba7d00ccf	The list of tasks
+extra.0c86d70ab481	Mousebutton 5
+extra.0cd2b208dd68	Keep it here
+extra.116ffcfa45f0	a game (c)by Unreal Software 2004-2008
+extra.133cdbe88228	Get food
+extra.145c9786713c	Cursor Right
+extra.15ee2fcf7de0	Leave monkey school
+extra.16ec2f126583	Mousewheel Down
+extra.17f6a1ad0af1	Middle Mousebutton
+extra.26cfabed9764	Windows Left
+extra.2ace2b567d0a	Mark Sibly for Blitz 3D
+extra.2df73bd74a9e	Congratulatios!
+extra.30db153c32e4	$score Points
+extra.362891117b9a	You won!
+extra.3766e1b6064a	Get stones
+extra.3b8f01e17f01	Voice (German):
+extra.3e7e631b502f	How to heal (20 leaves of hemp)
+extra.402522823ba1	Mousewheel Up
+extra.4379bbf35462	GAME OVER!
+extra.43d6671a97f2	You win! Congratulations!
+extra.45cdc1cbaa53	Store stuff
+extra.4673b1865616	Models:
+extra.46e55573e013	Voice (English):
+extra.48f1166c6674	Mr. Keks for orthography quality assurance
+extra.4b1c527e3b69	Shift Right
+extra.599196897c5b	- TRANSLATION -
+extra.5ca8dbe1a791	Left Mousebutton
+extra.5d047e8d8748	Do nothing with this raft
+extra.5fbd995106e4	- CREDITS -
+extra.6151b27e74bc	(Niemand mag den OFC)
+extra.6545a810cfbb	NoName
+extra.68060fd6b29a	How to bake bread (15 leaves of hemp)
+extra.695259aabe4d	- SOUNDS -
+extra.69547e6132e7	which contributed something
+extra.696d276fa6fa	$c of 10 crystalls found
+extra.6e0c91805b4f	Upgrade to Level 2 (50 Gold)
+extra.6fa9f26c7d25	Lumbering
+extra.705a357adabd	How to harvest hemp (for free)
+extra.738e5436b196	Interface/Textures:
+extra.76d98f70ecef	$tl of $tt t torches lighted
+extra.77e6e4249525	Unreal Software community
+extra.83a87562e638	Cursor Up
+extra.8721543498e8	Sky Textures:
+extra.8ce5e7c1539b	$hname with $hscore points to round $hround
+extra.8d25b10816b8	German Blitz Basic community
+extra.943955585fad	Not bad.
+extra.94714e855c78	... honestly!
+extra.9810746f0c66	Cursor Down
+extra.9fa115f0553f	How to fish (10 leaves of hemp)
+extra.a2cf3ecf2e6a	Die Sprache der Eingeborenen
+extra.a3c740f29acd	- PROGRAMMING -
+extra.a5285b64d81b	Get water
+extra.a59d01b3ae2e	Menu Music:
+extra.a9ce37f7b5f6	Get branches
+extra.aafb0addc67c	$round. Round
+extra.acfd69f2a921	Shift Left
+extra.ae213c713dfa	Music/SFX:
+extra.aec2e65537d6	New Highscore! Your name:
+extra.b088e9609ef3	Cracking lock
+extra.b2917ef01927	$gold Gold
+extra.b5d49b98af46	Survival Guide
+extra.b8cc35d2100c	- GRAPHICS -
+extra.bd05c30079bf	- THX 2 -
+extra.be5645671ee7	Stranded online:
+extra.c28bf58b09c0	You made it.
+extra.c6600d320ab9	CTRL Right
+extra.cb166c034d1b	Additional Translations:
+extra.ccf930c65072	CTRL Left
+extra.cd1b654eed61	Special thanks are going to
+extra.cf917ab051fd	$wave. Wave
+extra.cf91ab8b92a8	Michael Neupärtl for link certification
+extra.d14b140978e0	You have not enough points for the highscore!
+extra.d425009224f5	Right Mousebutton
+extra.d7808ce36721	Windows Right
+extra.ddfb955f8045	Drive the raft
+extra.df7bc1fcc5dd	Bitmap Fonts:
+extra.e15bbfc40394	Strike the tent
+extra.e33250156492	Get leaves
+extra.e3473ce28432	Upgrade to Level 3 (100 Gold)
+extra.e95c396138aa	Go!
+extra.e9c2c17f95c9	Train transport monkey (15 bananas)
+extra.ebbfa4657326	... and all others,
+extra.f51886c136bc	Most Translations by:
+extra.f71dca16b8a7	to this game
+extra.fa779d8a3c39	Thankyou!
+extra.ff558a38a083	Cursor Left
+help.00e5af63a3ad	Geschw
+help.0378894a522e	Quelle
+help.071f8e682b67	Länge
+help.08885de044d8	Startzeit
+help.10519914aa6b	Faktor
+help.1199038f5d0d	Untergrenze
+help.12b10bce1f8e	UnitID
+help.12b98040fac5	Behaviour
+help.1350cec5c2fb	Kombinations
+help.14d5fc54b22c	Bereich
+help.1503916a2ab2	Tag
+help.196a947aaf1c	Schrift
+help.197532daa8c7	Sichtweite
+help.1b024183cb33	Typ
+help.1bece813ec41	Menge
+help.1d1317e28eaf	Waffe
+help.1d7fe146fad6	diary
+help.2207deb65b86	Rot
+help.23a3b7b2229a	Befehle
+help.2958d416d08a	object
+help.2f34027404ca	neue
+help.3039a4ca1f78	Durst
+help.312bf2d3b2ed	Stunde
+help.32c1cf49a2fe	skills
+help.32edeecd77ac	Kamera
+help.33029ba1208b	Ordner
+help.34478c00cb8d	Kombination
+help.34d875437d8f	Luft
+help.35c4e3487d8a	Müdigkeit
+help.375e84034b8f	Bild
+help.395d4c382804	sounds
+help.39a31692360d	Energie
+help.3ca731c21306	Vars
+help.3d1236b60cb9	Lautstärke
+help.3dfd5f374da0	Reichweite
+help.43ce6022b931	von
+help.44089be1da32	indicators
+help.442e96ec9e5a	Drag
+help.4464105f259b	Roll
+help.45517c77e57e	Modus
+help.4c5c11e1c7e2	Startframe
+help.4e1f49a9c8ae	Event
+help.53367bc65275	Nachricht
+help.56a1a73a6266	Endframe
+help.57f0a84b822a	Änderung
+help.59ffe6121c39	Prozent
+help.5e2c614c23f0	Model
+help.5f3c4f8580d3	items
+help.5f46f561e32f	Trennzeichen
+help.60be9861750f	map
+help.62cfdd08b935	SFX
+help.640b818d3082	Teil
+help.640e86cbc244	Von
+help.654eb4c0a380	Zahl
+help.668cbe316167	Dauer
+help.66d0f523a379	Skills
+help.674b0ed54bf7	Limit
+help.6770c319ff7b	Tage
+help.6ac5c56f9fc4	Ausrichtung
+help.6af11cc59404	Pitch
+help.6d031af10da7	Position
+help.6df1bb18a59a	Skill
+help.7174de22bac6	Anzahl
+help.7187f0675eb3	return
+help.71988c4d8e08	Text
+help.734e2543db83	Endzeit
+help.74f24931f4dc	Zeit
+help.777b451a3adb	Einstellung
+help.7af0b3e47c35	variables
+help.7c6fddf5f556	infos
+help.7e347daa5ec7	Wert
+help.7e744141b40e	Style
+help.82cefa8283d3	zu
+help.83c91957085b	Textur
+help.856dd7210536	Zu
+help.87c5912f2cef	Building
+help.888ad3a8bb06	effects
+help.897a4cea20c0	Variablen
+help.89f584dfcd7b	Tagebuch
+help.8a305c39be2d	Wetter
+help.8d55f705cf2b	Blau
+help.8edcc26c0f6c	models
+help.923b4b90ea64	states
+help.9571c665ef3f	Stärke
+help.9615231ee629	Gras
+help.9732e5129468	Nummer
+help.97d1e68526b8	Bezeichnung
+help.992bd25f4da6	Außen
+help.995223df54c6	Grün
+help.9b2d26de6f92	Verstecken
+help.9c32429c2926	misc
+help.9e53a7db6db7	Mischen
+help.9efb597c9154	Fade
+help.a1a5936d3b0f	Max
+help.a35abcd6dac9	Icon
+help.a47939e41488	ItemID
+help.a4d1685e1efc	Schließbar
+help.a4d8c3470ca7	Höhe
+help.a8184dba5c5c	Locals
+help.a861d05f9897	buildings
+help.a8c5b52487ab	Abbruch
+help.a952c8f76f58	Farbe
+help.ab4434a4eab8	Himmelname
+help.abcafc82daaf	Titel
+help.ad95d5fa651b	free
+help.aedc3f80989a	Größe
+help.af9e77ea9137	Ereignis
+help.b1a1e8e3cf7c	Offset
+help.b2ef230e7f4f	String
+help.b81d9593a3f6	oder
+help.b93838e6408f	Wiederholungen
+help.be2fbefc5c27	Pfad
+help.c135c89a4069	Verhalten
+help.c1d1da5a73af	Bedingung
+help.c69c0e55eeaa	Schaden
+help.c7769c22482c	Überspringbar
+help.c796d37c6d49	interface
+help.c8505b89f048	Befehl
+help.c9ffcae5ded5	Zielzeit
+help.cbb4a721bce8	Obergrenze
+help.cbb95cf02b7d	Hinzufügen
+help.ccb27f03f03e	Anzeigen
+help.cdb59355f3ba	player
+help.cfa5ce1d6ab2	Anzeigedauer
+help.d0ca8c2ac0da	buffer
+help.d6957019457b	sequences
+help.d973ba169e5e	Bilddatei
+help.da9695dd40c9	Aussehen
+help.dd066ec1bf1d	Parameter
+help.dd51a37cd464	Einlagern
+help.dd8df2a98784	Absolut
+help.dea79332147f	Min
+help.e04d24c52b3d	Startseite
+help.e1596a2dd971	ObjectID
+help.e17f74aa873f	timers
+help.e2885c9dbc01	neuer
+help.e3ee87b136fa	Zeile
+help.e4bb9f1ece9a	Start
+help.e4cd302972b0	objects
+help.e57e99872603	Variable
+help.e5e72beb4e3c	weather
+help.e8a9c7dd73bc	Ausführen
+help.e9028a569297	Datei
+help.e967d16dae74	strings
+help.ed1543efb6fe	Buildlocks
+help.ee6cfb23a65e	Blend
+help.eebeec9dcb97	Klasse
+help.f34e5fa8b24f	Streifen
+help.f487ce396018	Ziel
+help.f600f317ad32	Combi
+help.f78e4c7b0684	Maskiert
+help.f7a6e5b531e8	Klima
+help.f7ff1178af20	Abbrechen
+help.faaa4e13d89c	Schrittzeit
+help.fbb7b5bf4ca3	basic
+help.fd184691f986	KI
+help.fd92d952db92	Pan
+legacy.0000	I remember it as if it were yesterday.
+legacy.0001	I had just bought a new yacht, and I was eager to take it for a ride... So I took it out to sea.
+legacy.0002	In my excitement, I didn't really pay attention to where I was going, and I got into a storm.
+legacy.0003	The storm... drove me off course.
+legacy.0004	All of a sudden, a bolt of lightning struck the boat... and caused a fire.
+legacy.0005	The fire spread so quickly I couldn't do anything to stop it, and soon it reached the fuel cans...
+legacy.0006	...and it caused an explosion that shattered my boat into a thousand pieces.
+legacy.0007	And it threw me off board... drifting.
+legacy.0008	An island! This is what I call good luck. The sea has washed me ashore practically unharmed.
+legacy.0009	I should take a look around.
+legacy.0010	- Info -
+legacy.0011	On the left top you can see four bars that represent your present state:
+legacy.0012	- health
+legacy.0013	- hunger (green)
+legacy.0014	- thirst (blue)
+legacy.0015	- tiredness (violet)
+legacy.0016	You must keep an eye on hunger, thirst and tiredness. They may not rise too high. If one of these bars is full, you start to lose health. If nothing is left of your health bar, you die.
+legacy.0017	For a closer look at your state, you can look it up under "character" in the menu or press [$key_char].
+legacy.0018	You can attack with [$key_attack1]. Attack objects to damage them or to get items.
+legacy.0019	Items that lay around loose can be gathered with [$key_use].
+legacy.0020	The thereby gathered items can then be used, dumped, combined or taken in the hand in the inventory [$key_items].
+legacy.0021	- Hint -
+legacy.0022	A part of the provisions that you had aboard has stranded here, too. But it is enclosed in crates and barrels. Use [$key_attack1] to destroy those and [$key_use] to collect the laid open items!
+legacy.0023	- Remark -
+legacy.0024	You are still feeling dizzy. That is why everything is blurry, but this will go over.
+legacy.0025	It quite looks like I cannot find a hotel to simply check in.
+legacy.0026	So I will have to take care of my situation on myself and build a shelter to sleep under. But first things first: I don't even have the right tools for that yet...
+legacy.0027	Items can be combined in the inventory [$key_items] to get new kinds of items. Choose at least two items by clicking them and then hit the "Combine" button with the plus symbol. If one or several combinations with the selected items is possible, a new window will open and display the combinations which are executed per left-click.
+legacy.0028	Keep in mind that you can also obtain items if you just hit, for instance, trees or stones by holding down [$key_attack].
+legacy.0029	After several failures I have now managed to connect a stone with a branch in a way that reminds of a simple hammer... with a lot of fantasy. I would prefer proper one, of course.
+legacy.0030	Anyway, the thingy should be sufficient to construct a tent or a wooden shelter.
+legacy.0031	Select the hammer in the inventory and then press [$key_attack2] and the building menu will open, wherein you can select a building and choose a location.
+legacy.0032	Press [$key_attack2] again at the building site to work on the building.
+legacy.0033	The special functions of weapons or tools are always triggered per [$key_attack2], whereas [$key_attack1] usually starts an attack.
+legacy.0034	It is recommandable to begin with a shelter. A tent may on the one hand be handier because it can be packed and set up again elsewhere - but on the other hand, you must hunt animals first to make the required tent kit by combining their hides with sticks in the inventory!
+legacy.0035	There by the way is no need to carry all required materials when you set up a building site. You can gather and employ them later just as well.
+legacy.0036	Finally, a shelter above my head... at least symbolically.
+legacy.0037	So, from now on  I will not have to sleep under open sky anymore and should be protected at least a bit from bad weather, coldness and predators. Although I am still rather sceptical if the latter will be very impressed by a simple pile of sticks and leaves.
+legacy.0038	I should definitely be prepared to live here for quite a while. It will surely take some time until they send somebody to search for me. And even in case that somebody is on his way: I haven't got a clue how far this Island is away from my original course.
+legacy.0039	I can only hope that somebody will find me here and use the time I am waiting to make the most of what I have got here.
+legacy.0040	Constructing a new building often enables you to construct further kinds of buildings! Select the hammer and press [$key_attack2] to find out what you can build.
+legacy.0041	This campfire will give me warmth and light. But naturally, I must find a way to light it first. Since I neither have a lighter nor a box of matches at hand right now, I must find another way.
+legacy.0042	Fireplaces provide more than just light. Certain items can be processed or combined in the fire to improve their quality.
+legacy.0043	Oops! During the construction of my camp, I have found something shiny in the mud. At second sight I came to the conclusion that a picklock is what I am dealing with. With some deftness, I should be able to pick just about any lock with it. There's only one thing that tempers the delight: Which lock? I should keep my eyes open to find something to use this picklock on. Perhaps it might bring me onwards somehow.
+legacy.0044	With my digging, I discovered a pirate instead of a treasure. I believe he's quite a nut, but that shouldn't bother me at the moment. I have caught him a parrot to make him give me a lift. But now I'm also supposed to dig out gold for him. Gosh, what a slavedriver!
+legacy.0045	Hey... I have a feeling that tells me that I'll need this for something! I'll rather keep it.
+legacy.0046	I think there's something on this island that I can open hereby. I must just find it!
+legacy.0047	No Dumping!
+legacy.0048	Something's shimmering in these rocks. It looks like iron ore! If I manage to extract some of it by force, the iron might be my chance to achieve better tools or weaponry.
+legacy.0049	Even grain does grow here!
+legacy.0050	Golden as the stars that shine and twinkle on the milky way,
+legacy.0051	it stretchs in never-ending line along the margin of a bay...
+legacy.0052	Well, that stuff could be bloody useful.
+legacy.0053	1. Grain can be harvested per [$key_attack1].
+legacy.0054	2. On usage in the inventory [$key_items], grains can be extracted from the bundles of crop.
+legacy.0055	3. These grains can be sowed anewedly. But they can also be eaten or processed into flour.
+legacy.0056	babble babble ... a source of fresh water! Here I can satisfy my thirst.
+legacy.0057	With [$key_use], fresh water can be drunk from the source.
+legacy.0058	Some items can only be used near fire or sources of water. Others may get an entirely different purpose there. So you should always pay attention to your environment when you use items!
+legacy.0059	These funny, smooth soft balls of wool... look suspiciously like cotton. I can surely pluck those things off and use them somehow.
+legacy.0060	By striking upon the plants [$key_attack1], you can gather wool.
+legacy.0061	There are bubbles arising in the water! That can only mean that there are many fishes at this part of the shore. If I could manage to make a fishing rod somehow, I could certainly pull them out of the water without too much effort.
+legacy.0062	Rising bubbles and circle-shapen waves at the surface are indicators for fishing areas.
+legacy.0063	Harrrrrrr!
+legacy.0064	Out of me way!
+legacy.0065	Pirate
+legacy.0066	Harr, harr! Whom have we got here?!
+legacy.0067	Ye stinking landlubber should better leave thine dirty fingers away from the treasures of us seamen!
+legacy.0068	Do thou not know how much work it is to steal all the plunder?
+legacy.0069	No, not really
+legacy.0070	Oh yes, of course!
+legacy.0071	Well, I've stranded here...
+legacy.0072	A pirate? Pirates do not exist anymore!
+legacy.0073	I'm shaking with fear. Bye!
+legacy.0074	NO, of course ye do not! Arr! Ye art no pirate, after all... Although I must admit that ye stink like a real buccaneer! If ye fell in the seas they would surely spit ye back ashore because ye stink so much! Hohoho!
+legacy.0075	But wherefore do ye do this? Why ye be diggin' out my treasure?
+legacy.0076	I did not know it is yours!
+legacy.0077	I was just curious
+legacy.0078	Well, I kind of stranded here...
+legacy.0079	Oh, alright. But that makes thine deed even worse! Arr!
+legacy.0080	Why do ye just steal my treasury even though ye know for sure how mean that is?
+legacy.0081	It's not like it's written on it that it's yours.
+legacy.0082	I wanted to know what's inside.
+legacy.0083	Hohoho, what makes thee so sure?
+legacy.0084	Thou do not even know when and where this game plays! Aye?
+legacy.0085	And now that ye see a real pirate captain in front of ye, ye say that piracy would not exist anymore! That is truly foolish! Har Har Har!
+legacy.0086	Well... so what?
+legacy.0087	This is getting too awkward for my taste!
+legacy.0088	Hoho!
+legacy.0089	Aye, just flee!
+legacy.0090	And keep thine clutches off me treasures!
+legacy.0091	Har har har!
+legacy.0092	Yeah, sure. I'm off!
+legacy.0093	Harharharhar!
+legacy.0094	Hohoho!
+legacy.0095	Right, that was dumb!
+legacy.0096	I indeed forgot to write my name on the chest! Unbelievable! Har har har!
+legacy.0097	But now that ye mention it: I cannot write at all anyway! Hohoho!
+legacy.0098	And what do ye do here, apart from thievery?
+legacy.0099	I've stranded here.
+legacy.0100	You cannot write?!
+legacy.0101	I'll better leave you alone now.
+legacy.0102	Watch out where ye poke thine nose in!
+legacy.0103	A propos nose: Did ye notice how many extremities I miss? Hohoho!
+legacy.0104	But no matter now! Har har!
+legacy.0105	What art ye doing here?
+legacy.0106	I am shipwrecked.
+legacy.0107	Hoho, har... hohoho! Harhar!
+legacy.0108	Arr, why... say it again: why are ye digging me plunder out?
+legacy.0109	Harhar, hoho, bye to thee! Arrrrr!
+legacy.0110	Ye shalt not do that because it is totally mean! So mean is it, I am close to shed tears.
+legacy.0111	But it might also be just because I once again picked around in mine eye with the wrong hand!
+legacy.0112	I understand...
+legacy.0113	Do not change the subject! Aye?
+legacy.0114	Speak it out! What brings ye here?
+legacy.0115	I am shipwrecked!
+legacy.0116	Stranded, huh? Arr, that's horrible!
+legacy.0117	I actually am in quite a lack of transport, too, at the moment. All I have is me phantom boat. It lies on the beach down there. I have just come hither after all! Hoho!
+legacy.0118	Unfortunately, it is invisible. That makes it hard to see. Not easy to get in without getting wet! Har har har!
+legacy.0119	But let us get back to business: ye surely want to get away, don't ye?
+legacy.0120	I can offer thee a deal:
+legacy.0121	Ye must know I have come hither to get a new parrot. My shoulder is looking a bit empty.
+legacy.0122	The olde one is not among us anymore, ye know? He had a horrible accident.
+legacy.0123	He fell down from my shoulder, and I did not take notice. My wooden leg finished him off. Right onto the skull. Didn't look nice, I tell ye! Har har har!
+legacy.0124	Anyway, I would take thee with me if ye get me a parrot. Sounds great, doesn't it?
+legacy.0125	Hmm... okay! I'll do my best!
+legacy.0126	I'll think about it. Goodbye!
+legacy.0127	Wonderful! Hohoho!
+legacy.0128	Those creatures fly around just around everywhere here. Ye should lurk until one of them lands, sneak nearer and catch it! Harhar!
+legacy.0129	But remember: I need it alive. I already have got a dead one.
+legacy.0130	Let's see what I can do.
+legacy.0131	Alright... then think about it.
+legacy.0132	But do not complain if I catch one on myself in the meantime and then just get off.
+legacy.0133	Without saying fayre thee well! Har har har!
+legacy.0134	So come back hither and talk to me once again if ye want to help me.
+legacy.0135	Harrrr. See ye soon!
+legacy.0136	Bye.
+legacy.0137	Got him!
+legacy.0138	I've already got one, remember?
+legacy.0139	Ich hab ihn!
+legacy.0140	Catch the parrot
+legacy.0141	Harhar... how art things going?
+legacy.0142	Oh, as I see ye still hast not succeeded yet, lad!
+legacy.0143	Perhaps ye should make a device if ye cannot do it with thine bare hands: Take about 10 pieces o'thread and a branch. If ye combine them deftly, ye will get a nice net. If ye use that, ye can get the creature from a farer distance, aye?
+legacy.0144	Have good sport!
+legacy.0145	Okay
+legacy.0146	Excellent!
+legacy.0147	Hoho! Hooray!
+legacy.0148	Ye have it, ye have it! Good job, young swashbuckler! Hoho!
+legacy.0149	And what a magnific specimen ye have cought! I am proud of thee.
+legacy.0150	Of course thine success is all mine because only my instructions enabled thee to prevail. Actually, I should not help thee but even ask gold from thee! Harhar!
+legacy.0151	But do not worry, I am a man of my word!
+legacy.0152	There is time left for thee to fetch thine stuff. When ye art ready, just come down to the beach. I will wait beneath the phantom boat. Harharhar.
+legacy.0153	Deal?
+legacy.0154	So, what do ye say?
+legacy.0155	Wilst ye catch the parrot for me? Hoho!
+legacy.0156	I will take thee off this island then. Ye will never get such an offer again!
+legacy.0157	Okay.
+legacy.0158	Nay. Let's dump that idea.
+legacy.0159	Deal!
+legacy.0160	Excellent! Har har har!
+legacy.0161	Then get startet! I will wait here.
+legacy.0162	Good luck!
+legacy.0163	No Deal!
+legacy.0164	Arrr...
+legacy.0165	If ye want to get off here ye should really think about it once again.
+legacy.0166	Me patience is limited, aye?
+legacy.0167	Come again when ye have taken thine decision. But keep in mind that mine time is limited, too.
+legacy.0168	Well, let's see. Bye!
+legacy.0169	Departure
+legacy.0170	Hoho! There ye art!
+legacy.0171	I have found the phantom boat and prepared everything for the voyage. I am ready to head for our destination. Arr!
+legacy.0172	Just tell me when ye art ready!
+legacy.0173	Yessir! Let's go!
+legacy.0174	I need some more time.
+legacy.0175	Aye, aye!
+legacy.0176	I will wait here.
+legacy.0177	But hurry up!
+legacy.0178	Departure?
+legacy.0179	Wait a minute! I'd almost have forgotten that! Harrr!
+legacy.0180	It occurs to me that I have still some gold hidden on this island. 3 bags of it, spread over 3 different stashes.
+legacy.0181	Dig 'em out, too, now that ye art on it anyway. 'twould be a great shame to leave 'em here!
+legacy.0182	Alright... but where are they?
+legacy.0183	Wo?
+legacy.0184	Ah, right...
+legacy.0185	I'll better briskly mark it for you on this map.
+legacy.0186	Hither we go. Harr! And now onwards!
+legacy.0187	Pirate treasure
+legacy.0188	Gold
+legacy.0189	Wonderful! Mine precious gold. Nyarharhar!
+legacy.0190	I hope ye didst not have too much problems dealing with the terrible creepy curses that laid upon the stashes. I did not mention it because I was afraid ye might refuse to dig that stuff of mine out. Hohoho!
+legacy.0191	But apparently, ye have survived! Harrr!
+legacy.0192	We can leave now as far as mine preparation goes.
+legacy.0193	Hm... yes... let's go!
+legacy.0194	What kind of curse is a grapevine supposed to be?
+legacy.0195	Have ye got the gold?
+legacy.0196	No ye have not!
+legacy.0197	Do I want the gold?
+legacy.0198	Yes I want!
+legacy.0199	Wilst ye go get it?
+legacy.0200	Yes ye wilst!
+legacy.0201	How many bags were it, again?
+legacy.0202	Three were they!
+legacy.0203	What art ye to dig it out with?
+legacy.0204	With a shovel ye shalt do so!
+legacy.0205	GO! HARRR! No-good apprentice!
+legacy.0206	Take a bloody look at the bleeding map and wrench the gold from the double-bleeding earth! Hell-kite! It cannot be that hard, after all!
+legacy.0207	Sure! Alright! Come down, old sailor.
+legacy.0208	Well... wine makes one drunk! Huahaha! Harr harrrr!
+legacy.0209	I see... anyway: time to leave!
+legacy.0210	But it didn't bear any grapes at all!
+legacy.0211	What do ye demand? I'm merely a buccaneer. Witchcraft is none of my business! The grape of wine hast to be regarded as a symbol! Harr!
+legacy.0212	Okay, okay. Let's go aboard.
+legacy.0213	And the turtle?
+legacy.0214	What's wrong with the turtle?
+legacy.0215	Well, it burns and doesn't harm anybody!
+legacy.0216	How dumb art you after all?
+legacy.0217	Imagine the following scenario: A lion gets the scent of the gold and tries to dig it out. If there were not the burning turtle, the gold would be lost. But this way, the lion will drop the gold because he wants to devour the turtle instead. But since the creature is litten in flames, he will have his maw terribly burned trying.
+legacy.0218	The result: The gold is safe. Thanks to the burning turtle!
+legacy.0219	Now I get it! Let's go.
+legacy.0220	Okay, but the monkeys... Wow!
+legacy.0221	Huh? Don't talk such a rubbish! Harrr!
+legacy.0222	The claw monkey curse was a pure deed of desparation! There just wasn't anything senseful comin' to me mind anymore!
+legacy.0223	Okay...
+legacy.0224	Yes, indeed! And we shalt leave now! I still have two ears remaining, which is quite a lot in comparison to the average stock of mine other extremities! And this shalt stay that way. So stop babblin' plunder before they fall off, wilst ye!
+legacy.0225	Alright, alright. Let's leave!
+legacy.0226	I only wanted to dig out a treasure, and now this is where I am. Cruising with a pirate.
+legacy.0227	Now he has brought me to a different island, but I do not have the slightest clue what he expects me to do here!
+legacy.0228	Welcome
+legacy.0229	Welcome to mine pirate island!
+legacy.0230	This is where I plan my raids and repair my magnific ship, if it has been damaged in battle.
+legacy.0231	Well... actually, this is what I used to do. But some weeks ago, somebody came hither and ransacked and raided everything. They blew up my entire lighthouse! Arrr! Of course I was on a raid at that time and could not stop them, aye? I saw it when I returned. The fog was so dense that one could cut it in slices. I was doomed, because I didn't have any cuttery. Which was not the main problem; that was rather the missing lighthouse. With a big crush, I ran ashore with at least 10 knots of velocity. Hoho! I spotted my island by far too late. I expected that the lighthouse would warn me. Arrr...
+legacy.0232	Anyway, my ship is a complete wreck now. It is down there at the beach. I really am on a run of bad luck. I had not even yet got over the death of my parrot when it happened!
+legacy.0233	And what do you want me to do here?
+legacy.0234	I feel very sorry for you.
+legacy.0235	A ship
+legacy.0236	Harrr! Did ye not listen properly?! I am a dreadful pirate! A pirate without a ship!
+legacy.0237	Ye fool shalt help me! I need ye to build a new ship. Won't get far with the olde phantom rudder boat!
+legacy.0238	Alright, I see. It looks like I have no choice.
+legacy.0239	Can't we find another way?
+legacy.0240	Hohoho. Thank ye for being so understanding! At least I have a new parrot now. All more that I need is a ship...
+legacy.0241	Um... what do I have to do with that?
+legacy.0242	Lighthouse
+legacy.0243	Well... We could surely also solve our problem by rebuilding the lighthouse.
+legacy.0244	Then I could send light signals to the next inhabited island and they would send help hither - per ship.
+legacy.0245	Ahem... what shall I do?
+legacy.0246	Torches
+legacy.0247	Before ye can do anything here, ye must light all torches on the island. There is a pair of firestones in my cottage. If somebody might occasionally come across, he will see us better then.
+legacy.0248	Plus, I just like fire. This is why me jacket is red. Lovely, isn't it?
+legacy.0249	Um... yes, sure... I'm off to work on it.
+legacy.0250	Arrr! Ye hast not litten all torches yet!
+legacy.0251	There are two flintstones in mine cottage, in case ye do not have a pair.
+legacy.0252	Alright
+legacy.0253	Warm and illuminated! Hoho! That is how I like it!
+legacy.0254	Let's see... er... oh, right. Ye want to get away, don't ye?
+legacy.0255	There are two ways:
+legacy.0256	Either ye help me to rebuild my lighthouse or we repair my ship.
+legacy.0257	It is up to thee to decide.
+legacy.0258	For the lighthouse I need 30 stones, for the ship 15 logs should do it.
+legacy.0259	Get the stuff and deliver it to me, then we will see how to carry on!
+legacy.0260	Aye aye!
+legacy.0261	Got nothing for me?
+legacy.0262	Hoho! Ye have nothing for me? Talk to me again when ye have trunks or stones! We will not get further otherwise.
+legacy.0263	I would do it meself, but I have just one leg, one hand and one eye left. Harharrr!! That does sum up to quite a handicap, I can tell ye!
+legacy.0264	Okay, I understand
+legacy.0265	Timber
+legacy.0266	Arrrr! Good timber! Wonderful!
+legacy.0267	Ye have collected $wood logs.
+legacy.0268	Stone
+legacy.0269	Aye! Stones! Fantastic!
+legacy.0270	Ye have collected $stone stones.
+legacy.0271	Both timber and stone
+legacy.0272	Harrharr! Ye cannot decide, can ye? Ye brought both stones AND logs! I will get mixed up! Har har!
+legacy.0273	What luck is it that I have taken down exact notes!
+legacy.0274	Trunks: $wood
+legacy.0275	Stones: $stone
+legacy.0276	If ye carry on like that ye might once become a real buccaneer, lad!
+legacy.0277	Finished?!
+legacy.0278	Har har! Oops! Ye broughtst me enough timber! It's unbelievable!
+legacy.0279	Ye may have a break now. Let's carry on tomorrow in the morning!
+legacy.0280	Har har! Oops! Ye broughtst me enough stones! It's unbelievable!
+legacy.0281	No work until tomorrow!
+legacy.0282	Hoho! Just have a nick first! Tomorrow we shalt carry on, lad.
+legacy.0283	He is gone! Just gone!
+legacy.0284	When I slept, he must just have hopped into his phantom rudder boat and left. The jerk has imposed on my kindness! What a shameless boldness!
+legacy.0285	But... wait a minute!
+legacy.0286	Over there, he seems to have left a message for me. I should take a look at it.
+legacy.0287	All broken!
+legacy.0288	Whaaa! Help!
+legacy.0289	As I try to grab the message, suddenly I hear a loud cracking below me. The jetty breaks and the message falls down into the water that is filled to the very rim with sharks - and I follow it!
+legacy.0290	Now I must grab the message as quickly as possible and then get out of the water, or I can forget the whole survival thing.
+legacy.0291	Message
+legacy.0292	This is what the pirate wrote:
+legacy.0293	Fair thea wal, yee dump lubber!
+legacy.0294	Thanx for al teh stuf, I kan youse it reely wel.
+legacy.0295	If ye want too ged awey too, ye musst ownlee use the stones att the ruins!
+legacy.0296	Une of themm is carsted with a telleport spall! It wil bring ye too a FRIEND!!
+legacy.0297	P.S.: Naver drust a pirrate!! Hohoho!!!
+legacy.0298	My opinion:
+legacy.0299	I am dumb. Indeed. But at least I have a better orthography than the chap. That is a little consolation.
+legacy.0300	I will see if what he wrote about the stones is true. I am breathless of anticipation! It is all so exciting!
+legacy.0301	A map with a strange text. Perhaps I might find something if I strictly stick to the instructions and dig at the target spot!
+legacy.0302	The shape of a kind of hat and used for washing
+legacy.0303	from there on to the southwest until you are surrounded by fern
+legacy.0304	Henceforth southwards you go till the element of beginning
+legacy.0305	Northeast is the direction to your hard goal
+legacy.0306	I have found the treasure! A watch and a gold nugget! Awesome!
+legacy.0307	Trying to have myself teleported by the rock, I notice lightning and thunder. At closer sight, I see an inscription that reveals important facts that the pirate appears to have kept secret from me:
+legacy.0308	This worthy teleport stone 2050 XL of the quality brand Neptune needs the power of the water in order to perform long-range teleport. Please place 25 children of the sea at the stone before you use it.
+legacy.0309	In case of problems, contact our technical customer service by dialing 0190 ...
+legacy.0310	... the rest is too weather-beaten to be made out. Hm.
+legacy.0311	The first crystal
+legacy.0312	Got everything!
+legacy.0313	I still need that one!
+legacy.0314	I am feeling dizzy. A flash of light, and suddenly I am standing a different place. But it is unknown to me as well. I want to go home!
+legacy.0315	To Jack Limpeye:
+legacy.0316	If you read this (and in case you have finally learned how to read), prepare to die soon. Except if you are here by ship - then you should bugger off as quickly as possible.
+legacy.0317	But if you have teleported yourself here, you can entirely forget it. You cannot get away. The 10 crystals that are required to teleport oneself away again are spread all over the island, and I can tell you for sure that they are well-guarded!
+legacy.0318	So you are trapped here.
+legacy.0319	I had to leave the island for a magical conference, but as soon as I return, I will change you into a slimy snail, you stinking little thief!
+legacy.0320	I nevertheless wish you an agreeable stay on MY island.
+legacy.0321	Enjoy it as long as you can!
+legacy.0322	I have read a sign with a message that appears to be adressed to the pirate.
+legacy.0323	The chap who lives here surely is no friend. Apart from that, I have read something about 10 crystals. It seems like I need them to get off.
+legacy.0324	- Warning -
+legacy.0325	This island is teeming with raptors guarding the crystals. They are faster than a man, and with their sharp fangs and claws they can kill you within a few seconds! You are only safe if you flee into the water or climb somewhere where they cannot follow you.
+legacy.0326	I have found one of the crystals. Luckily they shine brightly. This should make it much easier to find the other nine ones in this darkness.
+legacy.0327	I have finally found all ten crytals, but what is to do now?
+legacy.0328	Consider how you have come to this island!
+legacy.0329	Oh no... apart from the fact that I of course didn't land at home by sheer luck, I am noticing that I appear to have lost all items during the teleport. Damn.
+legacy.0330	Arrows! The bleeding bastards are shooting at me!
+legacy.0331	Looks like a village inhabited by natives - and it is guarded by two watch towers. I better ought to keep some distance to them.
+legacy.0332	Native Merchant
+legacy.0333	Uhna mohnu g'u Lahak!
+legacy.0334	... I can't understand him!
+legacy.0335	I'm off!
+legacy.0336	Hello, stranger!
+legacy.0337	What do you do here?
+legacy.0338	Me? Question rather what you do! But me not care.
+legacy.0339	Me trade with old man who give plants of joy.
+legacy.0340	Drugs are not good!
+legacy.0341	An old man?
+legacy.0342	What? Me not understand!
+legacy.0343	Do you live in the village?
+legacy.0344	Yes. Old man with white beard. Live in tent at shore.
+legacy.0345	Yes, me home is village of tribe. Here we live.
+legacy.0346	Feel safe because safeguard of towers with bowmen.
+legacy.0347	Village not for strangers.
+legacy.0348	I want to get into the village!
+legacy.0349	VILLAGE NOT FOR STRANGERS!
+legacy.0350	Towers with bowmen shoot at you if you go village!
+legacy.0351	Oh Shit!
+legacy.0352	I will just enter it, whatever you say.
+legacy.0353	Can't I do something about that?
+legacy.0354	You talk about brown mass come out bottom?
+legacy.0355	Is sanctuary of tribe. We call Pupu. Stranger worship it.
+legacy.0356	I'll better leave now...
+legacy.0357	You need help from tribe or you never come onwards.
+legacy.0358	Tribe will not help if you stranger. You need me for come in village of tribe.
+legacy.0359	As punishment for dumbness me act like not know you.
+legacy.0360	You say all again.
+legacy.0361	Oh no... alright, in Devil's name...
+legacy.0362	Me can help become friend of tribe. Friend of tribe have free entry to village of tribe.
+legacy.0363	Towers with bowmen not shoot at friends, only shoot at foes.
+legacy.0364	I'll better terminate this, you queer oddball!
+legacy.0365	Sounds good. What shall I do?
+legacy.0366	That be easy thing.
+legacy.0367	You help me then me help you.
+legacy.0368	Then we both happy and drink cup o'tea.
+legacy.0369	Just carry on...
+legacy.0370	You have cups?!
+legacy.0371	You have tea?
+legacy.0372	Come to a point, jackass!
+legacy.0373	We have find crate lie at beach.
+legacy.0374	Good cups. Good good cups..
+legacy.0375	I see... and what shall I do?
+legacy.0376	No.
+legacy.0377	Me have lied. We not have tea.
+legacy.0378	We urine of turtles. Taste magnific.
+legacy.0379	Drink yummy cup urine when you be friend of tribe.
+legacy.0380	Me now tell you what must do.
+legacy.0381	If you me help me will say my tribe that you friend, not foe.
+legacy.0382	But first you must proof that you be true friend.
+legacy.0383	Me give you list of tasks.
+legacy.0384	Then I shall start to work!
+legacy.0385	The list that the native gave me:
+legacy.0386	Hello stranger!
+legacy.0387	You must me bring follow:
+legacy.0388	20 feathers - for new arrows of bowmen
+legacy.0389	10 branches - for eternal campfire
+legacy.0390	3 skins - for soft bed
+legacy.0391	4 bananas - for great hunger
+legacy.0392	1 stone - for heavier burden
+legacy.0393	2 pieces from bark - for hoard
+legacy.0394	1 vine - for patching of hut
+legacy.0395	When you have ALL together, you me search and give me!
+legacy.0396	Me wish you success!
+legacy.0397	Fantastic! You have all get for me! Now it can go on.
+legacy.0398	When I come across next time in village I bring tidings that you new friend for tribe.
+legacy.0399	You then come into village. But not before. Or towers with bowmen shoot.
+legacy.0400	Great, thank you!
+legacy.0401	Hello stranger on path to friend!
+legacy.0402	You not have all from list I have give you. Only talk again to me when have all on list with you.
+legacy.0403	Good luck on search.
+legacy.0404	Thanks...
+legacy.0405	Hello friend.
+legacy.0406	I must trade. Not like to talk to you anymore.
+legacy.0407	You bugger off.
+legacy.0408	How impolite... bye.
+legacy.0409	Weed Grandpa
+legacy.0410	Oh, hello my fellow!
+legacy.0411	How are you? Have you stranded here too?
+legacy.0412	Yes!
+legacy.0413	Gee, just like me!
+legacy.0414	That is already some years ago. But I don't try to get away anymore since quite a while. This Island is located just about in the middle of nowhere. It seems like there's nothing around.
+legacy.0415	You wouldn't stand any chance without a real ship.
+legacy.0416	But I have come to an arrangement! I just set up my tent, and now I grow my weed here. The natives are totally crazy about the shit! I channel them some of it off. In exchange, they give me everything I need.
+legacy.0417	What natives?
+legacy.0418	What? You haven't got to know them yet?
+legacy.0419	You can call yourself lucky! They are quite... um, well ... let's say precautious towards strangers. Their village is guarded by two watch towers. They shoot on everybody they don't know. When I was there for the first time, they'd nearly have killed me, son!
+legacy.0420	By now, they know me and don't attack me anymore. That would be pretty stupid, because they wouldn't get their joints anymore.
+legacy.0421	Alright ... I understand ... Goodbye!
+legacy.0422	The Weed Grandpa
+legacy.0423	That's odd. A stranded Hippie Grandpa that grows hemp, rolls joints and hucksters them to the natives.
+legacy.0424	Anyway, the chap seems to know the ropes. I should let him show them to me.
+legacy.0425	Greetings!
+legacy.0426	What can I do for ya, fellow?
+legacy.0427	Oh... green elephants. They're everywhere. Watch out!
+legacy.0428	Over there...
+legacy.0429	Behind you!
+legacy.0430	A three-headed monkey!
+legacy.0431	*grunt*
+legacy.0432	You smell like caramel bonbons.
+legacy.0433	D'you also find cows totally super?
+legacy.0434	All colour water colour.
+legacy.0435	Game good.
+legacy.0436	Ngog hari ti pa ku!
+legacy.0437	That's how it works!
+legacy.0438	Why do your eyes glow yellow and pink?
+legacy.0439	... you're scary.
+legacy.0440	I wonder where I can get new sandals...
+legacy.0441	Hahahahaha!
+legacy.0442	Is everything alright?
+legacy.0443	Could you teach me something?
+legacy.0444	How can I get into the village?
+legacy.0445	Could you sell me something?
+legacy.0446	Nothing. Bye!
+legacy.0447	Yes, everything's alright with me. I feel fine. Good vibes 'n' stuff.
+legacy.0448	Thanks for asking.
+legacy.0449	Back
+legacy.0450	In all the time I've been here, I have gathered quite a lot of useful experience. Of course I'm open to share it with you. But I demand your service in return; you have to harvest hemp for me and pile it up in my storage.
+legacy.0451	What d'you want to know?
+legacy.0452	Harvesting hemp is easy, son!
+legacy.0453	You only gotta blow upon the hemp plant per [$key_attack1] until it falls over. The leaves remain on the ground. You can simply pick them up with [$key_use].
+legacy.0454	If you want to grow new hemp plants on yourself, you just gotta take the leaves into your hand.
+legacy.0455	Then you search for a free spot at the ground. Look onto the spot and press [$key_use] to plant a new hemp plant. Let it grow for some days until you reap it again to gain a higher number of hemp leaves.
+legacy.0456	I'm afraid you haven't reaped enough hemp for that.
+legacy.0457	Harvest the listed amount and put it into my storage!
+legacy.0458	Baking bread is a craft of its own. It takes a lot of work, but you will see it's worth all of it.
+legacy.0459	First among, you need grain. You can harvest it by pounding against it per [$key_attack1]. That way, you get sheaves of crop that you must use in the inventory to get the grains out. The grains can instantly be eaten, which does not make much sense. It's better to grind them or to seed them again.
+legacy.0460	To seed them, just take them into the hand and look at a free spot on the ground. Press [$key_use] to place them there. Some days later, you can reap the crop.
+legacy.0461	If you want to grind the grains to make flour out of them, you need at least 9 units of grain to combine them with a stone. The flour is edible as well, but you actually shouldn't do that, because it makes you damn thirsty.
+legacy.0462	Go to a fountain or to a well and use the flour there to knead it to paste with the water.
+legacy.0463	The paste is already quite good to satisfy one's hunger. If you don't have fire at hand, you can just eat it raw. But if it's possible to bake the paste, you should always do that. Just go to a campfire and use the paste to bake it and obtain bread.
+legacy.0464	Bread is the best kind of food that you can make on yourself out here. It satisfies even very great hunger.
+legacy.0465	If you run short of food, fishing often turns out to be the solution.
+legacy.0466	It is needless to say that you need a fishing rod to get started.
+legacy.0467	Combine a branch with water or use it at a wellspring to make it bendable. You can't use sea water for this! The bendable branch is your rod - you only need a fishing line for the completion. Use wool to spin thread out of it and combine it with the bendable branch. Voila, your fishing rod is ready.
+legacy.0468	Then all that's left to do is take the rod in your hand and angle via [$key_attack2].
+legacy.0469	You can fish at any shore you find, but there are not fishes everywhere. There are two ways to spot  fishes:
+legacy.0470	- Diving: If the water is deep enough, you can just dive into the water and have a look with your own eyes if there are fishes around.
+legacy.0471	- Bubbles: If bubbles rise in the water and spread as concentric waves at the surface, you can also fish successfully at the particular place. Even if you don't see fishes when you dive in!
+legacy.0472	So choose the spot where you fish wisely, son.
+legacy.0473	By the way: fishing also increases your fishing skill. This improves your chances for a good gain. Moreover, you can unlock the bow net that way. That's a kind of net trap that can be set up in the water catch fish.
+legacy.0474	The art of healing is very important. If you don't cure your wounds correctly, you can die faster than you can imagine.
+legacy.0475	Treating of fractures:
+legacy.0476	When you sustain a fracture, you are strongly handicapped and an easy prey for the creatures of wilderness. But you can quite simply help yourself by splinting the fracture. You only need a stick and a long vine. Combine both and tie the branch to the broken bone with the vine. The splinting makes the two parts heal quicklier and allows you to stress them stronglier.
+legacy.0477	Staunching of bleeds:
+legacy.0478	Deep wounds can cause bleedings that do not heal on themselves. In such a case, you must react quickly and combine a vine with a leaf. Lay the leaf onto the wound and fix it to it with the vine. Pay attention to give the leaf enough pressure.
+legacy.0479	Medicine against dizziness:
+legacy.0480	The golden herb is an efficient means against dizziness. It is easily recognisable by its light yellow colour. It's a real shame that it's so seldom. You must simply eat it to let it affect you.
+legacy.0481	Medicine against inebriation:
+legacy.0482	The bitter root is a plain, dark root that can often be found in the shadow, near to bushes and trees. As its name implies, it has a very bitter taste. If you consume it, you will instantly vomit the whole content of your guts out, including the toxic substances that are making you high, drunk or whichever kind of inebriated.
+legacy.0483	Brewing health potions:
+legacy.0484	There are several ways to brew a health potion. See some of my recipes:
+legacy.0485	1 strong healing herb, water, stone
+legacy.0486	Pound the healing herb with the stone and mix the juice with water
+legacy.0487	3 healing herbs, water, stone
+legacy.0488	Same procedure. You need three normal healing herbs, because their power is weaker than that of a strong healing herb.
+legacy.0489	5 golden herbs, water, stone
+legacy.0490	If you have a lot of golden herbs, this is an alternate way instead of the classical health potion with healing herbs. Separate the golden cusps from the rest of the golden herb, pulverise them and mix them with water. The healing power of the golden herb sadly is quite restricted, which makes the hight amount necessary.
+legacy.0491	Health potions regenerate one's health with the time and are good against intoxications, dizziness and inebriation.
+legacy.0492	You want to know how to get into the village, son... hahaha...
+legacy.0493	I can tell you: You have to learn the language of the natives!
+legacy.0494	I can teach it to you, but that'll be a shitload of work.
+legacy.0495	Hmm...
+legacy.0496	If you help me with the harvest and take care that there are at least 30 leaves of hemp in my storage, I will give you lessons.
+legacy.0497	Okay... Then I'll better go and do that...
+legacy.0498	The natives' tongue
+legacy.0499	Hanfopa
+legacy.0500	Have you already forgotten it?
+legacy.0501	There must be 30 leaves of hemp in my storage. Do me that little favour and I'll teach you what you want.
+legacy.0502	Alright...
+legacy.0503	Yes - I am always open to a fair trade.
+legacy.0504	I can offer you health potions, juice and cookies.
+legacy.0505	I want to be paid in branches, so that I can fence my plantation.
+legacy.0506	Buy cookie (5 branches)
+legacy.0507	Buy juice (15 branches)
+legacy.0508	Buy health potion (35 branches)
+legacy.0509	Here, take the cookie! And thanks for the branches.
+legacy.0510	I can't leave it to you.
+legacy.0511	You must have at least 5 branches for it!
+legacy.0512	Goodbye
+legacy.0513	Yummy juice for you and strong wood for me.
+legacy.0514	You must have at least 15 branches for it!
+legacy.0515	Good choice.
+legacy.0516	Here, take your health potion.
+legacy.0517	That makes 35 branches.
+legacy.0518	You must have at least 35 branches for it!
+legacy.0519	The hemp grandfather has offered me to teach me the language of the natives, to make myself understood and get into their village.
+legacy.0520	Before the lessons start, I must lend him a hand for the harvest of his weed.
+legacy.0521	I must increase his stock to at least 30 leaves.
+legacy.0522	Thanks for your aid!
+legacy.0523	It looks like the lessons can begin now...
+legacy.0524	Yessir, I'm ready!
+legacy.0525	I have got the green stuff for the chappy, and he has been true to his word. He gave me a crash course about the language these strange natives speak, and I now feel able to make myself understood in their tongue. The problem is only that a rain of arrows crackles down upon me every time I approach their village. I must find one of them outside the village!
+legacy.0526	Chieftain
+legacy.0527	Hugh harrr Tschack! Gnar gnar! Ignak!
+legacy.0528	I SUDDENLY BURST INTO FLAMES!
+legacy.0529	Whaaaaaah!
+legacy.0530	Häuptling
+legacy.0531	A trespassing illegal immigrant! Go away! Burrrrn!
+legacy.0532	Hello. Me ear got news that you now friend of tribe. You be welcome in ours circle.
+legacy.0533	Me introduce myself:
+legacy.0534	Name is Rootignoot. Me be mighty chieftain of tribe with scary mask full of colourful paint and with strong magical powers!
+legacy.0535	Me can make things burn with me magic.
+legacy.0536	Gosh, that's fascinating...
+legacy.0537	Yes. That be about me.
+legacy.0538	But what with you? Why you here?
+legacy.0539	Tribe seldom have foreign visitor.
+legacy.0540	Stranded, teleported etc...
+legacy.0541	Me understand. Me believe, you not want stay here?
+legacy.0542	You want back where you come from. You want get away.
+legacy.0543	Me be right?
+legacy.0544	No...
+legacy.0545	In this case help you we can.
+legacy.0546	Build biiiiig ship for go away. But help not for free. You do drudgery for tribe.
+legacy.0547	Then tribe build big ship for escape.
+legacy.0548	You be liar!
+legacy.0549	Me see your thoughts! You want away.
+legacy.0550	Only if you come away from this island this game you can win.
+legacy.0551	You now know. So away you want?
+legacy.0552	Yes...
+legacy.0553	You must know the tribe have great starvation. You must help tribe.
+legacy.0554	Seed 10 plants of crop in village, build 3 new bow nets before village so we have 5 of them and bring 15 bread to me.
+legacy.0555	Then we ready to build big boat for you.
+legacy.0556	At your command!
+legacy.0557	The famine
+legacy.0558	The tribe of the local natives wants to help me to escape by building me a big ship.
+legacy.0559	To make them do it I must first help them to solve their shortness of food.
+legacy.0560	There are 3 conditions to fulfill:
+legacy.0561	- 5 bow nets before the village
+legacy.0562	- 10 plants of crop within the village
+legacy.0563	- I must give the chief 15 loafs of bread
+legacy.0564	I will not get away without the help of the natives.
+legacy.0565	I must fulfill the tasks!
+legacy.0566	You can erect bow nets with a hammer, just as all other buildings. However, you must know the ropes of fishery first. Your fishing skill must be at least 50. To increase it, you must simply angle. If you do not have a fishing rod yet, just combine a thread with a branch that has been made bendable by using it beneath a fountain or a well.
+legacy.0567	If you have problems with the baking of bread or with the cultivation of crops, the weed grandpa can tell you how to do that.
+legacy.0568	You not have all tasks done.
+legacy.0569	Bring 15 bread, seed 10 crop and take care of 5 fishtraps!
+legacy.0570	Please help!
+legacy.0571	Sure, goodbye.
+legacy.0572	!3- Not enough bread!
+legacy.0573	!3- Not enough crop!
+legacy.0574	!3- Not enough bow nets!
+legacy.0575	You have done great service to tribe.
+legacy.0576	Tribe now show thankful for help. Tribe build ship.
+legacy.0577	But bad tidings me have to say. Have sent workers to jetty. Workers have said that construction not possible!
+legacy.0578	Why isn't it possible?
+legacy.0579	Beach and jetty be full of sea weed and algas. Settle on boat and destroy hull.
+legacy.0580	Building not work so. Work be useless.
+legacy.0581	What to do now?
+legacy.0582	You must clean away sea weed. Dive and destroy!
+legacy.0583	Then we begin to work immediate.
+legacy.0584	Why exactly ME?!
+legacy.0585	Tribesmen not dive. Afraid of water. Die when dive.
+legacy.0586	You only who dares to dive. You only who can remove plants in water.
+legacy.0587	When removed we build ship.
+legacy.0588	Then I'll better do that...
+legacy.0589	The ship
+legacy.0590	There still plants in water.
+legacy.0591	You remove all or nobody build ship!
+legacy.0592	Yes, Mr. Super-precise... okay.
+legacy.0593	Good work!
+legacy.0594	Now we ready to build ship for you.
+legacy.0595	Building dure 14 sunsets. We do. You come when ready.
+legacy.0596	Sounds good. Thanks!
+legacy.0597	You have helped tribe so tribe help you.
+legacy.0598	Question of honour...
+legacy.0599	I understand
+legacy.0600	One good turn deserves another...
+legacy.0601	Yes, right!
+legacy.0602	We like help strangers.
+legacy.0603	Great thing
+legacy.0604	Have good skill with build ships
+legacy.0605	Good
+legacy.0606	Ship will be great, me promise
+legacy.0607	The better!
+legacy.0608	Least do we can for recompense your help
+legacy.0609	Mhmyeah...
+legacy.0610	You good man
+legacy.0611	Sure
+legacy.0612	We very thankful
+legacy.0613	Have you finished now?
+legacy.0614	One thing left me have to say!
+legacy.0615	What?
+legacy.0616	Give knowledge of survive in wilderness!
+legacy.0617	When find bark at trees, you can use bark. You find insects and slime in bark. Good against hunger and thirst! Or take many leaves and press water out with stone.
+legacy.0618	Then you survive hardship!
+legacy.0619	See you soon!
+legacy.0620	Oh, thanks. Goodbye.
+legacy.0621	Building Ship.
+legacy.0622	Finished tomorrow!
+legacy.0623	Finished in $daysleft days
+legacy.0624	Bye
+legacy.0625	Ship be ready, good friend!
+legacy.0626	With best wishes from whole tribe.
+legacy.0627	Thanks, goodbye!
+legacy.0628	You not can go with ship?
+legacy.0629	No, I need some fuel, er... powerwater!
+legacy.0630	Powerwater... oh...
+legacy.0631	Yeah, I mean... you are the ones who've actually built the ship!
+legacy.0632	Yes and we very good shipmakers! Ship equipped with most modern technology!
+legacy.0633	Congratulation to purchase of new ship.
+legacy.0634	But how am I supposed to use it?
+legacy.0635	So you need what you call fuel...
+legacy.0636	Me can have your ship filled with this powerwater. But you show that you worth before!
+legacy.0637	Haven't I helped you enough already?
+legacy.0638	Never! You first proof that you be good boardchief for worthy ship!
+legacy.0639	Before you not use ship. Before you stay here.
+legacy.0640	We not risk accident with ship because boardchief dumb. Building was too much work.
+legacy.0641	And what now?
+legacy.0642	Quest be so easy! You bring 10 smoking leaves from colourful man.
+legacy.0643	Joints?
+legacy.0644	As he them calls! You bring us 15. That be your quest.
+legacy.0645	But drugs are wicked and evil and stuff!
+legacy.0646	That true. But we be band of addicts. Not anymore come away from wicked green stuff.
+legacy.0647	Need to have good life. Else go mad!
+legacy.0648	You bring 20 or me kill you and give ship next visitor!
+legacy.0649	Okay, I've got that.
+legacy.0650	You true friend.
+legacy.0651	Absolutely. Goodbye.
+legacy.0652	You not have enough. Bring 20 of smoking leaves. Else you must die!
+legacy.0653	You satisfied great wish. You worthy boardchief.
+legacy.0654	Tribe fuel up ship. You now can start voyage home.
+legacy.0655	Whole tribe be thankful and wish good luck!
+legacy.0656	Fantastic, Goodbye!
+legacy.0657	Great success at voyage to homeland.
+legacy.0658	Whole tribe be with you!
+legacy.0659	Thanks!
+legacy.0660	Damn it...
+legacy.0661	The fuel tank is empty!
+legacy.0662	I have helped the natives with their nutrition problems. But before they build the ship for me, I must remove the sea weed from the beach. According to them, they can't build the ship otherwise.
+legacy.0663	Ha! Finally! The tribe has begun to build the ship. It is announced to be finished in some days.
+legacy.0664	The ship is ready. Hooray!
+legacy.0665	However, I wonder how the natives have managed to construct such a modern vehicle. The thing looks suspiciously similar to my yacht. But, well... after all, the chieftain has already assured me beforehands that his village is very experienced on the field of shipbuilding.
+legacy.0666	The ship may be ready, but I cannot use it nevertheless.
+legacy.0667	The tank is empty... what an idiocy. Why didn't the chaps just build a sail-powered ship? Now I am honestly supposed to roll them 20 bleeding Joints, only to get them to fill it up with fuel for me.
+legacy.0668	What a nasty boldness!
+legacy.0669	Finally, all is prepared! Now the ship should be ready so that I can go on my journey home!
+legacy.0670	Native
+legacy.0671	Errr... ok. See you.
+legacy.0672	Stranger leave me alone!
+legacy.0673	If you want so...
+legacy.0674	Cartographer
+legacy.0675	Who are you?
+legacy.0676	Hello 'n' goodbye!
+legacy.0677	Me? Me be cartographer of village. Make fine maps of island. Maps reveal secret places and treasures and are help for orientation.
+legacy.0678	Secret places and treasures?
+legacy.0679	Bla bla bla!
+legacy.0680	Yes. Island have many secret places and treasures! That be why strong demand for me maps. Everybody want map.
+legacy.0681	So do I.
+legacy.0682	I don't!
+legacy.0683	G'bye, you nut!
+legacy.0684	Why you ask when not interested?
+legacy.0685	Unworthy go away!
+legacy.0686	Bye bye
+legacy.0687	I knew you have interest!
+legacy.0688	Can give you map, but not for free. Me love butterflies. If catch 30 butterflies for me, me give you map.
+legacy.0689	Where can I find so many butterflies?
+legacy.0690	Your own fault!
+legacy.0691	You be sure that you not want?
+legacy.0692	Must've been a slip of my tongue...
+legacy.0693	What? Gimme a damned map! Pronto!
+legacy.0694	What do I care!
+legacy.0695	Later, perhaps...
+legacy.0696	No way, mate. Bye!
+legacy.0697	At beach in south. Just beneath village. You be there within moment, not far!
+legacy.0698	You need net for catching. Or you never get them. You can make net with stick and threads.
+legacy.0699	Fetch butterflies and me give map!
+legacy.0700	The map
+legacy.0701	You have 30 butterflies! Excellent!
+legacy.0702	Here is map as promised. Wish success on treasure hunting!
+legacy.0703	Thankyou, goodbye!
+legacy.0704	Bring me butterflies for map! You not have enough!
+legacy.0705	Okay!
+legacy.0706	Hope you have much fun with map!
+legacy.0707	Yeah, I bet I will...
+legacy.0708	I have met a cartographer in the village. He says that there are many treasures on the island. I do not know for sure wether he told me the truth or if it is just a trick of him to get people to buy his maps. Anyway, he said that he'd mark the positions of the treasures on his maps.
+legacy.0709	He furthermore offered me a simple deal:
+legacy.0710	I must catch 30 butterflies for him and in exchange, I will get a map. With branches and threads I can make a net to be able to catch the little things. There are said to be markedly many at the southern beach.
+legacy.0711	I have brought him the butterflies and received the map!
+legacy.0712	Ooohhh... oohhhh!
+legacy.0713	Ahhhh!
+legacy.0714	What's up?
+legacy.0715	What the...?! See you!
+legacy.0716	I feel such an incredible sudden hunger for delicious, juicy plums!
+legacy.0717	Plums?
+legacy.0718	Now that you mention it... me too!
+legacy.0719	You piss me off!
+legacy.0720	Okay. Interesting. Bye.
+legacy.0721	Yes, plums. Delicate plums! Yummy!
+legacy.0722	I see...
+legacy.0723	Why do you speak my language so well?
+legacy.0724	Really? Do you like plums, too?
+legacy.0725	Yes, tell me anybody who doesn't!
+legacy.0726	For god's sake! I wasn't that serious!
+legacy.0727	Then bugger off!
+legacy.0728	Okay, see you!
+legacy.0729	This is because I happen to visit the hemp chap at the other side of the island very often. We often have chats for hours. There is not much more to do here, after all.
+legacy.0730	Yes! Hmm...
+legacy.0731	Wait a minute! How about you getting me some plums?
+legacy.0732	Why should I do this?
+legacy.0733	Never! Bye bye!
+legacy.0734	Because you are a nice person?
+legacy.0735	Basically not.
+legacy.0736	Perhaps, because you want plums anyway?
+legacy.0737	Rather that...
+legacy.0738	I've got it! Because I would give you something for them!
+legacy.0739	Bingo!
+legacy.0740	Er... what?
+legacy.0741	Forget it... what do you offer me?
+legacy.0742	Well... if you should really manage to get a plum somewhere here, I will brew three potions, each of which will enable you to run faster for some time. This is an undeniable offer!
+legacy.0743	Yes, let's see.
+legacy.0744	The plum chap
+legacy.0745	Ohh! THANK YOU! I am so thankful for you!
+legacy.0746	Here are your potions!
+legacy.0747	Come to your daddy, little plum!
+legacy.0748	Gna-haa!
+legacy.0749	Wonderful!
+legacy.0750	You're welcome... you freakity freak-freak!
+legacy.0751	Plums! I want plums! Ahhhh!
+legacy.0752	Bring me one! Please!
+legacy.0753	I'll try to...
+legacy.0754	Oh, you delicious plums!
+legacy.0755	Goodbye...
+legacy.0756	One of the natives will brew me three potions, if I bring him a plum.
+legacy.0757	That sounds like a very good deal...
+legacy.0758	Made it! Gave him a plum and received potions as reward.
+legacy.0759	Is there anything to add? I think there isn't.
+legacy.0760	Nice contact, neat potions, why not come again!
+legacy.0761	Good day!
+legacy.0762	Yeah, g'day!
+legacy.0763	Goodbye.
+legacy.0764	Bye then!
+legacy.0765	Greetings, stranger!
+legacy.0766	Hi!
+legacy.0767	Leave me alone!
+legacy.0768	How are you?
+legacy.0769	So-so. It's alright.
+legacy.0770	Nice weather, not is?
+legacy.0771	What you doing?
+legacy.0772	Let's see, er... talking to you?!
+legacy.0773	I understand. What else going on?
+legacy.0774	Nothing!
+legacy.0775	Everything be proper?
+legacy.0776	I could use a shower...
+legacy.0777	And what else on mind?
+legacy.0778	Argh!
+legacy.0779	All fine with you? Feel good?
+legacy.0780	No. You're annoying.
+legacy.0781	Oh.
+legacy.0782	See you!
+legacy.0783	Wellbye. Till next time.
+legacy.0784	Hope we meet again soon.
+legacy.0785	Yeah, you say it...
+legacy.0786	Nyaarrgh!
+legacy.0787	I have run onto a cliff with my ship.
+legacy.0788	It looks like I must repair it to go on. But I need iron for that.
+legacy.0789	7 pieces of iron should be enough, but I will have to dive for them.
+legacy.0790	Enough iron gathered!
+legacy.0791	I still need that, remember?
+legacy.0792	I have managed to find enough iron!
+legacy.0793	After a short repair, the ship is fully functionable again and I can head homewards again.
+legacy.0794	Full speed ahead!
+legacy.0795	Not enough gold!
+legacy.0796	!1Level $level Tower
+legacy.0797	Shoots arrows at the enemy
+legacy.0798	Shoots fire arrows at the enemy
+legacy.0799	!2Damage: 5
+legacy.0800	!2Rate: 3 sec.
+legacy.0801	!2Arrow Speed: 20 meters/sec.
+legacy.0802	!2Damage: 7
+legacy.0803	!2Rate: 2 sec.
+legacy.0804	!2Arrow Speed: 24 meters/sec.
+legacy.0805	!2Damage: 9
+legacy.0806	!2Rate: 1 sec.
+legacy.0807	!2Arrow Speed: 30 meters/Sec.
+legacy.0808	!2Damage: 10 + FireDamage
+legacy.0809	!2Arrow Speed: 30 meters/sec.
+legacy.0810	Level $level Tower
+legacy.0811	Upgraded!
+legacy.0812	10 Kiwis
+legacy.0813	20 Kiwis
+legacy.0814	30 Kiwis
+legacy.0815	5 Turtles
+legacy.0816	10 Turtles
+legacy.0817	15 Turtles
+legacy.0818	5 Slow Monkeys
+legacy.0819	10 Slow Monkeys
+legacy.0820	15 Slow Monkeys
+legacy.0821	1 Butterfly Of Death
+legacy.0822	3 Lions
+legacy.0823	5 Lions
+legacy.0824	10 Lions
+legacy.0825	3 Raptors
+legacy.0826	5 Raptors
+legacy.0827	7 Raptors
+legacy.0828	10 Raptors
+legacy.0829	15 Raptors
+legacy.0830	20 Raptors
+legacy.0831	1 Scary Sheep
+legacy.0832	making fire
+legacy.0833	Fracture splinted!
+legacy.0834	You have no fractures
+legacy.0835	Wound bandaged!
+legacy.0836	You have no open wounds
+legacy.0837	making arrow
+legacy.0838	carving bolts
+legacy.0839	processing metal
+legacy.0840	making poison arrow
+legacy.0841	making fire arrow
+legacy.0842	making bendable
+legacy.0843	grinding
+legacy.0844	making dough
+legacy.0845	rolling joint
+legacy.0846	squeezing
+legacy.0847	chopping log
+legacy.0848	smashing stone
+legacy.0849	mixing dough
+legacy.0850	brewing potion
+legacy.0851	I need water!
+legacy.0852	Ich need water!
+legacy.0853	pressing grapes
+legacy.0854	making juice
+legacy.0855	squeezing leaves
+legacy.0856	brewing potion of haste
+legacy.0857	Wilson!
+legacy.0858	Yeah. Thats how I call him - my new friend.
+legacy.0859	I think we are going to have a lot of fun!
+legacy.0860	My new friend!
+legacy.0861	making spear
+legacy.0862	making claw spear
+legacy.0863	drinking
+legacy.0864	Ugh! Saltwater!
+legacy.0865	planting grain
+legacy.0866	Here is not enough space!
+legacy.0867	Grain does not grow in water!
+legacy.0868	planting vine
+legacy.0869	This does not grow in water!
+legacy.0870	planting hemp
+legacy.0871	planting bush
+legacy.0872	I cannot do this yet!
+legacy.0873	My planting skill needs to be higher!
+legacy.0874	planting tree
+legacy.0875	planting berry bush
+legacy.0876	planting banana palm
+legacy.0877	planting coconut palm
+legacy.0878	planting cacao tree
+legacy.0879	This does not grow in the water!
+legacy.0880	planting coffee tree
+legacy.0881	planting plum tree
+legacy.0882	You slept
+legacy.0883	Saved (Autosave)
+legacy.0884	I should not sleep now!
+legacy.0885	Sleeping in the water?
+legacy.0886	Not a good idea...
+legacy.0887	I'm not tired enough!
+legacy.0888	I need a dry fireplace!
+legacy.0889	Fire started
+legacy.0890	It's too wet!
+legacy.0891	It does not work...
+legacy.0892	I have to try it again!
+legacy.0893	Skill Info
+legacy.0894	Skill improved!
+legacy.0895	Trees
+legacy.0896	Palms
+legacy.0897	Bushes
+legacy.0898	Grass
+legacy.0899	Flowers
+legacy.0900	Stones
+legacy.0901	Buildings
+legacy.0902	Misc.
+legacy.0903	Humans
+legacy.0904	Animals
+legacy.0905	Vehicles
+legacy.0906	Food
+legacy.0907	Potions
+legacy.0908	Tools
+legacy.0909	Weapons
+legacy.0910	Ammo
+legacy.0911	Material
+legacy.0912	Triggers
+legacy.0913	Areas
+legacy.0914	Flags
+legacy.0915	Storages
+legacy.0916	Production
+legacy.0917	Miscellaneous
+legacy.0918	Starting Position
+legacy.0919	Starting position for the player. The player will be set to the middle of the island if there is no starting position info.
+legacy.0920	Sprite
+legacy.0921	Allows to put sprites in your map.
+legacy.0922	see also: "info_sprite"
+legacy.0923	Areal Trigger
+legacy.0924	Triggers the event "trigger" in its own script, as soon as its conditions are true.
+legacy.0925	A certain amount of objects has to be in the radius of this info.
+legacy.0926	Attention: "instant active" has to be checked. It can also be controlled with "starttrigger(s)" and "stoptrigger(s)"!
+legacy.0927	Time Trigger
+legacy.0928	A certain time has to be reached.
+legacy.0929	Item Count Trigger
+legacy.0930	A certain object has to have a certain amount of items.
+legacy.0931	Flag
+legacy.0932	This info does not have any special function. Use it to define positions and paths.
+legacy.0933	Map Indicator
+legacy.0934	Marks a spot at the map.
+legacy.0935	Attention: The mark is only visible if "instant active" is checked. You can use "showindicator(s)" and "hideindicator(s)" to control this.
+legacy.0936	see also: "setindicatorlook" and "setindicatorinfo"
+legacy.0937	Text Container
+legacy.0938	Use this as containter for scripts and texts. Stranded II will not execute the script you write here.
+legacy.0939	Camera Position
+legacy.0940	Use this for camera positions in sequences (you can use every other info too).
+legacy.0941	Freshwater Area
+legacy.0942	Defines a freshwater area.
+legacy.0943	Use the script command "inarea_freshwater" to check if an object is in such an area.
+legacy.0944	Water in this area is drinkable.
+legacy.0945	Digging Area
+legacy.0946	Defines a digging area.
+legacy.0947	Use the script command "inarea_dig" to check if an object is in such an area.
+legacy.0948	You can store items in this info. The player will get them if he digs in this area.
+legacy.0949	Fishing Area
+legacy.0950	Defines a fishing area.
+legacy.0951	Use the script command "inarea_fish" to check if an object is in such an area.
+legacy.0952	You can store items in this info. The player will get them if he fishs in this area.
+legacy.0953	Area
+legacy.0954	Defines a plain area.
+legacy.0955	Use the script command "inarea" to check if an object is in such an area.
+legacy.0956	No other special functions.
+legacy.0957	Spawn Control
+legacy.0958	Checks if there is a certain amount of objects ("number max") in an area.
+legacy.0959	It will automatically create new objects if there are less than "number max".
+legacy.0960	see also: "info_spawncontrol" and "trigger"
+legacy.0961	AI Area
+legacy.0962	An area which controls units. They will be either attracted or expelled.
+legacy.0963	Loudspeaker
+legacy.0964	Loops a sound. It can be played in a certain area. Enter a radius of 0 to play it on the whole map.
+legacy.0965	see also: "info_loudspeaker"
+legacy.0966	Thumbnail
+legacy.0967	This info can be placed on the map like a camera. The thumbnail for this map will then be recorded from the position of this info.
+legacy.0968	But you can also specify an image file which you want to use as thumbnail (96x72 pixels).
+legacy.0969	Attention: The image file will be saved in the map file so you do not have to provide the image file with your map.
+legacy.0970	Arcade Mode
+legacy.0971	Deactivates hunger, thirst and exhaustion. Just put it on the map to make it work.
+legacy.0972	Invulnerability Mode
+legacy.0973	Makes the player invulnerable. Just put it on the map to make it work. Use the "freestate" command to remove the invulnerability.
+legacy.0974	Meat
+legacy.0975	a juicy piece of raw meat. I can fry it, eat it as it is or take it in my hand and throw it at wild animals...
+legacy.0976	frying
+legacy.0977	I need fire to fry this!
+legacy.0978	eating
+legacy.0979	I tamed it!
+legacy.0980	Meat (fried)
+legacy.0981	a big piece of fried meat
+legacy.0982	small Meat
+legacy.0983	a small piece of raw meat. Eatable, fryable and throwable
+legacy.0984	small Meat (fried)
+legacy.0985	a small piece of fried meat
+legacy.0986	Banana
+legacy.0987	a delicious banana. Not only me but also monkeys do like it!
+legacy.0988	The monkey school is now buildable!
+legacy.0989	Bloodleaf
+legacy.0990	a plant with crimson leaves
+legacy.0991	Healing Herb
+legacy.0992	a herb with a healing effect
+legacy.0993	strong Healing Herb
+legacy.0994	a healing herb with a very strong effect
+legacy.0995	Goldherb
+legacy.0996	a golden herb. Good against dizziness
+legacy.0997	Bitterroot
+legacy.0998	an extremly acerbic, root-like plant
+legacy.0999	vomiting
+legacy.1000	Coconut
+legacy.1001	a coconut. It will take long to eat it because of its hard hull
+legacy.1002	Mushroom
+legacy.1003	a mushroom
+legacy.1004	big Mushroom
+legacy.1005	a big mushroom
+legacy.1006	brown Mushroom
+legacy.1007	a brown mushroom
+legacy.1008	Poison Mushroom
+legacy.1009	a green, poisonous mushroom. I should be able to press the poison out of it with a stone
+legacy.1010	Dwarf Hat Mushroom
+legacy.1011	a mushroom which looks like the hat of a dwarf
+legacy.1012	Healing Potion
+legacy.1013	a healing potion which heals the player for 30 seconds
+legacy.1014	You get healing!
+legacy.1015	Water
+legacy.1016	fresh drinking water. You can also put it in your hand to throw it at fire
+legacy.1017	Wine
+legacy.1018	tasty wine. You shouldn't drink too much...
+legacy.1019	Grains
+legacy.1020	can be grinded with a stone. take them into your hand and use the ground in order to plant them
+legacy.1021	I have to take them into my hand
+legacy.1022	and to use the ground!
+legacy.1023	Flour
+legacy.1024	a pile of flour. I can mix it with water to get dough
+legacy.1025	Bread
+legacy.1026	a loaf of bread. Very filling!
+legacy.1027	Grapes
+legacy.1028	they can be eaten or I can make wine out of them. take them into your hand and use the ground in order to plant them
+legacy.1029	Berries
+legacy.1030	sweet red berries
+legacy.1031	Juice
+legacy.1032	a healthy juice consisting of fruits
+legacy.1033	Cookie
+legacy.1034	cookies with chocolate pieces! Yay!
+legacy.1035	Cacaofruit
+legacy.1036	a cacaofruit
+legacy.1037	Cocoa
+legacy.1038	dry cocoa
+legacy.1039	Coffee Fruits
+legacy.1040	coffee fruits which contain a lot of caffeine
+legacy.1041	Dough
+legacy.1042	simple dough made of flour and water. I can use it close to fire in order to bake it
+legacy.1043	baking
+legacy.1044	I need fire to bake this!
+legacy.1045	Hemp Leaf
+legacy.1046	Hemp with an exhilarating agency...
+legacy.1047	I have to take it into my hand
+legacy.1048	Fish
+legacy.1049	Fish. Can be eaten sushi style or fried.
+legacy.1050	Fish (fried)
+legacy.1051	a fried fish
+legacy.1052	Joint
+legacy.1053	a Joint. I should dispose it as fast as possible! Drugs are bad!
+legacy.1054	smoking
+legacy.1055	too wet...
+legacy.1056	Insect Parts
+legacy.1057	delicious parts of insects. They are used as baits when I fish
+legacy.1058	They will be used as bait
+legacy.1059	when I fish!
+legacy.1060	Slime
+legacy.1061	sticky and disgusting!
+legacy.1062	Seaweed
+legacy.1063	slimy-green seaweed
+legacy.1064	Potion of Haste
+legacy.1065	a potion which doubles my movement speed for a minute
+legacy.1066	You are faster now!
+legacy.1067	Immortal Potion
+legacy.1068	this potion makes me immortal for a half minute
+legacy.1069	You are immortal now!
+legacy.1070	Air Potion
+legacy.1071	a special air mixture which gives me air for breathing while diving
+legacy.1072	New air for breathing!
+legacy.1073	Chocolate Dough
+legacy.1074	a dough with cocoa in it. I can use it close to a fire in order to bake it
+legacy.1075	Plums
+legacy.1076	plums! Good for the digestion...
+legacy.1077	Worm
+legacy.1078	a small worm. Will be used as bait when I fish
+legacy.1079	Will be used as bait
+legacy.1080	small Crystal
+legacy.1081	a small crystal
+legacy.1082	Crystal
+legacy.1083	a sparkling crystal
+legacy.1084	Goldnugget
+legacy.1085	a big goldnugget! I'm rich!
+legacy.1086	Log
+legacy.1087	a heavy log. Why do I have to haul this bulky thing?
+legacy.1088	Bamboo
+legacy.1089	weird bamboo stuff!
+legacy.1090	Leaf
+legacy.1091	a wonderful leaf. I can use a stone to press the water out of leaves if I have many of them
+legacy.1092	Pebbles
+legacy.1093	small pebbles - I'm sure that they could be a good ammunition
+legacy.1094	a heavy stone
+legacy.1095	Ouch! My teeth!
+legacy.1096	I'm bleeding!
+legacy.1097	Branch
+legacy.1098	a branch. You can make it bendable with water or light it with fire
+legacy.1099	making torch
+legacy.1100	I need fire or freshwater!
+legacy.1101	bendable Branch
+legacy.1102	a branch which has been made bendable with water
+legacy.1103	hardening
+legacy.1104	Vine
+legacy.1105	a vine. I can use it as a whip to drove animals
+legacy.1106	Cotton / Wool
+legacy.1107	cotton and/or wool. I can use it to make cord out of it
+legacy.1108	making cord
+legacy.1109	Thread
+legacy.1110	thread!
+legacy.1111	Feather
+legacy.1112	a bird's feather
+legacy.1113	Iron
+legacy.1114	a clump of iron. I can use a hammer to process it. But this form can be used to make tools too
+legacy.1115	Iron Rod
+legacy.1116	an iron rod. Combine it with a hammer and other stuff to create tools
+legacy.1117	Tooth
+legacy.1118	a spiky tooth
+legacy.1119	Claw
+legacy.1120	a sharp claw of some threatening animals
+legacy.1121	Skin
+legacy.1122	skins/hides. I can create a tent out of this when I combine it with branches
+legacy.1123	Bark
+legacy.1124	a piece of bark. Maybe I can create fire with this...
+legacy.1125	searching
+legacy.1126	The bark is broken!
+legacy.1127	Insects!
+legacy.1128	Slime!
+legacy.1129	I found nothing!
+legacy.1130	Bag
+legacy.1131	a bag
+legacy.1132	Bag with Gold
+legacy.1133	a bag full of gold!
+legacy.1134	*bite* ...
+legacy.1135	The coins seem to be real!
+legacy.1136	Blueblossom
+legacy.1137	a blue blossom. Can be used to stop bleeding
+legacy.1138	Bleeding stopped!
+legacy.1139	You aren't bleeding!
+legacy.1140	Poison
+legacy.1141	green poison. Maybe I should taste it!
+legacy.1142	Message in a Bottle
+legacy.1143	a message in a bottle
+legacy.1144	Sheaf
+legacy.1145	a sheaf of grain. I have to use it to get the grains out of it
+legacy.1146	I cannot use it this way!
+legacy.1147	Shake the grains out of it first!
+legacy.1148	Butterflies
+legacy.1149	these butterflies are helping me to carry more stuff!
+legacy.1150	Fly!
+legacy.1151	I carry to much!
+legacy.1152	I have to throw
+legacy.1153	something else away!
+legacy.1154	Bone
+legacy.1155	Yuck! A bone! I'm not a dog!
+legacy.1156	No! I'm not going to gnaw on this bone!
+legacy.1157	Excrement
+legacy.1158	an excrement. Also called shit or poo-poo. This stuff stinks that much that I probably could poison someone with it...
+legacy.1159	Erbrechen
+legacy.1160	Volleyball
+legacy.1161	Yeah, nice! I'm just missing a net and an opponent...
+legacy.1162	Wilson
+legacy.1163	my best friend Wilson. I hope the 'Cast Away' people are not going to sue me for this...
+legacy.1164	Wilson says: Hello!
+legacy.1165	Wilson says: Yoink!
+legacy.1166	Wilson asks: How is it going?
+legacy.1167	Wilson says: Nice weather.
+legacy.1168	Wilson sings: Tralalalala!
+legacy.1169	Shush! Wilson sleeps at the moment!
+legacy.1170	Wilson jumps around!
+legacy.1171	Wilson is speechless.
+legacy.1172	Wilson says nothing.
+legacy.1173	Wilson saves his breath!
+legacy.1174	Wilson ist silent.
+legacy.1175	Wilson grins!
+legacy.1176	Wilson seems to be sad!
+legacy.1177	Wilson is okay.
+legacy.1178	I would never ever eat Wilson!
+legacy.1179	Tent
+legacy.1180	a tent. I need a hammer to build it
+legacy.1181	I have to use a hammer
+legacy.1182	to setup this tent!
+legacy.1183	Take the hammer,
+legacy.1184	not the tent!
+legacy.1185	explosive Bait
+legacy.1186	I can throw this at animals. They will explode when I press the remote trigger!
+legacy.1187	I have to drop it
+legacy.1188	or to throw it!
+legacy.1189	Remote Trigger
+legacy.1190	a remote trigger for explosive baits
+legacy.1191	Clam
+legacy.1192	a clam. I'm wondering what might be inside?
+legacy.1193	A pearl!
+legacy.1194	Starfish
+legacy.1195	a starfish. I'm going to call him Patrick!
+legacy.1196	Bottle
+legacy.1197	an empty glass bottle
+legacy.1198	I filled the bottle!
+legacy.1199	I have to be close
+legacy.1200	to some freshwater!
+legacy.1201	Pearl
+legacy.1202	a shiny pearl
+legacy.1203	Bandage
+legacy.1204	a bandage which can be used when I have bleeding wounds
+legacy.1205	You do not have open wounds!
+legacy.1206	First Aid Box
+legacy.1207	a first aid box which can be used when I have wounds, fractures or poisonings
+legacy.1208	Wounds/fractures/poisonings treated
+legacy.1209	Flint
+legacy.1210	striking two flint stones together provides the sparks needed to start a fire
+legacy.1211	Already burning
+legacy.1212	I need at least 2
+legacy.1213	flints to start a fire!
+legacy.1214	Hammer
+legacy.1215	this hammer can be used to build stuff. It is also needed for combinations with iron
+legacy.1216	Fishing Rod
+legacy.1217	a fishing rod which allows me to fish
+legacy.1218	I cannot fish here!
+legacy.1219	Used worm as bait!
+legacy.1220	Used insect parts as bait!
+legacy.1221	Watch
+legacy.1222	this thing shows the exact time!
+legacy.1223	Map
+legacy.1224	a map! I'll never lose my way again!
+legacy.1225	Spade
+legacy.1226	this spade can be used to dig
+legacy.1227	Axe
+legacy.1228	very good to damage things which consist of wood
+legacy.1229	Pickaxe
+legacy.1230	can be used to get minerals out of rocks more easily
+legacy.1231	Key
+legacy.1232	a Key
+legacy.1233	Use the object
+legacy.1234	you want to open!
+legacy.1235	Picklock
+legacy.1236	a picklock which can be used to crack locks
+legacy.1237	Net
+legacy.1238	makes it possible to catch little animals
+legacy.1239	Use the right mouse button,
+legacy.1240	to catch animals!
+legacy.1241	Scythe
+legacy.1242	though designed as a harvesting tool, the scythe can be a powerful weapon as well
+legacy.1243	Torch
+legacy.1244	besides providing illumination, you can attack with a torch to light other things on fire
+legacy.1245	I'm no fire-eater!
+legacy.1246	Machete
+legacy.1247	a sharp machete. Good for close combat or to separate bark from trees
+legacy.1248	Bullet
+legacy.1249	Ammunition for firearms
+legacy.1250	Slingshot
+legacy.1251	a slingshot which can shoot small stuff
+legacy.1252	No ammo!
+legacy.1253	Spear
+legacy.1254	a spear which causes a lot of damage on animals. Every spear can be thrown only one time unless I'm an experienced hunter
+legacy.1255	Arrow
+legacy.1256	an arrow with a solid arrowhead out of stone - causes raised damage
+legacy.1257	Wooden Arrow
+legacy.1258	a plain wooden arrow - causes average damage
+legacy.1259	Poison Arrow
+legacy.1260	this arrow causes poisoning. The target will die if it has no antidote!
+legacy.1261	Fire Arrow
+legacy.1262	this arrow will start a fire at the target which will cause a lot of damage
+legacy.1263	Pistol
+legacy.1264	*BANG* ... a very accurate pistol
+legacy.1265	Bow
+legacy.1266	a bow which can shoot arrows
+legacy.1267	Longbow
+legacy.1268	a bow with a very good range
+legacy.1269	Goldbow
+legacy.1270	an noble golden bow - causes much damage
+legacy.1271	Bolt
+legacy.1272	a wooden bolt
+legacy.1273	Iron Bolt
+legacy.1274	a sharp iron bolt
+legacy.1275	Arbalest
+legacy.1276	fires bolts, causes much damage and has a great range
+legacy.1277	Sword
+legacy.1278	a simple sword
+legacy.1279	Broadsword
+legacy.1280	a sword with a very broad blade
+legacy.1281	Crystal Blade
+legacy.1282	a sword with a blade made out of unbelievable hard and sharp crystal
+legacy.1283	Rocket
+legacy.1284	an explosive rocket
+legacy.1285	poisonous Rocket
+legacy.1286	a rocket filled with poisonous gas
+legacy.1287	Rocket Launcher
+legacy.1288	a heavy rocket launcher
+legacy.1289	Shotgun
+legacy.1290	this gun causes a lot of damage but it has only a very small range
+legacy.1291	Claw Spear
+legacy.1292	a spear with sharp claws which can be thrown only once but which causes serious damage
+legacy.1293	Building Site
+legacy.1294	Press the right mousebutton
+legacy.1295	to build here!
+legacy.1296	Bamboo Hut
+legacy.1297	Offers cover for sleeping
+legacy.1298	Fence
+legacy.1299	Shelter
+legacy.1300	Fackel
+legacy.1301	Boardwall
+legacy.1302	Boards
+legacy.1303	Campfire
+legacy.1304	warm-up
+legacy.1305	Sign
+legacy.1306	Guidepost
+legacy.1307	Jetty
+legacy.1308	Storage
+legacy.1309	You can store items inside this storage.
+legacy.1310	Big Fence
+legacy.1311	Metal Fence
+legacy.1312	You can strike this tent in order to rebuild it on another place.
+legacy.1313	What do you want to do?
+legacy.1314	closemenu;
+legacy.1315	Waterpipe
+legacy.1316	Well
+legacy.1317	Offers freshwater.
+legacy.1318	Tree House
+legacy.1319	Bow Net
+legacy.1320	It is empty!
+legacy.1321	Catches fish over night.
+legacy.1322	Target
+legacy.1323	Bamboo Tower
+legacy.1324	House
+legacy.1325	Stance
+legacy.1326	Kiwi Breeding
+legacy.1327	Creates kiwi birds.
+legacy.1328	Covering
+legacy.1329	Trap
+legacy.1330	closing trap
+legacy.1331	opening trap
+legacy.1332	Catches little animals if its opened.
+legacy.1333	Hut
+legacy.1334	Herb Patch
+legacy.1335	Kräuterbeet
+legacy.1336	Place where herbs grow.
+legacy.1337	broken Well
+legacy.1338	Oh dear! This well is full of mud. I cannot use it in this condition.
+legacy.1339	I have to dig with a spade close to this well in order to remove the mud.
+legacy.1340	Full of mud
+legacy.1341	Well cleaned!
+legacy.1342	You removed mud.
+legacy.1343	( $mud x left )
+legacy.1344	A broken well. You have to dig close to it to make it work again.
+legacy.1345	broken Bow Net
+legacy.1346	It is broken
+legacy.1347	A broken bow net.
+legacy.1348	Table
+legacy.1349	Desk
+legacy.1350	Big Storage
+legacy.1351	Garden
+legacy.1352	Creates butterflies
+legacy.1353	Hammock
+legacy.1354	A great place for sleeping
+legacy.1355	Monkey School
+legacy.1356	Welcome to the monkey school!
+legacy.1357	At this place you can train transport monkeys.
+legacy.1358	These will follow you all the time so that you can give them items which they will carry for you.
+legacy.1359	You need a tamed monkey and enough bananas to train your own transport monkey!
+legacy.1360	Palisade
+legacy.1361	Gate
+legacy.1362	Close gate
+legacy.1363	Open gate
+legacy.1364	I can't move it!
+legacy.1365	Wood Storage
+legacy.1366	Stone Storage
+legacy.1367	Defense Tower
+legacy.1368	Shoots at enemies
+legacy.1369	bald Bush
+legacy.1370	Bush
+legacy.1371	Reed
+legacy.1372	Grapevine
+legacy.1373	Berry Bush
+legacy.1374	Cotton
+legacy.1375	Air Weed
+legacy.1376	Bang Mushroom
+legacy.1377	Poison Flower
+legacy.1378	Meadow
+legacy.1379	Palm
+legacy.1380	big Palm
+legacy.1381	Banana Palm
+legacy.1382	Coconut Palm
+legacy.1383	Liana Palm
+legacy.1384	Rock
+legacy.1385	Metal Rock
+legacy.1386	Gold Rock
+legacy.1387	Crystal Rock
+legacy.1388	Water Rock
+legacy.1389	Water Rock (empty)
+legacy.1390	I cannot drink here
+legacy.1391	because it is empty!
+legacy.1392	Fountain
+legacy.1393	Grain
+legacy.1394	Marble Cylinder
+legacy.1395	Marble Pillar
+legacy.1396	Marble Plate
+legacy.1397	Marble Floor
+legacy.1398	Roots
+legacy.1399	Stump
+legacy.1400	Palm Stump
+legacy.1401	Hemp
+legacy.1402	Liefert Hanfblätter und kann angepflanzt werden. Aus den Hanfblättern können Joints gedreht werden.
+legacy.1403	long Stump
+legacy.1404	Crate
+legacy.1405	Barrel
+legacy.1406	Wreck
+legacy.1407	explosive Barrel
+legacy.1408	Ruins
+legacy.1409	Cave
+legacy.1410	Raptor Nest
+legacy.1411	Kiwi Nest
+legacy.1412	Parrot Nest
+legacy.1413	Lion Stone
+legacy.1414	Moss
+legacy.1415	Bird Nest
+legacy.1416	Coral
+legacy.1417	Adlerhorst
+legacy.1418	Tree
+legacy.1419	Liana Tree
+legacy.1420	Cacao Tree
+legacy.1421	Coffee Tree
+legacy.1422	Plum Tree
+legacy.1423	Fir
+legacy.1424	Endless Game - Easy
+legacy.1425	You are stranded.
+legacy.1426	Try to survive - besides this there is no special aim.
+legacy.1427	Have fun!
+legacy.1428	!4Difficulty: Easy
+legacy.1429	A lot of resources and no dangerous animals.
+legacy.1430	You have a lot of supplies at the start.
+legacy.1431	Stranded
+legacy.1432	Endless Game - Normal
+legacy.1433	!1Difficulty: Normal
+legacy.1434	An average amount of resources and dangerous animals.
+legacy.1435	You have some victuals at the start.
+legacy.1436	Endless Game - Hard
+legacy.1437	!3Difficulty: Hard
+legacy.1438	A horde dangerous animals and not many resources.
+legacy.1439	You start without anything in your rucksack.
+legacy.1440	Raptor Hunter
+legacy.1441	This island has a serious problem with raptors!
+legacy.1442	!1 - Your Mission -
+legacy.1443	Kill all raptors!
+legacy.1444	!1 - Remark -
+legacy.1445	You have a shotgun and enough ammunition.
+legacy.1446	Furthermore you have an first-aid kit in case you suffer from fractures or bleedings.
+legacy.1447	!4Good speed!
+legacy.1448	Hunt the raptors!
+legacy.1449	This beautiful garden is a perfect place for butterflies. There will daily appear new ones.
+legacy.1450	This little tower automatically shoots with arrows at each enemy in its range!
+legacy.1451	This is a campire. I can use it to fry meat and fish or to bake bread.
+legacy.1452	If you want do so you have to go close to this fire and open your rucksack. Now you can just use the item there. It will be automatically combined with the fire if it is possible!
+legacy.1453	You do not have to care about this herb patch. Herbs are going to grow here automatically. You just have to gather them.
+legacy.1454	This breeding creates kiwi birds which can deliver feathers and meat when I hunt them.
+legacy.1455	Uhh uh ahh ah ahh!
+legacy.1456	Ahh ah... Uhh uh uh .. aahhh aahh uh!
+legacy.1457	Ugh! Ahh ahh!
+legacy.1458	Ahh ugh ahh ahh, uhh uh?
+legacy.1459	Hmmm...
+legacy.1460	Lucky thing I speak monkey tongue!
+legacy.1461	The monkey greets me and asks what he can do for me.
+legacy.1462	Ahhh ahhh ah!
+legacy.1463	Ugh ah!
+legacy.1464	Uh uh uh uh!
+legacy.1465	The monkey already has a job. I must wait for him to finish it before I can give him new orders!
+legacy.1466	Me is chieftain of tribe huge. I can brew potion magic for you!
+legacy.1467	Yeah! Potions!
+legacy.1468	Thanks but I don't need potions
+legacy.1469	Trade with chieftain
+legacy.1470	Goodbye, great chieftain!
+legacy.1471	Grandpa
+legacy.1472	Hey you. How's it going?
+legacy.1473	I want to trade.
+legacy.1474	Don't bother me!
+legacy.1475	Trade with grandpa
+legacy.1476	Cheers!
+legacy.1477	All hail!
+legacy.1478	I be native of island.
+legacy.1479	What want?
+legacy.1480	I want to trade!
+legacy.1481	What can you tell about the island?
+legacy.1482	Nothing, bye!
+legacy.1483	Trade with native
+legacy.1484	Goodbye!
+legacy.1485	I made map of island.
+legacy.1486	You allowed to look at but I not give to you.
+legacy.1487	You want to see?
+legacy.1488	Yes! Show the map!
+legacy.1489	No, I just want to trade.
+legacy.1490	No, I'm off. Bye.
+legacy.1491	Njaaaaarrr!
+legacy.1492	Hey lubber, do you have precious treasures? I would be interested in doing business with you!
+legacy.1493	Yeah, I have something to sell!
+legacy.1494	Show me your goods!
+legacy.1495	I have no treasures.
+legacy.1496	I don't want anything!
+legacy.1497	What? No treasures? I take nearly everything which looks valuable. Gold, coins, pearls... and I love wine by the way! So find something for me!
+legacy.1498	Maybe I got something.
+legacy.1499	What is your offer?
+legacy.1500	Trade with pirate
+legacy.1501	I want to buy something.
+legacy.1502	I have something to sell.
+legacy.1503	Professor
+legacy.1504	Good day! I need something to do at all costs. Just give me the materials and I will construct great stuff for you!
+legacy.1505	What can you build for me?
+legacy.1506	No, thanks!
+legacy.1507	Trade with professor
+legacy.1508	Bye!
+legacy.1509	Feuer, Feuer!
+legacy.1510	Ein Gebäude brennt!
+legacy.1511	striking tent
+legacy.1512	This torch gives light and can be a good help for orientation - as long as it burns!
+legacy.1513	You need a tamed monkey!
+legacy.1514	Transport monkey has been trained!
+legacy.1515	I don't have enough bananas!
+legacy.1516	Digging
+legacy.1517	This skill increases whenever I dig
+legacy.1518	25 - Scooping
+legacy.1519	You do not aimlessly poke around in the ground anymore but chim it systematically, hereby increasing the chance of findings.
+legacy.1520	50 - Shovel amateur
+legacy.1521	Carefuller digging enables you to find insects and mushrooms.
+legacy.1522	100 - Shovel adept
+legacy.1523	Better technique furtherly increases the probability to find something. Plus, from now on you can dig out bitterroots!
+legacy.1524	200 - Shovel semi-professional
+legacy.1525	You do not let anything slip anymore. You will always find something when you dig.
+legacy.1526	500 - Shovel professional
+legacy.1527	The optimised shovel technique now provides great gains at digging.
+legacy.1528	Fishing
+legacy.1529	This skill increases whenever I angle
+legacy.1530	25 - Rod amateur
+legacy.1531	There is now a slight chance that you may also catch something at places without fishes
+legacy.1532	50 - Rod adept
+legacy.1533	The probability to catch something has increased. Furthermore, you can now build bow nets that trap fishes automatically.
+legacy.1534	100 - Rod semi-professional
+legacy.1535	Thanks to optimised technique, you can catch things anywhere with a high rate of success
+legacy.1536	200 - Rod professional
+legacy.1537	You are now a true master of making and using baits. Therefore you cannot only catch worthless junk anywhere you want, but even big, handsome fish.
+legacy.1538	500 - Pike-man
+legacy.1539	Amazing! Your gain at the rod should now be truly satisfying!
+legacy.1540	Hunting
+legacy.1541	This skill increases whenever I bring an animal down
+legacy.1542	25 - Master of the sling
+legacy.1543	When shooting pebbles with the slingshot, there is now a chance that they stay where they hit the ground and can be reutilised
+legacy.1544	50 - Spearman
+legacy.1545	Spears can now also be picked up again in some cases
+legacy.1546	100 - Bowman
+legacy.1547	Through the right way to shoot arrows, even they may now sometimes remain intact. In addition, you can now construct a stance - a safe place to attack animals from
+legacy.1548	200 - Spearmaster
+legacy.1549	From now on, spears will never be destroyed when thrown and can be used as often as you want
+legacy.1550	Agriculture
+legacy.1551	This skill increases whenever I plant or seed something
+legacy.1552	50 - Berry bush planter
+legacy.1553	You are now able to grow berry bushes from berries
+legacy.1554	100 - Herbalist
+legacy.1555	You have found out how to find the perfect soil to grow herbs and are hereby able to set up herbal beds.
+legacy.1556	200 - Forester
+legacy.1557	If you stick branches into the ground, trees will grow there. You can also plant leaves to grow bushes now.
+legacy.1558	400 - Master of the fruits
+legacy.1559	Your skills in herbal lore get better and better! You now have the abilities to plant bananas, plums, coconuts, cacao pods and coffee berries.
+legacy.1560	800 - Farmer
+legacy.1561	Thanks to optimised procedure, the sowing of seeds takes far less time than before.
+legacy.1562	Woodcutting
+legacy.1563	This skill increases whenever I fell a tree
+legacy.1564	25 - Hackling
+legacy.1565	Logs can now be combined with an axe or a machete to gain 10 branches
+legacy.1566	50 - Axe amateur
+legacy.1567	The right way to strike out increases the damage that your axe causes on wood
+legacy.1568	100 - Axe adept
+legacy.1569	You have learned to hit wood at the right angle to cause even more damage
+legacy.1570	200 - Axe semi-professional
+legacy.1571	Your strenght and technique have further improved, increasing the damage on wood
+legacy.1572	400 - Axe professional
+legacy.1573	Woodcutting in perfection! By using the optimised technique, you cause maximum damage with your axe
+legacy.1574	800 - Butcher of the woods
+legacy.1575	Attention! Keep in mind that trees are important for the earth's climate - with your skills, you could easily clear-fell all forests of the world!
+legacy.1576	Bleeding
+legacy.1577	Poisoning
+legacy.1578	Pus
+legacy.1579	Fire
+legacy.1580	eternal Fire
+legacy.1581	Frostbite
+legacy.1582	Fracture
+legacy.1583	Electroshock
+legacy.1584	Blood Rush
+legacy.1585	Dizziness
+legacy.1586	Wet
+legacy.1587	Fuddle
+legacy.1588	Healing
+legacy.1589	Invulnerability
+legacy.1590	Tame
+legacy.1591	Action
+legacy.1592	Flare
+legacy.1593	Smoke
+legacy.1594	Light
+legacy.1595	Particle
+legacy.1596	Loading Interface
+legacy.1597	Loading Stuff
+legacy.1598	Loading Objects
+legacy.1599	Loading Units
+legacy.1600	Loading Items
+legacy.1601	Loading Infos
+legacy.1602	Saving Map
+legacy.1603	Saving Colormap
+legacy.1604	Saving Heightmap
+legacy.1605	Saving Grassmap
+legacy.1606	Saving Objects
+legacy.1607	Saving Units
+legacy.1608	Saving Items
+legacy.1609	Saving Infos
+legacy.1610	Saving States
+legacy.1611	Saving Scripts
+legacy.1612	Saving Done
+legacy.1613	Loading Map
+legacy.1614	Loading Colormap
+legacy.1615	Loading Heightmap
+legacy.1616	Loading Grassmap
+legacy.1617	Loading States
+legacy.1618	Loading Scripts
+legacy.1619	Loading Environment
+legacy.1620	Loading Done
+legacy.1621	N
+legacy.1622	E
+legacy.1623	S
+legacy.1624	W
+legacy.1625	Yes
+legacy.1626	No
+legacy.1627	Cancel
+legacy.1628	Accept
+legacy.1629	Click here to change the value
+legacy.1630	Click here to use the object on the left side
+legacy.1631	equal
+legacy.1632	bigger
+legacy.1633	smaller
+legacy.1634	equals/bigger
+legacy.1635	equals/smaller
+legacy.1636	unequal
+legacy.1637	(Press any key or mousebutton to continue)
+legacy.1638	Close
+legacy.1639	Color Selection
+legacy.1640	Brighten
+legacy.1641	Shade
+legacy.1642	Invert Color
+legacy.1643	Path
+legacy.1644	One Level up
+legacy.1645	Harddisks and Drives
+legacy.1646	to the left
+legacy.1647	to the right
+legacy.1648	Filename
+legacy.1649	File
+legacy.1650	No File Selected
+legacy.1651	Map Selection
+legacy.1652	Up
+legacy.1653	Down
+legacy.1654	No maps
+legacy.1655	No multiplayer maps
+legacy.1656	Created
+legacy.1657	At
+legacy.1658	Line
+legacy.1659	Column
+legacy.1660	$1's Island
+legacy.1661	Adventure
+legacy.1662	Random Island
+legacy.1663	Single Island
+legacy.1664	Multiplayer
+legacy.1665	Options
+legacy.1666	Editor
+legacy.1667	Credits
+legacy.1668	Quit
+legacy.1669	Quit $1 ?
+legacy.1670	Controls
+legacy.1671	Graphics
+legacy.1672	Sound
+legacy.1673	Forward
+legacy.1674	Backward
+legacy.1675	Left
+legacy.1676	Right
+legacy.1677	Jump/Close Menu
+legacy.1678	Sleep
+legacy.1679	Attack 1
+legacy.1680	Attack 2
+legacy.1681	Next Weapon
+legacy.1682	Previous Weapon
+legacy.1683	Throw away
+legacy.1684	Use
+legacy.1685	Chat
+legacy.1686	Character Menu
+legacy.1687	Rucksack
+legacy.1688	Diary
+legacy.1689	Quick Load
+legacy.1690	Quick Save
+legacy.1691	Mouse
+legacy.1692	Sensibility
+legacy.1693	Invert
+legacy.1694	Smoothing
+legacy.1695	Resolution
+legacy.1696	Color Depth
+legacy.1697	View Range
+legacy.1698	Very Small
+legacy.1699	Small
+legacy.1700	Medium
+legacy.1701	Far
+legacy.1702	Very Far
+legacy.1703	Landscape Details
+legacy.1704	Very Low
+legacy.1705	Low
+legacy.1706	High
+legacy.1707	Very High
+legacy.1708	Water Details
+legacy.1709	Minimal
+legacy.1710	Maximal
+legacy.1711	Sky Details
+legacy.1712	Effect Details
+legacy.1713	None
+legacy.1714	Few
+legacy.1715	Much
+legacy.1716	Very Much
+legacy.1717	Stuff
+legacy.1718	2D Postprocessing
+legacy.1719	Light Effects
+legacy.1720	Wiggle in Wind
+legacy.1721	Fog
+legacy.1722	Hardware Multitexturing
+legacy.1723	Motion Blur
+legacy.1724	Intensity
+legacy.1725	Music
+legacy.1726	Off
+legacy.1727	Sound Effects
+legacy.1728	Player Name
+legacy.1729	Server Port
+legacy.1730	Restart needed!
+legacy.1731	Stranded II has to be restarted
+legacy.1732	Please click at quit and
+legacy.1733	restart Stranded II afterwards
+legacy.1734	Online
+legacy.1735	LAN
+legacy.1736	Create Game
+legacy.1737	Name
+legacy.1738	Player
+legacy.1739	Ping
+legacy.1740	join
+legacy.1741	Server Name
+legacy.1742	No map selected
+legacy.1743	Select Map
+legacy.1744	Server Password
+legacy.1745	Player Limit
+legacy.1746	< Press Key >
+legacy.1747	You are DEAD
+legacy.1748	Character
+legacy.1749	Load
+legacy.1750	Save
+legacy.1751	Energy
+legacy.1752	Hunger
+legacy.1753	Thirst
+legacy.1754	Fatigue
+legacy.1755	$1g / $2g - $3g free
+legacy.1756	Combine
+legacy.1757	Discard
+legacy.1758	Load Game
+legacy.1759	Save Game
+legacy.1760	No Savegames
+legacy.1761	Savegame
+legacy.1762	From
+legacy.1763	Build
+legacy.1764	You do not know how to build!
+legacy.1765	Build $1
+legacy.1766	Time
+legacy.1767	Exchange (1)
+legacy.1768	Exchange (5)
+legacy.1769	Exchange (Alle)
+legacy.1770	Air
+legacy.1771	Location
+legacy.1772	Update Commandlist online
+legacy.1773	Used $1!
+legacy.1774	Building finished!
+legacy.1775	You have no materials for building!
+legacy.1776	Building site created!
+legacy.1777	You cannot build here!
+legacy.1778	Dig
+legacy.1779	Found $1 ($2x)
+legacy.1780	Not enough space
+legacy.1781	New diary entry!
+legacy.1782	Has to be build on land!
+legacy.1783	Has to be build in water!
+legacy.1784	Has to be build on the beach!
+legacy.1785	Has to be build on a mountain!
+legacy.1786	Has to be build in shallow water!
+legacy.1787	Take in hand
+legacy.1788	Delete savegame
+legacy.1789	Are you sure you want to delete '$1'?
+legacy.1790	Quit current game?
+legacy.1791	Crack lock
+legacy.1792	Has to be build at a special object!
+legacy.1793	Eat/Drink
+legacy.1794	I cannot eat this
+legacy.1795	I cannot use this
+legacy.1796	Put $1 on key $2
+legacy.1797	Key assignment of $1 removed
+legacy.1798	Combine to $1
+legacy.1799	Not possible yet
+legacy.1800	Exchange
+legacy.1801	Exchange with $1
+legacy.1802	sell $1 $2 ($3 in rucksack)
+legacy.1803	buy $1 $2 ($3 in rucksack)
+legacy.1804	New map
+legacy.1805	Load map
+legacy.1806	Save map
+legacy.1807	Map settings
+legacy.1808	Quit editor
+legacy.1809	Terrain
+legacy.1810	Objects
+legacy.1811	Units
+legacy.1812	Items
+legacy.1813	Infos
+legacy.1814	Edit Heightmap
+legacy.1815	Edit Colormap
+legacy.1816	Edit Grassmap
+legacy.1817	Raise Complete Terrain
+legacy.1818	Lower Complete Terrain
+legacy.1819	Round Off Terrain
+legacy.1820	Distort Terrain
+legacy.1821	Set Objects On Terrain
+legacy.1822	Raise Terrain Border
+legacy.1823	Lower Terrain Border
+legacy.1824	Straighten Terrain Border
+legacy.1825	Brush: mouse left/right/wheel to change the size
+legacy.1826	Brush
+legacy.1827	Change Height
+legacy.1828	Straighten Terrain
+legacy.1829	Random Rotation
+legacy.1830	Create Info at Camera
+legacy.1831	Size
+legacy.1832	Big
+legacy.1833	Normal
+legacy.1834	Hills
+legacy.1835	Mountains
+legacy.1836	Desert
+legacy.1837	Snow
+legacy.1838	Swamp
+legacy.1839	Vegetation
+legacy.1840	Deciduous Trees
+legacy.1841	Fir Trees
+legacy.1842	Wasteland
+legacy.1843	Plants & Stones
+legacy.1844	Map Time (Day:Hour:Min)
+legacy.1845	Freeze
+legacy.1846	Skybox
+legacy.1847	Beginning of a Skybox in the 'skies'-Dir
+legacy.1848	Load Skybox
+legacy.1849	Multiplayer Map
+legacy.1850	Climate
+legacy.1851	Normal (Sun/Rain)
+legacy.1852	Arctiv (Sun/Snow)
+legacy.1853	Sun Only
+legacy.1854	Rain Only
+legacy.1855	Snow Only
+legacy.1856	Thunder Only
+legacy.1857	Ambient SFX
+legacy.1858	wav/mp3-file in 'sfx'-dir
+legacy.1859	Load Ambient SFX
+legacy.1860	Fog Active Everytime
+legacy.1861	Globale Script
+legacy.1862	Script Editor
+legacy.1863	Test Map
+legacy.1864	More Options
+legacy.1865	Map Informations
+legacy.1866	Select File
+legacy.1867	Fog Color
+legacy.1868	Terrain Size
+legacy.1869	Texture Size
+legacy.1870	($1 stored)
+legacy.1871	States
+legacy.1872	Scripts
+legacy.1873	Sum
+legacy.1874	($1 Models)
+legacy.1875	Adapt Energies To Definitionen
+legacy.1876	Adapt Energies To Definitionen?
+legacy.1877	Energies of $1 object(s) and $2 unit(s) adapted!
+legacy.1878	All energies are already adapted!
+legacy.1879	Changes energies of objects and units depending on the definitions
+legacy.1880	Delete all objects
+legacy.1881	Delete all objects of the type '$1'?
+legacy.1882	Delete stored objects too?
+legacy.1883	$1 object(s) of the type '$2' deleted!
+legacy.1884	There are no objects of '$1'!
+legacy.1885	Deletes all objects/units/items/infos of the type you selected on the left
+legacy.1886	Delete children
+legacy.1887	Delete States?
+legacy.1888	Delete Scripts?
+legacy.1889	Delete stored Items?
+legacy.1890	$1 state(s), $2 script(s) and $3 stored item(s) deleted!
+legacy.1891	Deletes states, scripts and stored items
+legacy.1892	Nothing has been deleted
+legacy.1893	Quit Map Editor?
+legacy.1894	Attention: Everything you didn't save will get lost!
+legacy.1895	Mapname
+legacy.1896	Password
+legacy.1897	Error While Loading Map
+legacy.1898	Attention: Map already exists! Overwrite?
+legacy.1899	Error While Saving Map
+legacy.1900	Height Scaling For Import
+legacy.1901	Import Heightmap
+legacy.1902	Export Heightmap
+legacy.1903	Current Height
+legacy.1904	Alpha
+legacy.1905	Spray Can
+legacy.1906	Zoom
+legacy.1907	Im-/Export Error!
+legacy.1908	Colormap Size In Pixels
+legacy.1909	Scale
+legacy.1910	Import Colormap
+legacy.1911	Export Colormap
+legacy.1912	current color
+legacy.1913	Color A
+legacy.1914	Color B
+legacy.1915	Color C
+legacy.1916	Update Colormap With Heightmap
+legacy.1917	Mode
+legacy.1918	Set Grass
+legacy.1919	Delete Grass
+legacy.1920	Update Grassmap With Heightmap
+legacy.1921	Object Properties
+legacy.1922	Unit Properties
+legacy.1923	Item Properties
+legacy.1924	Info Properties
+legacy.1925	ID
+legacy.1926	Type
+legacy.1927	Rotation
+legacy.1928	Delete
+legacy.1929	stored
+legacy.1930	Number
+legacy.1931	Info
+legacy.1932	Starting Position For Player
+legacy.1933	Trigger
+legacy.1934	Object(s)
+legacy.1935	Unit(s)
+legacy.1936	Item(s)
+legacy.1937	State
+legacy.1938	Radius
+legacy.1939	Aktive
+legacy.1940	Instant Active
+legacy.1941	All X Seconds
+legacy.1942	All X Game Minutes
+legacy.1943	At Certain Gametime
+legacy.1944	Daily At Certain Time
+legacy.1945	While Sleeping
+legacy.1946	Seconds
+legacy.1947	Game Minutes
+legacy.1948	Day
+legacy.1949	Hour
+legacy.1950	Minute
+legacy.1951	Object
+legacy.1952	Unit
+legacy.1953	Item
+legacy.1954	No Special Properties
+legacy.1955	Script
+legacy.1956	Global Script
+legacy.1957	Object Script ($1)
+legacy.1958	Unit Script ($1)
+legacy.1959	Item Script ($1)
+legacy.1960	Info Script ($1)
+legacy.1961	Delete Script?
+legacy.1962	Import Script
+legacy.1963	Export Script
+legacy.1964	Add Command
+legacy.1965	leftclick: delete / rightclick: properties
+legacy.1966	Add State
+legacy.1967	forward
+legacy.1968	back
+legacy.1969	Add Item
+legacy.1970	Addition
+legacy.1971	Add Addition
+legacy.1972	Free Addition
+legacy.1973	The file has to be in a sub-dir of the mod
+legacy.1974	Look
+legacy.1975	Scripts in this info will NOT be executed
+legacy.1976	State Properties
+legacy.1977	Strenght/Damage
+legacy.1978	Color
+legacy.1979	Size/Range
+legacy.1980	$1: [DEL] delete, [Space] free positioning
+legacy.1981	$1: [DEL] delete
+legacy.1982	Point Brushmode
+legacy.1983	Line Brushmode
+legacy.1984	List
+legacy.1985	Goto Object
+legacy.1986	Create
+legacy.1987	testing - press [F12] to return to the editor
+legacy.1988	Writing 'maps\\editor\\checkmap.s2' failed!
+legacy.1989	Save before testing?
+legacy.1990	Image Path
+legacy.1991	Glow
+legacy.1992	Fix
+legacy.1993	Fix Vertically
+legacy.1994	Signal
+legacy.1995	Attract
+legacy.1996	Distract
+legacy.1997	All X days
+legacy.1998	Number Part/Max.
+legacy.1999	Fill Map Randomly
+legacy.2000	Hide Menu
+legacy.2001	Show Menu
+legacy.2002	Attach To Object
+legacy.2003	Soundpath
+legacy.2004	(0=play everywhere)
+legacy.2005	Online Command Help For '$1'
+legacy.2006	Definition Variables
+legacy.2007	Pipette
+legacy.2008	All
+legacy.2009	Set-Script
+legacy.2010	The potion has
+legacy.2011	lost its effects.
+legacy.2012	Raptor
+legacy.2013	Ouch ...
+legacy.2014	He dropped me!
+legacy.2015	Crab
+legacy.2016	Caught fish!
+legacy.2017	Piranha
+legacy.2018	Butterfly
+legacy.2019	Caught butterfly!
+legacy.2020	Carnivorous Plant
+legacy.2021	Lion
+legacy.2022	Turtle
+legacy.2023	Shark
+legacy.2024	Scorpion
+legacy.2025	Sheep
+legacy.2026	It has no wool!
+legacy.2027	Dragonfly
+legacy.2028	Caught dragonfly
+legacy.2029	... and killed it
+legacy.2030	Fly
+legacy.2031	Caught fly
+legacy.2032	Snail
+legacy.2033	Caught snail
+legacy.2034	Monkey
+legacy.2035	Monkey Task Menu
+legacy.2036	Spider
+legacy.2037	Caught spider
+legacy.2038	Firefly
+legacy.2039	Caught firefly
+legacy.2040	Bird
+legacy.2041	Kiwi
+legacy.2042	Sailraft
+legacy.2043	You can drive this raft or store stuff inside.
+legacy.2044	exchange 2,$id;
+legacy.2045	ride $id; closemenu;
+legacy.2046	Logboat
+legacy.2047	Soldier
+legacy.2048	Eingeborener
+legacy.2049	Yacht
+legacy.2050	Parrot
+legacy.2051	Airplane
+legacy.2052	Claw Monkey
+legacy.2053	Grasshopper
+legacy.2054	Caught grasshopper
+legacy.2055	Transport Monkey
+legacy.2056	Eagle
+legacy.2057	Welcome to the survival guide!
+legacy.2058	Here you will learn how to play Stranded 2 and how to survive in wilderness.
+legacy.2059	Looking around and walking
+legacy.2060	Move the mouse to look around.
+legacy.2061	You can move by holding down the following buttons:
+legacy.2062	[$key_forward] - Walk forward
+legacy.2063	[$key_backward] - Walk backwards
+legacy.2064	[$key_left] - Walk sidewards to the left
+legacy.2065	[$key_right] - Walk sidewards to the right
+legacy.2066	Your task
+legacy.2067	Walk to the prof!
+legacy.2068	Hello!
+legacy.2069	If you want to find out how Stranded 2 works and what you have to do to survive, just follow the path and read the signs. At the various stations, you will be taught everything that you need to know.
+legacy.2070	Interaction
+legacy.2071	To use something on the island (i.e. to read a sign), you have to look at it by pointing the cursor on it. Pressing down a button will trigger an action. But keep in mind: Only some certain objects will react if you use them that way.
+legacy.2072	[$key_use] - Action
+legacy.2073	Follow the path and read the signs!
+legacy.2074	A puddle of water!
+legacy.2075	Water surrounds the island, but can also be found in the form of ponds and puddles.
+legacy.2076	Thirst and drinking
+legacy.2077	Water can be used just like other objects! Look on the surface and press [$key_use]. If you are lucky, it will be fresh water that satisfies your thirst. But in most cases, you will only find salt water, which will only increase your thirst when you drink it.
+legacy.2078	Your thirst is displayed on the top left corner in the form of a blue bar. The broader the blue bar is, the higher is your thirst. If the bar is entirely full, you will lose health until you do something against your thirst. The health is shown in the very top bar.
+legacy.2079	Character menu
+legacy.2080	In the character menu, you can have a closer look at the values on the left top.
+legacy.2081	[$key_char] - character menu
+legacy.2082	[$key_jump] - close menu
+legacy.2083	Of course you can close the menu again by clicking the buttons. As long as it is open, the game will be paused.
+legacy.2084	Neat - a tree!
+legacy.2085	You can hit many objects in the world of Stranded in order to gain items.
+legacy.2086	Attack
+legacy.2087	To strike upon something, you must look at it by pointing at it with the mouse. A left-click will then trigger a stroke.
+legacy.2088	[$key_attack1] - Attack
+legacy.2089	You only use your hands as long as you do not select something to hold in them. On the right bottom corner, you see if - or what - you are holding in your hand. Details will follow later.
+legacy.2090	Gathering items
+legacy.2091	If you often hit objects such as trees, you will get items that are instantly stored in your rucksack (in case you are not carrying too much already). If and how many items you get per hit is decided per random. However, not all objects provide items and furthermore, you will gain far more from some certain objects, if you use the right tool.
+legacy.2092	If you have items, you will of course be able to do something with them. To do so, you must look into your rucksack.
+legacy.2093	Using the rucksack
+legacy.2094	[$key_items] - open the rucksack
+legacy.2095	Using items
+legacy.2096	Click an item in the rucksack to select it (another click will deselect it). Now you can use the item by clicking the use-button (see tooltip).
+legacy.2097	Keep in mind, that not all items can be used that way.
+legacy.2098	Eating items
+legacy.2099	Eating items works the same way - with the slight difference, that you have to use the eat button.
+legacy.2100	Of course, you cannot eat anything.
+legacy.2101	Taking items in one's hand
+legacy.2102	To take items into your hand, you can proceed just like for eating or using them - but you have to use the hand button for this.
+legacy.2103	You can also assign numeric keys to items. If you press the fitting button in the game, you immediately hold the item in your hand without having to open the rucksack - handy thing.
+legacy.2104	Select an item and press a numeric key [1-9] to assign it to the item. If you want to delete the assignment, choose the item again and press the same key.
+legacy.2105	[1-9] - assign item / select item
+legacy.2106	[0] - bare hands
+legacy.2107	[$key_next] - next item
+legacy.2108	[$key_prev] - previous item
+legacy.2109	Dropping items
+legacy.2110	To chuck things away, select an item and press the drop button. If you have many items of the same type, you can choose wether to drop just one, the half, or all of them.
+legacy.2111	Combining items
+legacy.2112	To combine items, you have to select at least 2 different ones and click the combine button. Depending on the particular combination, it may also happen that nothing happens, or that a combination submenu appears that lists various possible combinations. For some combinations, you need more than one item per type. If you do not have enough, the menu will nevertheless appear, but red numbers will show you what you need.
+legacy.2113	An obstacle! You could of course just go around it, but sometimes it is better to jump over it!
+legacy.2114	Jumping
+legacy.2115	[$key_jump] - jump
+legacy.2116	When you jump, you can influence your direction with the movement keys.
+legacy.2117	But keep in mind that jumping is exhausting and increases hunger, thirst and fatigue quickly.
+legacy.2118	Hunger and fatigue
+legacy.2119	Apropos: Besides the thirst that was already mentioned, there are also hunger and fatigue. All these values are raised by movement. You must eat, drink and sleep to keep them as low as possible. Otherwise, the resulting loss of health may lead to your death!
+legacy.2120	Hunger is illustrated by a green bar on the top left corner and in the character menu, whereas fatigue is the violet one.
+legacy.2121	You can only sleep ashore, and only if you are tired enough and there are no dangerous animals close to you. If you do not sleep in a building or cave, the sleep will cost you a bit of energy. Hunger and thirst will be increased as well.
+legacy.2122	Use the sleep button in the character menu or the sleep key to sleep.
+legacy.2123	[$key_sleep] - sleep
+legacy.2124	Weapons! They can be made with certain combinations.
+legacy.2125	If you take them into your hand, you can hunt or defend yourself.
+legacy.2126	Meelee weapons
+legacy.2127	Meelee weapons such as the machete work just like simple striking with your fists. The only difference is that you deal more damage with them.
+legacy.2128	Ranged weapons
+legacy.2129	Spears can be thrown via [$key_attack1]. Once thrown, they are gone. So you have to aim carefully and keep in mind that they do not fly straightly but are influenced by gravity.
+legacy.2130	There are also weapons that are not thrown themselves but which need ammunition. Bows, for instance, or the slingshot. The ammunition is displayed on the right bottom corner, directly on the right of the weapon itself. If there are several types of ammunition in your inventory that fit for the same weapon, you can switch between them.
+legacy.2131	[$key_attack2] - switch ammunition
+legacy.2132	There is a whole lot of tools lying around here. They can be made by combining raw materials.
+legacy.2133	Using tools
+legacy.2134	Many tools can either be used as a weapon or peacefully as a tool. If we have such a case, then this is how to handle the dual use:
+legacy.2135	[$key_attack1] - strike
+legacy.2136	[$key_attack2] - tool function
+legacy.2137	The hammer
+legacy.2138	This probably is the most important tool at all. By its tool function, you can set up building sites where there is free room, or work on the building sites consuming the required materials. Constructing buildings often unlocks new ones in the construction menu.
+legacy.2139	The fishing rod
+legacy.2140	It allows you to pull fishes out of the water. The more often you fish, the better your fishing skills will become. You can see the skills - if yet achieved - in the character menu. A click on a skill leads to additional information. When you fish, pay attention to fishing areas. You will see bubbles rising and waves spreading in circles where there is a big swarm of fishes.
+legacy.2141	Other tools
+legacy.2142	Apart from the fishring rod, there are many other tools. The axe, for example, makes very high damage on wood. The pickaxe, in return, can extract metals more easily from certain rocks. With the shovel, you can dig out things and the net serves as a device to catch insects. A torch lightens the environment at night and the scythe is useful for harvesting crop.
+legacy.2143	splash splash!
+legacy.2144	A source of sprinkling water is an endless supply of fresh water. Here, you can drink by clicking [$key_use].
+legacy.2145	Hollow stones save water when it rains and you can only drink from them a few times until they are empty.
+legacy.2146	Fruits grow only at certain plants. You can pluck and eat them. But watch out: it normally takes several days until new ones have grown.
+legacy.2147	Plucking fruits
+legacy.2148	You can pluck fruits by simple using:
+legacy.2149	[$key_use] - gather fruits
+legacy.2150	If they hang too high, you can also shoot them down with ranged weapons from trees or palms and pick them up afterwards.
+legacy.2151	Planting
+legacy.2152	Fruits can also be planted in order to gain more of them. For some, you need good skills in agriculture. These can be increased by just planting other things.
+legacy.2153	For planting, take the fruits into your hand, point at the ground and use it by pressing [$key_use].
+legacy.2154	Some plants have to be completely destroyed to gain items. For example, crop and hemp are such cases. Both can be planted just like fruits.
+legacy.2155	Keep in mind that plants regenerate slowly (overnight). So if you do not want to destroy plants, but only gain items by hitting them, you should give them some days in order to let them regenerate.
+legacy.2156	This is the ending of this guide.
+legacy.2157	If you have carefully read all signs, you have successfully treaded the path of enlightenment and thereby gained all basic knowledge that you need to survive in Stranded 2.
+legacy.2158	There is just one thing left to say:
+legacy.2159	Good speed! Have Fun!
+legacy.2160	A dry spot
+legacy.2161	Let there be light
+legacy.2162	The picklock
+legacy.2163	merkwürdiges Kreuz
+legacy.2164	hidden gold
+legacy.2165	The crate is too stable
+legacy.2166	It is locked up!
+legacy.2167	That was wrong
+legacy.2168	Discovered iron
+legacy.2169	Discovered crop
+legacy.2170	Discovered cotton
+legacy.2171	I need a refuge
+legacy.2172	Fresh water!
+legacy.2173	Found bag of gold!
+legacy.2174	Nargh! Help, a burning turtle!
+legacy.2175	Wahhh! Claw monkeys!
+legacy.2176	Uh-oh! Ay... er... GRAPEVINE?!
+legacy.2177	He is gone!
+legacy.2178	Pirate hideout
+legacy.2179	Odd teleport stone
+legacy.2180	I must lay down 25 children of the sea
+legacy.2181	beneath the stone!
+legacy.2182	Hello,
+legacy.2183	!4www.unrealsoftware.de rocks hard!
+legacy.2184	Farewell.
+legacy.2185	Message in a bottle
+legacy.2186	*Crack*
+legacy.2187	Uh-oh... the jetty doesn't sound too good
+legacy.2188	Treasure map
+legacy.2189	Teleported
+legacy.2190	Teleporter
+legacy.2191	Viewpoint
+legacy.2192	Hatchery
+legacy.2193	Treasure
+legacy.2194	The sign
+legacy.2195	A message in a bottle. There is only a number on the sheet:
+legacy.2196	Creepy.
+legacy.2197	That doesn't work like that...
+legacy.2198	Wow, what a treasure...
+legacy.2199	Hooray! Potions!
+legacy.2200	Blimey, a chest...
+legacy.2201	...full of slime!
+legacy.2202	Nothing left!
+legacy.2203	Seems like some other treasure-hunter
+legacy.2204	was here before me!
+legacy.2205	Oh no...
+legacy.2206	Natives
+legacy.2207	Hill of Death
+legacy.2208	Village
+legacy.2209	old man
+legacy.2210	hidden key
+legacy.2211	hidden reserves
+legacy.2212	I cannot just pack this thing!
+legacy.2213	It belongs to that chap!
+legacy.2214	The box is too stable
+legacy.2215	My key doesn't fit in!
+legacy.2216	It is locked up
+legacy.2217	Lock opened!
+legacy.2218	The picklock won't work on this.
+legacy.2219	I need a key!
+legacy.2220	Hey, a key!
+legacy.2221	A little bag!
+legacy.2222	There's a cookie inside!
+legacy.2223	Super, 3 teeth...
+legacy.2224	A quite rusty picklock!
+legacy.2225	A chest full of junk...
+legacy.2226	What? A stone?!
+legacy.2227	Joints and wine!
+legacy.2228	Vitamin-rich healthy juice! Yay!
+legacy.2229	A couple of various arrows!
+legacy.2230	The crash
+legacy.2231	Color Game
+legacy.2232	Round completed!
+legacy.2233	Try to repeat the colors be using the stones on the ground. The row of colors will become longer and longer every round.
+legacy.2234	Highscore
+legacy.2235	hdat
+legacy.2236	Have Fun!
+legacy.2237	Repeat the colors!
+legacy.2238	cos $cos
+legacy.2239	sin $sin
+legacy.2240	yaw $yaw
+legacy.2241	Shooting Range
+legacy.2242	There is no special goal on this island.
+legacy.2243	Just try to hit the targets and find out how the different weapons work. You can find ammunition in the storage.
+legacy.2244	Read The Signs
+legacy.2245	Sources
+legacy.2246	Fruits
+legacy.2247	Green Stuff
+legacy.2248	The End
+legacy.2249	Tower Defense
+legacy.2250	Stranded II Tower Defense
+legacy.2251	Try to stop the enemies before they reach the end of the path by building towers. You will lose energy everytime an enemy reaches the end of the path.
+legacy.2252	Building & Upgrading Towers
+legacy.2253	You can build towers by using the stones on the ground with [$key_use]. Use a tower to upgrade it. Both costs gold which you earn by killing enemies.
+legacy.2254	Starting a Wave
+legacy.2255	Use the sign in the starting area to start a wave of attackers.
+legacy.2256	Attention!
+legacy.2257	The arrows of your towers can hurt yourself!
+legacy.2258	$wave. Welle gestartet!
+legacy.2259	Angriffswelle läuft bereits!
+legacy.2260	Wave completed!
+ui.language	Language
+ui.language.en	English
+ui.language.ko	한국어
+ui.restart	Changes apply after restarting the game.
+modern.borderless	Borderless
+modern.continue	Continue
+modern.desktop	Fit primary monitor
+modern.display	Display mode
+modern.fps	Frame limit
+modern.load_failed	The save is missing or incomplete. Choose another save or restore its .bak copy.
+modern.no_quicksave	No quick save yet.
+modern.resolution	Resolution
+modern.restart	Saved. Display and language changes apply after restarting the game.
+modern.save_failed	Save failed. Check folder permissions and disk space. The previous save is retained.
+modern.saved	Game saved.
+modern.settings_failed	Could not save settings. Check folder permissions and available disk space.
+modern.windowed	Windowed

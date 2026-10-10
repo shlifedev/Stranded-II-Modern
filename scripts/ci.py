@@ -1,0 +1,286 @@
+"""Pinned CI dependencies and standalone release packaging; never downloads upstream."""
+from pathlib import Path, PurePosixPath
+import argparse
+import hashlib
+import json
+import os
+import re
+import shutil
+import stat
+import struct
+import sys
+import zipfile
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def read_json(path):
+    return json.loads(path.read_text(encoding='utf8'))
+
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def file_bytes(base, relative):
+    base = base.resolve()
+    path = base / relative
+    if not path.resolve().is_relative_to(base) or not path.is_file():
+        raise ValueError(f'Missing file or path outside input directory: {path}')
+    return path.read_bytes()
+
+
+def checked_bytes(base, relative, expected):
+    data = file_bytes(base, relative)
+    if digest(data) != expected:
+        raise ValueError(f'Unexpected SHA-256: {base / relative}')
+    return data
+
+
+def license_members():
+    members = {p.relative_to(ROOT).as_posix(): file_bytes(ROOT, p.relative_to(ROOT))
+               for p in sorted((ROOT / 'licenses').rglob('*')) if p.is_file()}
+    if not members:
+        raise ValueError('Missing licenses directory')
+    return members
+
+
+def dependency_members(game, blitz, font):
+    members = {}
+    for prefix, base, manifest in (
+            ('game', game, 'game-files.json'),
+            ('blitz', blitz, 'toolchain-files.json')):
+        for relative, expected in read_json(ROOT / 'config' / manifest).items():
+            members[f'{prefix}/{relative}'] = checked_bytes(base, relative, expected)
+    expected = read_json(ROOT / 'config/dependencies.json')['font_sha256']
+    members['fonts/NotoSansKR.ttf'] = checked_bytes(font.parent, font.name, expected)
+    members.update(license_members())
+    return members
+
+
+def write_archive(path, members):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + '.tmp')
+    try:
+        with zipfile.ZipFile(temporary, 'w', compression=zipfile.ZIP_DEFLATED,
+                             compresslevel=9) as archive:
+            for name, data in sorted(members.items()):
+                info = zipfile.ZipInfo(name, date_time=(2000, 1, 1, 0, 0, 0))
+                info.create_system = 3
+                info.external_attr = (stat.S_IFREG | 0o644) << 16
+                archive.writestr(info, data, compress_type=zipfile.ZIP_DEFLATED,
+                                 compresslevel=9)
+        os.replace(temporary, path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+    checksum = digest(path.read_bytes())
+    path.with_suffix(path.suffix + '.sha256').write_text(
+        f'{checksum}  {path.name}\n', encoding='utf8', newline='\n')
+    return checksum
+
+
+def ci_config():
+    config = read_json(ROOT / 'config/ci-dependencies.json')
+    if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', config['release']):
+        raise ValueError('Invalid CI dependency release tag')
+    if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*\.zip', config['asset']):
+        raise ValueError('Invalid CI dependency asset filename')
+    if not re.fullmatch(r'[0-9a-f]{64}', config['sha256']):
+        raise ValueError('CI dependency SHA-256 must contain 64 lowercase hex digits')
+    return config
+
+
+def github_outputs(path, values):
+    if path:
+        with path.open('a', encoding='utf8', newline='\n') as output:
+            for key, value in values.items():
+                if '\n' in str(value) or '\r' in str(value):
+                    raise ValueError('Invalid newline in GitHub output')
+                output.write(f'{key}={value}\n')
+
+
+def extract_archive(path, destination):
+    """Reject ambiguous Windows paths, links and duplicate names before writing."""
+    with zipfile.ZipFile(path) as archive:
+        entries = []
+        names = set()
+        for info in archive.infolist():
+            name = info.filename.replace('\\', '/')
+            parts = name.rstrip('/').split('/')
+            if (not name or name.startswith('/') or
+                    any(p in ('', '.', '..') or ':' in p or
+                        p.endswith((' ', '.')) for p in parts) or
+                    stat.S_ISLNK(info.external_attr >> 16)):
+                raise ValueError(f'Unsafe dependency archive entry: {info.filename}')
+            relative = PurePosixPath(*parts)
+            key = relative.as_posix().casefold()
+            if key in names:
+                raise ValueError(f'Duplicate dependency archive entry: {name}')
+            names.add(key)
+            entries.append((info, relative))
+        for info, relative in entries:
+            target = destination.joinpath(*relative.parts)
+            if not target.resolve().is_relative_to(destination.resolve()):
+                raise ValueError(f'Archive path escapes destination: {relative}')
+            if info.is_dir():
+                target.mkdir(parents=True, exist_ok=True)
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with archive.open(info) as source, target.open('xb') as output:
+                    shutil.copyfileobj(source, output)
+
+
+def bundle(args):
+    members = dependency_members(args.game, args.blitz, args.font)
+    checksum = write_archive(args.output, members)
+    print(f'Dependency bundle: {args.output}\nSHA-256: {checksum}')
+    print('Upload this ZIP to the dependency Release. Pin its SHA-256 in '
+          'config/ci-dependencies.json when updating dependencies.')
+
+
+def config(args):
+    values = ci_config()
+    github_outputs(args.github_output, values)
+    print(json.dumps(values, indent=2))
+
+
+def dependencies(args):
+    expected = ci_config()['sha256']
+    checked_bytes(args.archive.parent, args.archive.name, expected)
+    destination = args.destination.resolve()
+    if destination.exists():
+        raise ValueError(f'Use a new dependency directory: {destination}')
+    destination.mkdir(parents=True)
+    extract_archive(args.archive, destination)
+    paths = {'game': destination / 'game', 'blitz': destination / 'blitz',
+             'font': destination / 'fonts/NotoSansKR.ttf'}
+    members = dependency_members(paths['game'], paths['blitz'], paths['font'])
+    actual = {p.relative_to(destination).as_posix(): p.read_bytes()
+              for p in destination.rglob('*') if p.is_file()}
+    if actual != members:
+        raise ValueError('Dependency bundle contains unexpected or changed files')
+    github_outputs(args.github_output, paths)
+    print(json.dumps({k: str(v) for k, v in paths.items()}, indent=2))
+
+
+def player_data(relative):
+    path = PurePosixPath(relative)
+    return (any(p.lower() in ('saves', 'preserved') for p in path.parts) or
+            path.name.lower() in ('settings.cfg', 'settings.inf', 'modern.ini') or
+            path.suffix.lower() in ('.sav', '.bak', '.tmp', '.log') or
+            path.name.lower().startswith('screen_'))
+
+
+def release_members(runtime, game):
+    from language_pack import registry
+    from locales import languages
+    members = {}
+    manifest = read_json(ROOT / 'config/game-files.json')
+    for relative, expected in manifest.items():
+        if player_data(relative):
+            continue
+        # Ship original key bindings, even when packaging a used local runtime.
+        members[relative] = (checked_bytes(game, relative, expected)
+                             if relative.endswith('.cfg')
+                             else file_bytes(runtime, relative))
+    overrides = ROOT / 'resources/overrides'
+    for path in sorted(overrides.rglob('*')):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(overrides).as_posix()
+        if player_data(relative) or path.suffix.lower() == '.cfg':
+            raise ValueError(f'Overrides may not replace player settings: {relative}')
+        members[relative] = file_bytes(runtime, relative)
+    exe = file_bytes(runtime, 'StrandedII.exe')
+    if not exe.startswith(b'MZ'):
+        raise ValueError('StrandedII.exe is not a Windows executable')
+    members['StrandedII.exe'] = exe
+    members['mods/Stranded II/sys/ko_aliases.dat'] = file_bytes(
+        runtime, 'mods/Stranded II/sys/ko_aliases.dat')
+    packs = languages(ROOT)
+    registered = file_bytes(runtime, 'core/locales/languages.dat')
+    if registered != registry(packs):
+        raise ValueError('Runtime language registry is stale; run setup/localize first')
+    members['core/locales/languages.dat'] = registered
+    for code in packs:
+        relative = f'core/locales/{code}.tsv'
+        catalog = file_bytes(runtime, relative)
+        if catalog != (ROOT / f'locales/{code}.tsv').read_text('utf8').encode('utf8'):
+            raise ValueError(f'Runtime catalog is stale: {code}; run setup/localize first')
+        members[relative] = catalog
+        relative = f'core/locales/{code}/glyphs.dat'
+        glyphs = file_bytes(runtime, relative)
+        if len(glyphs) < 16:
+            raise ValueError(f'Invalid font metadata: {code}')
+        magic, count, width, height = struct.unpack_from('<4sIII', glyphs)
+        if (magic != b'FNT2' or count == 0 or len(glyphs) != 16 + count * 28 or
+                not 0 < width <= 64 or height != 19):
+            raise ValueError(f'Invalid font metadata: {code}')
+        members[relative] = glyphs
+        for style in range(7):
+            for page in range((count + 1023) // 1024):
+                relative = f'core/locales/{code}/{style}_{page}.bmp'
+                members[relative] = file_bytes(runtime, relative)
+    members['core/modern.ini'] = file_bytes(ROOT, 'config/modern.ini')
+    members.update(license_members())
+    members['Play.cmd'] = (
+        '@echo off\r\ncd /d "%~dp0" || exit /b 1\r\n'
+        'start "" "StrandedII.exe" %*\r\n').encode('ascii')
+    members['README.txt'] = (
+        'Stranded II - community modernization / 커뮤니티 현대화 버전\n\n'
+        'Windows 10 or later. Extract the entire ZIP, then run Play.cmd or StrandedII.exe.\n'
+        'Blitz3D and Python are not needed to play.\n'
+        'Windows 10 이상에서 ZIP 전체를 풀고 Play.cmd 또는 StrandedII.exe를 실행하세요.\n'
+        '게임 실행에는 Blitz3D와 Python이 필요하지 않습니다.\n\n'
+        'Settings / 설정: core/modern.ini (language=ko|en; restart to apply / 재시작 후 적용).\n'
+        'Saves / 저장 파일: mods/Stranded II/saves/\n'
+        'Original game / 원작: Peter Schauß / Unreal Software, https://www.unrealsoftware.de/\n'
+        'This is an unofficial modified version. / 비공식 수정 버전입니다.\n'
+        'Copyright and component licenses / 저작권 및 구성물 라이선스: licenses/\n'
+    ).encode('utf8')
+    members['build-info.json'] = (json.dumps({
+        'commit': os.environ.get('GITHUB_SHA', ''),
+        'upstream_game_version': read_json(ROOT / 'config/dependencies.json')['game_version'],
+        'exe_sha256': digest(exe),
+        'languages': list(packs),
+        'source_sha256': {p.relative_to(ROOT).as_posix(): digest(p.read_bytes())
+                          for p in sorted((ROOT / 'src/engine').rglob('*.bb'))},
+    }, ensure_ascii=False, indent=2) + '\n').encode('utf8')
+    return {f'StrandedII/{name}': data for name, data in members.items()}
+
+
+def package(args):
+    members = release_members(args.runtime, args.game)
+    checksum = write_archive(args.output, members)
+    print(f'Release ZIP: {args.output}\nSHA-256: {checksum}\nFiles: {len(members)}')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    sub = parser.add_subparsers(dest='command', required=True)
+    command = sub.add_parser('bundle', help='Create a pinned dependency ZIP from local inputs')
+    command.add_argument('--game', type=Path, default=ROOT / 'deps/game')
+    command.add_argument('--blitz', type=Path, default=ROOT / 'deps/Blitz3D-V1.118')
+    command.add_argument('--font', type=Path, default=ROOT / 'deps/fonts/NotoSansKR[wght].ttf')
+    command.add_argument('--output', type=Path,
+                         default=ROOT / 'build/ci-upload/StrandedII-ci-deps-v1.zip')
+    command = sub.add_parser('config', help='Read the dependency Release and archive pin')
+    command.add_argument('--github-output', type=Path)
+    command = sub.add_parser('dependencies', help='Verify and unpack the CI dependency ZIP')
+    command.add_argument('--archive', type=Path, required=True)
+    command.add_argument('--destination', type=Path, default=ROOT / 'build/ci/deps')
+    command.add_argument('--github-output', type=Path)
+    command = sub.add_parser('package', help='Create a standalone ZIP without player data')
+    command.add_argument('--runtime', type=Path, default=ROOT / 'build/runtime')
+    command.add_argument('--game', type=Path, required=True)
+    command.add_argument('--output', type=Path, default=ROOT / 'build/release/StrandedII-windows.zip')
+    args = parser.parse_args()
+    try:
+        globals()[args.command](args)
+    except (ValueError, OSError, zipfile.BadZipFile) as exc:
+        parser.exit(1, f'Error: {exc}\n')
+
+
+if __name__ == '__main__':
+    main()

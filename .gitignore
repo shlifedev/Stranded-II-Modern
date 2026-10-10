@@ -1,0 +1,24 @@
+# External dependencies and local development output
+/deps/
+/build/
+/.venv/
+
+# Retired installs, patches and backups stay ignored if restored locally.
+# Active dependencies are in deps/; the canonical engine is src/engine/.
+/games/
+/dist/
+/archive/
+/tools/
+/src/ko-full/
+/src/upstream/
+/unins000.dat
+/unins000.exe
+/Play-Korean.cmd
+/Play-Original.cmd
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+Thumbs.db
+*.log

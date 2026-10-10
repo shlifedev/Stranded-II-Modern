@@ -1,0 +1,55 @@
+Stranded II shared engine — unofficial modified version, 2026-10-10
+
+Stranded II
+Original work and code: Peter Schauß / Unreal Software
+https://www.unrealsoftware.de/
+https://www.strandedonline.de/
+This project uses and modifies the publicly released source code of Stranded II.
+Modifications: English/Korean runtime catalogs, UTF-8 rendering and editing,
+bitmap font pages, display aliases, neutral resource references, frame pacing,
+focus recovery and developer setup/build tools.
+The original author does not endorse or provide support for this unofficial patch.
+The game source, game adaptations and Korean translation modifications are shared
+under Creative Commons Attribution-Noncommercial-ShareAlike 3.0 Germany.
+https://creativecommons.org/licenses/by-nc-sa/3.0/de/deed.en
+Original notice: StrandedII-source-README.txt (beside this notice)
+License text: CC-BY-NC-SA-3.0-DE.html
+Original assets are sourced from the official Stranded II English distribution.
+Release packages include those assets with their original credits intact.
+This notice does not relicense those assets or the third-party components below.
+
+Noto Sans KR bitmap subset
+Copyright 2014-2021 Adobe (http://www.adobe.com/), Reserved Font Name 'Source'.
+Noto Sans KR was converted to bitmap pages with a subset of the required glyphs.
+Font files and derived bitmap pages: SIL Open Font License 1.1, NotoSansKR-OFL.txt.
+Font source: https://github.com/google/fonts/tree/main/ofl/notosanskr
+
+Blitz3D runtime
+Copyright (c) 2013 Blitz Research Ltd. zlib/libpng license.
+Compiler used: official Blitz3D 1.118 prebuilt distribution.
+https://blitzresearch.itch.io/blitz3d
+https://github.com/blitz-research/blitz3d_soloud
+License: Blitz3D-LICENSE.txt
+The compiler itself is not distributed in the end-user package.
+
+SoLoud audio engine
+Copyright (c) 2013-2018 Jari Komppa. zlib/libpng license.
+https://soloud-audio.com/ / https://github.com/jarikomppa/soloud
+License: SoLoud-LICENSE.txt
+
+FreeImage 2 and image codecs in the Blitz3D runtime
+Original FreeImage design and implementation: Floris van den Berg and contributors.
+FreeImage Public License 1.0: FreeImage-LICENSE.txt
+Source is available under its own license, including the embedded codec notices:
+https://github.com/blitz-research/blitz3d_soloud/tree/f132a78c9f2da255905bf477cb845994324b865a/freeimage
+This project does not modify this runtime component. The source snapshot is
+identified by commit and SHA-256 in config/dependencies.json and is available at:
+https://github.com/blitz-research/blitz3d_soloud/archive/f132a78c9f2da255905bf477cb845994324b865a.zip
+The repository carries the codec notices in codec-notices/. The snapshot
+documents upstream components; it is not a claim that the official prebuilt
+compiler has been reproduced byte-for-byte from that revision.
+This software is based in part on the work of the Independent JPEG Group.
+PNG, TIFF, MNG and zlib components retain their respective copyright and license
+notices in that runtime-source archive and the codec-notices directory.
+The game's noncommercial condition does not restrict independent rights granted
+by any of these third-party licenses.

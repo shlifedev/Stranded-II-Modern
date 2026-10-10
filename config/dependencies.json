@@ -1,0 +1,14 @@
+{
+  "game_version": "1.0.0.1",
+  "game_zip_sha256": "d6424c2845f2fac2463e6fd01dc23122a914e97a443d4acca8d30131a46c924c",
+  "source_zip_sha256": "6413974be14c3d6b173ab05e6454bf9b3d60228c83d1e0da4fbf6e697082601b",
+  "blitz_version": "1.118",
+  "compiler_sha256": "bb9ec2c0f8311f82a76b424bdf03cf1d736911d2083d2a575d6b7ad0311f063a",
+  "font_sha256": "194018e6b2b293a7964f037b25c0249ce1418bc9ab3c971060a03aa57861e252",
+  "font_url": "https://raw.githubusercontent.com/google/fonts/4efc2774c63917927efe769ca845def6bd6debae/ofl/notosanskr/NotoSansKR%5Bwght%5D.ttf",
+  "game_download": "https://www.strandedonline.de/s2_download.php",
+  "blitz_download": "https://blitzresearch.itch.io/blitz3d",
+  "blitz_zip_sha256": "eb5b07c3f2ccf5142ddf866c1c4caec5c4ee262b6a3ab0bcc718a397a822cc02",
+  "runtime_source_commit": "f132a78c9f2da255905bf477cb845994324b865a",
+  "runtime_source_zip_sha256": "02532c6b27d09c26f69ceac8b160756bed2574b613c671f97ef4770c275143fb"
+}

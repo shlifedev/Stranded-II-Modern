@@ -1,0 +1,7 @@
+{
+  "bin/blitzcc.exe": "bb9ec2c0f8311f82a76b424bdf03cf1d736911d2083d2a575d6b7ad0311f063a",
+  "bin/debugger.dll": "dc89e18882d3eb4152f6ed364db9e3bb83da56ffce4b24845659893fbbb8e846",
+  "bin/ide.exe": "1289b9dcdb31704cd10e32268158891eeea46809dc123b2dc4a9d9c838cc104c",
+  "bin/linker.dll": "2608b431226d170269e4ec9bc9c6215980f392f80199bc644a7001a44c378752",
+  "bin/runtime.dll": "ba120a4a0f15f2ac48e1e86f6465137bd480d0b4a288cae2534a6fe0ecad1a4e"
+}

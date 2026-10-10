@@ -1,0 +1,141 @@
+name: Windows build and release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+
+defaults:
+  run:
+    shell: pwsh
+
+env:
+  PYTHONUTF8: '1'
+  PYTHONUNBUFFERED: '1'
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - name: Install preparation tools
+        run: python -m pip install -r requirements.txt
+
+      - name: Test dependency and release packaging
+        run: python -X utf8 -m unittest discover -s tests -p test_ci.py
+
+      - name: Read dependency pin
+        id: pin
+        run: python -X utf8 scripts/ci.py config --github-output "$env:GITHUB_OUTPUT"
+
+      - name: Cache pinned dependency archive
+        id: cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: build/ci/downloads
+          key: ci-deps-${{ steps.pin.outputs.sha256 }}
+
+      - name: Download dependencies from GitHub Release
+        if: steps.cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPENDENCY_REPOSITORY: ${{ github.event.pull_request.base.repo.full_name || github.repository }}
+          DEPENDENCY_RELEASE: ${{ steps.pin.outputs.release }}
+          DEPENDENCY_ASSET: ${{ steps.pin.outputs.asset }}
+        run: |
+          New-Item -ItemType Directory -Force -Path build/ci/downloads | Out-Null
+          gh release download "$env:DEPENDENCY_RELEASE" --repo "$env:DEPENDENCY_REPOSITORY" --pattern "$env:DEPENDENCY_ASSET" --dir build/ci/downloads
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Upload the pinned dependency ZIP to ci-deps-v1 first. See docs/development.md. No upstream download is attempted.'
+          }
+
+      - name: Validate and unpack dependencies
+        id: deps
+        env:
+          DEPENDENCY_ASSET: ${{ steps.pin.outputs.asset }}
+        run: python -X utf8 scripts/ci.py dependencies --archive "build/ci/downloads/$env:DEPENDENCY_ASSET" --github-output "$env:GITHUB_OUTPUT"
+
+      - name: Prepare runtime resources
+        env:
+          GAME_INPUT: ${{ steps.deps.outputs.game }}
+          BLITZ_INPUT: ${{ steps.deps.outputs.blitz }}
+          FONT_INPUT: ${{ steps.deps.outputs.font }}
+        run: python -X utf8 scripts/dev.py setup --game "$env:GAME_INPUT" --blitz "$env:BLITZ_INPUT" --font "$env:FONT_INPUT"
+
+      - name: Compile with Blitz3D
+        run: python -X utf8 scripts/dev.py build
+
+      - name: Check resources and non-graphical runtime behavior
+        run: python -X utf8 scripts/dev.py check
+
+      - name: Package standalone game
+        env:
+          GAME_INPUT: ${{ steps.deps.outputs.game }}
+        run: python -X utf8 scripts/ci.py package --game "$env:GAME_INPUT"
+
+      - name: Upload game ZIP and checksum
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: StrandedII-windows
+          path: build/release/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - name: Upload build and check reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: windows-reports
+          path: |
+            build/setup-report.json
+            build/build-report.json
+            build/check-*/**/*.json
+            build/check-*/**/*.txt
+          if-no-files-found: ignore
+          retention-days: 14
+
+  release:
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-2022
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: StrandedII-windows
+          path: release
+
+      - name: Attach tested ZIP to tagged Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release view "$env:RELEASE_TAG" *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload "$env:RELEASE_TAG" release/StrandedII-windows.zip release/StrandedII-windows.zip.sha256 --clobber
+          } else {
+            gh release create "$env:RELEASE_TAG" release/StrandedII-windows.zip release/StrandedII-windows.zip.sha256 --verify-tag --title "$env:RELEASE_TAG" --generate-notes
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub Release upload failed' }

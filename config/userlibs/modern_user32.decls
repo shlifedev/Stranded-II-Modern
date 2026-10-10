@@ -1,0 +1,7 @@
+.lib "user32.dll"
+modern_win_foreground%():"GetForegroundWindow"
+modern_win_iconic%(window%):"IsIconic"
+modern_win_style%(window%,index%,style%):"SetWindowLongA"
+modern_win_position%(window%,after%,x%,y%,width%,height%,flags%):"SetWindowPos"
+modern_win_metric%(index%):"GetSystemMetrics"
+modern_dpi_aware%():"SetProcessDPIAware"
