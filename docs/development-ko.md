@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"d5eb97fccba531c90ee32ff87ba5aefc7310b578040e98e5551265a1e718ea91"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"11276776692933c835a59043be8bfaecdb7e827fea8a96d7228e1c2d9400e2bc"} -->
 
 # 개발 가이드
 
@@ -246,9 +246,9 @@ msg "[[loc:quest.island1.arrival]]";
 
 수동 실행의 `publish=false`는 ZIP 생성과 검증만 수행합니다. 다른 브랜치나 태그 푸시에서는 출시하지 않습니다.
 
-CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행합니다. `check`는 비그래픽 런타임 검사이며 실제 화면, 렌더링 FPS, Alt-Tab과 전체 플레이 검증을 대신하지 않습니다. 로컬 검사와 별도로 실제 GitHub Actions 실행도 확인해야 합니다.
+CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행한 다음 Apple Silicon `macos-15` 실행기에서 같은 게임을 패키징합니다. `check`는 비그래픽 런타임 검사이며 실제 화면, 렌더링 FPS, Alt-Tab과 전체 플레이 검증을 대신하지 않습니다. 로컬 검사와 별도로 실제 GitHub Actions 실행도 확인해야 합니다.
 
-원본 사이트에 반복 다운로드 트래픽을 발생시키지 않도록 게임 리소스·컴파일러·글꼴은 같은 저장소의 의존성용 Release에 한 번 보관합니다. CI는 이 Release와 Actions 캐시만 사용합니다. 파일이 없으면 준비 방법을 안내하고 실패하며, 원본 사이트로 자동 다운로드하지 않습니다.
+원본 사이트에 반복 다운로드 트래픽을 발생시키지 않도록 게임 리소스·컴파일러·글꼴은 같은 저장소의 의존성용 Release에 한 번 보관합니다. 이 Windows 빌드 입력에는 해당 Release와 Actions 캐시만 사용합니다. 파일이 없으면 준비 방법을 안내하고 실패하며, 해당 입력을 원본 사이트에서 자동 다운로드하지 않습니다. macOS 런타임 다운로드는 아래 설명대로 별도 고정합니다.
 
 ### 버전 지정과 자동 증가
 
@@ -302,6 +302,31 @@ gh release create ci-deps-v1 `
 ```
 
 출력 이름은 `build/release/StrandedII-<표시 버전>-windows.zip`과 `.zip.sha256`입니다. 로컬 빌드의 예시는 `StrandedII-1.1.0-local-windows.zip`입니다. 패키징은 컴파일이나 게임 검사를 실행하지 않으므로 먼저 최신 소스로 `setup → build → check`를 완료하세요. CI 버전 정보는 `version-context`, 게임 ZIP은 `StrandedII-windows` 산출물로 저장됩니다.
+
+### macOS 테스트 패키지
+
+`macos` 작업은 `StrandedII-<표시 버전>-macos-apple-silicon.zip`과 `.sha256`을 만들어 `StrandedII-macos` 산출물로 저장합니다. `Stranded II.app`에는 변경하지 않은 Windows 게임, 네이티브 실행기, WineD3D와 필요한 Wine 라이브러리가 포함됩니다. 초기 대상은 macOS 15 이상과 Rosetta 2가 있는 Apple Silicon입니다. Intel Mac은 지원 검증 대상에 포함하지 않습니다. 플레이어는 Python·Homebrew·Wine을 별도로 설치할 필요가 없습니다.
+
+[config/macos-wine.json](../config/macos-wine.json)에 공식 Sikarugir GitHub Release의 엔진·보조 라이브러리 아카이브 URL과 SHA-256을 고정합니다. 캐시에서도 두 다운로드의 해시를 검사합니다. 패키저는 필요한 런타임 라이브러리만 복사하고 템플릿의 실행기와 다른 렌더러는 제외하며, Mono·Gecko·FFmpeg/GStreamer 연결 모듈도 제외합니다. 라이선스 고지를 포함합니다. 고정 버전을 변경하면 의존성과 실제 플레이를 다시 검증해야 합니다.
+
+Mac에서 패키징을 재현하려면 Python 3.13 이상과 Xcode Command Line Tools를 설치합니다. **같은 CI 실행**의 Windows ZIP·체크섬과 `version-context/version.json`을 받아 각각 `build/release/`와 `build/ci/`에 두고 실행합니다.
+
+```sh
+python3 scripts/package_macos.py download-wine
+python3 scripts/package_macos.py package \
+  --windows-zip build/release/StrandedII-<display-version>-windows.zip \
+  --version-info build/ci/version.json \
+  --wine-archive build/ci/macos-wine.tar.xz --smoke-test
+python3 -m unittest discover -s tests -p 'test_ci*.py'
+```
+
+실행 전에 `<display-version>`을 바꾸세요. 엔진과 `macos-wine-libraries.tar.xz`는 같은 디렉터리에 있어야 합니다. 기본 출력은 `build/release/`이며 초기화 로그는 `macos-smoke.log`로 저장합니다. 스모크 검사는 새 임시 데이터 디렉터리에서 Wine을 초기화하고 콘솔 명령을 실행하며 게임을 실행하거나 플레이를 검증하지는 않습니다. 네이티브 테스트는 설치, 동시 실행 잠금, 갱신, 설정·저장·사용자 파일 보존, 갱신 중단과 한글 경로를 검사합니다. 패키저는 실행 권한, 라이브러리 의존성, 서명과 Windows ZIP 대비 게임 파일도 검사합니다.
+
+앱은 임시 서명만 하며 Developer ID 서명·공증은 하지 않습니다. 압축을 풀고 응용 프로그램 폴더로 옮긴 뒤 처음 실행을 시도하면 **시스템 설정 → 개인정보 보호 및 보안 → 확인 없이 열기**가 필요할 수 있습니다. Rosetta가 없으면 실행기가 설치 필요를 안내합니다. 실제 Mac에서 화면·소리·키보드와 마우스 입력·한글 표시·창 전환·저장과 불러오기·이전 앱 교체를 확인하기 전에는 플레이 검증이 끝난 패키지로 안내하지 마세요.
+
+실행기는 `~/Library/Application Support/Stranded II/`에 Wine 환경, `launcher.log`와 쓰기 가능한 게임 세대를 저장합니다. `current`가 현재 게임 디렉터리를 가리킵니다. Wine 안에서는 전용 `S:\` 드라이브로 연결해 macOS 계정 이름이 한글이어도 Blitz에는 ASCII 경로가 전달됩니다. 갱신 시 저장 파일, 모든 `.cfg`, `settings.inf`, `modern.ini`와 사용자가 추가한 파일을 보존하며, 이전 패키지에 포함된 사용자 데이터가 아닌 파일만 제거할 수 있습니다. 갱신 실패 시 이전 세대를 계속 사용합니다. 과거 세대는 복구용으로 남깁니다. 앱을 교체해도 이 데이터는 삭제되지 않습니다. Windows나 Extended 설정은 가져오지 않습니다.
+
+출시는 macOS 작업 종료까지 기다리지만 Windows 빌드 성공만 필수입니다. macOS 패키징이 성공하면 같은 Release에 첨부하고, 실패하면 Windows만 게시하며 작업 요약에 macOS 결과를 기록합니다. 초안은 산출물 이름과 해시를 고정합니다. 업로드 중단은 원래 산출물로 복구하며, 다시 생성한 ZIP의 내용이 다르면 거부합니다. 공개된 Release는 변경하지 않으므로 Windows만 게시된 뒤 재실행에서 macOS 패키지가 생겨도 추가하지 않습니다. `scripts/ci.py release --platforms windows macos-apple-silicon`은 두 패키지를 선택하며, 기본값은 Windows만입니다.
 
 ## 생성물과 사용자 데이터 관리
 

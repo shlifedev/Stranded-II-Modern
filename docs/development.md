@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"99c5bc7a20569fef55a3404ed77fceb5d3e6560d1cea11e758d42c87d2841056"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"2468886c6aa252c8e02452468101ae6807a5deed00e366f171013864c2191fcf"} -->
 
 # Development guide
 
@@ -246,9 +246,9 @@ To publish a development release or manually publish a stable release, follow th
 
 For manual runs, `publish=false` only creates ZIPs and runs checks. Other branches and tag pushes do not publish.
 
-CI runs `setup → build → check → package` on Windows Server 2022 with Python 3.13. `check` tests non-graphical runtime behavior; it does not replace actual graphics, rendering FPS, Alt-Tab, or full-playthrough verification. Actual GitHub Actions runs must also be checked separately from local tests.
+CI runs `setup → build → check → package` on Windows Server 2022 with Python 3.13, then packages the same game on an Apple Silicon `macos-15` runner. `check` tests non-graphical runtime behavior; it does not replace actual graphics, rendering FPS, Alt-Tab, or full-playthrough verification. Actual GitHub Actions runs must also be checked separately from local tests.
 
-To avoid repeated download traffic to upstream sites, store game resources, the compiler, and the font once in a dependency Release in the same repository. CI uses only this Release and the Actions cache. Missing files cause a failure with preparation instructions; CI does not automatically download from upstream sites.
+To avoid repeated download traffic to upstream sites, store game resources, the compiler, and the font once in a dependency Release in the same repository. For these Windows build inputs, CI uses only this Release and the Actions cache. Missing files cause a failure with preparation instructions; CI does not automatically download those inputs from upstream sites. macOS runtime downloads are pinned separately as described below.
 
 ### Setting versions and automatic increments
 
@@ -302,6 +302,31 @@ Packaging uses an explicit file list, so a used development runtime's personal s
 ```
 
 Output names are `build/release/StrandedII-<display version>-windows.zip` and `.zip.sha256`. An example local build is `StrandedII-1.1.0-local-windows.zip`. Packaging does not compile or run game checks, so first complete `setup → build → check` with the latest sources. CI stores version information in `version-context` and game ZIPs in `StrandedII-windows`.
+
+### macOS test packages
+
+The `macos` job creates `StrandedII-<display version>-macos-apple-silicon.zip` and its `.sha256`, stored in the `StrandedII-macos` artifact. It contains `Stranded II.app` with the unchanged Windows game, a native launcher, WineD3D, and the required Wine libraries. The initial target is Apple Silicon with macOS 15 or later and Rosetta 2. Intel Macs are not a supported test target. Players do not need Python, Homebrew, or a separate Wine installation.
+
+[config/macos-wine.json](../config/macos-wine.json) pins the engine and supporting-library archive URLs and SHA-256 hashes from the official Sikarugir GitHub releases. Both downloads are checked even on cache hits. The packager copies only the needed runtime libraries, excludes the template's launcher and alternate renderers, and omits Mono, Gecko, and the FFmpeg/GStreamer bridges. License notices are included. Updating the pins requires dependency and gameplay verification again.
+
+To reproduce packaging on a Mac, install Python 3.13 or later and Xcode Command Line Tools. Obtain the Windows ZIP, its checksum, and `version-context/version.json` from the **same CI run**, place them under `build/release/` and `build/ci/`, then run:
+
+```sh
+python3 scripts/package_macos.py download-wine
+python3 scripts/package_macos.py package \
+  --windows-zip build/release/StrandedII-<display-version>-windows.zip \
+  --version-info build/ci/version.json \
+  --wine-archive build/ci/macos-wine.tar.xz --smoke-test
+python3 -m unittest discover -s tests -p 'test_ci*.py'
+```
+
+Replace `<display-version>` before running. The engine and `macos-wine-libraries.tar.xz` must be in the same directory. Output defaults to `build/release/`; initialization logs are saved as `macos-smoke.log`. The smoke test uses a new temporary data directory, initializes Wine, and runs a console command; it does **not** launch or verify gameplay. Native tests cover installation, concurrent-launch locking, upgrades, preservation of settings/saves/custom files, interrupted updates, and Unicode paths. The packager also checks executable permissions, library dependencies, signatures, and the game payload against the Windows ZIP.
+
+The app is ad-hoc signed, not Developer ID signed or notarized. After extracting and moving it to Applications, macOS may require **System Settings → Privacy & Security → Open Anyway** after the first launch attempt. If Rosetta is missing, the launcher reports that it must be installed. Verify actual display, audio, keyboard/mouse input, Korean text, focus switching, save/load, and replacement of an older app on a real Mac before describing the package as gameplay-tested.
+
+The launcher stores its Wine prefix, `launcher.log`, and writable game generations under `~/Library/Application Support/Stranded II/`. `current` points to the active game directory. Wine maps it to a private `S:\` drive so Blitz sees an ASCII path even for non-Latin macOS account names. Updates preserve saves, all `.cfg` files, `settings.inf`, `modern.ini`, and user-added files; only previously packaged, non-user files can be removed. A failed update leaves the previous generation active. Older generations remain as recovery copies. App replacement does not remove this data. No Windows or Extended settings are imported.
+
+Publication waits for the macOS job to finish but requires only the Windows build to succeed. A successful macOS package is attached to the same Release; otherwise Windows is published alone and the job summary records the macOS result. A draft freezes its artifact names and hashes. Recover interrupted uploads using the original artifacts; different regenerated ZIPs are rejected. Published Releases remain immutable, including Windows-only releases whose later retries produce a macOS package. `scripts/ci.py release --platforms windows macos-apple-silicon` selects both packages; the default remains Windows only.
 
 ## Generated output and user data
 

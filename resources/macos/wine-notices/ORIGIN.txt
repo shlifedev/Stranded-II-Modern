@@ -1,0 +1,13 @@
+Wine Sikarugir 10.0 (revision 8)
+Binary: https://github.com/Sikarugir-App/Engines/releases/download/v1.0/WS12WineSikarugir10.0_8.tar.xz
+Engine project and sources: https://github.com/Sikarugir-App/wine
+Upstream Wine 10.0 license files: https://github.com/Sikarugir-App/wine/tree/b073859675060c9211fcbccfd90e4e87520dc2c2
+Wine Mono, Gecko, and the winedmo/winegstreamer Unix bridges are omitted.
+Required open-source dylibs come from Sikarugir Template-1.0.21:
+https://github.com/Sikarugir-App/Template/releases/download/v1.0/Template-1.0.21.tar.xz
+Its launcher, SDK framework, and alternative renderers are not included.
+Support library license texts and their sources are in runtime/.
+The packaged macos-build.json lists the exact dylib filenames and archive hashes.
+Wine uses dynamically loaded libraries that can be replaced in Contents/Resources/wine/lib.
+After replacing a library, the app must be ad-hoc signed again with codesign.
+The launcher is maintained in src/native/macos of Stranded-II-Modern.
