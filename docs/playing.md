@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/playing.md","language":"en","syncedHash":"d32f144c221cb811311d72cccd52830da59ffc09ac568e571404841ee1daa62b"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/playing.md","language":"en","syncedHash":"5e863ea8061d5cbe2e3092cf8bb3ec84d346007fccc341555b21c266f1f32114"} -->
 
 # Playing and settings
 
@@ -6,32 +6,59 @@
 
 [Back to README](../README.md) · [Development guide](development.md) · [Localization guide](localization.md)
 
-## Launching the game
+## Launch the game
 
-On Windows 10 or later, run `Play.cmd` from the repository root. The executable is `build/runtime/StrandedII.exe`. Python is not required to play the game.
+Windows 10 or later is required. Playing does not require installing Python or Blitz3D.
 
-The source repository does not contain the executable or original game resources. For a first setup, complete the environment setup and build steps in the [development guide](development.md).
+| What you downloaded | How to launch |
+| --- | --- |
+| Release ZIP | Extract the entire ZIP and run `Play.cmd` inside its game folder |
+| Source checkout — Classic | Complete the [first build](development.md#first-build), then run `Play.cmd` in the repository root |
+| Source checkout — Extended | [Prepare Extended](development.md#classic-and-extended), then run `Play-Extended.cmd` in the repository root |
 
-Launch Extended with `Play-Extended.cmd` in the source checkout; its runtime folder is `build/extended/runtime/`. For Extended, replace the Classic `build/runtime/` paths below with that path. The editions do not share settings, saves, Continue, or autosaves, and save import is not provided yet. In a release ZIP, use `Play.cmd` inside the chosen edition's folder.
+Below, **game folder** means the folder containing `StrandedII.exe`. In a source checkout, it is `build/runtime/` for Classic or `build/extended/runtime/` for Extended. The editions have separate settings and saves; automatic import is not provided.
 
-## Frame rate and display mode
+## Change display, frame rate, or language
 
-Under **Settings → Graphics**, select a resolution, windowed/borderless mode, and 60/120/144 FPS. Left-click a selector for the next value or right-click for the previous value. Choose **Apply**, then close and restart the game to apply the changes. **Cancel** discards the current selection.
+1. Open **Settings → Graphics**.
+2. Select the resolution, display mode, FPS, or language. Left-click a selector for the next value; right-click for the previous one.
+3. Click **Apply**, close the game, and launch it again. **Cancel** discards your changes.
 
-New installations default to **144 FPS, borderless mode, and Fit monitor**. Existing settings are preserved, including older 1280×720 settings. FPS is a target; actual frame rates depend on your PC and display environment.
+| Setting | Choices and defaults |
+| --- | --- |
+| FPS | 60 / 120 / **144 (default)**. Actual FPS depends on your PC and the scene. |
+| Display mode | Windowed / **borderless (default)** |
+| Resolution | **Fit monitor (default)** or a specified size |
+| Language | **English (default)** / Korean / added language packs |
 
-**Fit monitor** calculates the rendering size from the Windows primary monitor. To avoid initialization failures at large resolutions in the current Direct3D path, each dimension is capped at **2048 pixels**. For example, 2560×1440 and 3840×2160 monitors render at 2048×1152, which borderless mode scales to the monitor size. Numbers in the selector show the actual rendering size. Very wide or tall displays also use the existing UI minimum of 800×600.
+Existing installations keep saved settings. **Fit monitor** uses the primary monitor, with rendering dimensions clamped to at least 800×600 and at most 2048 pixels per side. On 2560×1440 and 3840×2160 monitors, the game renders at 2048×1152 and scales to the borderless window. The resolution selector shows the actual rendering size.
 
-You can override these choices from PowerShell:
+Language switching is experimental. Missing translations or uninstalled languages fall back to English. Korean stored as plain sentences in older saves may remain unchanged after switching. To edit translations or add a language, see the [localization guide](localization.md).
 
-```powershell
-.\Play.cmd -fps 144
-.\Play.cmd -fps 120
-.\Play.cmd -win -fps 60
-.\Play.cmd -borderless
-```
+## Graphics quality and sound
 
-To keep using a setting, close the game and edit `build/runtime/core/modern.ini`:
+Use the game's settings menu. New installations start with view distance, terrain, water, sky, effects, and grass at their highest levels. 2D effects, light effects, wind movement, fog, and hardware multitexturing are enabled. Motion blur is enabled at 35%; music and sound effects are each at 50%.
+
+An existing `mods/Stranded II/sys/settings.cfg` keeps its saved values.
+
+## Saves and backups
+
+Saves are in **`mods/Stranded II/saves/` inside the game folder**. Back up this folder before moving to another PC or cleaning the game folder. Also keep custom maps, screenshots, and `preserved/` if present.
+
+| Feature | Behavior |
+| --- | --- |
+| Continue | Loads the most recently modified manual, quick, or autosave with a valid header and end marker. Disabled if none exists. |
+| Quick save/load | Uses the keys assigned in Settings → Controls and the file `QUICKSAVE.sav`. |
+| Autosave | Fills five slots, `AUTOSAVE.sav` and `AUTOSAVE_2.sav`–`AUTOSAVE_5.sav`, then replaces the oldest. The interval is unchanged from the original. Automatic loading uses the newest slot. |
+| Previous-save backup | Keeps the file being overwritten as `.sav.bak`. Backups do not appear in the save list. |
+
+To recover a backup, close the game and **copy** a file such as `QUICKSAVE.sav.bak` **to a new name, `recovered.sav`**, then load it. Also use copies and separate save names when testing older saves.
+
+Save errors preserve the existing file and show an error. Header and end-marker checks cannot detect every kind of corruption. Development `build/` folders contain real saves too; back them up before deleting a whole folder.
+
+## Settings file and launch options
+
+To edit settings directly, close the game and open **`core/modern.ini` in the game folder**.
 
 ```ini
 language=en
@@ -43,46 +70,23 @@ render_height=720
 diagnostics=0
 ```
 
-| Field | Settings |
+| Setting | Values |
 | --- | --- |
+| `language` | `en`, `ko`, or an installed language code |
 | `fps` | `60`, `120`, `144` |
-| `display` | `borderless`: borderless window; `windowed`: normal window |
-| `resolution` | `desktop`: fit the primary monitor; `custom`: use the resolution below. Older settings without this field use `custom` |
-| `render_width`, `render_height` | Internal rendering size for `custom`; clamped to at least 800×600, with each dimension capped at 2048 pixels |
-| `language` | `ko`: Korean; `en`: English, or an installed language pack's code |
-| `diagnostics` | `1` records frame rate and display recovery events in `core/modern.log` |
+| `display` | `borderless`, `windowed` |
+| `resolution` | `desktop` (fit monitor), `custom` (use dimensions below). Older settings without this entry use `custom`. |
+| `render_width`, `render_height` | Rendering size for `custom`, at least 800×600 and at most 2048 pixels per side |
+| `diagnostics` | `1` records frame and display recovery information in `core/modern.log` |
 
-The `-fps`, `-win`, and `-borderless` launch options override this file. The repository's `config/modern.ini` supplies defaults when first preparing a runtime folder. Change an already prepared game's settings in `build/runtime/core/modern.ini`.
+Launch options override the settings file. Specify them when launching in PowerShell. Use `Play-Extended.cmd` for Extended in a source checkout.
 
-## Changing game speed during testing
+```powershell
+.\Play.cmd -fps 120
+.\Play.cmd -win -fps 60
+.\Play.cmd -borderless
+```
 
-Game time and frame waiting use separate clocks. Game time uses a high-resolution clock that reflects speed changes; the frame limiter uses a separate real-time clock and Windows wait functions. This prevents movement and frame-wait stuttering caused by Cheat Engine leaving low-resolution clock changes active after returning to normal speed. The 100ms simulation cap per frame remains, so actual speed in demanding scenes may be lower than the requested multiplier.
+`config/modern.ini` and `config/editions/extended/modern.ini` are development defaults. To change an already prepared game, edit its `core/modern.ini` above.
 
-If smoothness changes after returning to normal speed, run with `diagnostics=1` and inspect the `FPS actual` records in `core/modern.log`. They measure how often the game calls frame presentation, not the monitor's physical refresh rate.
-
-## Changing language
-
-Under **Settings → Graphics → Language**, use the same choice control as resolution: left-click for the next language and right-click for the previous one. Apply, close, and restart the game. Cancel does not save the selection. English is the default game language.
-
-Korean and English translations are bundled; additional packs appear in the language choices when prepared. Missing translations display English, and a configured but unavailable language falls back to English at startup. See the [localization guide](localization.md) for new languages and the [font guide](fonts.md) for per-language font selection. Language switching remains experimental.
-
-## Graphics quality and sound
-
-New installations start with view distance, terrain, water, sky, effects, and grass at their highest levels. 2D effects, light effects, wind sway, fog, and hardware multitexturing are enabled. Motion blur keeps its existing defaults: enabled, with 35% intensity. Background music and sound effects each start at 50% volume.
-
-An existing `mods/Stranded II/sys/settings.cfg` keeps its saved graphics quality and volume. Release ZIPs exclude personal settings files; a fresh installation without that file uses the engine defaults. Change graphics quality and sound in the game's settings menus.
-
-## Save files
-
-Saves are stored in `build/runtime/mods/Stranded II/saves/`. Back up this folder before moving to another PC or resetting the runtime folder. Preserve your custom maps and screenshots as well.
-
-- **Continue:** loads the most recently modified `.sav` with a valid header and end marker from the main menu. Manual, quick, and automatic saves are included. The button is disabled when none exist.
-- **Quick save/load:** uses the keys assigned under Settings → Controls and one `QUICKSAVE.sav` file. A message appears when no quick save exists.
-- **Five autosave slots:** at the existing autosave points, fills `AUTOSAVE.sav` and `AUTOSAVE_2.sav` through `AUTOSAVE_5.sav`, then replaces the oldest slot. The autosave interval itself is unchanged. Automatic loading selects the newest of these five saves.
-- **Previous-save backup:** first writes to a `.tmp` file in the same folder, then replaces the save. The previous contents of the overwritten file are kept as `.sav.bak`. Backups are separate from the five autosave slots, and `.tmp` and `.bak` files do not appear in the save list.
-
-To recover a backup, close the game and copy, for example, `QUICKSAVE.sav.bak` to a new name such as `recovered.sav` in the same folder, then load it. If saving fails, the existing file is preserved and an error appears. Header and end-marker checks reject incomplete files; they do not detect every kind of corruption.
-
-Korean text already stored in saves from the earlier Korean patch may remain in Korean after switching to English. Test existing saves using copies and save them under separate names.
-
-Workspaces containing material preserved during cleanup of earlier installations may also contain `build/runtime/preserved/`. Back up that folder too: it holds earlier saves, custom maps, settings, and other user data. Git ignoring `build/` **does not mean that real user data can be deleted.**
+For stuttering or recovery from external speed changes, inspect `FPS actual` recorded with `diagnostics=1`. This measures the game's presentation calls, not the monitor's refresh rate. Game-time advancement is capped at 100ms per frame, so actual speed in demanding scenes may be lower than the requested multiplier.

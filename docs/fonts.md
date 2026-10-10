@@ -1,17 +1,17 @@
-<!-- dev-docs-ai-translation: {"document":"docs/fonts.md","language":"en","syncedHash":"c8e4cfb6470cbb332a6eacbcb60172c00ea83d56d2868396057973556e918ab1"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/fonts.md","language":"en","syncedHash":"bf17f8592cd47e16341a30e1efa59c12d78f8a58b7cf4a28c1b40df395ca2eba"} -->
 
-# Fonts for language packs
+# Changing fonts
 
 [English](fonts.md) · [한국어](fonts-ko.md)
 
 [Back to README](../README.md) · [Localization guide](localization.md) · [Development guide](development.md)
 
-## Change a font with one path and one command
+The default font is Noto Sans KR. Follow these steps to change its appearance or supply characters needed by a new language. Complete [environment setup](development.md#setting-up-the-development-environment) first.
 
-Complete the initial development `setup`, then close the game and follow these steps.
+## Select and apply a font
 
-1. Put a `.ttf` or `.otf` file in `deps/fonts/`. Installing it in Windows is unnecessary.
-2. Set the `font` path in that language's JSON. For example, `locales/ko.json`:
+1. Put your `.ttf` or `.otf` file in `deps/fonts/`. No Windows font installation is needed.
+2. Add `font` to the language's JSON. For example, `locales/ko.json`:
 
 ```json
 {
@@ -20,46 +20,35 @@ Complete the initial development `setup`, then close the game and follow these s
 }
 ```
 
-3. Run this from the repository root:
+3. Close the game you are testing and run from the repository root in PowerShell:
 
 ```powershell
 .\dev.ps1 localize -Python .\.venv\Scripts\python.exe
+.\dev.ps1 check -Python .\.venv\Scripts\python.exe
+.\Play.cmd
 ```
 
-4. Restart with `Play.cmd`. Korean, Latin letters, and numbers use the chosen font while Korean is selected. Menu highlight/error colors, small text, and diary text are generated from the same font.
+4. Select that language, restart, and check menus, the diary, numbers, and long-text wrapping.
 
-Relative paths are resolved from the **repository root**. Use `/` in JSON paths for convenience. Absolute paths work too, but relative paths are preferable for configuration shared with other developers. Missing or unsupported font files produce an error identifying the path.
+Paths are relative to the repository root; using `/` is convenient. To restore the default font, remove `font` and repeat the commands. The default is the Noto Sans KR file specified by the initial `setup --font`.
 
-To restore the default, remove `font` and run `localize` again. A language pack containing only `name` uses the Noto Sans KR file specified by the initial `setup --font`. Custom fonts do not need a hash entry in `config/dependencies.json`.
+For Extended, add `--edition extended` to `localize` and `check`, then launch `Play-Extended.cmd`. Font settings are shared, but each edition's runtime folder must be refreshed separately.
 
-## Fonts with missing characters
+## Missing or incorrect characters
 
-Each character is looked up in this order:
+- If a file is missing, check the JSON path against the actual filename.
+- Characters absent from your font fall back to the default Noto, then fonts specified by other language packs.
+- If no font has a character, preparation stops and reports the character, `U+XXXX`, and translation key. Select a font containing it and rerun. A failed update preserves the previous working pack.
+- `.ttf`, `.otf`, and variable fonts are supported. `.ttc`, supplementary-plane emoji, complex shaping, right-to-left layout, and additional IME input support are not supported.
 
-1. The selected language pack's font.
-2. The default Noto Sans KR font.
-3. Other language packs' fonts, ordered by language code.
+Preview `build/runtime/core/locales/ko/preview.png`; replace `ko` for another language. `fonts-report.json` in the same `core/locales/` directory records which fonts were used. For Extended, replace the path prefix with `build/extended/runtime/`. Check the final appearance in the game.
 
-For example, choosing a Latin-only font for Korean uses that font for Latin letters and numbers, and Noto for Korean. **Missing translations falling back to English** and **missing glyphs falling back to another font** are independent. Each language's images include characters from all registered catalogs so language names and text saved in other languages can still appear.
+## Files to distribute
 
-Static and variable fonts are supported. The initial sizes are 16px for normal text and 12px for small text. Variable fonts with a weight axis use 500, clamped to the supported range; other axes retain their defaults. Fonts exceeding the existing UI row height are scaled down automatically. Spacing, spaces, alignment, wrapping, and input carets use the generated advances.
+After `localize` and verification, bundle the edition's **entire `core/locales/` folder**: `build/runtime/core/locales/` for Classic, or `build/extended/runtime/core/locales/` for Extended.
 
-Support currently covers Unicode BMP characters. Supplementary-plane characters such as emoji, complex shaping, right-to-left layout, and new IME input support are outside this feature. Use individual `.ttf`/`.otf` files instead of `.ttc` collections.
+Recipients should close the game, back up their existing `core/locales/`, replace it with the supplied folder, and select the language in the game. They need an engine for the same edition that supports these language packs; do not install them with an older EXE. Players do not need Python or the original font files.
 
-## Previews and diagnostics
-
-| File | Contents |
-| --- | --- |
-| `build/runtime/core/locales/ko/preview.png` | Preview of the seven font states for Korean |
-| `build/runtime/core/locales/fonts-report.json` | Selected fonts, glyph counts, fitting scales, and source fonts for fallback glyphs |
-| `build/localization-report.json` | Summary of the last `localize` run |
-
-Replace `ko` with another language code to find its preview. Check the final result in the game too, especially long language names, numbers, menus, the diary, carets, and long text wrapping.
-
-If no font covers a character, preparation stops with the character, `U+XXXX`, and the translation key using it. Assign a font that includes that character to the relevant language pack and try again. Failed font generation or a failed publication replacement preserves the previous working pack. Edited translations and fonts do not take effect until the error is fixed.
-
-## Distribution
-
-After successful preparation, distribute **the complete `build/runtime/core/locales/` directory**. The `languages.dat` registry, TSV catalogs, and per-language `glyphs.dat` and BMP pages form one set. Players only select a language in the game; they need no Python, source TTF/OTF files, or system font installation. An engine build containing this feature is required; do not install these packs with an older EXE.
-
-Check that each font's license permits generating and distributing images, and include the required copyright notices. `fonts-report.json` contains absolute font paths from the development PC. You may omit that report and `preview.png` when distributing, but retain `languages.dat`, TSV, `glyphs.dat`, and BMP files. The default Noto notices are already in `licenses/`. Follow each custom font's redistribution terms when adding font files to a repository too.
+- Include `languages.dat`, TSV files, and each language's `glyphs.dat` and BMP pages.
+- You may omit `preview.png` and `fonts-report.json`. The report contains absolute paths from the development PC.
+- Check that the font permits image generation and distribution, and include required license notices. The default Noto notices are in [licenses/](../licenses/).
