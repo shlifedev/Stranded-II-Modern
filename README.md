@@ -2,6 +2,9 @@
 
 ## Stranded II : Modern
 
+<img width="2560" height="1440" alt="image" src="https://github.com/user-attachments/assets/d7553612-613b-4a5f-8ba7-77e4774af408" />
+
+
 [English](README.md) · [한국어](README-ko.md)
 
 An unofficial modernization of Stranded II, rebuilt with Blitz3D 1.118. It preserves the original survival and exploration experience while supporting higher frame rates and convenient switching between the game and other windows.
