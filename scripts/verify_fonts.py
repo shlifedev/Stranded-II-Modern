@@ -37,13 +37,13 @@ def digest(folder):
 
 
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument('--output',type=Path,required=True);args=ap.parse_args()
+    ap=argparse.ArgumentParser();ap.add_argument('--output',type=Path,required=True);ap.add_argument('--runtime',type=Path);args=ap.parse_args()
     root=Path(__file__).resolve().parents[1];out=args.output.resolve();out.mkdir(parents=True)
     deps=json.loads((root/'build/dependencies.local.json').read_text('utf8'));default=Path(deps['font'])
     assert Font(default).axes,'default exercises variable font path'
     fixture=out/'project';locale=fixture/'locales';locale.mkdir(parents=True)
     runtime=out/'runtime';gfx=runtime/'mods/Stranded II/sys/gfx';gfx.mkdir(parents=True)
-    for p in (root/'build/runtime/mods/Stranded II/sys/gfx').glob('font_*.bmp'):shutil.copy2(p,gfx/p.name)
+    for p in ((args.runtime or root/'build/runtime')/'mods/Stranded II/sys/gfx').glob('font_*.bmp'):shutil.copy2(p,gfx/p.name)
     latin=fixture/'Latin.ttf';other=fixture/'Other.otf'
     fixture_font(latin,list(range(32,127)))
     # A private-use character missing in Noto must come from another pack's OTF.

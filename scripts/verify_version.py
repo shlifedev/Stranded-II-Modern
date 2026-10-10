@@ -31,6 +31,8 @@ End
     if result.returncode:
         raise ValueError(result.stdout.decode('utf8', errors='replace') + result.stderr.decode('utf8', errors='replace'))
     cases = [(None, 'development'), ('1.1.0-main\n', '1.1.0-main'),
+             ('extended-0.1.0-local\n', 'extended-0.1.0-local'),
+             ('extended-0.1.0-dev.1\n', 'extended-0.1.0-dev.1'),
              ('1.1.1-dev.2\n', '1.1.1-dev.2'), ('1.2.0-local\n', '1.2.0-local'),
              ('', 'development'), ('invalid label!\n', 'development'), ('1' * 129, 'development')]
     for value, expected in cases:

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"d3a3b2384223444679c4dd74fd017efb41ca868ceb4ca4f81e3346878549930e"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"ee4c76a709f016d773d34fe0c4fc8df766ab7d00cd9753bd5eca7e1188ae8037"} -->
 
 # 개발 가이드
 
@@ -31,6 +31,44 @@ resources/ 수정 → setup 명령 → build/runtime/의 리소스 갱신
 | `build/runtime/` | 빌드된 게임, 리소스, 사용자 설정과 저장 파일 | 제외 |
 
 생성 결과를 수정하면 다음 `setup` 또는 `build`에서 덮어쓸 수 있습니다. 유지할 코드·번역·리소스 변경은 위 원본 폴더에 반영합니다. Python 도구는 리소스와 검증 코드를 생성하며, `src/engine/`의 게임 소스는 재생성하지 않습니다.
+
+## 기본판과 확장판
+
+`classic`은 기존 동작을 유지하는 기본판, `extended`는 별도 기능·콘텐츠를 개발할 확장판입니다. 현재는 분리 기반만 있으며 QOL·리밸런싱은 아직 추가하지 않았습니다. 공통 코드는 한 번 수정해 두 판에서 검증하고, 확장판 전용 변경은 해당 판의 코드·자료에만 작성합니다.
+
+```text
+src/engine/
+  StrandedII.bb                    기본판 진입점
+  StrandedIIExtended.bb            확장판 진입점
+  includes/engine_init.bb          공통 초기화·기능
+  includes/engine_loop.bb          공통 실행 루프
+  includes/                       현재 공유하는 엔진 구현
+  editions/classic/profile.bb     기본판 식별·창 제목
+  editions/classic/modules.bb     기본판의 UI·입력·건축 구현 선택
+  editions/extended/profile.bb    확장판 식별·창 제목
+  editions/extended/modules.bb    확장판의 UI·입력·건축 구현 선택
+resources/overrides/              공통 리소스 변경분(필요할 때 생성)
+resources/editions/classic/overrides/   기본판 리소스 변경분
+resources/editions/extended/overrides/  확장판 리소스 변경분
+build/runtime/                   기본판 실행·설정·세이브
+build/extended/runtime/          확장판 실행·설정·세이브
+```
+
+두 `modules.bb`는 현재 같은 기존 구현을 포함합니다. 기능이 달라질 때만 확장판 폴더에 해당 모듈을 만들고 확장판의 `Include`를 바꿉니다. 컴파일은 직접 작성한 소스를 사용하며 Python이 엔진 코드를 생성하지 않습니다. 빌드 보고서는 해당 진입점의 실제 `Include` 그래프만 기록합니다. 다른 판의 전용 소스를 포함하면 검사에 실패합니다.
+
+리소스는 공식 입력 → 현지화 준비 → 공통 변경분 → 선택한 판의 변경분 순서로 준비합니다. 판별 변경분은 실행 폴더 기준 `mods/Stranded II/...` 경로로 배치합니다. 아이템·조합·건축·능력치·맵·스크립트 리밸런싱은 확장판 변경분에 작성합니다. 설정·세이브·실행 파일은 리소스 변경분으로 덮어쓸 수 없습니다. `.s2` 수정은 기존 바이너리 보존 규칙을 따릅니다. 판별 번역은 [현지화 가이드](localization-ko.md#판별-번역)를 참고하세요.
+
+모든 개발 명령은 `--edition classic|extended`를 받으며 생략하면 기본판입니다. 의존성과 컴파일러는 공유하고, 실행 폴더·보고서·검증 산출물은 분리합니다. 기본판 데이터는 이동하지 않으며 확장판으로 자동 복사하지 않습니다.
+
+```powershell
+python -X utf8 scripts/dev.py setup --edition extended
+python -X utf8 scripts/dev.py build --edition extended
+python -X utf8 scripts/dev.py check --edition extended
+python -X utf8 scripts/dev.py run --edition extended -- -win
+.\Play-Extended.cmd
+```
+
+첫 `setup`에는 아래의 의존성 인자가 필요합니다. 이후에는 저장된 공통 의존성 경로를 사용합니다. 기본판은 기존 `Play.cmd`로 실행합니다. 확장판 기본 설정은 `config/editions/extended/modern.ini`이며, 이미 존재하는 개인 설정은 `setup`으로 교체하지 않습니다.
 
 ## 개발 환경 준비
 
@@ -166,29 +204,31 @@ try {
 
 ## GitHub CI와 배포 ZIP
 
-[Windows 워크플로](../.github/workflows/windows.yml)는 `main`·`dev` 푸시, PR, 수동 실행에서 빌드와 검사를 수행하고 실행 가능한 게임 ZIP과 SHA-256 파일을 산출물로 저장합니다. `main` 푸시는 정식 Release, `dev` 푸시는 시험판 Release를 자동 발행합니다. PR과 수동 실행은 `-local` 표시가 붙은 검증용 ZIP만 만들며 Release를 발행하거나 번호를 소모하지 않습니다. 태그 푸시로 배포하는 방식은 사용하지 않습니다.
+[Windows 워크플로](../.github/workflows/windows.yml)는 `main`·`dev` 푸시, PR, 수동 실행에서 두 판을 각각 빌드·검사하고 게임 ZIP과 SHA-256 파일을 산출물로 저장합니다. 푸시·PR은 `-local` 검증용 ZIP만 만들며 Release를 발행하거나 번호를 소모하지 않습니다.
 
-CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행합니다. `check`는 비그래픽 런타임 검사이며 실제 화면, 렌더링 FPS, Alt-Tab과 전체 플레이 검증을 대신하지 않습니다. GitHub Actions 자체의 실행 결과는 원격 저장소를 만든 뒤 확인합니다.
+실제 출시는 Actions에서 `main` 또는 `dev`를 선택하고 `edition=classic|extended`, `publish=true`로 수동 실행합니다. 두 판 검사가 모두 성공해야 선택한 판만 출시하며, `main`은 정식판, `dev`는 시험판입니다. 기본 수동 실행의 `publish=false`는 검증만 수행합니다. 다른 브랜치에서는 출시할 수 없으며 태그 푸시는 배포하지 않습니다.
+
+CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행합니다. `check`는 비그래픽 런타임 검사이며 실제 화면, 렌더링 FPS, Alt-Tab과 전체 플레이 검증을 대신하지 않습니다. 로컬 검사와 별도로 실제 GitHub Actions 실행도 확인해야 합니다.
 
 원본 사이트에 반복 다운로드 트래픽을 발생시키지 않도록 게임 리소스·컴파일러·글꼴은 같은 저장소의 의존성용 Release에 한 번 보관합니다. CI는 이 Release와 Actions 캐시만 사용합니다. 파일이 없으면 준비 방법을 안내하고 실패하며, 원본 사이트로 자동 다운로드하지 않습니다.
 
 ### 버전 지정과 자동 증가
 
-개발자가 `main`의 [config/version.json](../config/version.json)에 기준 버전을 지정합니다. 초기값은 `{"version":"1.1.0"}`입니다. 앞 두 숫자는 CI가 변경하지 않습니다. patch는 해당 계열의 시작값이며, 같은 계열의 기존 정식 태그가 있으면 그 다음 번호부터 배포합니다. CI는 이 파일을 수정하거나 버전 커밋을 만들지 않습니다.
+기본판 기준 버전은 `main`의 [config/version.json](../config/version.json)에 있으며 초기값은 `1.1.0`입니다. 확장판은 [config/editions/extended/version.json](../config/editions/extended/version.json)의 `0.1.0`부터 독립적으로 시작합니다. CI는 앞 두 숫자나 설정 파일을 수정하지 않고 버전 커밋을 만들지 않습니다. patch는 해당 판·계열의 시작값이며 기존 정식 태그가 있으면 다음 번호부터 배포합니다.
 
-| 배포 상황 | 메뉴 오른쪽 아래 표시 | GitHub 태그 |
+| 배포 상황 | 메뉴 표시 | GitHub 태그 |
 |---|---|---|
-| 첫 정식 배포 | `1.1.0-main` | `v1.1.0` |
-| 이후 첫 개발 배포 | `1.1.1-dev.1` | `v1.1.1-dev.1` |
-| 같은 목표의 개발 배포 추가 | `1.1.1-dev.2` | `v1.1.1-dev.2` |
-| 다음 정식 배포 | `1.1.1-main` | `v1.1.1` |
-| 정식 배포 후 개발 배포 | `1.1.2-dev.1` | `v1.1.2-dev.1` |
+| 기본판 첫 정식 배포 | `1.1.0-main` | `v1.1.0` |
+| 이후 기본판 개발 배포 | `1.1.1-dev.1` | `v1.1.1-dev.1` |
+| 기본판 다음 정식 배포 | `1.1.1-main` | `v1.1.1` |
+| 확장판 첫 정식 배포 | `extended-0.1.0-main` | `extended-v0.1.0` |
+| 이후 확장판 개발 배포 | `extended-0.1.1-dev.1` | `extended-v0.1.1-dev.1` |
 
-`dev`는 CI가 시작할 때 `main`의 기준 파일을 읽고 그 커밋 SHA를 고정합니다. 정식 배포 전에는 기준 버전의 `-dev.1`부터 시작하며, 정식 배포가 있으면 다음 정식 patch를 목표로 `dev.N` 순번을 올립니다. 개발 배포는 정식 patch를 소모하지 않습니다. `main`에서 기준을 `1.2.0`으로 바꾸면 다음 개발 배포도 새 계열을 사용하며 병합은 필요하지 않습니다. `main`은 배포 대상 커밋에 있는 기준 파일을 사용합니다.
+출시할 때 `dev`는 `main`에 있는 해당 판의 기준 파일을 읽고 그 커밋 SHA를 고정합니다. 정식 배포 전에는 기준 버전의 `-dev.1`부터 시작하며, 정식 배포가 있으면 다음 patch를 목표로 `dev.N` 순번을 올립니다. 개발 배포는 정식 patch를 소모하지 않습니다. `main`은 배포 대상 커밋의 기준 파일을 사용합니다. 확장판을 `dev`에서 처음 출시하기 전에 해당 기준 파일이 `main`에 있어야 합니다.
 
-두 브랜치의 버전 계산부터 발행까지 실행을 직렬 처리합니다. 빌드·검사 실패는 태그를 만들지 않으므로 번호를 소모하지 않습니다. 태그 생성이나 업로드 도중 중단되면 번호가 예약될 수 있지만, 재실행은 같은 소스 커밋·채널의 태그와 초안을 복구합니다. 공개된 Release는 덮어쓰지 않고, 이미 발행한 커밋을 재실행하면 빌드를 생략합니다. `ci-deps-v1`은 게임 버전 계산에서 제외합니다. dev는 시험판이며 최신 정식 Release를 대체하지 않습니다.
+출시 실행은 버전 계산부터 발행까지 직렬 처리합니다. 빌드·검사 실패는 태그를 만들지 않으므로 번호를 소모하지 않습니다. 발행 중 중단되면 번호가 예약될 수 있지만 같은 판·소스 커밋·채널로 재실행하면 태그와 초안을 복구합니다. 공개된 Release는 덮어쓰지 않으며 재실행 시 검증 후 기존 발행을 유지합니다. 다른 판의 태그와 `ci-deps-v1`은 번호 계산에 영향을 주지 않습니다. 개발판과 확장판은 기본판의 최신 정식 Release 표시를 대체하지 않습니다.
 
-빌드 시 `core/version.txt`와 `core/version.json`을 생성합니다. 게임은 시작할 때 표시값을 읽고 메인 메뉴에 표시합니다. `build-info.json`에는 버전·채널·소스 커밋·기준 파일 커밋과 실행 파일 해시가 포함됩니다. 패키징은 이 정보와 빌드 보고서·현재 엔진 소스가 일치하는지 검사합니다. 엔진의 기존 `Cversion="1.0.0.1"`과 원본 의존성 버전은 맵·스크립트 호환성을 위해 유지합니다. 로컬 `build`는 기준 버전에 `-local`을 붙여 표시합니다.
+빌드는 `core/version.txt`와 `core/version.json`을 생성합니다. 게임은 표시값을 메인 메뉴에 표시합니다. `build-info.json`에는 배포판·버전·채널·소스 커밋·기준 파일 커밋과 실행 파일 해시가 포함됩니다. 패키징은 해당 판의 빌드 보고서·소스 그래프와 일치하는지 검사하며 판이 다른 실행 폴더나 오래된 리소스 변경분을 거부합니다. 기존 `Cversion="1.0.0.1"`은 맵·스크립트 호환성을 위해 유지합니다. 로컬 빌드는 `-local`로 표시합니다.
 
 ### 의존성 Release 최초 준비
 
@@ -216,16 +256,17 @@ gh release create ci-deps-v1 `
 
 ### 배포 ZIP 구성
 
-ZIP의 `StrandedII/` 폴더에는 빌드된 EXE, 원본 게임 리소스, 현지화 리소스, 언어별 비트맵 글꼴, 초기 설정과 라이선스가 포함됩니다. 전체 압축을 풀고 그 폴더의 `Play.cmd` 또는 `StrandedII.exe`를 실행합니다. 플레이어는 Python·Blitz3D·글꼴을 별도로 설치할 필요가 없습니다.
+기본판 ZIP의 `StrandedII/`, 확장판 ZIP의 `StrandedII-Extended/` 폴더에는 빌드된 EXE, 원본 게임 리소스, 현지화 리소스, 언어별 비트맵 글꼴, 초기 설정과 라이선스가 포함됩니다. 전체 압축을 풀고 그 폴더의 `Play.cmd` 또는 `StrandedII.exe`를 실행합니다. 플레이어는 Python·Blitz3D·글꼴을 별도로 설치할 필요가 없습니다.
 
 패키징은 파일 목록을 사용하므로 사용한 개발 런타임에 있는 개인 세이브, 사용자 지도, 스크린샷, `preserved/`, 로그와 검사 보고서를 포함하지 않습니다. 키 설정은 원본 의존성에서, `core/modern.ini`는 저장소 초기 설정에서 가져옵니다. 개인 `sys/settings.cfg`도 제외하므로 새 설치의 그래픽 품질과 음량은 엔진의 초기값을 사용합니다. 초기값은 [실행 및 설정](playing-ko.md#그래픽-품질과-소리)에 설명되어 있습니다. 개발 런타임은 변경하지 않습니다. 로컬 패키징도 가능합니다.
 
 ```powershell
 python -X utf8 scripts/ci.py package --game deps/game
+python -X utf8 scripts/ci.py package --edition extended --game deps/game
 python -X utf8 -m unittest discover -s tests -p 'test_ci*.py'
 ```
 
-출력 이름은 `build/release/StrandedII-<표시 버전>-windows.zip`과 `.zip.sha256`입니다. 예를 들어 첫 정식 배포는 `StrandedII-1.1.0-main-windows.zip`, 로컬 빌드는 `StrandedII-1.1.0-local-windows.zip`입니다. 패키징은 컴파일이나 게임 검사를 실행하지 않으므로 먼저 최신 소스로 `setup → build → check`를 완료하세요. CI가 사용한 버전 정보는 `version-context` 산출물에도 저장됩니다.
+출력 이름은 `build/release/StrandedII-<표시 버전>-windows.zip`과 `.zip.sha256`입니다. 예를 들어 기본판 로컬 빌드는 `StrandedII-1.1.0-local-windows.zip`, 확장판은 `StrandedII-extended-0.1.0-local-windows.zip`입니다. 패키징은 컴파일이나 게임 검사를 실행하지 않으므로 먼저 같은 판에서 최신 소스로 `setup → build → check`를 완료하세요. CI 버전 정보는 `version-context-classic`·`version-context-extended`, 게임 ZIP은 `StrandedII-classic-windows`·`StrandedII-extended-windows` 산출물로 저장됩니다.
 
 ## 생성물과 사용자 데이터 관리
 

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"README.md","language":"ko","syncedHash":"a873182eee499e018baff12b3ff819f152e9b5bc5e98edc479b3711fb002023b"} -->
+<!-- dev-docs-ai-translation: {"document":"README.md","language":"ko","syncedHash":"a5a6f34aeaabb50794d9cd4516c53b646a7c87a6c951398e1a8b900102c21b33"} -->
 
 ## Stranded II : Modern
 
@@ -7,6 +7,12 @@
 Blitz3D 1.118로 다시 빌드한 Stranded II의 비공식 현대화 버전입니다. 원작의 생존·탐험 경험을 유지하면서 높은 프레임과 편리한 화면 전환을 지원합니다.
 
 현재 개발 중이며, 안정판을 준비하고 있습니다.
+
+## 기본판과 확장판
+
+기본판(Classic)은 현재 게임 경험을 유지하며, 확장판(Extended)은 앞으로 별도 UI·QOL·콘텐츠·리밸런싱을 개발할 배포판입니다. 현재는 분리 기반만 구현했으며 두 판의 게임 동작과 콘텐츠는 같습니다.
+
+두 판은 공통 엔진을 사용하지만 실행 폴더·설정·세이브·버전·배포 ZIP이 분리됩니다. 소스 저장소에서 기본판은 `Play.cmd`, 확장판은 `Play-Extended.cmd`로 실행합니다. 확장판은 먼저 `setup --edition extended`와 `build --edition extended`로 준비하세요. 자세한 경계와 명령은 [개발 가이드](docs/development-ko.md#기본판과-확장판)를 참고하세요.
 
 ## 수정된 것들
 

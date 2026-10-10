@@ -8,9 +8,9 @@ SEP=str.maketrans({'¦':'\x1f','¶':'\x1e','¿':'\x1d'})
 REFERENCE=re.compile(r'\[\[loc:([A-Za-z0-9_.-]+)(?:\|[^\]]*)?\]\]')
 PLACEHOLDER=re.compile(r'(?<!\\)\$(?:[0-9]+|[A-Za-z_][A-Za-z0-9_]*)')
 
-def catalog(path):
+def catalog(path,text=None):
     result={}
-    for number,line in enumerate(path.read_text('utf8').splitlines(),1):
+    for number,line in enumerate((path.read_text('utf8') if text is None else text).splitlines(),1):
         if not line or line.startswith('#'):continue
         if '\t' not in line:raise ValueError(f'{path}:{number}: expected key<TAB>text')
         key,value=line.split('\t',1)
@@ -23,6 +23,19 @@ def catalog(path):
         if len(value)-len(value.rstrip('\\')) & 1:raise ValueError(f'{path}:{number}: trailing escape')
         result[key]=re.sub(r'\\(.)',unescape,value).translate(SEP)
     return result
+
+def catalog_text(root,code,edition='classic'):
+    from editions import Edition
+    Edition(edition)
+    base=root/'locales'/f'{code}.tsv'
+    text=base.read_text('utf8')
+    overlay=root/'locales/editions'/edition/f'{code}.tsv'
+    if not overlay.exists():return text
+    # Validate each input before merging so duplicates are never hidden.
+    catalog(base)
+    replacements=catalog(overlay)
+    lines=[line for line in text.splitlines() if line.split('\t',1)[0] not in replacements]
+    return '\n'.join(lines)+'\n'+overlay.read_text('utf8')
 
 def languages(root):
     """Discover paired UTF-8 catalogs/metadata in a stable menu order."""
@@ -50,8 +63,11 @@ def languages(root):
     return result
 
 
-def validate(root):
-    catalogs={lang:catalog(root/'locales'/f'{lang}.tsv') for lang in languages(root)}
+def validate(root,edition='classic'):
+    packs=languages(root)
+    for path in (root/'locales/editions'/edition).glob('*.tsv'):
+        if path.stem not in packs:raise ValueError(f'Edition catalog has no registered language: {path}')
+    catalogs={lang:catalog(root/'locales'/f'{lang}.tsv',catalog_text(root,lang,edition)) for lang in packs}
     en=catalogs['en']
     if not en:raise ValueError('English catalog is empty')
     for lang,values in catalogs.items():
@@ -69,13 +85,16 @@ def validate(root):
         for child in REFERENCE.findall(values.get(key,en[key])):visit(child,values,stack+[key])
     for values in catalogs.values():
         for key in values:visit(key,values,[])
-    for folder in ('src/engine','resources/overrides'):
-        for p in (root/folder).rglob('*'):
-            if p.is_file() and p.suffix in ('.bb','.inf','.txt','.s2s'):
-                text=p.read_text('utf8')
-                if p.suffix=='.bb':text='\n'.join(line for line in text.splitlines() if not line.lstrip().startswith(';'))
-                for ref in REFERENCE.findall(text):
-                    if ref not in en:raise ValueError(f'{p}: missing reference {ref}')
+    from editions import source_files, override_files
+    # Tiny font fixtures have no engine entrypoint.
+    paths=list(source_files(root,edition).values()) if (root/'src/engine').exists() else []
+    paths.extend(override_files(root,edition).values())
+    for p in paths:
+        if p.suffix in ('.bb','.inf','.txt','.s2s'):
+            text=p.read_text('utf8')
+            if p.suffix=='.bb':text='\n'.join(line for line in text.splitlines() if not line.lstrip().startswith(';'))
+            for ref in REFERENCE.findall(text):
+                if ref not in en:raise ValueError(f'{p}: missing reference {ref}')
     return catalogs
 
 def encoded(text):return text.translate(SEP).encode('utf8')
@@ -83,8 +102,8 @@ def bstring(text):
     value=encoded(text)
     return struct.pack('<i',len(value))+value
 
-def prepare(root,game,runtime):
-    catalogs=validate(root)
+def prepare(root,game,runtime,edition='classic'):
+    catalogs=validate(root,edition)
     keys=json.loads((root/'resources/source-keys.json').read_text('utf8'))
     for key in keys.values():
         if key not in catalogs['en']:raise ValueError('Missing source mapping: '+key)
@@ -110,6 +129,7 @@ def prepare(root,game,runtime):
             text=re.sub(r'(?m)^([!0-6 ]*)(.+)$',lambda m:m[1]+ref(m[2]),text)
             text+='\n\n!1 - Community modernization -\nUTF-8 / localization: Noto Sans KR (SIL OFL 1.1)\nOriginal game: Unreal Software\n'
         dest=out/relative;dest.parent.mkdir(parents=True,exist_ok=True)
+        if dest.name=='settings.inf' and dest.exists():continue
         dest.write_bytes(encoded(text).replace(b'\n',b'\r\n'))
     map_count=0
     for p in (base/'maps').rglob('*.s2'):

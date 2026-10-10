@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"c7c293a37ab8a16678e260fbdde8944f1d45a66b59313bbc47f889a97b7bced9"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"54a58730a94522166d19461ced2d07448ff058f84e496170b166b36e73df1612"} -->
 
 # 현지화 가이드
 
@@ -8,9 +8,15 @@
 
 ## 현재 지원 범위
 
-현재 한국어(`ko`)와 영어(`en`) 카탈로그를 지원합니다. 하나의 실행 파일과 공통 리소스를 사용하고, 게임을 시작할 때 선택한 언어를 읽습니다. 옵션에서 언어를 바꾸면 다음 실행부터 적용됩니다.
+현재 한국어(`ko`)와 영어(`en`) 카탈로그를 지원합니다. 각 배포판은 언어별로 실행 파일을 나누지 않고, 게임을 시작할 때 선택한 언어를 읽습니다. 옵션에서 언어를 바꾸면 다음 실행부터 적용됩니다.
 
 번역·폰트 수정과 새 언어 추가에는 EXE 재컴파일이 필요하지 않습니다. `locales/<코드>.tsv`와 `locales/<코드>.json`을 함께 준비하고 `localize`를 실행하면 언어 선택 목록에 자동으로 등록됩니다. 폰트 지정은 [폰트 가이드](fonts-ko.md)를 참고하세요.
+
+## 판별 번역
+
+`locales/`의 카탈로그와 언어 메타데이터는 공통입니다. 판별 문구는 필요할 때 `locales/editions/classic/<코드>.tsv` 또는 `locales/editions/extended/<코드>.tsv`에 추가합니다. 선택한 판의 TSV만 공통 카탈로그 위에 적용하며, 같은 키는 교체하고 새 키는 추가합니다. 새 키의 영어 원문도 같은 판의 `en.tsv`에 작성합니다. 한국어 등 번역 누락은 해당 판의 영어 문구로 폴백합니다.
+
+언어 자체의 등록과 폰트 메타데이터는 공통 `locales/<코드>.json`을 사용합니다. 판별 TSV에도 동일한 문법·치환 변수·참조 검증을 적용합니다. `localize --edition extended`와 `check --edition extended`는 확장판만 대상으로 하며 기본판의 카탈로그를 변경하지 않습니다. 판을 생략하면 기본판을 대상으로 합니다.
 
 ## 파일별 역할
 

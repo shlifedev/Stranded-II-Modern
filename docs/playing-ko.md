@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/playing.md","language":"ko","syncedHash":"6169925391b2e3486dca4291cc41a8f8d3fcf5384b346954265025cccec387aa"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/playing.md","language":"ko","syncedHash":"d939022024543f32c123626f8f2e9ddf71a8340654ecaec1c3a57a24b47ea4c1"} -->
 
 # 실행 및 설정
 
@@ -11,6 +11,8 @@
 Windows 10 이상에서 저장소 루트의 `Play.cmd`를 실행합니다. 실제 실행 파일은 `build/runtime/StrandedII.exe`입니다. 게임 실행에는 Python이 필요하지 않습니다.
 
 소스 저장소에는 실행 파일과 원본 게임 리소스가 포함돼 있지 않습니다. 처음 준비하는 경우 [개발 가이드](development-ko.md)의 환경 구성과 빌드를 먼저 진행하세요.
+
+확장판은 소스 저장소의 `Play-Extended.cmd`로 실행하며, 실제 실행 폴더는 `build/extended/runtime/`입니다. 아래의 기본판 `build/runtime/` 경로를 확장판에 적용할 때는 이 경로로 바꿉니다. 두 판은 설정·세이브·계속하기·자동 저장을 공유하지 않으며, 세이브 가져오기는 아직 제공하지 않습니다. 배포 ZIP에서는 각 판의 폴더 안에 있는 `Play.cmd`를 실행합니다.
 
 ## 프레임과 화면 모드
 

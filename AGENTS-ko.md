@@ -1,10 +1,16 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"ko","syncedHash":"f136054796086f2b8444eeb76857f9b25eea7bdd35662815505a8c2e227c9378"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"ko","syncedHash":"9a5a77e2bb3c42144f2c11952768aedb24d1af1998dea4edfe35facdd0771999"} -->
 
 # Stranded II 개발 지침
 
 [English](AGENTS.md) · [한국어](AGENTS-ko.md)
 
-현재 구조는 단일 엔진 + 공통 리소스 + 자동 등록되는 언어팩(기본 EN/KO)을 실행 시 선택하는 구조다. 사용자와 한국어로 소통한다.
+현재 구조는 공통 엔진을 사용하는 기본판(Classic)과 확장판(Extended), 판별 리소스, 실행 시 선택하는 언어팩(기본 EN/KO)이다. 사용자와 한국어로 소통한다.
+
+- 현재 분리는 개발 기반이며 QOL이나 리밸런싱을 추가하지 않는다. 확장판 전용 변경으로 기본판의 게임 동작·콘텐츠를 바꾸지 않는다. 공통 엔진 수정은 두 판에서 검증한다.
+- 판별 진입점은 `src/engine/StrandedII.bb`와 `src/engine/StrandedIIExtended.bb`다. `editions/<판>/modules.bb`에서 구현을 선택한다. 확장판 동작이 달라질 때 필요한 모듈만 별도로 만들고 공통 엔진 전체를 복제하지 않는다.
+- 명령의 `--edition classic|extended`를 생략하면 기본판이다. 기본판은 `build/runtime`, 확장판은 `build/extended/runtime`을 사용한다. 설정·세이브를 공유하거나 자동 복사하지 않는다.
+- 판별 리소스는 `resources/editions/<판>/overrides/`, 판별 번역은 `locales/editions/<판>/<코드>.tsv`에 둔다. 공통 리소스·카탈로그 변경은 두 판에 반영된다. 확장판 리밸런싱은 확장판 경로에만 작성한다.
+- `main`/`dev`는 안정판/개발판 채널이다. 푸시·PR은 두 판을 검사하며, 실제 출시는 수동 워크플로에서 판과 `publish=true`를 선택한다. 요청 없이 릴리스를 발행하지 않는다.
 
 - 직접 편집하는 엔진은 `src/engine/**/*.bb`다. Git에 포함하며 생성물로 취급하지 않는다. `src/ko-full`의 옛 생성기를 새 엔진에 실행하지 않는다.
 - 명령과 폴더 구조는 `docs/development.md`의 `scripts/dev.py setup|localize|build|run|check`를 따른다. Python은 준비·글꼴·검증만 담당하며 엔진 코드를 재생성하지 않는다.

@@ -6,6 +6,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import shutil
 import stat
 import struct
 import sys
@@ -53,8 +54,9 @@ class CIPackagingTests(unittest.TestCase):
         info = make_info('1.1.0', 'local')
         self.put(self.runtime / 'core/version.json', json.dumps(info).encode())
         self.put(self.runtime / 'core/version.txt', b'1.1.0-local\n')
+        self.put(self.root / 'src/engine/StrandedII.bb', b'; fixture\n')
         self.put(self.root / 'build/build-report.json', json.dumps(dict(
-            info, exe_sha256=ci.digest(b'MZbuilt executable'), source_sha256={})).encode())
+            info, exe_sha256=ci.digest(b'MZbuilt executable'), source_sha256={'src/engine/StrandedII.bb':ci.digest(b'; fixture\n')})).encode())
         self.put(self.runtime / 'mods/Stranded II/sys/ko_aliases.dat', b'aliases')
         for code in ('en', 'ko'):
             self.put(self.root / f'locales/{code}.json',
@@ -186,7 +188,7 @@ class CIPackagingTests(unittest.TestCase):
         self.put(self.root / 'src/engine/StrandedII.bb', b'changed source')
         with self.assertRaisesRegex(ValueError, 'build report is stale'):
             ci.release_members(self.runtime, self.game)
-        (self.root / 'src/engine/StrandedII.bb').unlink()
+        self.put(self.root / 'src/engine/StrandedII.bb', b'; fixture\n')
         self.put(self.runtime / 'StrandedII.exe', b'MZold executable')
         with self.assertRaisesRegex(ValueError, 'build report is stale'):
             ci.release_members(self.runtime, self.game)
@@ -201,6 +203,36 @@ class CIPackagingTests(unittest.TestCase):
                  struct.pack('<4sIII', b'FNT2', 1, 20, 19))
         with self.assertRaisesRegex(ValueError, 'Invalid font metadata'):
             ci.release_members(self.runtime, self.game)
+
+    def test_extended_package_changes_leave_classic_package_unchanged(self):
+        from editions import Edition, source_hashes
+        from versioning import make_info
+        baseline = ci.release_members(self.runtime, self.game)
+        profile = Edition('extended')
+        runtime = profile.runtime(self.root)
+        shutil.copytree(self.runtime, runtime)
+        self.put(self.root / profile.defaults, b'fps=60\nlanguage=ko\n')
+        self.put(self.root / 'src/engine' / profile.entry, b'; extended entry\n')
+        content = 'mods/Stranded II/sys/items_extended.inf'
+        self.put(self.root / 'resources/editions/extended/overrides' / content, b'new content')
+        self.put(runtime / content, b'new content')
+        info = make_info('0.1.0', 'local', edition='extended')
+        self.put(runtime / 'core/version.json', json.dumps(info).encode())
+        self.put(runtime / 'core/version.txt', (info['display_version'] + '\n').encode())
+        self.put(profile.build_dir(self.root) / 'build-report.json', json.dumps(dict(
+            info, exe_sha256=ci.digest(b'MZbuilt executable'),
+            source_sha256=source_hashes(self.root, 'extended'))).encode())
+        members = ci.release_members(runtime, self.game, 'extended')
+        self.assertIn('StrandedII-Extended/' + content, members)
+        self.assertEqual(members['StrandedII-Extended/core/modern.ini'], b'fps=60\nlanguage=ko\n')
+        self.assertEqual(ci.release_members(self.runtime, self.game), baseline)
+        with self.assertRaisesRegex(ValueError, 'another edition'):
+            ci.release_members(runtime, self.game, 'classic')
+        with self.assertRaisesRegex(ValueError, 'another edition'):
+            ci.release_members(self.runtime, self.game, 'extended')
+        self.put(runtime / content, b'outdated')
+        with self.assertRaisesRegex(ValueError, 'override is stale'):
+            ci.release_members(runtime, self.game, 'extended')
 
 
 if __name__ == '__main__':

@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import re
 import subprocess
+from editions import Edition
 
 NUMBER = r'(?:0|[1-9][0-9]*)'
 CORE = rf'({NUMBER})\.({NUMBER})\.({NUMBER})'
@@ -32,7 +33,8 @@ def git(root, *args):
     return result.stdout.strip()
 
 
-def make_info(version, channel, commit='', base_version=None, base_commit=''):
+def make_info(version, channel, commit='', base_version=None, base_commit='', edition='classic'):
+    Edition(edition)
     if channel not in ('main', 'dev', 'local'):
         raise ValueError('Unknown release channel')
     if channel == 'dev':
@@ -51,33 +53,40 @@ def make_info(version, channel, commit='', base_version=None, base_commit=''):
     parse_base(base_version)
     if base_commit and not re.fullmatch(r'[0-9a-f]{40}', base_commit):
         raise ValueError('Invalid version configuration commit SHA')
-    return dict(version=version, channel=channel, display_version=display,
-                tag='' if channel == 'local' else 'v' + version, commit=commit,
+    if edition == 'extended': display = 'extended-' + display
+    return dict(edition=edition, version=version, channel=channel, display_version=display,
+                tag='' if channel == 'local' else ('extended-v' if edition == 'extended' else 'v') + version, commit=commit,
                 base_version=base_version, base_commit=base_commit)
 
 
 def validate_info(info):
     try:
         expected = make_info(info['version'], info['channel'], info['commit'],
-                             info['base_version'], info['base_commit'])
+                             info['base_version'], info['base_commit'], info.get('edition', 'classic'))
     except (KeyError, TypeError) as exc:
         raise ValueError('Missing or invalid product version metadata') from exc
-    if any(info.get(key) != value for key, value in expected.items()):
+    if any(info.get(key, 'classic' if key == 'edition' else None) != value for key, value in expected.items()):
         raise ValueError('Inconsistent product version metadata')
     return expected
 
 
-def local_info(root):
-    base = read_base((root / 'config/version.json').read_text('utf8'))
+def local_info(root, edition='classic'):
+    base = read_base((root / Edition(edition).version_config).read_text('utf8'))
     try:
         commit = git(root, 'rev-parse', 'HEAD')
     except ValueError:
         commit = ''
-    return make_info(base, 'local', commit, base, commit)
+    return make_info(base, 'local', commit, base, commit, edition)
 
 
-def select_version(base, channel, commit, tags, published):
+def select_version(base, channel, commit, tags, published, edition='classic'):
     """Tags reserve numbers; only published main releases advance the dev target."""
+    Edition(edition)
+    prefix = 'extended-' if edition == 'extended' else ''
+    tags = {name[len(prefix):]: sha for name, sha in tags.items()
+            if (name.startswith('extended-v') if prefix else name.startswith('v'))}
+    published = {name[len(prefix):] for name in published
+                 if (name.startswith('extended-v') if prefix else name.startswith('v'))}
     major, minor, floor = parse_base(base)
     records = [(name, TAG.fullmatch(name), sha) for name, sha in tags.items()]
     records = [(name, match, sha) for name, match, sha in records if match]

@@ -11,6 +11,7 @@ import struct
 import sys
 import zipfile
 from versioning import local_info, runtime_info, validate_info
+from editions import Edition, NAMES, source_hashes, override_files
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -173,9 +174,12 @@ def player_data(relative):
             path.name.lower().startswith('screen_'))
 
 
-def release_members(runtime, game):
+def release_members(runtime, game, edition='classic'):
+    profile = Edition(edition)
+    info = runtime_info(runtime)
+    if info['edition'] != edition:raise ValueError('Runtime belongs to another edition')
     from language_pack import registry
-    from locales import languages
+    from locales import languages, catalog_text
     members = {}
     manifest = read_json(ROOT / 'config/game-files.json')
     for relative, expected in manifest.items():
@@ -185,24 +189,19 @@ def release_members(runtime, game):
         members[relative] = (checked_bytes(game, relative, expected)
                              if relative.endswith('.cfg')
                              else file_bytes(runtime, relative))
-    overrides = ROOT / 'resources/overrides'
-    for path in sorted(overrides.rglob('*')):
-        if not path.is_file():
-            continue
-        relative = path.relative_to(overrides).as_posix()
-        if player_data(relative) or path.suffix.lower() == '.cfg':
-            raise ValueError(f'Overrides may not replace player settings: {relative}')
-        members[relative] = file_bytes(runtime, relative)
+    for relative, path in override_files(ROOT, edition).items():
+        data = file_bytes(runtime, relative)
+        if data != path.read_bytes():
+            raise ValueError(f'Runtime override is stale; run setup: {relative}')
+        members[relative] = data
     exe = file_bytes(runtime, 'StrandedII.exe')
     if not exe.startswith(b'MZ'):
         raise ValueError('StrandedII.exe is not a Windows executable')
     members['StrandedII.exe'] = exe
-    info = runtime_info(runtime)
-    report = read_json(ROOT / 'build/build-report.json')
-    source_hashes = {p.relative_to(ROOT).as_posix(): digest(p.read_bytes())
-                     for p in sorted((ROOT / 'src/engine').rglob('*.bb'))}
+    report = read_json(profile.build_dir(ROOT) / 'build-report.json')
+    sources = source_hashes(ROOT, edition)
     if (validate_info(report) != info or report['exe_sha256'] != digest(exe) or
-            report['source_sha256'] != source_hashes):
+            report['source_sha256'] != sources):
         raise ValueError('Runtime build report is stale; rebuild the current sources first')
     members['core/version.json'] = file_bytes(runtime, 'core/version.json')
     members['core/version.txt'] = file_bytes(runtime, 'core/version.txt')
@@ -216,7 +215,7 @@ def release_members(runtime, game):
     for code in packs:
         relative = f'core/locales/{code}.tsv'
         catalog = file_bytes(runtime, relative)
-        if catalog != (ROOT / f'locales/{code}.tsv').read_text('utf8').encode('utf8'):
+        if catalog != catalog_text(ROOT,code,edition).encode('utf8'):
             raise ValueError(f'Runtime catalog is stale: {code}; run setup/localize first')
         members[relative] = catalog
         relative = f'core/locales/{code}/glyphs.dat'
@@ -232,13 +231,13 @@ def release_members(runtime, game):
             for page in range((count + 1023) // 1024):
                 relative = f'core/locales/{code}/{style}_{page}.bmp'
                 members[relative] = file_bytes(runtime, relative)
-    members['core/modern.ini'] = file_bytes(ROOT, 'config/modern.ini')
+    members['core/modern.ini'] = file_bytes(ROOT, profile.defaults)
     members.update(license_members())
     members['Play.cmd'] = (
         '@echo off\r\ncd /d "%~dp0" || exit /b 1\r\n'
         'start "" "StrandedII.exe" %*\r\n').encode('ascii')
     members['README.txt'] = (
-        'Stranded II - community modernization / 커뮤니티 현대화 버전\n\n'
+        f'Stranded II - {edition.title()} / {edition} 배포판\n\n'
         'Windows 10 or later. Extract the entire ZIP, then run Play.cmd or StrandedII.exe.\n'
         'Blitz3D and Python are not needed to play.\n'
         'Windows 10 이상에서 ZIP 전체를 풀고 Play.cmd 또는 StrandedII.exe를 실행하세요.\n'
@@ -254,17 +253,20 @@ def release_members(runtime, game):
         'upstream_game_version': read_json(ROOT / 'config/dependencies.json')['game_version'],
         'exe_sha256': digest(exe),
         'languages': list(packs),
-        'source_sha256': source_hashes,
+        'source_sha256': sources,
     }, ensure_ascii=False, indent=2) + '\n').encode('utf8')
-    return {f'StrandedII/{name}': data for name, data in members.items()}
+    return {f'{profile.archive_root}/{name}': data for name, data in members.items()}
 
 
 def package(args):
     from release import archive_name
-    info = runtime_info(args.runtime)
+    edition = getattr(args, 'edition', 'classic')
+    runtime = args.runtime or Edition(edition).runtime(ROOT)
+    info = runtime_info(runtime)
+    if info['edition'] != edition:raise ValueError('Runtime belongs to another edition')
     if args.version_info and validate_info(read_json(args.version_info)) != info:
         raise ValueError('Runtime version differs from the CI-selected version')
-    members = release_members(args.runtime, args.game)
+    members = release_members(runtime, args.game, edition)
     output = args.output or ROOT / 'build/release' / archive_name(info)
     checksum = write_archive(output, members)
     print(f'Release ZIP: {output}\nSHA-256: {checksum}\nFiles: {len(members)}')
@@ -272,12 +274,13 @@ def package(args):
 
 def version(args):
     from release import allocation
+    edition = getattr(args, 'edition', 'classic')
     if args.channel:
         if not args.repo or not os.environ.get('GITHUB_SHA'):
             raise ValueError('Release allocation needs --repo and GITHUB_SHA')
-        info, published = allocation(ROOT, args.repo, args.channel, os.environ['GITHUB_SHA'])
+        info, published = allocation(ROOT, args.repo, args.channel, os.environ['GITHUB_SHA'], edition)
     else:
-        info, published = local_info(ROOT), False
+        info, published = local_info(ROOT, edition), False
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(info, indent=2) + '\n', encoding='utf8', newline='\n')
     github_outputs(args.github_output, dict(info, published=str(published).lower()))
@@ -286,7 +289,9 @@ def version(args):
 
 def release(args):
     from release import publish
-    publish(args.repo, args.directory, read_json(args.version_info))
+    info = validate_info(read_json(args.version_info))
+    if info['edition'] != args.edition:raise ValueError('Release belongs to another edition')
+    publish(args.repo, args.directory, info)
 
 
 def main():
@@ -305,7 +310,7 @@ def main():
     command.add_argument('--destination', type=Path, default=ROOT / 'build/ci/deps')
     command.add_argument('--github-output', type=Path)
     command = sub.add_parser('package', help='Create a standalone ZIP without player data')
-    command.add_argument('--runtime', type=Path, default=ROOT / 'build/runtime')
+    command.add_argument('--runtime', type=Path)
     command.add_argument('--game', type=Path, required=True)
     command.add_argument('--output', type=Path)
     command.add_argument('--version-info', type=Path)
@@ -318,6 +323,8 @@ def main():
     command.add_argument('--repo', required=True)
     command.add_argument('--version-info', type=Path, default=ROOT / 'build/ci/version.json')
     command.add_argument('--directory', type=Path, default=ROOT / 'build/release')
+    for name in ('package', 'version', 'release'):
+        sub.choices[name].add_argument('--edition', choices=NAMES, default='classic')
     args = parser.parse_args()
     try:
         globals()[args.command](args)

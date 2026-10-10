@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"1492ad2e38bb97d0778f9fe677eb254434bf121aee8e86685a26589cb7d6b27d"} -->
+<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"d19e43a5eb16747907a2feeae6a2f64c274578dea72407cddca88de934facf4d"} -->
 
 ## Stranded II : Modern
 
@@ -69,6 +69,12 @@ Please keep in mind that these are just plans for the future, and nothing beyond
 An unofficial modernization of Stranded II, rebuilt with Blitz3D 1.118. It preserves the original survival and exploration experience while supporting higher frame rates and convenient switching between the game and other windows.
 
 The project is under development, with a stable release in preparation.
+
+## Classic and Extended
+
+Classic preserves the current game experience. Extended is a separate edition for future UI, QOL, content, and balance changes. Only the separation foundation is implemented so far; both editions currently have the same gameplay and content.
+
+The editions share engine code but have separate runtime folders, settings, saves, versions, and release ZIPs. In the source checkout, launch Classic with `Play.cmd` and Extended with `Play-Extended.cmd`. Prepare Extended with `setup --edition extended` and `build --edition extended` first. See the [development guide](docs/development.md#classic-and-extended) for boundaries and commands.
 
 ## Changes
 

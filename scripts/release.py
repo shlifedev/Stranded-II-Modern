@@ -1,5 +1,6 @@
 """GitHub release allocation and resumable draft publication through GitHub CLI."""
 from pathlib import Path
+from editions import Edition
 import hashlib
 import json
 import re
@@ -35,19 +36,21 @@ def saved_info(release):
     return json.loads(match[1]) if match else None
 
 
-def allocation(root, repo, channel, commit):
+def allocation(root, repo, channel, commit, edition='classic'):
+    profile = Edition(edition)
+    pattern = re.compile(('extended-' if edition == 'extended' else '') + TAG.pattern)
     # Freeze the exact main configuration read by dev, rather than requiring a merge.
     base_commit = commit if channel == 'main' else git(root, 'rev-parse', 'origin/main')
     try:
-        base = read_base(git(root, 'show', f'{base_commit}:config/version.json'))
+        base = read_base(git(root, 'show', f'{base_commit}:{profile.version_config}'))
     except (ValueError, KeyError) as exc:
-        raise ValueError('Add a valid config/version.json to main before releasing dev') from exc
+        raise ValueError(f'Add a valid {profile.version_config} to main before releasing dev') from exc
     tags = {tag: git(root, 'rev-parse', tag + '^{}')
-            for tag in git(root, 'tag', '--list').splitlines() if TAG.fullmatch(tag)}
+            for tag in git(root, 'tag', '--list').splitlines() if pattern.fullmatch(tag)}
     history = releases(repo)
     # Our drafts always target an exact SHA; include a draft even if its tag has not appeared yet.
     for entry in history:
-        if TAG.fullmatch(entry['tag_name']):
+        if pattern.fullmatch(entry['tag_name']):
             previous = saved_info(entry)
             if previous:
                 info = validate_info(previous)
@@ -57,14 +60,14 @@ def allocation(root, repo, channel, commit):
                     raise ValueError('Release tag no longer points to its recorded source commit')
                 tags.setdefault(entry['tag_name'], info['commit'])
     published = {r['tag_name'] for r in history if not r['draft'] and not r['prerelease']}
-    version = select_version(base, channel, commit, tags, published)
-    info = make_info(version, channel, commit, base, base_commit)
+    version = select_version(base, channel, commit, tags, published, edition)
+    info = make_info(version, channel, commit, base, base_commit, edition)
     existing = next((r for r in history if r['tag_name'] == info['tag']), None)
     if existing:
         previous = saved_info(existing)
         if previous:
             info = validate_info(previous)
-        if info['commit'] != commit or info['channel'] != channel:
+        if info['commit'] != commit or info['channel'] != channel or info['edition'] != edition:
             raise ValueError('Cannot reuse a release for a different commit/channel')
         if not existing['draft']:
             expected = {archive_name(info), archive_name(info) + '.sha256'}
@@ -82,12 +85,13 @@ def validate_package(directory, info):
     checksum = hashlib.sha256(path.read_bytes()).hexdigest()
     if path.with_suffix('.zip.sha256').read_text('utf8') != f'{checksum}  {path.name}\n':
         raise ValueError('Release ZIP checksum file disagrees with the archive')
+    prefix = Edition(info['edition']).archive_root
     with zipfile.ZipFile(path) as archive:
-        build = json.loads(archive.read('StrandedII/build-info.json'))
-        metadata = validate_info(json.loads(archive.read('StrandedII/core/version.json')))
-        label = archive.read('StrandedII/core/version.txt')
-        exe = archive.read('StrandedII/StrandedII.exe')
-        if (metadata != info or any(build.get(k) != v for k, v in info.items()) or
+        build = json.loads(archive.read(f'{prefix}/build-info.json'))
+        metadata = validate_info(json.loads(archive.read(f'{prefix}/core/version.json')))
+        label = archive.read(f'{prefix}/core/version.txt')
+        exe = archive.read(f'{prefix}/StrandedII.exe')
+        if (metadata != info or any(build.get(k, 'classic' if k == 'edition' else None) != v for k, v in info.items()) or
                 label != (info['display_version'] + '\n').encode('ascii') or
                 build['exe_sha256'] != hashlib.sha256(exe).hexdigest()):
             raise ValueError('Release ZIP version/commit/executable does not match the selected build')
@@ -135,12 +139,12 @@ def publish(repo, directory, info):
         gh('release', 'edit', info['tag'], '--repo', repo, '--notes-file', str(notes))
     else:
         gh('release', 'create', info['tag'], '--repo', repo, '--verify-tag', '--draft',
-           '--title', info['display_version'], '--generate-notes', '--notes-file', str(notes),
+           '--title', info['edition'].title() + ' ' + info['display_version'], '--generate-notes', '--notes-file', str(notes),
            '--prerelease=' + str(info['channel'] == 'dev').lower(), '--latest=false')
     # Only drafts may replace assets, so interruption halfway through upload is recoverable.
     gh('release', 'upload', info['tag'], str(path), str(path.with_suffix('.zip.sha256')),
        '--repo', repo, '--clobber')
-    latest = info['channel'] == 'main' and not any(
+    latest = info['edition'] == 'classic' and info['channel'] == 'main' and not any(
         not r['draft'] and not r['prerelease'] and TAG.fullmatch(r['tag_name']) and
         TAG.fullmatch(r['tag_name'])[4] is None and
         parse_base(r['tag_name'][1:]) > parse_base(info['version']) for r in history)

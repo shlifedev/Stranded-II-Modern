@@ -1,10 +1,16 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"949657eb92c974ac078f4825641949fb479eda18ac9a7aaf679e96f3cb7b21e3"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"3395522cbf944c3acb2a859554d1c71ce78607075edd5761ec2df41d464a5802"} -->
 
 # Stranded II development instructions
 
 [English](AGENTS.md) · [한국어](AGENTS-ko.md)
 
-The current architecture is a single engine, shared resources, and discovered language packs selected at launch (EN/KO bundled). Communicate with the user in Korean.
+The architecture has Classic and Extended editions using a shared engine, edition-specific resources, and language packs selected at launch (EN/KO bundled). Communicate with the user in Korean.
+
+- The current separation provides the development foundation only; it adds no QOL or rebalancing. Extended-only changes must not alter Classic gameplay or content. Verify shared engine changes in both editions.
+- The entrypoints are `src/engine/StrandedII.bb` and `src/engine/StrandedIIExtended.bb`. Select implementations in `editions/<edition>/modules.bb`. When Extended behavior diverges, separate only the required modules rather than copying the whole engine.
+- Commands default to Classic when `--edition classic|extended` is omitted. Classic uses `build/runtime`; Extended uses `build/extended/runtime`. Do not share or automatically copy settings or saves.
+- Put edition resources in `resources/editions/<edition>/overrides/` and translations in `locales/editions/<edition>/<code>.tsv`. Shared resource/catalog changes affect both editions. Write Extended rebalancing only in its own paths.
+- `main`/`dev` are stable/development channels. Pushes and PRs check both editions; publication requires selecting the edition and `publish=true` in the manual workflow. Do not publish a release without a request.
 
 - Edit `src/engine/**/*.bb` directly. These files are tracked sources, not generated output. Do not run the old `src/ko-full` generators against the current engine.
 - Follow `scripts/dev.py setup|localize|build|run|check` and the directory structure in `docs/development.md`. Python handles preparation, fonts, and verification only; it does not regenerate engine code.

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/playing.md","language":"en","syncedHash":"931ce3bd2cd9992d3073e748ba2852428f42a1d4ef51e0283d28909a6f6718c7"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/playing.md","language":"en","syncedHash":"d32f144c221cb811311d72cccd52830da59ffc09ac568e571404841ee1daa62b"} -->
 
 # Playing and settings
 
@@ -11,6 +11,8 @@
 On Windows 10 or later, run `Play.cmd` from the repository root. The executable is `build/runtime/StrandedII.exe`. Python is not required to play the game.
 
 The source repository does not contain the executable or original game resources. For a first setup, complete the environment setup and build steps in the [development guide](development.md).
+
+Launch Extended with `Play-Extended.cmd` in the source checkout; its runtime folder is `build/extended/runtime/`. For Extended, replace the Classic `build/runtime/` paths below with that path. The editions do not share settings, saves, Continue, or autosaves, and save import is not provided yet. In a release ZIP, use `Play.cmd` inside the chosen edition's folder.
 
 ## Frame rate and display mode
 

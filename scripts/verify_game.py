@@ -4,6 +4,7 @@ No GUI input is sent. Only branding, focus waiting and the interactive loop are
 replaced. Use Computer Use separately for visual menu and options checks.
 """
 from pathlib import Path
+from editions import Edition, NAMES
 import argparse, json, os, shutil, subprocess, tempfile
 from verify_timing import function
 from s2map import Map
@@ -13,11 +14,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--desktop', action='store_true',
                         help='Test fitted primary-monitor resolution in borderless mode')
+    parser.add_argument('--edition', choices=NAMES, default='classic')
     args = parser.parse_args()
+    profile = Edition(args.edition)
     root = Path(__file__).resolve().parents[1]
-    out = Path(tempfile.mkdtemp(prefix='game-smoke-', dir=root/'build'))
+    out = Path(tempfile.mkdtemp(prefix='game-smoke-', dir=profile.build_dir(root)))
     runtime = out/'runtime'
-    shutil.copytree(root/'build/runtime', runtime,
+    shutil.copytree(profile.runtime(root), runtime,
                     ignore=shutil.ignore_patterns('preserved', 'saves', '*.log'))
     (runtime/'mods/Stranded II/saves').mkdir()
     display = 'borderless' if args.desktop else 'windowed'
@@ -31,9 +34,11 @@ def main():
     text = timing.read_text('utf8')
     text = text.replace(function(text, 'modern_focus'), 'Function modern_focus()\n Return 0\nEnd Function')
     timing.write_text(text, encoding='utf8')
-    entry = source/'StrandedII.bb'
+    entry = source/'includes/engine_init.bb'
     text = entry.read_text('utf8').replace('\nunrealsoftware()\n', '\n; Branding skipped for automated test.\n')
-    text = text[:text.index(';############################################ RUNTIME')]
+    entry.write_text(text, encoding='utf8')
+    entry = source/'includes/engine_loop.bb'
+    text = ''
     text += r'''
 Global smoke_report=WriteFile(set_rootdir$+"game-smoke.txt"),smoke_failures
 Function smoke_check(ok,label$)
@@ -90,7 +95,7 @@ End
     blitz = root/'build/toolchain'
     exe = runtime/'SaveSmoke.exe'
     print('Isolated runtime:', runtime, flush=True)
-    subprocess.run([str(blitz/'bin/blitzcc.exe'), '-o', str(exe), str(entry)],
+    subprocess.run([str(blitz/'bin/blitzcc.exe'), '-o', str(exe), str(source/profile.entry)],
                    cwd=source, env=dict(os.environ, blitzpath=str(blitz)), check=True)
     startup = subprocess.STARTUPINFO()
     startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW

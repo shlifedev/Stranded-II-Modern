@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"86cbf8121f1aa1834ac1dbbba92a5818a5b8ab30318f0b19b9a7c568d1b881cd"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"14b2648a469dbd066de0f4afa4d755720746c98177cb6831de3f8de08fa8c2a2"} -->
 
 # Development guide
 
@@ -31,6 +31,44 @@ edit resources/ → setup command → refresh resources in build/runtime/
 | `build/runtime/` | Built game, resources, user settings, and saves | Excluded |
 
 Changes to generated output may be overwritten by the next `setup` or `build`. Keep code, translations, and resource changes in the source directories above. Python tools generate resources and verification code; they do not regenerate the game sources in `src/engine/`.
+
+## Classic and Extended
+
+`classic` preserves existing behavior; `extended` is the separate edition for new features and content. Only the separation foundation exists so far; QOL and rebalancing have not been added. Change shared code once and verify both editions; write Extended-only changes in that edition's code and resources.
+
+```text
+src/engine/
+  StrandedII.bb                    Classic entrypoint
+  StrandedIIExtended.bb            Extended entrypoint
+  includes/engine_init.bb          Shared initialization and functions
+  includes/engine_loop.bb          Shared runtime loop
+  includes/                       Currently shared engine implementations
+  editions/classic/profile.bb     Classic identity and window title
+  editions/classic/modules.bb     Classic UI/input/building selection
+  editions/extended/profile.bb    Extended identity and window title
+  editions/extended/modules.bb    Extended UI/input/building selection
+resources/overrides/              Shared resource overrides (create when needed)
+resources/editions/classic/overrides/   Classic resource overrides
+resources/editions/extended/overrides/  Extended resource overrides
+build/runtime/                   Classic runtime, settings and saves
+build/extended/runtime/          Extended runtime, settings and saves
+```
+
+Both `modules.bb` files currently include the same existing implementations. Only when behavior diverges, create the relevant module in the Extended folder and change its `Include`. Compilation uses directly authored sources; Python does not generate engine code. Build reports record only the selected entrypoint's actual `Include` graph. Including another edition's private source fails validation.
+
+Resources are prepared in this order: official input, localization preparation, shared overrides, then the selected edition's overrides. Place edition overrides at runtime-relative `mods/Stranded II/...` paths. Write item, recipe, building, stat, map, and script rebalancing in Extended overrides. Overrides cannot replace settings, saves, or executables. Follow the existing binary-preservation rules for `.s2` edits. See the [localization guide](localization.md#edition-specific-translations) for edition translations.
+
+All development commands accept `--edition classic|extended` and default to Classic. Dependencies and the compiler are shared; runtime folders, reports, and verification artifacts are separate. Classic data is neither moved nor automatically copied to Extended.
+
+```powershell
+python -X utf8 scripts/dev.py setup --edition extended
+python -X utf8 scripts/dev.py build --edition extended
+python -X utf8 scripts/dev.py check --edition extended
+python -X utf8 scripts/dev.py run --edition extended -- -win
+.\Play-Extended.cmd
+```
+
+The first `setup` needs the dependency arguments below. Later runs use the saved shared dependency paths. Classic still launches with `Play.cmd`. Extended defaults are in `config/editions/extended/modern.ini`; `setup` does not replace existing personal settings.
 
 ## Setting up the development environment
 
@@ -166,29 +204,31 @@ Keep document bodies editable and leave synchronization hashes for the agent to 
 
 ## GitHub CI and release ZIPs
 
-The [Windows workflow](../.github/workflows/windows.yml) builds and checks pushes to `main`/`dev`, pull requests, and manual runs, then stores a playable game ZIP and SHA-256 file as artifacts. A `main` push automatically publishes a stable Release; a `dev` push publishes a prerelease. Pull requests and manual runs only produce verification ZIPs labeled `-local`, without publishing Releases or consuming version numbers. Tag pushes no longer trigger deployment.
+The [Windows workflow](../.github/workflows/windows.yml) builds and checks both editions on pushes to `main`/`dev`, pull requests, and manual runs, storing game ZIPs and SHA-256 files as artifacts. Pushes and PRs only produce `-local` verification ZIPs without publishing Releases or consuming version numbers.
 
-CI runs `setup → build → check → package` on Windows Server 2022 with Python 3.13. `check` tests non-graphical runtime behavior; it does not replace checks of actual graphics, rendering FPS, Alt-Tab, or a full playthrough. Verify GitHub Actions itself after creating the remote repository.
+To publish, manually run Actions on `main` or `dev` with `edition=classic|extended` and `publish=true`. Both editions must pass before only the selected edition is published; `main` is stable and `dev` is a prerelease. The default manual run uses `publish=false` for verification only. Other branches cannot publish, and tag pushes do not publish.
+
+CI runs `setup → build → check → package` on Windows Server 2022 with Python 3.13. `check` tests non-graphical runtime behavior; it does not replace actual graphics, rendering FPS, Alt-Tab, or full-playthrough verification. Actual GitHub Actions runs must also be checked separately from local tests.
 
 To avoid repeated download traffic to upstream sites, store game resources, the compiler, and the font once in a dependency Release in the same repository. CI uses only this Release and the Actions cache. Missing files cause a failure with preparation instructions; CI does not automatically download from upstream sites.
 
 ### Setting versions and automatic increments
 
-The developer sets the baseline in [config/version.json](../config/version.json) on `main`. Its initial value is `{"version":"1.1.0"}`. CI never changes the first two numbers. The patch is the starting value for that series; if stable tags already exist in the same series, releases continue with the next number. CI does not modify this file or create version commits.
+Classic's baseline is in [config/version.json](../config/version.json) on `main`, initially `1.1.0`. Extended starts independently at `0.1.0` in [config/editions/extended/version.json](../config/editions/extended/version.json). CI never changes the first two numbers or configuration files, and creates no version commits. The patch is the starting value for that edition and series; existing stable tags advance the next release number.
 
-| Release situation | Bottom-right menu label | GitHub tag |
+| Release situation | Menu label | GitHub tag |
 |---|---|---|
-| First stable release | `1.1.0-main` | `v1.1.0` |
-| First subsequent development release | `1.1.1-dev.1` | `v1.1.1-dev.1` |
-| Another development release for the same target | `1.1.1-dev.2` | `v1.1.1-dev.2` |
-| Next stable release | `1.1.1-main` | `v1.1.1` |
-| Development release after that stable release | `1.1.2-dev.1` | `v1.1.2-dev.1` |
+| First Classic stable release | `1.1.0-main` | `v1.1.0` |
+| Subsequent Classic development release | `1.1.1-dev.1` | `v1.1.1-dev.1` |
+| Next Classic stable release | `1.1.1-main` | `v1.1.1` |
+| First Extended stable release | `extended-0.1.0-main` | `extended-v0.1.0` |
+| Subsequent Extended development release | `extended-0.1.1-dev.1` | `extended-v0.1.1-dev.1` |
 
-At the start of CI, `dev` reads the baseline file from `main` and freezes its commit SHA. Before a stable release exists, development releases start at the baseline with `-dev.1`; otherwise they target the next stable patch and increment the `dev.N` sequence. Development releases do not consume stable patches. Changing the baseline on `main` to `1.2.0` makes the next development release use the new series without a merge. `main` uses the baseline file from the commit being released.
+When publishing, `dev` reads the selected edition's baseline file from `main` and freezes its commit SHA. Before a stable release exists, development releases start at the baseline with `-dev.1`; otherwise they target the next patch and increment `dev.N`. Development releases do not consume stable patches. `main` uses the baseline file from the release commit. Before the first Extended release from `dev`, its baseline file must exist on `main`.
 
-Version selection through publication is serialized across both branches. Build/check failures create no tags and consume no numbers. An interruption during tag creation or upload can reserve a number, but a rerun recovers the tag and draft for the same source commit/channel. Published Releases are never overwritten, and rerunning an already published commit skips the build. `ci-deps-v1` is excluded from game version calculations. Development prereleases do not replace the latest stable Release.
+Release runs are serialized from version allocation through publication. Build/check failures create no tags and consume no numbers. Publication interruptions may reserve a number, but rerunning the same edition, source commit, and channel recovers its tag and draft. Published Releases are never overwritten; reruns verify and retain the existing publication. Other editions' tags and `ci-deps-v1` do not affect number allocation. Development and Extended releases do not replace Classic's latest stable Release marker.
 
-Builds generate `core/version.txt` and `core/version.json`. The game reads the label at startup and displays it in the main menu. `build-info.json` includes the version, channel, source commit, baseline-file commit, and executable hash. Packaging verifies that this information matches the build report and current engine sources. The engine's existing `Cversion="1.0.0.1"` and upstream dependency version remain unchanged for map/script compatibility. A local `build` displays the baseline with a `-local` suffix.
+Builds generate `core/version.txt` and `core/version.json`. The game displays the label in the main menu. `build-info.json` includes the edition, version, channel, source commit, baseline-file commit, and executable hash. Packaging checks the selected edition's build report and source graph, rejecting another edition's runtime or stale resource overrides. The existing `Cversion="1.0.0.1"` remains unchanged for map/script compatibility. Local builds display `-local`.
 
 ### Preparing the dependency Release once
 
@@ -216,16 +256,17 @@ Then manually run `Windows build and release` in Actions to download the game ZI
 
 ### Release ZIP contents
 
-The ZIP's `StrandedII/` folder includes the compiled EXE, original game resources, localized resources, per-language bitmap fonts, initial settings, and licenses. Extract the whole ZIP and run `Play.cmd` or `StrandedII.exe` in that folder. Players do not need separate Python, Blitz3D, or font installations.
+Classic ZIPs use `StrandedII/` and Extended ZIPs use `StrandedII-Extended/`. Each folder includes the compiled EXE, original game resources, localized resources, per-language bitmap fonts, initial settings, and licenses. Extract the whole ZIP and run `Play.cmd` or `StrandedII.exe` in that folder. Players do not need separate Python, Blitz3D, or font installations.
 
 Packaging uses an explicit file list, so a used development runtime's personal saves, custom maps, screenshots, `preserved/`, logs, and check reports are excluded. Key bindings come from the original dependencies; `core/modern.ini` comes from the repository's initial settings. Personal `sys/settings.cfg` is also excluded, so new installations use the engine's graphics quality and volume defaults, described in [playing and settings](playing.md#graphics-quality-and-sound). The development runtime is not modified. Local packaging is also available.
 
 ```powershell
 python -X utf8 scripts/ci.py package --game deps/game
+python -X utf8 scripts/ci.py package --edition extended --game deps/game
 python -X utf8 -m unittest discover -s tests -p 'test_ci*.py'
 ```
 
-Output names are `build/release/StrandedII-<display version>-windows.zip` and `.zip.sha256`. For example, the first stable release is `StrandedII-1.1.0-main-windows.zip`, and a local build is `StrandedII-1.1.0-local-windows.zip`. Packaging does not compile or run game checks, so first complete `setup → build → check` with the latest sources. CI also stores its selected version information in the `version-context` artifact.
+Output names are `build/release/StrandedII-<display version>-windows.zip` and `.zip.sha256`. For example, a Classic local build is `StrandedII-1.1.0-local-windows.zip`, and Extended is `StrandedII-extended-0.1.0-local-windows.zip`. Packaging does not compile or run game checks, so first complete `setup → build → check` for the same edition with the latest sources. CI stores version information in `version-context-classic` and `version-context-extended`, and game ZIPs in `StrandedII-classic-windows` and `StrandedII-extended-windows`.
 
 ## Generated output and user data
 

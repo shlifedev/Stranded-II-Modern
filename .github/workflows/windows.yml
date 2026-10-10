@@ -2,6 +2,16 @@ name: Windows build and release
 
 on:
   workflow_dispatch:
+    inputs:
+      edition:
+        description: Edition to publish (both editions are always checked)
+        type: choice
+        options: [classic, extended]
+        default: classic
+      publish:
+        description: Publish the selected edition from main or dev
+        type: boolean
+        default: false
   push:
     branches: [main, dev]
   pull_request:
@@ -10,7 +20,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: windows-${{ github.event_name == 'push' && 'release' || github.ref }}
+  group: windows-${{ github.event_name == 'workflow_dispatch' && inputs.publish && 'release' || github.ref }}
   queue: max
   cancel-in-progress: false
 
@@ -23,57 +33,19 @@ env:
   PYTHONUNBUFFERED: '1'
 
 jobs:
-  version:
+  build:
     runs-on: windows-2022
-    timeout-minutes: 5
-    outputs:
-      published: ${{ steps.version.outputs.published }}
-      display_version: ${{ steps.version.outputs.display_version }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        edition: [classic, extended]
+    env:
+      EDITION: ${{ matrix.edition }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-          persist-credentials: false
-
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
-        with:
-          python-version: '3.13'
-
-      - name: Test version allocation and release recovery
-        run: python -X utf8 -m unittest discover -s tests -p test_ci*.py
-
-      - name: Select release or preview version
-        id: version
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          RELEASE_CHANNEL: ${{ github.ref_name }}
-          PUBLISH_RELEASE: ${{ github.event_name == 'push' }}
-        run: |
-          if ($env:PUBLISH_RELEASE -eq 'true') {
-            python -X utf8 scripts/ci.py version --channel "$env:RELEASE_CHANNEL" --repo "$env:GH_REPO" --github-output "$env:GITHUB_OUTPUT"
-          } else {
-            python -X utf8 scripts/ci.py version --github-output "$env:GITHUB_OUTPUT"
-          }
-          if ($LASTEXITCODE -ne 0) { throw 'Version selection failed' }
-
-      - name: Store selected version
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
-        with:
-          name: version-context
-          path: build/ci/version.json
-          overwrite: true
-          if-no-files-found: error
-          retention-days: 14
-
-  build:
-    needs: version
-    if: needs.version.outputs.published != 'true'
-    runs-on: windows-2022
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
           persist-credentials: false
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
@@ -84,11 +56,31 @@ jobs:
       - name: Install preparation tools
         run: python -m pip install -r requirements.txt
 
-      - name: Restore selected version
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+      - name: Test editions, packaging and release recovery
+        run: python -X utf8 -m unittest discover -s tests -p test_ci*.py
+
+      - name: Select release or preview version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_CHANNEL: ${{ github.ref_name }}
+          PUBLISH_RELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.publish && inputs.edition == matrix.edition }}
+        run: |
+          if ($env:PUBLISH_RELEASE -eq 'true') {
+            python -X utf8 scripts/ci.py version --edition "$env:EDITION" --channel "$env:RELEASE_CHANNEL" --repo "$env:GH_REPO"
+          } else {
+            python -X utf8 scripts/ci.py version --edition "$env:EDITION"
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Version selection failed' }
+
+      - name: Store selected version
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: version-context
-          path: build/ci
+          name: version-context-${{ matrix.edition }}
+          path: build/ci/version.json
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Read dependency pin
         id: pin
@@ -126,23 +118,23 @@ jobs:
           GAME_INPUT: ${{ steps.deps.outputs.game }}
           BLITZ_INPUT: ${{ steps.deps.outputs.blitz }}
           FONT_INPUT: ${{ steps.deps.outputs.font }}
-        run: python -X utf8 scripts/dev.py setup --game "$env:GAME_INPUT" --blitz "$env:BLITZ_INPUT" --font "$env:FONT_INPUT"
+        run: python -X utf8 scripts/dev.py setup --edition "$env:EDITION" --game "$env:GAME_INPUT" --blitz "$env:BLITZ_INPUT" --font "$env:FONT_INPUT"
 
       - name: Compile with Blitz3D
-        run: python -X utf8 scripts/dev.py build --version-info build/ci/version.json
+        run: python -X utf8 scripts/dev.py build --edition "$env:EDITION" --version-info build/ci/version.json
 
       - name: Check resources and non-graphical runtime behavior
-        run: python -X utf8 scripts/dev.py check
+        run: python -X utf8 scripts/dev.py check --edition "$env:EDITION"
 
       - name: Package standalone game
         env:
           GAME_INPUT: ${{ steps.deps.outputs.game }}
-        run: python -X utf8 scripts/ci.py package --game "$env:GAME_INPUT" --version-info build/ci/version.json
+        run: python -X utf8 scripts/ci.py package --edition "$env:EDITION" --game "$env:GAME_INPUT" --version-info build/ci/version.json
 
       - name: Upload game ZIP and checksum
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: StrandedII-windows
+          name: StrandedII-${{ matrix.edition }}-windows
           path: build/release/*
           overwrite: true
           if-no-files-found: error
@@ -153,19 +145,23 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: windows-reports
+          name: windows-reports-${{ matrix.edition }}
           overwrite: true
           path: |
             build/setup-report.json
             build/build-report.json
             build/check-*/**/*.json
             build/check-*/**/*.txt
+            build/extended/setup-report.json
+            build/extended/build-report.json
+            build/extended/check-*/**/*.json
+            build/extended/check-*/**/*.txt
           if-no-files-found: ignore
           retention-days: 14
 
   release:
-    needs: [version, build]
-    if: github.event_name == 'push'
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
     runs-on: windows-2022
     timeout-minutes: 5
     permissions:
@@ -181,16 +177,17 @@ jobs:
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          name: version-context
+          name: version-context-${{ inputs.edition }}
           path: build/ci
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          name: StrandedII-windows
+          name: StrandedII-${{ inputs.edition }}-windows
           path: build/release
 
-      - name: Publish immutable main or dev Release
+      - name: Publish selected immutable Release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: python -X utf8 scripts/ci.py release --repo "$env:GH_REPO"
+          EDITION: ${{ inputs.edition }}
+        run: python -X utf8 scripts/ci.py release --edition "$env:EDITION" --repo "$env:GH_REPO"

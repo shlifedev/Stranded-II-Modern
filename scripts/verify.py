@@ -1,8 +1,10 @@
 """Actual Blitz localization/timing tests plus structural resource/save checks."""
 from pathlib import Path
 from collections import Counter
-import json, os, re, shutil, struct, subprocess, sys, tempfile
-from locales import catalog, validate, languages, REFERENCE
+import argparse, json, os, re, shutil, struct, subprocess, sys, tempfile
+from editions import Edition, NAMES
+from versioning import runtime_info
+from locales import catalog, catalog_text, validate, languages, REFERENCE
 from language_pack import registry
 from s2map import Map
 from verify_timing import function
@@ -10,11 +12,15 @@ from verify_timing import function
 ROOT=Path(__file__).resolve().parents[1]
 BUILD=ROOT/'build'
 def main():
-    catalogs=validate(ROOT)
-    if not (BUILD/'runtime/StrandedII.exe').exists():raise ValueError('Run setup and build before check')
-    output=Path(tempfile.mkdtemp(prefix='check-',dir=BUILD))
+    parser=argparse.ArgumentParser();parser.add_argument('--edition',choices=NAMES,default='classic')
+    args=parser.parse_args();profile=Edition(args.edition)
+    runtime=profile.runtime(ROOT);output_root=profile.build_dir(ROOT)
+    catalogs=validate(ROOT,args.edition)
+    if not (runtime/'StrandedII.exe').exists():raise ValueError('Run setup and build before check')
+    if runtime_info(runtime)['edition']!=args.edition:raise ValueError('Runtime belongs to another edition')
+    output=Path(tempfile.mkdtemp(prefix='check-',dir=output_root))
     (output/'core/locales').mkdir(parents=True)
-    for lang in catalogs:shutil.copy2(ROOT/'locales'/f'{lang}.tsv',output/'core/locales'/f'{lang}.tsv')
+    for lang in catalogs:(output/'core/locales'/f'{lang}.tsv').write_text(catalog_text(ROOT,lang,args.edition),encoding='utf8',newline='\n')
     packs=languages(ROOT);packs['zz-test']={'name':'日本語テスト'}
     (output/'core/locales/languages.dat').write_bytes(registry(packs))
     (output/'core/locales/zz-test.tsv').write_text('ui.language\t言語\n',encoding='utf8')
@@ -119,9 +125,9 @@ End
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_settings.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'settings')],check=True)
     # Check every emitted reference, including binary map string fields.
     refcount=0
-    for p in (BUILD/'runtime').rglob('*'):
+    for p in runtime.rglob('*'):
         texts=[]
-        if p.relative_to(BUILD/'runtime').parts[0]=='preserved':continue
+        if p.relative_to(runtime).parts[0]=='preserved':continue
         if '/saves/' in p.as_posix():continue
         if p.suffix in ('.inf','.s2s','.txt') and p.is_file():
             try:texts=[p.read_text('utf8')]
@@ -134,12 +140,12 @@ End
     from fonts import repertoire
     expected=set(repertoire(catalogs,languages(ROOT)))
     for code in catalogs:
-        data=(BUILD/f'runtime/core/locales/{code}/glyphs.dat').read_bytes()
+        data=(runtime/f'core/locales/{code}/glyphs.dat').read_bytes()
         magic,count,cw,ch=struct.unpack_from('<4sIII',data)
         assert magic==b'FNT2' and len(data)==16+count*28 and 0<cw<=64 and ch==19
         glyphs={struct.unpack_from('<i',data,16+i*28)[0] for i in range(count)}
         assert expected<=glyphs,(code,expected-glyphs)
-    subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_fonts.py'),'--output',str(output/'fonts')],check=True)
+    subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_fonts.py'),'--runtime',str(runtime),'--output',str(output/'fonts')],check=True)
     report={'localization_runtime':'pass','config_preservation':'pass','timing':'pass','coarse_timer_hook':'pass','modern_save_and_display':'pass','product_version_loader':'pass','initial_settings_and_preservation':'pass','validated_references':refcount,'unicode_glyphs':len(glyphs),'graphics_and_actual_game_save':'requires game smoke test'}
     (output/'report.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf8')
     print('Checks passed:',output)

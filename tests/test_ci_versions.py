@@ -17,6 +17,21 @@ OLDER = 'b' * 40
 
 
 class VersionTests(unittest.TestCase):
+    def test_extended_allocation_uses_its_own_baseline_and_release_history(self):
+        def fake_git(root, *args):
+            if args == ('rev-parse', 'origin/main'): return OLDER
+            if args == ('show', OLDER + ':config/editions/extended/version.json'): return '{"version":"0.1.0"}'
+            if args == ('tag', '--list'): return 'v0.1.99\nextended-v0.1.0'
+            if args == ('rev-parse', 'extended-v0.1.0^{}'): return OLDER
+            self.fail(args)
+        stable = dict(tag_name='extended-v0.1.0', draft=False, prerelease=False, assets=[])
+        with patch.object(release, 'git', side_effect=fake_git), patch.object(release, 'releases', return_value=[stable]):
+            info, published = release.allocation(Path('.'), 'owner/repo', 'dev', COMMIT, 'extended')
+        self.assertEqual(info['version'], '0.1.1-dev.1')
+        self.assertEqual(info['tag'], 'extended-v0.1.1-dev.1')
+        self.assertEqual(info['base_commit'], OLDER)
+        self.assertFalse(published)
+
     def test_first_main_and_dev_start_at_declared_base(self):
         tags = {'ci-deps-v1': OLDER, 'v1.0.9': OLDER, 'v2.0.0': OLDER}
         self.assertEqual(select_version('1.1.0', 'main', COMMIT, tags, set()), '1.1.0')
@@ -94,13 +109,15 @@ class PublicationTests(unittest.TestCase):
         patch.object(release, 'gh', side_effect=self.gh).start()
 
     def make_package(self, info):
+        from editions import Edition
+        prefix = Edition(info['edition']).archive_root
         path = self.directory / release.archive_name(info)
         exe = b'MZexecutable'
         with zipfile.ZipFile(path, 'w') as archive:
-            archive.writestr('StrandedII/core/version.json', json.dumps(info))
-            archive.writestr('StrandedII/core/version.txt', info['display_version'] + '\n')
-            archive.writestr('StrandedII/StrandedII.exe', exe)
-            archive.writestr('StrandedII/build-info.json', json.dumps(dict(info, exe_sha256=hashlib.sha256(exe).hexdigest())))
+            archive.writestr(f'{prefix}/core/version.json', json.dumps(info))
+            archive.writestr(f'{prefix}/core/version.txt', info['display_version'] + '\n')
+            archive.writestr(f'{prefix}/StrandedII.exe', exe)
+            archive.writestr(f'{prefix}/build-info.json', json.dumps(dict(info, exe_sha256=hashlib.sha256(exe).hexdigest())))
         checksum = hashlib.sha256(path.read_bytes()).hexdigest()
         path.with_suffix('.zip.sha256').write_text(f'{checksum}  {path.name}\n', encoding='utf8')
         return path
@@ -150,6 +167,21 @@ class PublicationTests(unittest.TestCase):
         release.publish('owner/repo', self.directory, info)
         self.assertIn('--prerelease=false', self.commands[-1])
         self.assertIn('--latest=false', self.commands[-1])
+
+    def test_extended_stable_release_is_independent_and_never_latest(self):
+        info = make_info('0.1.0', 'main', COMMIT, edition='extended')
+        self.make_package(info)
+        self.fail_upload = True
+        with self.assertRaisesRegex(ValueError, 'upload failure'):
+            release.publish('owner/repo', self.directory, info)
+        self.fail_upload = False
+        release.publish('owner/repo', self.directory, info)
+        self.assertEqual(self.tags, {'extended-v0.1.0': COMMIT})
+        self.assertIn('--prerelease=false', self.commands[-1])
+        self.assertIn('--latest=false', self.commands[-1])
+        previous = self.commands.copy()
+        release.publish('owner/repo', self.directory, info)
+        self.assertEqual(self.commands, previous)
 
     def test_wrong_tag_commit_and_package_tampering_fail_before_publication(self):
         self.tags[self.info['tag']] = OLDER

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"07a8bae0a63cb550d7395f1368ddde6ffcf5dce8d9d0884ac0dd862c6121e7e3"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"6d84a1f727e881e08c218947f3b593012b18efbdf842ff340e447816ef3d1405"} -->
 
 # Localization guide
 
@@ -8,9 +8,15 @@
 
 ## Current support
 
-The game supports Korean (`ko`) and English (`en`) catalogs. Both use one executable and shared resources; the selected language is read at launch. A language change in the options takes effect on the next launch.
+The game supports Korean (`ko`) and English (`en`) catalogs. Each edition uses one executable for all languages; the selected language is read at launch. A language change in the options takes effect on the next launch.
 
 Editing translations or fonts and adding languages does not require recompiling the EXE. Prepare both `locales/<code>.tsv` and `locales/<code>.json`, then run `localize` to register the language automatically. See the [font guide](fonts.md) for font selection.
+
+## Edition-specific translations
+
+Catalogs and language metadata in `locales/` are shared. Add edition text in `locales/editions/classic/<code>.tsv` or `locales/editions/extended/<code>.tsv` when needed. Only the selected edition's TSV is applied over the shared catalog: matching keys replace entries and new keys are added. Define new English source keys in that edition's `en.tsv` as well. Missing Korean or other translations fall back to that edition's English text.
+
+Language registration and font metadata still use the shared `locales/<code>.json`. Edition TSVs follow the same syntax, substitution-variable, and reference checks. `localize --edition extended` and `check --edition extended` target only Extended and do not change Classic catalogs. Omitting the edition targets Classic.
 
 ## File roles
 

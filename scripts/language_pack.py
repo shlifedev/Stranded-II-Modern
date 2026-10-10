@@ -1,7 +1,7 @@
 """Stage and publish catalogs, language registry and bitmap fonts together."""
 from pathlib import Path
 import os, shutil, struct, tempfile
-from locales import languages, validate
+from locales import languages, validate, catalog_text
 
 
 def registry(packs):
@@ -12,15 +12,15 @@ def registry(packs):
     return data
 
 
-def refresh(root,runtime,default_font):
+def refresh(root,runtime,default_font,edition='classic'):
     from fonts import make_fonts
-    packs=languages(root);catalogs=validate(root)
+    packs=languages(root);catalogs=validate(root,edition)
     parent=runtime/'core';parent.mkdir(parents=True,exist_ok=True)
     stage=Path(tempfile.mkdtemp(prefix='.locales-stage-',dir=parent))
     target=parent/'locales';backup=stage.with_name(stage.name+'-previous')
     try:
         for code in packs:
-            text=(root/'locales'/f'{code}.tsv').read_text('utf8')
+            text=catalog_text(root,code,edition)
             (stage/f'{code}.tsv').write_bytes(text.encode('utf8'))
         fonts=make_fonts(catalogs,packs,default_font,runtime/'mods/Stranded II/sys/gfx',stage,root)
         (stage/'languages.dat').write_bytes(registry(packs))
