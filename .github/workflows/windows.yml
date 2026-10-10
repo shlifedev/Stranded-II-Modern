@@ -3,13 +3,14 @@ name: Windows build and release
 on:
   workflow_dispatch:
     inputs:
-      edition:
-        description: Edition to publish (both editions are always checked)
-        type: choice
-        options: [classic, extended]
-        default: classic
+      # Extended is for local development; edition selection is disabled.
+      # edition:
+      #   description: Edition to publish
+      #   type: choice
+      #   options: [classic, extended]
+      #   default: classic
       publish:
-        description: Publish the selected edition from main or dev
+        description: Publish Stranded II from main or dev
         type: boolean
         default: false
   push:
@@ -36,12 +37,14 @@ jobs:
   build:
     runs-on: windows-2022
     timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        edition: [classic, extended]
-    env:
-      EDITION: ${{ matrix.edition }}
+    # Extended CI is paused. Restore edition routing and artifact names
+    # together with this matrix when public Extended builds resume.
+    # strategy:
+    #   fail-fast: false
+    #   matrix:
+    #     edition: [classic, extended]
+    # env:
+    #   EDITION: ${{ matrix.edition }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -56,7 +59,7 @@ jobs:
       - name: Install preparation tools
         run: python -m pip install -r requirements.txt
 
-      - name: Test editions, packaging and release recovery
+      - name: Test packaging and release recovery
         run: python -X utf8 -m unittest discover -s tests -p test_ci*.py
 
       - name: Select release or preview version
@@ -64,19 +67,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_CHANNEL: ${{ github.ref_name }}
-          PUBLISH_RELEASE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.edition == 'classic' || github.event_name == 'workflow_dispatch' && inputs.publish && inputs.edition == matrix.edition }}
+          PUBLISH_RELEASE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' && inputs.publish }}
         run: |
           if ($env:PUBLISH_RELEASE -eq 'true') {
-            python -X utf8 scripts/ci.py version --edition "$env:EDITION" --channel "$env:RELEASE_CHANNEL" --repo "$env:GH_REPO"
+            python -X utf8 scripts/ci.py version --channel "$env:RELEASE_CHANNEL" --repo "$env:GH_REPO"
           } else {
-            python -X utf8 scripts/ci.py version --edition "$env:EDITION"
+            python -X utf8 scripts/ci.py version
           }
           if ($LASTEXITCODE -ne 0) { throw 'Version selection failed' }
 
       - name: Store selected version
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: version-context-${{ matrix.edition }}
+          name: version-context
           path: build/ci/version.json
           overwrite: true
           if-no-files-found: error
@@ -118,23 +121,23 @@ jobs:
           GAME_INPUT: ${{ steps.deps.outputs.game }}
           BLITZ_INPUT: ${{ steps.deps.outputs.blitz }}
           FONT_INPUT: ${{ steps.deps.outputs.font }}
-        run: python -X utf8 scripts/dev.py setup --edition "$env:EDITION" --game "$env:GAME_INPUT" --blitz "$env:BLITZ_INPUT" --font "$env:FONT_INPUT"
+        run: python -X utf8 scripts/dev.py setup --game "$env:GAME_INPUT" --blitz "$env:BLITZ_INPUT" --font "$env:FONT_INPUT"
 
       - name: Compile with Blitz3D
-        run: python -X utf8 scripts/dev.py build --edition "$env:EDITION" --version-info build/ci/version.json
+        run: python -X utf8 scripts/dev.py build --version-info build/ci/version.json
 
       - name: Check resources and non-graphical runtime behavior
-        run: python -X utf8 scripts/dev.py check --edition "$env:EDITION"
+        run: python -X utf8 scripts/dev.py check
 
       - name: Package standalone game
         env:
           GAME_INPUT: ${{ steps.deps.outputs.game }}
-        run: python -X utf8 scripts/ci.py package --edition "$env:EDITION" --game "$env:GAME_INPUT" --version-info build/ci/version.json
+        run: python -X utf8 scripts/ci.py package --game "$env:GAME_INPUT" --version-info build/ci/version.json
 
       - name: Upload game ZIP and checksum
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: StrandedII-${{ matrix.edition }}-windows
+          name: StrandedII-windows
           path: build/release/*
           overwrite: true
           if-no-files-found: error
@@ -145,17 +148,18 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: windows-reports-${{ matrix.edition }}
+          name: windows-reports
           overwrite: true
           path: |
             build/setup-report.json
             build/build-report.json
             build/check-*/**/*.json
             build/check-*/**/*.txt
-            build/extended/setup-report.json
-            build/extended/build-report.json
-            build/extended/check-*/**/*.json
-            build/extended/check-*/**/*.txt
+          # Extended reports are disabled with its CI build:
+          #   build/extended/setup-report.json
+          #   build/extended/build-report.json
+          #   build/extended/check-*/**/*.json
+          #   build/extended/check-*/**/*.txt
           if-no-files-found: ignore
           retention-days: 14
 
@@ -177,17 +181,16 @@ jobs:
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          name: version-context-${{ inputs.edition || 'classic' }}
+          name: version-context
           path: build/ci
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          name: StrandedII-${{ inputs.edition || 'classic' }}-windows
+          name: StrandedII-windows
           path: build/release
 
-      - name: Publish selected immutable Release
+      - name: Publish immutable Release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          EDITION: ${{ inputs.edition || 'classic' }}
-        run: python -X utf8 scripts/ci.py release --edition "$env:EDITION" --repo "$env:GH_REPO"
+        run: python -X utf8 scripts/ci.py release --repo "$env:GH_REPO"

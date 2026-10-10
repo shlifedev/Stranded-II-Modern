@@ -1,4 +1,4 @@
-"""Explicit build boundaries for Classic and Extended; no engine code generation."""
+"""Explicit build boundaries for the base game and Extended; no engine code generation."""
 from dataclasses import dataclass
 from pathlib import Path
 import hashlib

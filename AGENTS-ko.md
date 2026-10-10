@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"ko","syncedHash":"08b1744d4e95e010f30b9dbb89c8d925827d213888ddc26689c372130d5141e9"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"ko","syncedHash":"0e3c0f35014c69f76131de054020584d15c67858f49430b20baa64d6f5bde13e"} -->
 
 # Stranded II 개발 지침
 
@@ -10,7 +10,8 @@
 - 판별 진입점은 `src/engine/StrandedII.bb`와 `src/engine/StrandedIIExtended.bb`다. `editions/<판>/modules.bb`에서 구현을 선택한다. 확장판 동작이 달라질 때 필요한 모듈만 별도로 만들고 공통 엔진 전체를 복제하지 않는다.
 - 명령의 `--edition classic|extended`를 생략하면 기본판이다. 기본판은 `build/runtime`, 확장판은 `build/extended/runtime`을 사용한다. 설정·세이브를 공유하거나 자동 복사하지 않는다.
 - 판별 리소스는 `resources/editions/<판>/overrides/`, 판별 번역은 `locales/editions/<판>/<코드>.tsv`에 둔다. 공통 리소스·카탈로그 변경은 두 판에 반영된다. 확장판 리밸런싱은 확장판 경로에만 작성한다.
-- `main`/`dev`는 안정판/개발판 채널이다. 푸시·PR은 두 판을 검사하며, `main` 푸시는 검사 성공 후 Classic 안정판을 자동 발행한다. Extended 또는 개발판 출시는 수동 워크플로에서 판과 `publish=true`를 선택한다. 요청 없이 릴리스나 이를 유발하는 푸시를 실행하지 않는다.
+- `main`/`dev`는 안정판/개발판 채널이다. CI는 기본 게임만 빌드·검사하며, `main` 푸시는 성공 후 안정판을 자동 발행한다. 개발판 출시는 수동 워크플로의 `publish=true`로 실행한다. Extended는 당분간 로컬 개발용이며 CI의 판 선택·빌드·배포 경로는 주석 처리한다. 요청 없이 릴리스나 이를 유발하는 푸시를 실행하지 않는다.
+- 기본 게임의 공개 이름과 릴리스 제목에는 판 이름을 붙이지 않는다. `classic`은 기존 명령·경로·메타데이터의 내부 식별자로만 유지한다.
 
 - 직접 편집하는 엔진은 `src/engine/**/*.bb`다. Git에 포함하며 생성물로 취급하지 않는다. `src/ko-full`의 옛 생성기를 새 엔진에 실행하지 않는다.
 - 명령과 폴더 구조는 `docs/development.md`의 `scripts/dev.py setup|localize|build|run|check`를 따른다. Python은 준비·글꼴·검증만 담당하며 엔진 코드를 재생성하지 않는다.

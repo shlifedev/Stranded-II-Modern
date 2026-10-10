@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/extend-features.md","language":"en","syncedHash":"1cf96e87267af722bc46f855a28f8a37e19940df4aa4e2601e1822d636b9f373"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/extend-features.md","language":"en","syncedHash":"3a8d8bba7b542549125f658c3fa46f54010c3e18ec9e8a5acce5fe6843472cd2"} -->
 
 # Extended features
 
@@ -6,7 +6,7 @@
 
 [Back to README](../README.md) · [Development guide](development.md)
 
-These features are **exclusive to Extended** and can be toggled individually under **Settings → QOL**. All are enabled by default; applying saves them to that edition's settings. They are not added to Classic gameplay or content.
+Extended is currently for local development; CI builds and releases are disabled. These features are **exclusive to Extended** and can be toggled individually under **Settings → QOL**. All are enabled by default; applying saves them to that edition's settings. They are not added to Stranded II gameplay or content.
 
 | Feature | How to use it |
 | --- | --- |
@@ -16,4 +16,4 @@ These features are **exclusive to Extended** and can be toggled individually und
 | Automatic sorting | Display items in this order: quickslots 1–9 → tools → weapons → ammunition → food → potions → materials → other, then by name within each category. |
 | Hold to build | Hold right-click with a hammer to keep supplying materials to the same construction target. It stops on release, completion, target or equipment changes, menu or focus changes, or leaving range. |
 
-Crafting conditions, weight limits, construction costs, and hammer intervals follow the existing rules. Sorting changes only the display order; it does not automatically transfer or delete items. Classic and Extended keep separate settings and saves.
+Crafting conditions, weight limits, construction costs, and hammer intervals follow the existing rules. Sorting changes only the display order; it does not automatically transfer or delete items. Stranded II and Extended keep separate settings and saves.

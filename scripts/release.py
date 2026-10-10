@@ -140,7 +140,7 @@ def publish(repo, directory, info):
         gh('release', 'edit', info['tag'], '--repo', repo, '--notes-file', str(notes))
     else:
         gh('release', 'create', info['tag'], '--repo', repo, '--verify-tag', '--draft',
-           '--title', info['edition'].title() + ' ' + info['display_version'], '--generate-notes', '--notes-file', str(notes),
+           '--title', info['display_version'], '--generate-notes', '--notes-file', str(notes),
            '--prerelease=' + str(info['channel'] == 'dev').lower(), '--latest=false')
     # Only drafts may replace assets, so interruption halfway through upload is recoverable.
     gh('release', 'upload', info['tag'], str(path), str(path.with_suffix('.zip.sha256')),

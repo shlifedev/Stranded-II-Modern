@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"7171b0909e0490c657d58743527b3993650b9dc57612bba4266a1562ce604198"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"e1887d47da26822e8c7acf9a0c27142b4937f8d08bf7ab3f436f2abda2c09fc4"} -->
 
 # Translating the game
 
@@ -75,12 +75,12 @@ Both editions use `locales/<code>.tsv`. To change text in just one edition, put 
 
 | Edition | File |
 | --- | --- |
-| Classic | `locales/editions/classic/<code>.tsv` |
+| Stranded II | `locales/editions/classic/<code>.tsv` |
 | Extended | `locales/editions/extended/<code>.tsv` |
 
 Matching keys override shared translations. When adding a new key, also add its English source to that edition's `en.tsv`. Language names and fonts use the shared `locales/<code>.json`.
 
-Commands default to Classic. After [preparing Extended](development.md#classic-and-extended), use the following commands for it. To apply shared translations to both editions, run the commands once for each edition.
+Commands default to Stranded II. After [preparing Extended](development.md#stranded-ii-and-extended), use the following commands for it. To apply shared translations to both editions, run the commands once for each edition.
 
 ```powershell
 .\dev.ps1 localize -Python .\.venv\Scripts\python.exe --edition extended
@@ -92,7 +92,7 @@ Commands default to Classic. After [preparing Extended](development.md#classic-a
 
 For a translation contribution, share the edited TSV and, for a new language, its JSON. If you chose a separate font, include its download instructions and license information.
 
-To distribute a pack to players, run `localize`, verify it, and bundle the edition's **entire `core/locales/` folder**: `build/runtime/core/locales/` for Classic, or `build/extended/runtime/core/locales/` for Extended.
+To distribute a pack to players, run `localize`, verify it, and bundle the edition's **entire `core/locales/` folder**: `build/runtime/core/locales/` for Stranded II, or `build/extended/runtime/core/locales/` for Extended.
 
 - Include `languages.dat`, TSV files, and each language's `glyphs.dat` and BMP pages. You may omit `preview.png` and `fonts-report.json`, which contains absolute paths from the development PC.
 - Check that the font permits image generation and distribution, and include required license notices. The default Noto notices are in [licenses/](../licenses/).

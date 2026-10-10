@@ -1,16 +1,17 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"82227922362c5ab204bdfa514557129c71741fa57a05ed32b689788a706046dc"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"827a136c1c390c7dae98d12ded604559dca1c7522c3e9fe6a38961e2f9829d42"} -->
 
 # Stranded II development instructions
 
 [English](AGENTS.md) · [한국어](AGENTS-ko.md)
 
-The architecture has Classic and Extended editions using a shared engine, edition-specific resources, and language packs selected at launch (EN/KO bundled). Communicate with the user in Korean.
+The architecture has Stranded II and Extended editions using a shared engine, edition-specific resources, and language packs selected at launch (EN/KO bundled). Communicate with the user in Korean.
 
-- Extended provides individual Settings > QOL controls for recipe browsing, storage transfers, closing emptied corpses, display sorting, and held construction input. Extended-only changes must not alter Classic gameplay or content. Verify shared engine changes in both editions.
+- Extended provides individual Settings > QOL controls for recipe browsing, storage transfers, closing emptied corpses, display sorting, and held construction input. Extended-only changes must not alter Stranded II gameplay or content. Verify shared engine changes in both editions.
 - The entrypoints are `src/engine/StrandedII.bb` and `src/engine/StrandedIIExtended.bb`. Select implementations in `editions/<edition>/modules.bb`. When Extended behavior diverges, separate only the required modules rather than copying the whole engine.
-- Commands default to Classic when `--edition classic|extended` is omitted. Classic uses `build/runtime`; Extended uses `build/extended/runtime`. Do not share or automatically copy settings or saves.
+- Commands default to Stranded II when `--edition classic|extended` is omitted. Stranded II uses `build/runtime`; Extended uses `build/extended/runtime`. Do not share or automatically copy settings or saves.
 - Put edition resources in `resources/editions/<edition>/overrides/` and translations in `locales/editions/<edition>/<code>.tsv`. Shared resource/catalog changes affect both editions. Write Extended rebalancing only in its own paths.
-- `main`/`dev` are stable/development channels. Pushes and PRs check both editions; a `main` push automatically publishes a Classic stable release after checks pass. Extended or development releases require selecting the edition and `publish=true` in the manual workflow. Do not publish a release or trigger one by pushing without a request.
+- `main`/`dev` are stable/development channels. CI builds and checks only the base game; a `main` push automatically publishes a stable release after checks pass. Development releases use `publish=true` in the manual workflow. Extended is for local development for now; keep CI edition selection, build and release routing commented out. Do not publish a release or trigger one by pushing without a request.
+- Public names for the base game and its release titles have no edition label. Keep `classic` only as the internal identifier in existing commands, paths and metadata.
 
 - Edit `src/engine/**/*.bb` directly. These files are tracked sources, not generated output. Do not run the old `src/ko-full` generators against the current engine.
 - Follow `scripts/dev.py setup|localize|build|run|check` and the directory structure in `docs/development.md`. Python handles preparation, fonts, and verification only; it does not regenerate engine code.

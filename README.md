@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"07388d42c058057a19ee1ab8d99312e0a2c1a40375f1ed677da5508d1863d714"} -->
+<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"6f59c7ff49c1ca61974b945745a103d42f57ee97b4648d1c6bee991d77f5b2c4"} -->
 
 # Stranded II : Modern
 
@@ -10,7 +10,7 @@ An unofficial update of Stranded II for modern Windows systems. Built with Blitz
 
 ## Getting started
 
-- **Play:** extract the entire release ZIP and double-click `StrandedII.exe` in the game folder. For Extended, run `StrandedII-Extended.exe`. Windows 10 or later is required; no separate installation is needed.
+- **Play:** extract the entire release ZIP and double-click `StrandedII.exe` in the game folder. Windows 10 or later is required; no separate installation is needed.
 - **Build from source:** follow environment setup and the first build in the [development guide](docs/development.md). The source checkout does not include the EXE or original game resources.
 - **Translate:** edit `locales/<code>.tsv` following the [localization guide](docs/localization.md).
 
@@ -20,13 +20,6 @@ An unofficial update of Stranded II for modern Windows systems. Built with Blitz
 - Display - Borderless mode, resolution selection, and fixes for corrupted graphics after Alt-Tab. Display settings apply after a restart.
 - Saving - Quick save/load fixes, five autosave slots, previous-save backups, and Continue on the main menu.
 - Localization - Players can now easily translate the game themselves. (Support for adding languages.)
-
-## Classic and Extended
-
-| Edition | Purpose | Executable |
-| --- | --- | --- |
-| Classic | Keep the improvements above while preserving the original gameplay and content. | `StrandedII.exe` |
-| Extended (Beta) | Develop optional inventory, storage, and construction QOL, with separate content planned for the future. Current changes focus on QoL. Please keep its beta status in mind. | `StrandedII-Extended.exe` |
 
 ## Find the right guide
 

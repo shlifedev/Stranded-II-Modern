@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"39b26a14f12c5eb7ef00b7d04e96af2dea1740f816a16e77e197bff6931f6755"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"5e564bd9843b622b24f68d62d14e2878acb5d77596b37a7d73676280a643f02a"} -->
 
 # Development guide
 
@@ -12,7 +12,7 @@ For a first build, follow **environment setup → first build**. Once set up, us
 
 You need Windows 10 or later, Python 3.10 or later, and Pillow and fontTools from [requirements.txt](../requirements.txt). Use an ASCII path such as `C:\Stranded II` because of Blitz's file-path handling. Spaces are allowed.
 
-Building Extended also requires Visual Studio's MSVC x86/x64 C++ build tools and a Windows SDK. `build --edition extended` compiles `src/native/extended/qol_input.c` into the 32-bit `QolInput.dll`. No separate C runtime installation is needed, and the DLL is included in the Extended release ZIP. Classic builds do not require these tools.
+Building Extended also requires Visual Studio's MSVC x86/x64 C++ build tools and a Windows SDK. `build --edition extended` compiles `src/native/extended/qol_input.c` into the 32-bit `QolInput.dll`. No separate C runtime installation is needed, and the DLL is included when packaging Extended locally. Stranded II builds do not require these tools.
 
 These dependencies are not included in the repository; prepare them yourself:
 
@@ -59,7 +59,7 @@ You can specify dependencies elsewhere with `--game`, `--blitz`, and `--font`. T
 
 ## Running after changes
 
-Use the following commands from the repository root. Close the development game before refreshing resources or replacing its executable. **Commands default to Classic**; add `--edition extended` for Extended.
+Use the following commands from the repository root. Close the development game before refreshing resources or replacing its executable. **Commands default to Stranded II**; add `--edition extended` for Extended.
 
 | Change | Command |
 | --- | --- |
@@ -85,7 +85,7 @@ You can also launch directly through Python:
 
 ## Where to make changes
 
-**Implement game features in `src/engine/`.** `build/` contains executables and check results, not authoritative sources. The paths and commands below are for Classic. See the [next section](#classic-and-extended) for Extended paths.
+**Implement game features in `src/engine/`.** `build/` contains executables and check results, not authoritative sources. The paths and commands below are for Stranded II. See the [next section](#stranded-ii-and-extended) for Extended paths.
 
 ```text
 edit src/engine/ → build command → build/runtime/StrandedII.exe → Play.cmd
@@ -109,7 +109,7 @@ edit resources/ → setup command → refresh resources in build/runtime/
 
 Changes to generated output may be overwritten by the next `setup` or `build`. Keep code, translations, and resource changes in the source directories above. Python tools generate resources and verification code; they do not regenerate the game sources in `src/engine/`.
 
-## Classic and Extended
+## Stranded II and Extended
 
 `classic` preserves existing behavior; `extended` provides inventory, storage, and construction QOL and is the separate edition for new features and content. QOL calls the existing crafting, transfer, and construction rules without changing material costs or tool speed. Change shared code once and verify both editions; write Extended-only changes in that edition's code and resources.
 
@@ -117,23 +117,23 @@ Changes to generated output may be overwritten by the next `setup` or `build`. K
 
 ```text
 src/engine/
-  StrandedII.bb                    Classic entrypoint
+  StrandedII.bb                    Stranded II entrypoint
   StrandedIIExtended.bb            Extended entrypoint
   includes/engine_init.bb          Shared initialization and functions
   includes/engine_loop.bb          Shared runtime loop
   includes/                       Currently shared engine implementations
-  editions/classic/profile.bb     Classic identity and window title
-  editions/classic/modules.bb     Classic UI/input/building selection
+  editions/classic/profile.bb     Stranded II identity and window title
+  editions/classic/modules.bb     Stranded II UI/input/building selection
   editions/extended/profile.bb    Extended identity and window title
   editions/extended/modules.bb    Extended UI/input/building selection
 resources/overrides/              Shared resource overrides (create when needed)
-resources/editions/classic/overrides/   Classic resource overrides
+resources/editions/classic/overrides/   Stranded II resource overrides
 resources/editions/extended/overrides/  Extended resource overrides
-build/runtime/                   Classic runtime, settings and saves
+build/runtime/                   Stranded II runtime, settings and saves
 build/extended/runtime/          Extended runtime, settings and saves
 ```
 
-Both `modules.bb` files share the existing UI, input, and construction implementations and select edition-specific QOL hooks. Classic's `qol.bb` contains no-op hooks that preserve existing behavior; Extended's `qol.bb`, `qol_inventory.bb`, `qol_recipes.bb`, and `qol_search.bb` implement settings, sorting, transfers, the recipe book, and Unicode search. Search uses a Win32 Unicode EDIT control and IME, with declarations in `config/userlibs/qol_*.decls`. Separate only the modules needed when behavior diverges. Compilation uses directly authored sources; Python does not generate engine code. Build reports record only the selected entrypoint's actual `Include` graph. Including another edition's private source fails validation.
+Both `modules.bb` files share the existing UI, input, and construction implementations and select edition-specific QOL hooks. Stranded II's `qol.bb` contains no-op hooks that preserve existing behavior; Extended's `qol.bb`, `qol_inventory.bb`, `qol_recipes.bb`, and `qol_search.bb` implement settings, sorting, transfers, the recipe book, and Unicode search. Search uses a Win32 Unicode EDIT control and IME, with declarations in `config/userlibs/qol_*.decls`. Separate only the modules needed when behavior diverges. Compilation uses directly authored sources; Python does not generate engine code. Build reports record only the selected entrypoint's actual `Include` graph. Including another edition's private source fails validation.
 
 The recipe book reads loaded `Tcom` data. Guides for cooking, water use, and similar interactions are maintained separately in the Extended override `mods/Stranded II/sys/qol_guides.inf`; each `source` identifies the supporting script and event. Guides do not execute scripts on the player's behalf. When changing an original event, review the guide's conditions, quantities, and probability descriptions too. QOL settings are saved only in that edition's `core/modern.ini`.
 
@@ -141,7 +141,7 @@ The native search bridge translates and dispatches Unicode messages only for tha
 
 Resources are prepared in this order: official input, localization preparation, shared overrides, then the selected edition's overrides. Place edition overrides at runtime-relative `mods/Stranded II/...` paths. Write item, recipe, building, stat, map, and script rebalancing in Extended overrides. Overrides cannot replace settings, saves, or executables. Follow the [resource localization binary rules](#localizing-new-text-and-resources) for `.s2` edits. See the [localization guide](localization.md#edition-specific-translations) for edition translations.
 
-All development commands accept `--edition classic|extended` and default to Classic. Dependencies and the compiler are shared; runtime folders, reports, and verification artifacts are separate. Classic data is neither moved nor automatically copied to Extended.
+All development commands accept `--edition classic|extended` and default to Stranded II. Dependencies and the compiler are shared; runtime folders, reports, and verification artifacts are separate. Stranded II data is neither moved nor automatically copied to Extended.
 
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 scripts/dev.py setup --edition extended
@@ -233,14 +233,14 @@ As an exception, `README-ko.md` is maintained by the user and agents do not chan
 
 ## GitHub CI and release ZIPs
 
-The [Windows workflow](../.github/workflows/windows.yml) builds and checks both editions on pushes to `main`/`dev`, pull requests, and manual runs, storing game ZIPs and SHA-256 files as artifacts. A `main` push automatically publishes a Classic stable Release and advances its patch number after both editions pass checks. Extended produces a `-local` verification ZIP in that run. Pushes to `dev` and PRs only produce verification ZIPs for both editions without publishing Releases or consuming version numbers.
+The [Windows workflow](../.github/workflows/windows.yml) builds and checks the base game on pushes to `main`/`dev`, pull requests, and manual runs, storing game ZIPs and SHA-256 files as artifacts. A `main` push automatically publishes a stable Release and advances its patch number after checks pass. Pushes to `dev` and PRs only produce `-local` verification ZIPs without publishing Releases or consuming version numbers. Extended CI edition selection, build and release routing are commented out; Extended remains under local development for now.
 
-To publish Extended or a development release, or manually publish Classic, follow these steps on GitHub:
+To publish a development release or manually publish a stable release, follow these steps on GitHub:
 
 1. Open **Actions → Windows build and release → Run workflow**.
 2. Select `main` for a stable release or `dev` for a prerelease.
-3. Choose `classic` or `extended` under `edition` and enable `publish`.
-4. After both editions build and pass checks, a Release is published for the selected edition.
+3. Enable `publish`.
+4. After the build and checks pass, a Release is published.
 
 For manual runs, `publish=false` only creates ZIPs and runs checks. Other branches and tag pushes do not publish.
 
@@ -250,19 +250,17 @@ To avoid repeated download traffic to upstream sites, store game resources, the 
 
 ### Setting versions and automatic increments
 
-Classic's baseline is in [config/version.json](../config/version.json) on `main`, initially `1.1.0`. Extended starts independently at `0.1.0` in [config/editions/extended/version.json](../config/editions/extended/version.json). CI never changes the first two numbers or configuration files, and creates no version commits. The patch is the starting value for that edition and series; existing stable tags advance the next release number.
+The baseline is in [config/version.json](../config/version.json) on `main`, initially `1.1.0`. CI never changes the first two numbers or configuration files, and creates no version commits. The patch is the starting value for that series; existing stable tags advance the next release number. Extended's local baseline is managed separately in [config/editions/extended/version.json](../config/editions/extended/version.json).
 
 | Release situation | Menu label | GitHub tag |
 |---|---|---|
-| First Classic stable release | `1.1.0-main` | `v1.1.0` |
-| Subsequent Classic development release | `1.1.1-dev.1` | `v1.1.1-dev.1` |
-| Next Classic stable release | `1.1.1-main` | `v1.1.1` |
-| First Extended stable release | `extended-0.1.0-main` | `extended-v0.1.0` |
-| Subsequent Extended development release | `extended-0.1.1-dev.1` | `extended-v0.1.1-dev.1` |
+| First Stranded II stable release | `1.1.0-main` | `v1.1.0` |
+| Subsequent Stranded II development release | `1.1.1-dev.1` | `v1.1.1-dev.1` |
+| Next Stranded II stable release | `1.1.1-main` | `v1.1.1` |
 
-When publishing, `dev` reads the selected edition's baseline file from `main` and freezes its commit SHA. Before a stable release exists, development releases start at the baseline with `-dev.1`; otherwise they target the next patch and increment `dev.N`. Development releases do not consume stable patches. `main` uses the baseline file from the release commit. Before the first Extended release from `dev`, its baseline file must exist on `main`.
+When publishing, `dev` reads the baseline file from `main` and freezes its commit SHA. Before a stable release exists, development releases start at the baseline with `-dev.1`; otherwise they target the next patch and increment `dev.N`. Development releases do not consume stable patches. `main` uses the baseline file from the release commit.
 
-Automatic and manual release runs share a queue and are serialized from version allocation through publication. Build/check failures create no tags and consume no numbers. Publication interruptions may reserve a number, but rerunning the same edition, source commit, and channel recovers its tag and draft. Published Releases are never overwritten; reruns verify and retain the existing publication. Other editions' tags and `ci-deps-v1` do not affect number allocation. Development and Extended releases do not replace Classic's latest stable Release marker.
+Automatic and manual release runs share a queue and are serialized from version allocation through publication. Build/check failures create no tags and consume no numbers. Publication interruptions may reserve a number, but rerunning the same edition, source commit, and channel recovers its tag and draft. Published Releases are never overwritten; reruns verify and retain the existing publication. Other editions' tags and `ci-deps-v1` do not affect number allocation. Development releases do not replace the latest stable Release marker.
 
 Builds generate `core/version.txt` and `core/version.json`. The game displays the label in the main menu. `build-info.json` includes the edition, version, channel, source commit, baseline-file commit, and executable hash. Packaging checks the selected edition's build report and source graph, rejecting another edition's runtime or stale resource overrides. The existing `Cversion="1.0.0.1"` remains unchanged for map/script compatibility. Local builds display `-local`.
 
@@ -292,17 +290,16 @@ Then manually run `Windows build and release` in Actions to download the game ZI
 
 ### Release ZIP contents
 
-Classic ZIPs use `StrandedII/` and Extended ZIPs use `StrandedII-Extended/`. Each folder includes one EXE for that edition, original game resources, localized resources, per-language bitmap fonts, initial settings, and licenses. Extract the whole ZIP and double-click `StrandedII.exe` for the base edition or `StrandedII-Extended.exe` for Extended. No launch CMD is included. Players do not need separate Python, Blitz3D, or font installations; display, FPS, and language are changed in the game's settings menu.
+The release ZIP's `StrandedII/` folder includes `StrandedII.exe`, original game resources, localized resources, per-language bitmap fonts, initial settings, and licenses. Extract the whole ZIP and double-click `StrandedII.exe`. No launch CMD is included. Players do not need separate Python, Blitz3D, or font installations; display, FPS, and language are changed in the game's settings menu.
 
 Packaging uses an explicit file list, so a used development runtime's personal saves, custom maps, screenshots, `preserved/`, logs, and check reports are excluded. Key bindings come from the original dependencies; `core/modern.ini` comes from the repository's initial settings. Personal `sys/settings.cfg` is also excluded, so new installations use the engine's graphics quality and volume defaults. The development runtime is not modified. Local packaging is also available.
 
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 scripts/ci.py package --game deps/game
-.\.venv\Scripts\python.exe -X utf8 scripts/ci.py package --edition extended --game deps/game
 .\.venv\Scripts\python.exe -X utf8 -m unittest discover -s tests -p 'test_ci*.py'
 ```
 
-Output names are `build/release/StrandedII-<display version>-windows.zip` and `.zip.sha256`. For example, a Classic local build is `StrandedII-1.1.0-local-windows.zip`, and Extended is `StrandedII-extended-0.1.0-local-windows.zip`. Packaging does not compile or run game checks, so first complete `setup → build → check` for the same edition with the latest sources. CI stores version information in `version-context-classic` and `version-context-extended`, and game ZIPs in `StrandedII-classic-windows` and `StrandedII-extended-windows`.
+Output names are `build/release/StrandedII-<display version>-windows.zip` and `.zip.sha256`. An example local build is `StrandedII-1.1.0-local-windows.zip`. Packaging does not compile or run game checks, so first complete `setup → build → check` with the latest sources. CI stores version information in `version-context` and game ZIPs in `StrandedII-windows`.
 
 ## Generated output and user data
 
