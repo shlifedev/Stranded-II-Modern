@@ -1,23 +1,47 @@
+<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"1492ad2e38bb97d0778f9fe677eb254434bf121aee8e86685a26589cb7d6b27d"} -->
+
 ## Stranded II : Modern
 
-최신 Blitz 3D 엔진 으로 빌드된 스트랜디드2의 현대화된 버전입니다.
+[English](README.md) · [한국어](README-ko.md)
 
-## 수정된 것들
+An unofficial modernization of Stranded II, rebuilt with Blitz3D 1.118. It preserves the original survival and exploration experience while supporting higher frame rates and convenient switching between the game and other windows.
 
-- 기존 게임은 `20ms` 단위로 업데이트 되었습니다. 렌더링 및 게임 시뮬레이션이 60hz+ 이상에서 문제없이 동작하도록 수정되었습니다.
-- 전체 창 모드를 지원하며 기존 Alt-Tab 버그를 수정했습니다.
-- (예정) Localization을 지원할 예정입니다. 옵션에서 영어, 한국어, 일본어 등 다양한 사용자 언어를 선택하고 번역할 수 있습니다.
+The project is under development, with a stable release in preparation.
 
-## 예정
+## Changes
 
+- Adjusted the original `20ms` (50Hz) updates to use elapsed time, keeping game speed consistent at 60/120/144 FPS. The default target is **144 FPS**.
+- Added borderless window mode and fixed corrupted graphics after Alt-Tab.
+- Added resolution, 60/120/144 FPS, and window mode choices in the settings. Display changes take effect after restarting the game, with an automatic resolution option that fits the monitor.
+- Fixed unresponsive quick save/load. Save files are replaced safely with backups of the previous version, and autosaves rotate through five slots. **Continue** on the main menu loads the most recent save.
+- **Localization support:** one executable can switch between Korean and English. Change the language under Settings → Graphics → Language, then restart the game. This feature is experimental. Add community translations and fonts through language packs and font file paths.
 
+## Planned
 
-## 기여하기
+- Translations for Japanese and other additional languages.
+- A stable release after checking language switching, compatibility with existing saves, and different display environments.
 
-안정판이 나오기 전까지는 별도 기여 규칙은 없습니다. 추후 문서를 작성하겠습니다.
+## Running the game
 
-## 저작권
+Use `Play.cmd` in a folder with a prepared build. If you downloaded only the source, follow the [development guide](docs/development.md) to prepare the original game resources and build the executable.
 
-- 이 소프트웨어 및 소스코드의 모든 권리는 [Unreal Software](https://UNREALsoftware.de)에 있습니다.
-- 원본 upstream은 [stranded 2 source](https://github.com/ttyborg/Stranded2) 입니다.
-  
+Windows 10 or later is required. See [playing and settings](docs/playing.md) for display settings and rendering limits on high-resolution monitors.
+
+## Documentation
+
+- [Playing and settings](docs/playing.md) — launching the game, frame rate, display and language settings, and saves.
+- [Development guide](docs/development.md) — environment setup, directory roles, builds, and verification.
+- [Localization guide](docs/localization.md) — editing translations and adding text and language packs.
+- [Font guide](docs/fonts.md) — font file selection, missing-glyph fallback, previews, and distribution.
+
+English is the default documentation language. You can edit the corresponding `-ko.md` file directly; an AI agent synchronizes the changed document across the languages in [.dev-docs-ai-translation.json](.dev-docs-ai-translation.json). Korean edits take priority when multiple versions change. See [the documentation workflow](docs/development.md#editing-project-documentation).
+
+## Contributing
+
+There are no separate contribution rules before the stable release. A contribution guide will be added later.
+
+## Copyright
+
+- The original Stranded II game and source code belong to Peter Schauß / [Unreal Software](https://www.unrealsoftware.de/).
+- This project is based on the [original Stranded II source](https://github.com/ttyborg/Stranded2).
+- See the [copyright and third-party license notices](licenses/THIRD-PARTY-NOTICES.txt) for the original license and the individual licenses of the engine, fonts, and other components.
