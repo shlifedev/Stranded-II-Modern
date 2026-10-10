@@ -85,12 +85,13 @@ def validate_package(directory, info):
     checksum = hashlib.sha256(path.read_bytes()).hexdigest()
     if path.with_suffix('.zip.sha256').read_text('utf8') != f'{checksum}  {path.name}\n':
         raise ValueError('Release ZIP checksum file disagrees with the archive')
-    prefix = Edition(info['edition']).archive_root
+    profile = Edition(info['edition'])
+    prefix = profile.archive_root
     with zipfile.ZipFile(path) as archive:
         build = json.loads(archive.read(f'{prefix}/build-info.json'))
         metadata = validate_info(json.loads(archive.read(f'{prefix}/core/version.json')))
         label = archive.read(f'{prefix}/core/version.txt')
-        exe = archive.read(f'{prefix}/StrandedII.exe')
+        exe = archive.read(f'{prefix}/{profile.executable}')
         if (metadata != info or any(build.get(k, 'classic' if k == 'edition' else None) != v for k, v in info.items()) or
                 label != (info['display_version'] + '\n').encode('ascii') or
                 build['exe_sha256'] != hashlib.sha256(exe).hexdigest()):

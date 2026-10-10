@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"5fa0769df7b6c89e0053b1eea25f58b69117702d9cb36c1b2f55df2bd793471c"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"488a7b2fd3930d8fd9201c751af48fcc34f2af4ec9882561595e09ab3a9e4ffa"} -->
 
 # Development guide
 
@@ -108,6 +108,8 @@ Changes to generated output may be overwritten by the next `setup` or `build`. K
 ## Classic and Extended
 
 `classic` preserves existing behavior; `extended` is the separate edition for new features and content. Only the separation foundation exists so far; QOL and rebalancing have not been added. Change shared code once and verify both editions; write Extended-only changes in that edition's code and resources.
+
+`classic` is an internal identifier. The base edition keeps the window title `Stranded II` and executable `StrandedII.exe`; only Extended uses `Stranded II - Extended` and `StrandedII-Extended.exe`. Builds, launchers, and packaging use these names consistently.
 
 ```text
 src/engine/
@@ -274,7 +276,7 @@ Then manually run `Windows build and release` in Actions to download the game ZI
 
 ### Release ZIP contents
 
-Classic ZIPs use `StrandedII/` and Extended ZIPs use `StrandedII-Extended/`. Each folder includes the compiled EXE, original game resources, localized resources, per-language bitmap fonts, initial settings, and licenses. Extract the whole ZIP and run `Play.cmd` or `StrandedII.exe` in that folder. Players do not need separate Python, Blitz3D, or font installations.
+Classic ZIPs use `StrandedII/` and Extended ZIPs use `StrandedII-Extended/`. Each folder includes the compiled EXE, original game resources, localized resources, per-language bitmap fonts, initial settings, and licenses. Extract the whole ZIP and run `Play.cmd` in that folder. To launch the EXE directly, use `StrandedII.exe` for the base edition or `StrandedII-Extended.exe` for Extended. Players do not need separate Python, Blitz3D, or font installations.
 
 Packaging uses an explicit file list, so a used development runtime's personal saves, custom maps, screenshots, `preserved/`, logs, and check reports are excluded. Key bindings come from the original dependencies; `core/modern.ini` comes from the repository's initial settings. Personal `sys/settings.cfg` is also excluded, so new installations use the engine's graphics quality and volume defaults, described in [playing and settings](playing.md#graphics-quality-and-sound). The development runtime is not modified. Local packaging is also available.
 

@@ -116,7 +116,7 @@ class PublicationTests(unittest.TestCase):
         with zipfile.ZipFile(path, 'w') as archive:
             archive.writestr(f'{prefix}/core/version.json', json.dumps(info))
             archive.writestr(f'{prefix}/core/version.txt', info['display_version'] + '\n')
-            archive.writestr(f'{prefix}/StrandedII.exe', exe)
+            archive.writestr(f'{prefix}/{Edition(info["edition"]).executable}', exe)
             archive.writestr(f'{prefix}/build-info.json', json.dumps(dict(info, exe_sha256=hashlib.sha256(exe).hexdigest())))
         checksum = hashlib.sha256(path.read_bytes()).hexdigest()
         path.with_suffix('.zip.sha256').write_text(f'{checksum}  {path.name}\n', encoding='utf8')

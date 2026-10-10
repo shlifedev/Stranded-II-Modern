@@ -16,7 +16,7 @@ def main():
     args=parser.parse_args();profile=Edition(args.edition)
     runtime=profile.runtime(ROOT);output_root=profile.build_dir(ROOT)
     catalogs=validate(ROOT,args.edition)
-    if not (runtime/'StrandedII.exe').exists():raise ValueError('Run setup and build before check')
+    if not (runtime/profile.executable).exists():raise ValueError('Run setup and build before check')
     if runtime_info(runtime)['edition']!=args.edition:raise ValueError('Runtime belongs to another edition')
     output=Path(tempfile.mkdtemp(prefix='check-',dir=output_root))
     (output/'core/locales').mkdir(parents=True)

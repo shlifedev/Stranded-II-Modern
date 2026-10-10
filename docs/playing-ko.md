@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/playing.md","language":"ko","syncedHash":"ed6f6a56b3c1b54a50b510067e4134055dbc1d2f3f8191794680ebce99d0580a"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/playing.md","language":"ko","syncedHash":"dd8d118d6711a0a35751fe27b70041ae1149ec51cb6779e46ed2cf6c0cdabc40"} -->
 
 # 실행 및 설정
 
@@ -16,7 +16,9 @@ Windows 10 이상이 필요합니다. 게임 실행에는 Python이나 Blitz3D �
 | 소스 저장소 — 기본판 | [최초 빌드](development-ko.md#최초-빌드) 후 저장소 루트의 `Play.cmd` 실행 |
 | 소스 저장소 — 확장판 | [확장판 준비](development-ko.md#기본판과-확장판) 후 저장소 루트의 `Play-Extended.cmd` 실행 |
 
-아래 **게임 폴더**는 `StrandedII.exe`가 있는 곳입니다. 소스 저장소에서는 기본판 `build/runtime/`, 확장판 `build/extended/runtime/`입니다. 두 판의 설정과 세이브는 별개이며 자동 가져오기는 제공하지 않습니다.
+기본판 이름은 기존 **Stranded II**를 유지합니다. `Classic`은 개발용 구분이며 창 제목이나 실행 파일명에 붙이지 않습니다. 확장판 창 제목은 **Stranded II - Extended**입니다.
+
+아래 **게임 폴더**는 기본판의 `StrandedII.exe` 또는 확장판의 `StrandedII-Extended.exe`가 있는 곳입니다. 소스 저장소에서는 기본판 `build/runtime/`, 확장판 `build/extended/runtime/`입니다. 두 판의 설정과 세이브는 별개이며 자동 가져오기는 제공하지 않습니다.
 
 ## 화면·프레임·언어 바꾸기
 

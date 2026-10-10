@@ -21,6 +21,14 @@ class Edition:
         return 'StrandedII.bb' if self.name == 'classic' else 'StrandedIIExtended.bb'
 
     @property
+    def executable(self):
+        return 'StrandedII.exe' if self.name == 'classic' else 'StrandedII-Extended.exe'
+
+    @property
+    def title(self):
+        return 'Stranded II' if self.name == 'classic' else 'Stranded II - Extended'
+
+    @property
     def archive_root(self):
         return 'StrandedII' if self.name == 'classic' else 'StrandedII-Extended'
 

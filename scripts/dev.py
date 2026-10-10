@@ -82,7 +82,7 @@ def build(args):
     for relative,digest in read(ROOT/'config/toolchain-files.json').items():
         checked(SHARED_BUILD/'toolchain'/relative,digest,'private Blitz3D component')
     env=dict(os.environ,blitzpath=str(SHARED_BUILD/'toolchain'))
-    dest=RUNTIME/'StrandedII.exe'
+    dest=RUNTIME/PROFILE.executable
     candidate=BUILD/'StrandedII.next.exe'
     if candidate.exists():candidate.unlink()
     result=subprocess.run([str(compiler),'-o',str(candidate),PROFILE.entry],cwd=ROOT/'src/engine',env=env,capture_output=True)
@@ -98,7 +98,7 @@ def build(args):
     print('Built:',dest)
 
 def run(args):
-    exe=RUNTIME/'StrandedII.exe'
+    exe=RUNTIME/PROFILE.executable
     if not exe.exists():raise ValueError('Run build first')
     if runtime_info(RUNTIME)['edition']!=PROFILE.name:raise ValueError('Runtime belongs to another edition')
     options=args.game_args[1:] if args.game_args[:1]==['--'] else args.game_args

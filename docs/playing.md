@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/playing.md","language":"en","syncedHash":"5e863ea8061d5cbe2e3092cf8bb3ec84d346007fccc341555b21c266f1f32114"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/playing.md","language":"en","syncedHash":"99b240c89dfc474341c596a6da49d726eccfe4a87bc158ae48e812df6def4215"} -->
 
 # Playing and settings
 
@@ -16,7 +16,9 @@ Windows 10 or later is required. Playing does not require installing Python or B
 | Source checkout — Classic | Complete the [first build](development.md#first-build), then run `Play.cmd` in the repository root |
 | Source checkout — Extended | [Prepare Extended](development.md#classic-and-extended), then run `Play-Extended.cmd` in the repository root |
 
-Below, **game folder** means the folder containing `StrandedII.exe`. In a source checkout, it is `build/runtime/` for Classic or `build/extended/runtime/` for Extended. The editions have separate settings and saves; automatic import is not provided.
+The base edition keeps its existing **Stranded II** name. `Classic` is a development identifier, not a suffix in the window title or executable name. Extended uses the window title **Stranded II - Extended**.
+
+Below, **game folder** means the folder containing `StrandedII.exe` for the base edition or `StrandedII-Extended.exe` for Extended. In a source checkout, it is `build/runtime/` for Classic or `build/extended/runtime/` for Extended. The editions have separate settings and saves; automatic import is not provided.
 
 ## Change display, frame rate, or language
 

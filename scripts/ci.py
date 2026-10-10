@@ -194,10 +194,10 @@ def release_members(runtime, game, edition='classic'):
         if data != path.read_bytes():
             raise ValueError(f'Runtime override is stale; run setup: {relative}')
         members[relative] = data
-    exe = file_bytes(runtime, 'StrandedII.exe')
+    exe = file_bytes(runtime, profile.executable)
     if not exe.startswith(b'MZ'):
-        raise ValueError('StrandedII.exe is not a Windows executable')
-    members['StrandedII.exe'] = exe
+        raise ValueError(f'{profile.executable} is not a Windows executable')
+    members[profile.executable] = exe
     report = read_json(profile.build_dir(ROOT) / 'build-report.json')
     sources = source_hashes(ROOT, edition)
     if (validate_info(report) != info or report['exe_sha256'] != digest(exe) or
@@ -235,12 +235,12 @@ def release_members(runtime, game, edition='classic'):
     members.update(license_members())
     members['Play.cmd'] = (
         '@echo off\r\ncd /d "%~dp0" || exit /b 1\r\n'
-        'start "" "StrandedII.exe" %*\r\n').encode('ascii')
+        f'start "" "{profile.executable}" %*\r\n').encode('ascii')
     members['README.txt'] = (
-        f'Stranded II - {edition.title()} / {edition} 배포판\n\n'
-        'Windows 10 or later. Extract the entire ZIP, then run Play.cmd or StrandedII.exe.\n'
+        f'{profile.title}\n\n'
+        f'Windows 10 or later. Extract the entire ZIP, then run Play.cmd or {profile.executable}.\n'
         'Blitz3D and Python are not needed to play.\n'
-        'Windows 10 이상에서 ZIP 전체를 풀고 Play.cmd 또는 StrandedII.exe를 실행하세요.\n'
+        f'Windows 10 이상에서 ZIP 전체를 풀고 Play.cmd 또는 {profile.executable}를 실행하세요.\n'
         '게임 실행에는 Blitz3D와 Python이 필요하지 않습니다.\n\n'
         'Settings / 설정: core/modern.ini (language=ko|en; restart to apply / 재시작 후 적용).\n'
         'Saves / 저장 파일: mods/Stranded II/saves/\n'

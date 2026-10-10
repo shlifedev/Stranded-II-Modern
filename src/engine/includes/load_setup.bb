@@ -59,7 +59,7 @@ modern_window()
 If set_moddir$="Stranded II" Then
 	AppTitle(Cedition_title$)
 Else
-	AppTitle(set_moddir$+" - "+Cedition_title$)
+	AppTitle(set_moddir$+" - "+Cedition_title$+" Mod")
 EndIf
 HidePointer()
 

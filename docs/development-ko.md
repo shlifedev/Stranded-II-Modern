@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"b3d1b7c95c0bd019e61cf8cb5c8e0c7c9401d9f5841876a30a8f3b63c86dffda"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"638889fd0d0a51763308156694b1e0d21eb37a028373da3ddabd9e55433c6bcc"} -->
 
 # 개발 가이드
 
@@ -108,6 +108,8 @@ resources/ 수정 → setup 명령 → build/runtime/의 리소스 갱신
 ## 기본판과 확장판
 
 `classic`은 기존 동작을 유지하는 기본판, `extended`는 별도 기능·콘텐츠를 개발할 확장판입니다. 현재는 분리 기반만 있으며 QOL·리밸런싱은 아직 추가하지 않았습니다. 공통 코드는 한 번 수정해 두 판에서 검증하고, 확장판 전용 변경은 해당 판의 코드·자료에만 작성합니다.
+
+`classic`은 내부 구분용입니다. 기본판 창 제목·실행 파일명은 `Stranded II`·`StrandedII.exe`로 유지하고, 확장판만 `Stranded II - Extended`·`StrandedII-Extended.exe`를 사용합니다. 빌드·실행·패키징은 이 이름을 함께 사용합니다.
 
 ```text
 src/engine/
@@ -274,7 +276,7 @@ gh release create ci-deps-v1 `
 
 ### 배포 ZIP 구성
 
-기본판 ZIP의 `StrandedII/`, 확장판 ZIP의 `StrandedII-Extended/` 폴더에는 빌드된 EXE, 원본 게임 리소스, 현지화 리소스, 언어별 비트맵 글꼴, 초기 설정과 라이선스가 포함됩니다. 전체 압축을 풀고 그 폴더의 `Play.cmd` 또는 `StrandedII.exe`를 실행합니다. 플레이어는 Python·Blitz3D·글꼴을 별도로 설치할 필요가 없습니다.
+기본판 ZIP의 `StrandedII/`, 확장판 ZIP의 `StrandedII-Extended/` 폴더에는 빌드된 EXE, 원본 게임 리소스, 현지화 리소스, 언어별 비트맵 글꼴, 초기 설정과 라이선스가 포함됩니다. 전체 압축을 풀고 그 폴더의 `Play.cmd`를 실행합니다. EXE를 직접 실행하려면 기본판은 `StrandedII.exe`, 확장판은 `StrandedII-Extended.exe`를 사용합니다. 플레이어는 Python·Blitz3D·글꼴을 별도로 설치할 필요가 없습니다.
 
 패키징은 파일 목록을 사용하므로 사용한 개발 런타임에 있는 개인 세이브, 사용자 지도, 스크린샷, `preserved/`, 로그와 검사 보고서를 포함하지 않습니다. 키 설정은 원본 의존성에서, `core/modern.ini`는 저장소 초기 설정에서 가져옵니다. 개인 `sys/settings.cfg`도 제외하므로 새 설치의 그래픽 품질과 음량은 엔진의 초기값을 사용합니다. 초기값은 [실행 및 설정](playing-ko.md#그래픽-품질과-소리)에 설명되어 있습니다. 개발 런타임은 변경하지 않습니다. 로컬 패키징도 가능합니다.
 

@@ -164,6 +164,9 @@ class CIPackagingTests(unittest.TestCase):
         self.assertEqual(members['StrandedII/mods/Stranded II/sys/controls.cfg'], b'original controls')
         self.assertEqual(members['StrandedII/licenses/LICENSE.txt'], b'original license\r\n')
         self.assertIn(b'cd /d "%~dp0"', members['StrandedII/Play.cmd'])
+        self.assertIn(b'"StrandedII.exe"', members['StrandedII/Play.cmd'])
+        self.assertTrue(members['StrandedII/README.txt'].startswith(b'Stranded II\n'))
+        self.assertNotIn('StrandedII/StrandedII-Extended.exe', members)
         self.assertFalse(any(data == b'private or obsolete' for data in members.values()))
         self.assertEqual((self.runtime / 'core/modern.ini').read_bytes(), b'private or obsolete')
 
@@ -211,6 +214,7 @@ class CIPackagingTests(unittest.TestCase):
         profile = Edition('extended')
         runtime = profile.runtime(self.root)
         shutil.copytree(self.runtime, runtime)
+        self.put(runtime / profile.executable, b'MZbuilt executable')
         self.put(self.root / profile.defaults, b'fps=60\nlanguage=ko\n')
         self.put(self.root / 'src/engine' / profile.entry, b'; extended entry\n')
         content = 'mods/Stranded II/sys/items_extended.inf'
@@ -223,6 +227,10 @@ class CIPackagingTests(unittest.TestCase):
             info, exe_sha256=ci.digest(b'MZbuilt executable'),
             source_sha256=source_hashes(self.root, 'extended'))).encode())
         members = ci.release_members(runtime, self.game, 'extended')
+        self.assertIn('StrandedII-Extended/StrandedII-Extended.exe', members)
+        self.assertNotIn('StrandedII-Extended/StrandedII.exe', members)
+        self.assertIn(b'"StrandedII-Extended.exe"', members['StrandedII-Extended/Play.cmd'])
+        self.assertTrue(members['StrandedII-Extended/README.txt'].startswith(b'Stranded II - Extended\n'))
         self.assertIn('StrandedII-Extended/' + content, members)
         self.assertEqual(members['StrandedII-Extended/core/modern.ini'], b'fps=60\nlanguage=ko\n')
         self.assertEqual(ci.release_members(self.runtime, self.game), baseline)
