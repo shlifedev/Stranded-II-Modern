@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"ad5d735e8abba409304ede76572588757712cd082bde67227889bd1e34b44357"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"86cbf8121f1aa1834ac1dbbba92a5818a5b8ab30318f0b19b9a7c568d1b881cd"} -->
 
 # Development guide
 
@@ -218,7 +218,7 @@ Then manually run `Windows build and release` in Actions to download the game ZI
 
 The ZIP's `StrandedII/` folder includes the compiled EXE, original game resources, localized resources, per-language bitmap fonts, initial settings, and licenses. Extract the whole ZIP and run `Play.cmd` or `StrandedII.exe` in that folder. Players do not need separate Python, Blitz3D, or font installations.
 
-Packaging uses an explicit file list, so a used development runtime's personal saves, custom maps, screenshots, `preserved/`, logs, and check reports are excluded. Key bindings come from the original dependencies; `core/modern.ini` comes from the repository's initial settings. The development runtime is not modified. Local packaging is also available.
+Packaging uses an explicit file list, so a used development runtime's personal saves, custom maps, screenshots, `preserved/`, logs, and check reports are excluded. Key bindings come from the original dependencies; `core/modern.ini` comes from the repository's initial settings. Personal `sys/settings.cfg` is also excluded, so new installations use the engine's graphics quality and volume defaults, described in [playing and settings](playing.md#graphics-quality-and-sound). The development runtime is not modified. Local packaging is also available.
 
 ```powershell
 python -X utf8 scripts/ci.py package --game deps/game

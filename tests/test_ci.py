@@ -47,7 +47,7 @@ class CIPackagingTests(unittest.TestCase):
         self.put(self.root / 'config/dependencies.json', json.dumps({
             'font_sha256': ci.digest(b'font'), 'game_version': '1.0.0.1'}).encode())
         self.put(self.root / 'licenses/LICENSE.txt', b'original license\r\n')
-        self.put(self.root / 'config/modern.ini', b'fps=144\nlanguage=ko\n')
+        self.put(self.root / 'config/modern.ini', b'fps=144\nlanguage=en\n')
         self.put(self.runtime / 'StrandedII.exe', b'MZbuilt executable')
         from versioning import make_info
         info = make_info('1.1.0', 'local')
@@ -157,7 +157,8 @@ class CIPackagingTests(unittest.TestCase):
                      'core/locales/en/preview.png', 'mods/Stranded II/sys/gfx/ko_0_0.bmp'):
             self.put(self.runtime / name, b'private or obsolete')
         members = ci.release_members(self.runtime, self.game)
-        self.assertEqual(members['StrandedII/core/modern.ini'], b'fps=144\nlanguage=ko\n')
+        self.assertEqual(members['StrandedII/core/modern.ini'], b'fps=144\nlanguage=en\n')
+        self.assertNotIn('StrandedII/mods/Stranded II/sys/settings.cfg', members)
         self.assertEqual(members['StrandedII/mods/Stranded II/sys/controls.cfg'], b'original controls')
         self.assertEqual(members['StrandedII/licenses/LICENSE.txt'], b'original license\r\n')
         self.assertIn(b'cd /d "%~dp0"', members['StrandedII/Play.cmd'])

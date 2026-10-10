@@ -1,7 +1,7 @@
 ; Shared UTF-8 catalogs. References stay intact in scripts and saved games.
 ; Grammar: [[loc:key]] or [[loc:key|variable=HEX_UTF8_BYTES]].
 Dim loc_heads(4095)
-Global loc_language$="ko",loc_saved$="ko",loc_pending$="ko"
+Global loc_language$="en",loc_saved$="en",loc_pending$="en"
 Global loc_language_count
 Type Tlanguage
  Field code$,name$,index
@@ -82,7 +82,7 @@ End Function
 Function loc_boot()
  Local stream=ReadFile(set_rootdir$+"core\modern.ini"),line$,eq,value$
  loc_languages_load()
- loc_saved$="ko"
+ loc_saved$="en"
  If stream Then
   While Not Eof(stream)
    line$=Trim(ReadLine(stream)):eq=Instr(line$,"=")

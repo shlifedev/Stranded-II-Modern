@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/playing.md","language":"en","syncedHash":"f0477a924ec8af4a4680b410306fdcd7c330478ed913b81b06084e30a7973b1d"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/playing.md","language":"en","syncedHash":"931ce3bd2cd9992d3073e748ba2852428f42a1d4ef51e0283d28909a6f6718c7"} -->
 
 # Playing and settings
 
@@ -32,7 +32,7 @@ You can override these choices from PowerShell:
 To keep using a setting, close the game and edit `build/runtime/core/modern.ini`:
 
 ```ini
-language=ko
+language=en
 fps=144
 display=borderless
 resolution=desktop
@@ -60,9 +60,15 @@ If smoothness changes after returning to normal speed, run with `diagnostics=1` 
 
 ## Changing language
 
-Under **Settings → Graphics → Language**, use the same choice control as resolution: left-click for the next language and right-click for the previous one. Apply, close, and restart the game. Cancel does not save the selection. Korean is the default game language.
+Under **Settings → Graphics → Language**, use the same choice control as resolution: left-click for the next language and right-click for the previous one. Apply, close, and restart the game. Cancel does not save the selection. English is the default game language.
 
 Korean and English translations are bundled; additional packs appear in the language choices when prepared. Missing translations display English, and a configured but unavailable language falls back to English at startup. See the [localization guide](localization.md) for new languages and the [font guide](fonts.md) for per-language font selection. Language switching remains experimental.
+
+## Graphics quality and sound
+
+New installations start with view distance, terrain, water, sky, effects, and grass at their highest levels. 2D effects, light effects, wind sway, fog, and hardware multitexturing are enabled. Motion blur keeps its existing defaults: enabled, with 35% intensity. Background music and sound effects each start at 50% volume.
+
+An existing `mods/Stranded II/sys/settings.cfg` keeps its saved graphics quality and volume. Release ZIPs exclude personal settings files; a fresh installation without that file uses the engine defaults. Change graphics quality and sound in the game's settings menus.
 
 ## Save files
 

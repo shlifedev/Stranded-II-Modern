@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"6cb2f92463d3e010bc05a98091d7a8b27cb0cdb0d64610caab40093f6df7a479"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"d3a3b2384223444679c4dd74fd017efb41ca868ceb4ca4f81e3346878549930e"} -->
 
 # 개발 가이드
 
@@ -218,7 +218,7 @@ gh release create ci-deps-v1 `
 
 ZIP의 `StrandedII/` 폴더에는 빌드된 EXE, 원본 게임 리소스, 현지화 리소스, 언어별 비트맵 글꼴, 초기 설정과 라이선스가 포함됩니다. 전체 압축을 풀고 그 폴더의 `Play.cmd` 또는 `StrandedII.exe`를 실행합니다. 플레이어는 Python·Blitz3D·글꼴을 별도로 설치할 필요가 없습니다.
 
-패키징은 파일 목록을 사용하므로 사용한 개발 런타임에 있는 개인 세이브, 사용자 지도, 스크린샷, `preserved/`, 로그와 검사 보고서를 포함하지 않습니다. 키 설정은 원본 의존성에서, `core/modern.ini`는 저장소 초기 설정에서 가져옵니다. 개발 런타임은 변경하지 않습니다. 로컬 패키징도 가능합니다.
+패키징은 파일 목록을 사용하므로 사용한 개발 런타임에 있는 개인 세이브, 사용자 지도, 스크린샷, `preserved/`, 로그와 검사 보고서를 포함하지 않습니다. 키 설정은 원본 의존성에서, `core/modern.ini`는 저장소 초기 설정에서 가져옵니다. 개인 `sys/settings.cfg`도 제외하므로 새 설치의 그래픽 품질과 음량은 엔진의 초기값을 사용합니다. 초기값은 [실행 및 설정](playing-ko.md#그래픽-품질과-소리)에 설명되어 있습니다. 개발 런타임은 변경하지 않습니다. 로컬 패키징도 가능합니다.
 
 ```powershell
 python -X utf8 scripts/ci.py package --game deps/game

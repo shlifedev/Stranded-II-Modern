@@ -38,7 +38,21 @@ Function load_settings()
 		set_scrx=800
 		set_scry=600
 		set_scrbit=32
+		; Fresh installs use the highest quality offered by the graphics menu.
+		set_viewrange=4
+		set_terrain=2
+		set_water=6
+		set_sky=2
+		set_effects=2
+		set_grass=4
+		set_2dfx=1
+		set_lightfx=1
+		set_windsway=1
+		set_fog=1
 		set_hwmultitex=1
+		set_musicvolume#=0.5
+		set_fxvolume#=0.5
+		; Preserve the existing motion blur defaults.
 		set_mb=1
 		set_mb_alpha#=0.35
 	Else

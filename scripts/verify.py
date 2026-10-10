@@ -43,7 +43,7 @@ Function check(ok,label$)
 End Function
 check(True,"start")
 loc_boot()
-check(loc_language$="ko","Korean default/config")
+check(loc_language$="ko","existing Korean configuration preserved")
 check(loc_resolve("[[loc:ui.language]]")="언어","UTF-8 catalog")
 check(loc_available("zz-test"),"third language discovered without engine changes")
 check(loc_name("zz-test")="日本語テスト","native language name")
@@ -92,6 +92,13 @@ loc_boot():check(loc_language$="en","removed selected pack falls back to English
 loc_pending$="not-installed":check(loc_save(),"write unavailable language fixture")
 loc_boot():check(loc_language$="en","unknown configured language falls back to English")
 loc_pending$="en":loc_save()
+CopyFile set_rootdir$+"core\modern.ini",set_rootdir$+"core\modern-preserved.ini"
+DeleteFile set_rootdir$+"core\modern.ini"
+loc_boot():check(loc_language$="en","missing config defaults to English")
+stream=WriteFile(set_rootdir$+"core\modern.ini")
+WriteLine stream,"fps=144":CloseFile stream
+loc_boot():check(loc_language$="en","missing language key defaults to English")
+CopyFile set_rootdir$+"core\modern-preserved.ini",set_rootdir$+"core\modern.ini"
 WriteLine report,"FAILURES "+failures
 CloseFile report
 End
@@ -109,6 +116,7 @@ End
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_clock_hooks.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'clock-hooks')],check=True)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_modern.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'modern')],check=True)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_version.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'version')],check=True)
+    subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_settings.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'settings')],check=True)
     # Check every emitted reference, including binary map string fields.
     refcount=0
     for p in (BUILD/'runtime').rglob('*'):
@@ -132,7 +140,7 @@ End
         glyphs={struct.unpack_from('<i',data,16+i*28)[0] for i in range(count)}
         assert expected<=glyphs,(code,expected-glyphs)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_fonts.py'),'--output',str(output/'fonts')],check=True)
-    report={'localization_runtime':'pass','config_preservation':'pass','timing':'pass','coarse_timer_hook':'pass','modern_save_and_display':'pass','product_version_loader':'pass','validated_references':refcount,'unicode_glyphs':len(glyphs),'graphics_and_actual_game_save':'requires game smoke test'}
+    report={'localization_runtime':'pass','config_preservation':'pass','timing':'pass','coarse_timer_hook':'pass','modern_save_and_display':'pass','product_version_loader':'pass','initial_settings_and_preservation':'pass','validated_references':refcount,'unicode_glyphs':len(glyphs),'graphics_and_actual_game_save':'requires game smoke test'}
     (output/'report.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf8')
     print('Checks passed:',output)
 if __name__=='__main__':main()
