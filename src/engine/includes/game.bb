@@ -20,22 +20,11 @@ Function game()
 	
 	;Update World
 	ct=MilliSecs()
+	col_player_prepare()
 	UpdateWorld(f#)
+	col_player_finish()
 	If set_debug_rt Then
 		set_debug_rt_updateworld$=(MilliSecs()-ct)+" ms Update"
-	EndIf
-	
-	;Set Camera
-	game_setcam()
-	
-	;Player Collision
-	If m_menu=0 Then
-		If g_drive=0 Then
-			If Handle(g_cplayer) Then
-				TCunit.Tunit=g_cplayer.Tunit
-				col_player()
-			EndIf
-		EndIf
 	EndIf
 	
 	;Teleport
@@ -43,8 +32,13 @@ Function game()
 		in_tpforce=in_tpforce-f#
 		If Handle(g_cplayer) Then
 			PositionEntity g_cplayer\h,in_tp#(0),in_tp#(1),in_tp#(2)
+			ResetEntity g_cplayer\h
+			col_player_reset()
 		EndIf
 	EndIf
+
+	;The camera follows the resolved position, before next-frame movement.
+	game_setcam()
 
 	;Update Objects / Units / Infos / Timer / Parse Scripts
 	cull()

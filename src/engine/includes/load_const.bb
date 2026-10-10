@@ -10,6 +10,7 @@ Const Cworld_facct=3000						;Fall Acceleration Time (ms)
 Const Cworld_col=100						;World Collision Type (Polygonal)
 Const Cworld_unitcol=1						;Units Collision Type (Radius)
 Const Cworld_procol=50						;Projectile Collision Type (Radius)
+Const Cworld_playercol=51					;Controlled player (full sliding)
 Const Cworld_itemcol=2						;Items Collisions Type (Radius)
 
 Const Cworld_userange=48					;Use Range

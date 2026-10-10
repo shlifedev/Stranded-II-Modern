@@ -483,6 +483,7 @@ End Function
 
 ;### Position Unit
 Function pos_unit(unit.Tunit,x#,y#,z#)
+	If unit=g_cplayer Then col_player_reset()
 	HideEntity unit\h
 	PositionEntity unit\h,x#,y#,z#								
 	ShowEntity unit\h

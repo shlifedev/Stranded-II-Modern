@@ -307,6 +307,8 @@ Function load_object_model(i)
 				RuntimeError("Unable to load "+Dobject_model$(i))
 			EndIf
 		Else
+			; Zero-area faces can produce NaN collision normals in Blitz3D.
+			col_prepare_mesh(Dobject_modelh(i))
 			HideEntity Dobject_modelh(i)
 		EndIf
 	EndIf

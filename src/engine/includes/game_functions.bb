@@ -77,6 +77,7 @@ Function game_setplayer(id)
 	g_player=id
 	If Not con_unit(id) Then RuntimeError("Unable to setup player #"+id+" (game_setplayer)")
 	g_cplayer.Tunit=TCunit
+	col_player_reset()
 End Function
 
 

@@ -1,6 +1,7 @@
 ;############################################ Engine Clear
 
 Function e_clear()
+	col_player_reset()
 	
 	;Frame
 	frame=0

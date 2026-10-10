@@ -188,9 +188,17 @@ Function save_map_staged(path$,mode$,pw$,s_skills,s_items,s_vars,s_diary,s_state
 			Else
 				WriteByte(stream,Tunit\typ)
 			EndIf								
-			WriteFloat(stream,EntityX(Tunit\h))							;X
-			WriteFloat(stream,EntityY(Tunit\h))							;Y
-			WriteFloat(stream,EntityZ(Tunit\h))							;Z
+			; A save can run after physics has queued next-frame movement.
+			; Serialize the resolved player pose, not an unchecked wall/ceiling entry.
+			If mode$="sav" And Tunit=g_cplayer And col_player_valid And col_player_managed(Tunit) Then
+				WriteFloat(stream,col_player_x#)
+				WriteFloat(stream,col_player_y#)
+				WriteFloat(stream,col_player_z#)
+			Else
+				WriteFloat(stream,EntityX(Tunit\h))						;X
+				WriteFloat(stream,EntityY(Tunit\h))						;Y
+				WriteFloat(stream,EntityZ(Tunit\h))						;Z
+			EndIf
 			WriteFloat(stream,EntityYaw(Tunit\h))						;Yaw
 			WriteFloat(stream,Tunit\health#)							;Health
 			WriteFloat(stream,Tunit\health_max#)						;Health Max

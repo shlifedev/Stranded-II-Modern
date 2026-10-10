@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"6cdf1068bba372df891f5eb06e50449a53a0ee8758d619b24170e6920d936c8d"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"5fa0769df7b6c89e0053b1eea25f58b69117702d9cb36c1b2f55df2bd793471c"} -->
 
 # Development guide
 
@@ -184,6 +184,9 @@ For game-code changes, run `build` and `check`, then verify the changed feature 
 | `build` | Actual Blitz3D compilation and executable/source hashes | `build/build-report.json` |
 | `check` | Text references, substitution variables, fonts, actual Blitz loader/parser, settings preservation, timing/frame waits, save replacement/locking failures/backups/five slots/queue/Continue selection | `build/check-*/report.json` and detailed results in that folder |
 | `.\.venv\Scripts\python.exe -X utf8 scripts/verify_game.py` | Actual map/save/backup/quick save/load/autosave state recovery in an isolated game | `build/game-smoke-*/report.json` |
+| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_collisions.py --edition classic` | Rock mesh sanitation, slope approach/retreat, jumping/landing, corridors/swimming, control transitions and projectile collisions in an isolated Blitz runtime | `build/collision-smoke-*/report.json` |
+
+For movement and collision changes, run `verify_collisions.py` for both editions. Extended uses `--edition extended` and writes results to `build/extended/collision-smoke-*/`. The check uses real terrain and rock models with 60/120/144 Hz and 100ms time steps and sends no GUI input. Actual rendering FPS and the user's reported location require separate verification. The existing `diagnostics=1` option in `core/modern.ini` logs requested/resolved movement, terrain correction, contact points/normals and rejected moves to `core/modern.log` at most four times per second.
 
 `check` tests timers, parsers, save-file handling, and related behavior without rendering. Actual rendering FPS, Alt-Tab, visual smoothness, and full progression require separate in-game checks.
 

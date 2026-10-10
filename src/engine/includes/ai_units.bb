@@ -1068,6 +1068,9 @@ Function update_unit()
 			Select mode
 				;0 - Land/Swim
 				Case 0
+					If col_player_managed(TCunit) Then
+						col_player_physics()
+					Else
 					;Land
 					If EntityY(TCunit\h)>0.-(Dunit_colyr(TCunit\typ)/2.) Then
 						;Jump
@@ -1165,6 +1168,7 @@ Function update_unit()
 						If EntityY(TCunit\h)<(tery#+Dunit_colyr(TCunit\typ)) Then
 							PositionEntity TCunit\h,EntityX(TCunit\h),tery#+Dunit_colyr(TCunit\typ),EntityZ(TCunit\h)
 						EndIf
+					EndIf
 					EndIf
 				;1 - Land/Water Ground
 				Case 1

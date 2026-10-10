@@ -83,6 +83,15 @@ modern_queue_save(1):modern_process_saves()
 g_cplayer\health#=10.
 modern_queue_save(2):modern_process_saves()
 smoke_check(Abs(g_cplayer\health#-67.)<0.01,"actual quicksave and quickload")
+col_player_prepare():UpdateWorld(0):col_player_finish()
+smoke_check(col_player_valid,"loaded player obtains verified collision pose")
+Global smoke_resolved_y#=col_player_y#
+TranslateEntity g_cplayer\h,0,50,0
+smoke_check(save_map("saves\collision-pose.sav","sav",""),"save with pending player movement")
+smoke_check(load_map("saves\collision-pose.sav",""),"load verified player pose")
+smoke_check(Abs(EntityY(g_cplayer\h)-smoke_resolved_y#)<0.001,"save excludes unresolved player movement")
+smoke_check(col_player_valid=0,"loading clears collision history")
+modern_queue_save(1):modern_process_saves()
 modern_continue_path$=modern_latest_save()
 smoke_check(modern_continue_path$="saves\QUICKSAVE.sav","continue selects latest actual save")
 WriteLine smoke_report,"FAILURES "+smoke_failures
@@ -113,6 +122,7 @@ End
     (out/'report.json').write_text(json.dumps({'display':display, 'resolution':resolution,
         'actual_game_save_load':'pass',
         'backups':'pass','rolling_autosaves':'pass','quicksave_load':'pass',
+        'resolved_player_pose':'pass','collision_history_reset':'pass',
         'continue_selection':'pass','visual_ui_and_cheat_engine':'not tested by this harness'},indent=2)+'\n',encoding='utf8')
 
 
