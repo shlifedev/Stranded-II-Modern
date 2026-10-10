@@ -2592,3 +2592,6 @@ modern.save_failed	저장하지 못했습니다. 기존 저장 파일은 유지�
 modern.saved	게임을 저장했습니다.
 modern.settings_failed	설정을 저장하지 못했습니다. 남은 공간과 쓰기 권한을 확인하세요.
 modern.windowed	창 모드
+ui.compass_east	동
+ui.keybinding	열쇠
+ui.fishing	물고기

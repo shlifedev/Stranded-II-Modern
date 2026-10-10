@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"6f52c1e0600090609d28eb4f0ad1d9d2c9b5e8aaa21bedd9eaf899e4aaf8b1df"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"9199e858211a723ca06e719e0cdfe73654401fdc60d3535b81d02fb93761fb44"} -->
 
 # 게임 번역하기
 
@@ -7,6 +7,8 @@
 [README로 돌아가기](../README-ko.md) · [개발 가이드](development-ko.md)
 
 **번역할 언어의 `locales/<코드>.tsv`를 수정하면 됩니다.** 영어 원문은 [locales/en.tsv](../locales/en.tsv), 한국어 번역은 [locales/ko.tsv](../locales/ko.tsv)에 있습니다. 번역·언어·폰트 변경에는 EXE 재빌드가 필요하지 않습니다.
+
+두 판 모두 영어(`en`), 한국어(`ko`), 독일어(`de`, **Deutsch**)를 기본 제공합니다. [독일어 번역](../locales/de.tsv)은 [공식 독일어 Gold 1.0.0.1 문구](https://www.unrealsoftware.de/get.php?get=stranded2.zip)를 활용하고, 이 프로젝트의 기능과 확장판에 맞게 조정·보충했습니다. 독일어 팩은 기본 폰트로 표시할 수 있습니다.
 
 ## 1. 번역 파일 수정하기
 
@@ -57,7 +59,7 @@ quest.example.greeting<TAB>$name님, 환영합니다!
 
 3. 위의 `localize → check → 실행` 절차를 따릅니다. 새 언어는 설정 목록에 자동으로 나타납니다.
 
-기본 영어·한국어 팩은 유지합니다. 일본어 번역은 현재 기본 제공하지 않습니다.
+기본 영어·한국어·독일어 팩은 유지합니다. 일본어 번역은 현재 기본 제공하지 않습니다.
 
 ## 폰트 지정
 

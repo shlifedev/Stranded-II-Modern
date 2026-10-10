@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"5e564bd9843b622b24f68d62d14e2878acb5d77596b37a7d73676280a643f02a"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"99c5bc7a20569fef55a3404ed77fceb5d3e6560d1cea11e758d42c87d2841056"} -->
 
 # Development guide
 
@@ -169,6 +169,8 @@ msg "[[loc:quest.island1.arrival]]";
 ```
 
 Keys use letters, digits, `_`, `.`, and `-` and must be unique. Preserve existing `legacy.*` and hash keys. TSV ignores blank lines and lines starting with `#`, and supports `\n`, `\r`, `\t`, and `\\` escapes. References may nest up to eight levels; do not create cycles. A key missing from both languages produces `[missing: key]` and diagnostics in the runtime's `core/localization.log`. Resolve `check` errors before distributing.
+
+Use distinct keys for different meanings of the same English word. The stock string loader separates compass east, keyboard keys, and the fishing action from the legacy keys for the E key, inventory keys, and fish; custom mod labels are preserved.
 
 | Edit | Location and rules |
 | --- | --- |

@@ -1,10 +1,10 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"ko","syncedHash":"0e3c0f35014c69f76131de054020584d15c67858f49430b20baa64d6f5bde13e"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"ko","syncedHash":"4fea2d4d2743210cce0a4118be99908534072b6cb81c80a7161da8598b9adbb5"} -->
 
 # Stranded II 개발 지침
 
 [English](AGENTS.md) · [한국어](AGENTS-ko.md)
 
-현재 구조는 공통 엔진을 사용하는 기본판(Classic)과 확장판(Extended), 판별 리소스, 실행 시 선택하는 언어팩(기본 EN/KO)이다. 사용자와 한국어로 소통한다.
+현재 구조는 공통 엔진을 사용하는 Stranded II와 확장판(Extended), 판별 리소스, 실행 시 선택하는 언어팩(기본 EN/KO/DE)이다. 사용자와 한국어로 소통한다.
 
 - 확장판은 설정의 QOL 탭에서 조합법 탐색, 보관함 이동, 시체 수집 후 닫기, 표시 정렬, 건축 연속 입력을 개별 설정한다. 확장판 전용 변경으로 기본판의 게임 동작·콘텐츠를 바꾸지 않는다. 공통 엔진 수정은 두 판에서 검증한다.
 - 판별 진입점은 `src/engine/StrandedII.bb`와 `src/engine/StrandedIIExtended.bb`다. `editions/<판>/modules.bb`에서 구현을 선택한다. 확장판 동작이 달라질 때 필요한 모듈만 별도로 만들고 공통 엔진 전체를 복제하지 않는다.

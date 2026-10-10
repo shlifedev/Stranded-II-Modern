@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"e1887d47da26822e8c7acf9a0c27142b4937f8d08bf7ab3f436f2abda2c09fc4"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"b771e1d9dbba64d1a0015308d0e8be1284432ae510716bcc8ea03aec51feb1f2"} -->
 
 # Translating the game
 
@@ -7,6 +7,8 @@
 [Back to README](../README.md) · [Development guide](development.md)
 
 **Edit `locales/<code>.tsv` for the language you want to translate.** English source text is in [locales/en.tsv](../locales/en.tsv); Korean translations are in [locales/ko.tsv](../locales/ko.tsv). Translation, language, and font changes do not require rebuilding the EXE.
+
+English (`en`), Korean (`ko`), and German (`de`, **Deutsch**) are bundled in both editions. [German translations](../locales/de.tsv) reuse the [official German Gold 1.0.0.1 text](https://www.unrealsoftware.de/get.php?get=stranded2.zip), adapted and supplemented for this project's features and Extended. The default font supports the German pack.
 
 ## 1. Edit the translation file
 
@@ -57,7 +59,7 @@ For example, Japanese uses `ja`. Language codes use lowercase letters, digits, a
 
 3. Follow `localize → check → launch` above. The new language appears in settings automatically.
 
-Keep the bundled English and Korean packs. Japanese translations are not currently bundled.
+Keep the bundled English, Korean, and German packs. Japanese translations are not currently bundled.
 
 ## Choose a font
 

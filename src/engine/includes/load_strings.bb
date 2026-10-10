@@ -40,6 +40,11 @@ Function load_strings()
 		EndIf
 	Wend
 	CloseFile(stream)
+	; English homonyms need distinct display keys in other languages.
+	; Preserve custom mod strings; only split the prepared stock references.
+	If s$(41)="[[loc:legacy.1622]]" Then s$(41)="[[loc:ui.compass_east]]"
+	If sm$(53)="[[loc:legacy.1231]]" Then sm$(53)="[[loc:ui.keybinding]]"
+	If sm$(179)="[[loc:legacy.1048]]" Then sm$(179)="[[loc:ui.fishing]]"
 End Function
 
 load_strings()

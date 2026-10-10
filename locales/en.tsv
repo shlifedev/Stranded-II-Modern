@@ -2592,3 +2592,6 @@ modern.save_failed	Save failed. Check folder permissions and disk space. The pre
 modern.saved	Game saved.
 modern.settings_failed	Could not save settings. Check folder permissions and available disk space.
 modern.windowed	Windowed
+ui.compass_east	E
+ui.keybinding	Key
+ui.fishing	Fish

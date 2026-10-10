@@ -20,6 +20,9 @@ def main():
     if runtime_info(runtime)['edition']!=args.edition:raise ValueError('Runtime belongs to another edition')
     output=Path(tempfile.mkdtemp(prefix='check-',dir=output_root))
     (output/'core/locales').mkdir(parents=True)
+    (output/'sys').mkdir()
+    stock_strings='0041=[[loc:legacy.1622]]\nm053=[[loc:legacy.1231]]\nm179=[[loc:legacy.1048]]\n'
+    (output/'sys/strings.inf').write_text(stock_strings,encoding='utf8')
     for lang in catalogs:(output/'core/locales'/f'{lang}.tsv').write_text(catalog_text(ROOT,lang,args.edition),encoding='utf8',newline='\n')
     packs=languages(ROOT);packs['zz-test']={'name':'日本語テスト'}
     (output/'core/locales/languages.dat').write_bytes(registry(packs))
@@ -31,7 +34,7 @@ def main():
 Global set_rootdir$=SystemProperty("APPDIR"),failures,variable$="7"
 Global p_internal,p_p,p_len,p_l$,p_internaltxt$,p_gotparam
 Global report=WriteFile(set_rootdir$+"localization.txt")
-'''+(includes/'localization.bb').read_text('utf8')+'\n'+function((includes/'parser_functions.bb').read_text('utf8'),'params$')+'\n'+function((includes/'functions.bb').read_text('utf8'),'trimtext$')+'\n'+function((includes/'parser_vars.bb').read_text('utf8'),'var_rep$')+r'''
+'''+(includes/'localization.bb').read_text('utf8')+'\n'+(includes/'load_strings.bb').read_text('utf8')+'\n'+function((includes/'parser_functions.bb').read_text('utf8'),'params$')+'\n'+function((includes/'functions.bb').read_text('utf8'),'trimtext$')+'\n'+function((includes/'parser_vars.bb').read_text('utf8'),'var_rep$')+r'''
 Function parse_error(message$)
  check(False,"unexpected parse error: "+message$)
 End Function
@@ -80,6 +83,27 @@ check(loc_resolve(bound$)="before 9 first; 7 second after","serialized reference
 check(loc_resolve("[[loc:ui.language]]")="Language","English catalog")
 loc_load("ko")
 check(loc_resolve("[[loc:ui.language]]")="언어","English to Korean round trip")
+check(loc_resolve(s$(41))=loc_resolve("[[loc:legacy.1622]]"),"Korean compass label preserved")
+check(loc_resolve(sm$(53))=loc_resolve("[[loc:legacy.1231]]"),"Korean key label preserved")
+check(loc_resolve(sm$(179))=loc_resolve("[[loc:legacy.1048]]"),"Korean fishing label preserved")
+loc_pending$="de":check(loc_save(),"German selection saved")
+check(loc_language$="ko","German apply waits for restart")
+loc_boot():check(loc_language$="de","German restart")
+check(loc_name("de")="Deutsch","German native language name")
+check(loc_resolve("[[loc:ui.language]]")="Sprache","German catalog loaded")
+check(loc_resolve(s$(41))="O","German compass east")
+check(loc_resolve("[[loc:legacy.1622]]")="E","keyboard E is not translated to compass east")
+check(loc_resolve(sm$(53))="Taste","German keyboard key")
+check(loc_resolve("[[loc:legacy.1231]]")="Schlüssel","German inventory key and umlaut")
+check(loc_resolve(sm$(179))="Angeln","German fishing action")
+check(loc_resolve("[[loc:legacy.1048]]")="Fisch","German fish item")
+check(ss("[[loc:extra.30db153c32e4|score=3132]]")="12 Punkte","German bound variable")
+check(loc_resolve("[[loc:test.fallback]]")="Fallback text","missing German falls back to English")
+stream=WriteFile("sys\strings.inf")
+WriteLine stream,"0041=Custom East":WriteLine stream,"m053=Custom Key":WriteLine stream,"m179=Custom Fish"
+CloseFile stream:load_strings()
+check(s$(41)="Custom East" And sm$(53)="Custom Key" And sm$(179)="Custom Fish","custom mod labels remain intact")
+loc_load("ko")
 check(loc_resolve("이전에 저장된 한글")="이전에 저장된 한글","legacy literal remains unchanged")
 value$="한글,"+Chr(34)+"$var|]]"
 check(loc_unhex(loc_hex(value$))=value$,"delimiter-safe UTF-8 binding encoding")

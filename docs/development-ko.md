@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"74d3f46d472e523d0086fba2b2f4aa37dfe8fab67c6df566856389815057d7ea"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"d5eb97fccba531c90ee32ff87ba5aefc7310b578040e98e5551265a1e718ea91"} -->
 
 # 개발 가이드
 
@@ -169,6 +169,8 @@ msg "[[loc:quest.island1.arrival]]";
 ```
 
 키는 영문자·숫자·`_`·`.`·`-`를 사용하고 중복하지 않습니다. 기존 `legacy.*`·해시 키는 유지하세요. TSV의 빈 줄과 `#` 시작 줄은 무시하고, 문자열 이스케이프는 `\n`, `\r`, `\t`, `\\`를 지원합니다. 참조를 중첩할 때는 최대 8단계이며 순환 참조를 만들지 않습니다. 양쪽 언어에 키가 없으면 `[missing: 키]`와 실행 폴더의 `core/localization.log`로 진단합니다. 배포 전에 `check` 오류를 해결하세요.
+
+같은 영어 단어라도 의미가 다르면 키를 분리합니다. 기본 문자열 로더는 나침반의 동쪽, 키보드 키, 낚시 동작을 각각 E 키, 아이템 열쇠, 물고기의 기존 키와 구분하며, 모드가 지정한 자체 문구는 유지합니다.
 
 | 수정 대상 | 위치와 규칙 |
 | --- | --- |
