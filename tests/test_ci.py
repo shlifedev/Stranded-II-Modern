@@ -105,7 +105,9 @@ class CIPackagingTests(unittest.TestCase):
             ci.dependencies(SimpleNamespace(archive=archive, destination=destination,
                                             github_output=outputs))
         self.assertEqual((destination / 'fonts/NotoSansKR.ttf').read_bytes(), b'font')
-        self.assertIn(f'game={destination / "game"}\n', outputs.read_text('utf8'))
+        values = dict(line.split('=', 1) for line in outputs.read_text('utf8').splitlines())
+        self.assertTrue(Path(values['game']).is_absolute())
+        self.assertTrue(Path(values['game']).samefile(destination / 'game'))
         with self.assertRaisesRegex(ValueError, 'new dependency directory'):
             ci.dependencies(SimpleNamespace(archive=archive, destination=destination,
                                             github_output=None))
