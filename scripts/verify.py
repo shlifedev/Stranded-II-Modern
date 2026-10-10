@@ -108,6 +108,7 @@ End
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_timing.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'timing')],check=True)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_clock_hooks.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'clock-hooks')],check=True)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_modern.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'modern')],check=True)
+    subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_version.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'version')],check=True)
     # Check every emitted reference, including binary map string fields.
     refcount=0
     for p in (BUILD/'runtime').rglob('*'):
@@ -131,7 +132,7 @@ End
         glyphs={struct.unpack_from('<i',data,16+i*28)[0] for i in range(count)}
         assert expected<=glyphs,(code,expected-glyphs)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_fonts.py'),'--output',str(output/'fonts')],check=True)
-    report={'localization_runtime':'pass','config_preservation':'pass','timing':'pass','coarse_timer_hook':'pass','modern_save_and_display':'pass','validated_references':refcount,'unicode_glyphs':len(glyphs),'graphics_and_actual_game_save':'requires game smoke test'}
+    report={'localization_runtime':'pass','config_preservation':'pass','timing':'pass','coarse_timer_hook':'pass','modern_save_and_display':'pass','product_version_loader':'pass','validated_references':refcount,'unicode_glyphs':len(glyphs),'graphics_and_actual_game_save':'requires game smoke test'}
     (output/'report.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf8')
     print('Checks passed:',output)
 if __name__=='__main__':main()

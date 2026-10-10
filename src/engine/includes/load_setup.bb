@@ -1,3 +1,4 @@
+modern_version_load()
 modern_config()
 ;############################################ SETUP
 

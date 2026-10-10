@@ -49,6 +49,12 @@ class CIPackagingTests(unittest.TestCase):
         self.put(self.root / 'licenses/LICENSE.txt', b'original license\r\n')
         self.put(self.root / 'config/modern.ini', b'fps=144\nlanguage=ko\n')
         self.put(self.runtime / 'StrandedII.exe', b'MZbuilt executable')
+        from versioning import make_info
+        info = make_info('1.1.0', 'local')
+        self.put(self.runtime / 'core/version.json', json.dumps(info).encode())
+        self.put(self.runtime / 'core/version.txt', b'1.1.0-local\n')
+        self.put(self.root / 'build/build-report.json', json.dumps(dict(
+            info, exe_sha256=ci.digest(b'MZbuilt executable'), source_sha256={})).encode())
         self.put(self.runtime / 'mods/Stranded II/sys/ko_aliases.dat', b'aliases')
         for code in ('en', 'ko'):
             self.put(self.root / f'locales/{code}.json',
@@ -158,7 +164,7 @@ class CIPackagingTests(unittest.TestCase):
 
     def test_incomplete_or_stale_language_pack_prevents_package_creation(self):
         output = self.root / 'release.zip'
-        args = SimpleNamespace(runtime=self.runtime, game=self.game, output=output)
+        args = SimpleNamespace(runtime=self.runtime, game=self.game, output=output, version_info=None)
         self.put(self.runtime / 'core/locales/en.tsv', b'old catalog')
         with self.assertRaisesRegex(ValueError, 'stale'):
             ci.package(args)
@@ -168,6 +174,19 @@ class CIPackagingTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Missing file'):
             ci.package(args)
         self.assertFalse(output.exists())
+
+    def test_stale_version_source_or_executable_is_rejected(self):
+        self.put(self.runtime / 'core/version.txt', b'1.1.99-main\n')
+        with self.assertRaisesRegex(ValueError, 'version label'):
+            ci.release_members(self.runtime, self.game)
+        self.put(self.runtime / 'core/version.txt', b'1.1.0-local\n')
+        self.put(self.root / 'src/engine/StrandedII.bb', b'changed source')
+        with self.assertRaisesRegex(ValueError, 'build report is stale'):
+            ci.release_members(self.runtime, self.game)
+        (self.root / 'src/engine/StrandedII.bb').unlink()
+        self.put(self.runtime / 'StrandedII.exe', b'MZold executable')
+        with self.assertRaisesRegex(ValueError, 'build report is stale'):
+            ci.release_members(self.runtime, self.game)
 
     def test_missing_licenses_or_truncated_font_metadata_cannot_be_packaged(self):
         license_path = self.root / 'licenses/LICENSE.txt'

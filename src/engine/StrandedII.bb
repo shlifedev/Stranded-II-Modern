@@ -23,6 +23,7 @@ Include "includes\load_vars.bb"				;Load Vars
 Include "includes\modern_files.bb"
 Include "includes\modern_saves.bb"
 Include "includes\modern_runtime.bb"
+Include "includes\modern_version.bb"
 Include "includes\load_commandline.bb"		;Load Commandline
 Include "includes\load_functions.bb"		;Load Functions
 Include "includes\load_settings.bb"			;Load Settings

@@ -10,6 +10,7 @@ import stat
 import struct
 import sys
 import zipfile
+from versioning import local_info, runtime_info, validate_info
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -196,6 +197,15 @@ def release_members(runtime, game):
     if not exe.startswith(b'MZ'):
         raise ValueError('StrandedII.exe is not a Windows executable')
     members['StrandedII.exe'] = exe
+    info = runtime_info(runtime)
+    report = read_json(ROOT / 'build/build-report.json')
+    source_hashes = {p.relative_to(ROOT).as_posix(): digest(p.read_bytes())
+                     for p in sorted((ROOT / 'src/engine').rglob('*.bb'))}
+    if (validate_info(report) != info or report['exe_sha256'] != digest(exe) or
+            report['source_sha256'] != source_hashes):
+        raise ValueError('Runtime build report is stale; rebuild the current sources first')
+    members['core/version.json'] = file_bytes(runtime, 'core/version.json')
+    members['core/version.txt'] = file_bytes(runtime, 'core/version.txt')
     members['mods/Stranded II/sys/ko_aliases.dat'] = file_bytes(
         runtime, 'mods/Stranded II/sys/ko_aliases.dat')
     packs = languages(ROOT)
@@ -240,20 +250,43 @@ def release_members(runtime, game):
         'Copyright and component licenses / 저작권 및 구성물 라이선스: licenses/\n'
     ).encode('utf8')
     members['build-info.json'] = (json.dumps({
-        'commit': os.environ.get('GITHUB_SHA', ''),
+        **info,
         'upstream_game_version': read_json(ROOT / 'config/dependencies.json')['game_version'],
         'exe_sha256': digest(exe),
         'languages': list(packs),
-        'source_sha256': {p.relative_to(ROOT).as_posix(): digest(p.read_bytes())
-                          for p in sorted((ROOT / 'src/engine').rglob('*.bb'))},
+        'source_sha256': source_hashes,
     }, ensure_ascii=False, indent=2) + '\n').encode('utf8')
     return {f'StrandedII/{name}': data for name, data in members.items()}
 
 
 def package(args):
+    from release import archive_name
+    info = runtime_info(args.runtime)
+    if args.version_info and validate_info(read_json(args.version_info)) != info:
+        raise ValueError('Runtime version differs from the CI-selected version')
     members = release_members(args.runtime, args.game)
-    checksum = write_archive(args.output, members)
-    print(f'Release ZIP: {args.output}\nSHA-256: {checksum}\nFiles: {len(members)}')
+    output = args.output or ROOT / 'build/release' / archive_name(info)
+    checksum = write_archive(output, members)
+    print(f'Release ZIP: {output}\nSHA-256: {checksum}\nFiles: {len(members)}')
+
+
+def version(args):
+    from release import allocation
+    if args.channel:
+        if not args.repo or not os.environ.get('GITHUB_SHA'):
+            raise ValueError('Release allocation needs --repo and GITHUB_SHA')
+        info, published = allocation(ROOT, args.repo, args.channel, os.environ['GITHUB_SHA'])
+    else:
+        info, published = local_info(ROOT), False
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(info, indent=2) + '\n', encoding='utf8', newline='\n')
+    github_outputs(args.github_output, dict(info, published=str(published).lower()))
+    print(json.dumps(dict(info, published=published), indent=2))
+
+
+def release(args):
+    from release import publish
+    publish(args.repo, args.directory, read_json(args.version_info))
 
 
 def main():
@@ -274,7 +307,17 @@ def main():
     command = sub.add_parser('package', help='Create a standalone ZIP without player data')
     command.add_argument('--runtime', type=Path, default=ROOT / 'build/runtime')
     command.add_argument('--game', type=Path, required=True)
-    command.add_argument('--output', type=Path, default=ROOT / 'build/release/StrandedII-windows.zip')
+    command.add_argument('--output', type=Path)
+    command.add_argument('--version-info', type=Path)
+    command = sub.add_parser('version', help='Select an immutable release version or a local/preview label')
+    command.add_argument('--channel', choices=('main', 'dev'))
+    command.add_argument('--repo')
+    command.add_argument('--output', type=Path, default=ROOT / 'build/ci/version.json')
+    command.add_argument('--github-output', type=Path)
+    command = sub.add_parser('release', help='Publish the validated ZIP through a resumable draft Release')
+    command.add_argument('--repo', required=True)
+    command.add_argument('--version-info', type=Path, default=ROOT / 'build/ci/version.json')
+    command.add_argument('--directory', type=Path, default=ROOT / 'build/release')
     args = parser.parse_args()
     try:
         globals()[args.command](args)

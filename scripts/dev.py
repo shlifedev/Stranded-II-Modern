@@ -2,6 +2,7 @@
 from pathlib import Path
 import argparse, hashlib, json, os, shutil, subprocess, sys
 from locales import prepare, validate
+from versioning import local_info, validate_info
 
 ROOT=Path(__file__).resolve().parents[1]
 BUILD=ROOT/'build'
@@ -72,6 +73,9 @@ def localize(args):
 
 def build(args):
     settings();validate(ROOT)
+    info=validate_info(read(args.version_info)) if args.version_info else local_info(ROOT)
+    if os.environ.get('GITHUB_SHA') and info['commit']!=os.environ['GITHUB_SHA']:
+        raise ValueError('Selected version belongs to a different source commit')
     compiler=BUILD/'toolchain/bin/blitzcc.exe'
     for relative,digest in read(ROOT/'config/toolchain-files.json').items():
         checked(BUILD/'toolchain'/relative,digest,'private Blitz3D component')
@@ -86,7 +90,9 @@ def build(args):
     try:os.replace(candidate,dest)
     except PermissionError as exc:
         raise RuntimeError(f'Compiled {candidate}; close the development game and run build again to replace {dest}') from exc
-    write(BUILD/'build-report.json',{'exe_sha256':sha(dest),'source_sha256':{p.relative_to(ROOT).as_posix():sha(p) for p in (ROOT/'src/engine').rglob('*.bb')}})
+    write(RUNTIME/'core/version.json',info)
+    (RUNTIME/'core/version.txt').write_text(info['display_version']+'\n',encoding='ascii',newline='\n')
+    write(BUILD/'build-report.json',dict(info,exe_sha256=sha(dest),source_sha256={p.relative_to(ROOT).as_posix():sha(p) for p in (ROOT/'src/engine').rglob('*.bb')}))
     print('Built:',dest)
 
 def run(args):
@@ -106,7 +112,8 @@ def main():
     p=sub.add_parser('setup',help='Validate external dependencies and refresh shared resources/fonts')
     for name in ('game','blitz','font'):p.add_argument('--'+name,type=Path)
     sub.add_parser('localize',help='Refresh language packs and fonts without recompiling or copying game resources')
-    sub.add_parser('build',help='Compile directly edited src/engine with private Blitz3D')
+    p=sub.add_parser('build',help='Compile directly edited src/engine with private Blitz3D')
+    p.add_argument('--version-info',type=Path,help='CI-selected version metadata; defaults to config/version.json with -local')
     p=sub.add_parser('run',help='Launch the isolated development game')
     p.add_argument('game_args',nargs=argparse.REMAINDER)
     sub.add_parser('check',help='Check catalogs, resources and compiled runtime functions')

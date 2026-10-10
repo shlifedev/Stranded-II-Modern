@@ -307,7 +307,7 @@ Function menu()
 			EndIf
 			
 			;Version
-			bmpf_txt_r(set_scrx-3,set_scry-17,Cversion$,Cbmpf_tiny)
+			bmpf_txt_r(set_scrx-3,set_scry-17,modern_version$,Cbmpf_tiny)
 			
 			
 			;Rightclick Explode Fun Stuff ;D

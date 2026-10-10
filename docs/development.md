@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"a0f39153ce28c8b66c96e3c8d04e5e07d436e327056c74c7865b00823db41ce3"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"ad5d735e8abba409304ede76572588757712cd082bde67227889bd1e34b44357"} -->
 
 # Development guide
 
@@ -166,11 +166,29 @@ Keep document bodies editable and leave synchronization hashes for the agent to 
 
 ## GitHub CI and release ZIPs
 
-The [Windows workflow](../.github/workflows/windows.yml) builds and checks pushes to `main`/`master`, pull requests, and manual runs, then stores a playable game ZIP and SHA-256 file as artifacts. Pushing a `v*` tag attaches the same checked ZIP to the corresponding GitHub Release. Manual runs do not create Releases.
+The [Windows workflow](../.github/workflows/windows.yml) builds and checks pushes to `main`/`dev`, pull requests, and manual runs, then stores a playable game ZIP and SHA-256 file as artifacts. A `main` push automatically publishes a stable Release; a `dev` push publishes a prerelease. Pull requests and manual runs only produce verification ZIPs labeled `-local`, without publishing Releases or consuming version numbers. Tag pushes no longer trigger deployment.
 
 CI runs `setup → build → check → package` on Windows Server 2022 with Python 3.13. `check` tests non-graphical runtime behavior; it does not replace checks of actual graphics, rendering FPS, Alt-Tab, or a full playthrough. Verify GitHub Actions itself after creating the remote repository.
 
 To avoid repeated download traffic to upstream sites, store game resources, the compiler, and the font once in a dependency Release in the same repository. CI uses only this Release and the Actions cache. Missing files cause a failure with preparation instructions; CI does not automatically download from upstream sites.
+
+### Setting versions and automatic increments
+
+The developer sets the baseline in [config/version.json](../config/version.json) on `main`. Its initial value is `{"version":"1.1.0"}`. CI never changes the first two numbers. The patch is the starting value for that series; if stable tags already exist in the same series, releases continue with the next number. CI does not modify this file or create version commits.
+
+| Release situation | Bottom-right menu label | GitHub tag |
+|---|---|---|
+| First stable release | `1.1.0-main` | `v1.1.0` |
+| First subsequent development release | `1.1.1-dev.1` | `v1.1.1-dev.1` |
+| Another development release for the same target | `1.1.1-dev.2` | `v1.1.1-dev.2` |
+| Next stable release | `1.1.1-main` | `v1.1.1` |
+| Development release after that stable release | `1.1.2-dev.1` | `v1.1.2-dev.1` |
+
+At the start of CI, `dev` reads the baseline file from `main` and freezes its commit SHA. Before a stable release exists, development releases start at the baseline with `-dev.1`; otherwise they target the next stable patch and increment the `dev.N` sequence. Development releases do not consume stable patches. Changing the baseline on `main` to `1.2.0` makes the next development release use the new series without a merge. `main` uses the baseline file from the commit being released.
+
+Version selection through publication is serialized across both branches. Build/check failures create no tags and consume no numbers. An interruption during tag creation or upload can reserve a number, but a rerun recovers the tag and draft for the same source commit/channel. Published Releases are never overwritten, and rerunning an already published commit skips the build. `ci-deps-v1` is excluded from game version calculations. Development prereleases do not replace the latest stable Release.
+
+Builds generate `core/version.txt` and `core/version.json`. The game reads the label at startup and displays it in the main menu. `build-info.json` includes the version, channel, source commit, baseline-file commit, and executable hash. Packaging verifies that this information matches the build report and current engine sources. The engine's existing `Cversion="1.0.0.1"` and upstream dependency version remain unchanged for map/script compatibility. A local `build` displays the baseline with a `-local` suffix.
 
 ### Preparing the dependency Release once
 
@@ -204,10 +222,10 @@ Packaging uses an explicit file list, so a used development runtime's personal s
 
 ```powershell
 python -X utf8 scripts/ci.py package --game deps/game
-python -X utf8 -m unittest discover -s tests -p test_ci.py
+python -X utf8 -m unittest discover -s tests -p 'test_ci*.py'
 ```
 
-Output is `build/release/StrandedII-windows.zip` and `.zip.sha256`. Packaging does not compile or run game checks, so complete `setup → build → check` with the latest sources first.
+Output names are `build/release/StrandedII-<display version>-windows.zip` and `.zip.sha256`. For example, the first stable release is `StrandedII-1.1.0-main-windows.zip`, and a local build is `StrandedII-1.1.0-local-windows.zip`. Packaging does not compile or run game checks, so first complete `setup → build → check` with the latest sources. CI also stores its selected version information in the `version-context` artifact.
 
 ## Generated output and user data
 

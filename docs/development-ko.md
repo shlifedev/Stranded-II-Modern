@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"88a9c047567a1476294bfde37dc16cee5c9f6dde515d069754397f7e5636a209"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"6cb2f92463d3e010bc05a98091d7a8b27cb0cdb0d64610caab40093f6df7a479"} -->
 
 # 개발 가이드
 
@@ -166,11 +166,29 @@ try {
 
 ## GitHub CI와 배포 ZIP
 
-[Windows 워크플로](../.github/workflows/windows.yml)는 `main`·`master` 푸시, PR, 수동 실행에서 빌드와 검사를 수행하고 실행 가능한 게임 ZIP과 SHA-256 파일을 산출물로 저장합니다. `v*` 태그를 푸시하면 검사에 통과한 같은 ZIP을 해당 GitHub Release에 첨부합니다. 수동 실행은 Release를 만들지 않습니다.
+[Windows 워크플로](../.github/workflows/windows.yml)는 `main`·`dev` 푸시, PR, 수동 실행에서 빌드와 검사를 수행하고 실행 가능한 게임 ZIP과 SHA-256 파일을 산출물로 저장합니다. `main` 푸시는 정식 Release, `dev` 푸시는 시험판 Release를 자동 발행합니다. PR과 수동 실행은 `-local` 표시가 붙은 검증용 ZIP만 만들며 Release를 발행하거나 번호를 소모하지 않습니다. 태그 푸시로 배포하는 방식은 사용하지 않습니다.
 
 CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행합니다. `check`는 비그래픽 런타임 검사이며 실제 화면, 렌더링 FPS, Alt-Tab과 전체 플레이 검증을 대신하지 않습니다. GitHub Actions 자체의 실행 결과는 원격 저장소를 만든 뒤 확인합니다.
 
 원본 사이트에 반복 다운로드 트래픽을 발생시키지 않도록 게임 리소스·컴파일러·글꼴은 같은 저장소의 의존성용 Release에 한 번 보관합니다. CI는 이 Release와 Actions 캐시만 사용합니다. 파일이 없으면 준비 방법을 안내하고 실패하며, 원본 사이트로 자동 다운로드하지 않습니다.
+
+### 버전 지정과 자동 증가
+
+개발자가 `main`의 [config/version.json](../config/version.json)에 기준 버전을 지정합니다. 초기값은 `{"version":"1.1.0"}`입니다. 앞 두 숫자는 CI가 변경하지 않습니다. patch는 해당 계열의 시작값이며, 같은 계열의 기존 정식 태그가 있으면 그 다음 번호부터 배포합니다. CI는 이 파일을 수정하거나 버전 커밋을 만들지 않습니다.
+
+| 배포 상황 | 메뉴 오른쪽 아래 표시 | GitHub 태그 |
+|---|---|---|
+| 첫 정식 배포 | `1.1.0-main` | `v1.1.0` |
+| 이후 첫 개발 배포 | `1.1.1-dev.1` | `v1.1.1-dev.1` |
+| 같은 목표의 개발 배포 추가 | `1.1.1-dev.2` | `v1.1.1-dev.2` |
+| 다음 정식 배포 | `1.1.1-main` | `v1.1.1` |
+| 정식 배포 후 개발 배포 | `1.1.2-dev.1` | `v1.1.2-dev.1` |
+
+`dev`는 CI가 시작할 때 `main`의 기준 파일을 읽고 그 커밋 SHA를 고정합니다. 정식 배포 전에는 기준 버전의 `-dev.1`부터 시작하며, 정식 배포가 있으면 다음 정식 patch를 목표로 `dev.N` 순번을 올립니다. 개발 배포는 정식 patch를 소모하지 않습니다. `main`에서 기준을 `1.2.0`으로 바꾸면 다음 개발 배포도 새 계열을 사용하며 병합은 필요하지 않습니다. `main`은 배포 대상 커밋에 있는 기준 파일을 사용합니다.
+
+두 브랜치의 버전 계산부터 발행까지 실행을 직렬 처리합니다. 빌드·검사 실패는 태그를 만들지 않으므로 번호를 소모하지 않습니다. 태그 생성이나 업로드 도중 중단되면 번호가 예약될 수 있지만, 재실행은 같은 소스 커밋·채널의 태그와 초안을 복구합니다. 공개된 Release는 덮어쓰지 않고, 이미 발행한 커밋을 재실행하면 빌드를 생략합니다. `ci-deps-v1`은 게임 버전 계산에서 제외합니다. dev는 시험판이며 최신 정식 Release를 대체하지 않습니다.
+
+빌드 시 `core/version.txt`와 `core/version.json`을 생성합니다. 게임은 시작할 때 표시값을 읽고 메인 메뉴에 표시합니다. `build-info.json`에는 버전·채널·소스 커밋·기준 파일 커밋과 실행 파일 해시가 포함됩니다. 패키징은 이 정보와 빌드 보고서·현재 엔진 소스가 일치하는지 검사합니다. 엔진의 기존 `Cversion="1.0.0.1"`과 원본 의존성 버전은 맵·스크립트 호환성을 위해 유지합니다. 로컬 `build`는 기준 버전에 `-local`을 붙여 표시합니다.
 
 ### 의존성 Release 최초 준비
 
@@ -204,10 +222,10 @@ ZIP의 `StrandedII/` 폴더에는 빌드된 EXE, 원본 게임 리소스, 현지
 
 ```powershell
 python -X utf8 scripts/ci.py package --game deps/game
-python -X utf8 -m unittest discover -s tests -p test_ci.py
+python -X utf8 -m unittest discover -s tests -p 'test_ci*.py'
 ```
 
-출력은 `build/release/StrandedII-windows.zip`과 `.zip.sha256`입니다. 패키징은 컴파일이나 게임 검사를 실행하지 않으므로 먼저 최신 소스로 `setup → build → check`를 완료하세요.
+출력 이름은 `build/release/StrandedII-<표시 버전>-windows.zip`과 `.zip.sha256`입니다. 예를 들어 첫 정식 배포는 `StrandedII-1.1.0-main-windows.zip`, 로컬 빌드는 `StrandedII-1.1.0-local-windows.zip`입니다. 패키징은 컴파일이나 게임 검사를 실행하지 않으므로 먼저 최신 소스로 `setup → build → check`를 완료하세요. CI가 사용한 버전 정보는 `version-context` 산출물에도 저장됩니다.
 
 ## 생성물과 사용자 데이터 관리
 

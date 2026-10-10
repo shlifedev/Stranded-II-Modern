@@ -1,0 +1,52 @@
+"""Run the real Blitz version-file loader without opening a graphics window."""
+from pathlib import Path
+import argparse
+import json
+import os
+import subprocess
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--blitz', type=Path, required=True)
+    parser.add_argument('--output', type=Path, required=True)
+    args = parser.parse_args()
+    output = args.output.resolve()
+    (output / 'core').mkdir(parents=True, exist_ok=True)
+    root = Path(__file__).resolve().parents[1]
+    body = 'Global set_rootdir$=SystemProperty("APPDIR")\n'
+    body += (root / 'src/engine/includes/modern_version.bb').read_text('utf8')
+    body += '''
+Local report=WriteFile(set_rootdir$+"version-result.txt")
+modern_version_load()
+WriteLine report,modern_version$
+CloseFile report
+End
+'''
+    source = output / 'version-test.bb'
+    source.write_text(body, encoding='utf8')
+    exe = output / 'version-test.exe'
+    result = subprocess.run([str(args.blitz.resolve() / 'bin/blitzcc.exe'), '-o', str(exe), str(source)],
+                            cwd=output, env=dict(os.environ, blitzpath=str(args.blitz.resolve())), capture_output=True)
+    if result.returncode:
+        raise ValueError(result.stdout.decode('utf8', errors='replace') + result.stderr.decode('utf8', errors='replace'))
+    cases = [(None, 'development'), ('1.1.0-main\n', '1.1.0-main'),
+             ('1.1.1-dev.2\n', '1.1.1-dev.2'), ('1.2.0-local\n', '1.2.0-local'),
+             ('', 'development'), ('invalid label!\n', 'development'), ('1' * 129, 'development')]
+    for value, expected in cases:
+        path = output / 'core/version.txt'
+        if value is None:
+            if path.exists(): path.unlink()
+        else:
+            path.write_text(value, encoding='ascii')
+        subprocess.run([str(exe)], cwd=output, check=True, timeout=15,
+                       creationflags=subprocess.CREATE_NO_WINDOW)
+        actual = (output / 'version-result.txt').read_text('utf8').strip()
+        if actual != expected:
+            raise ValueError(f'Version loader: {value!r} returned {actual!r}, expected {expected!r}')
+    (output / 'report.json').write_text(json.dumps({'version_loader': 'pass', 'cases': len(cases)}) + '\n', encoding='utf8')
+    print('Blitz product version loader passed:', len(cases), 'cases')
+
+
+if __name__ == '__main__':
+    main()
