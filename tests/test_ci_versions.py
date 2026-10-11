@@ -199,31 +199,6 @@ class PublicationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'cannot be published'):
             release.publish('owner/repo', self.directory, make_info('1.1.0', 'local'))
 
-    def test_two_platform_publication_and_frozen_retry(self):
-        from test_ci_macos import mac_package
-        mac_package(self.directory, self.info, self.archive)
-        self.fail_upload = True
-        with self.assertRaisesRegex(ValueError, 'upload failure'):
-            release.publish('owner/repo', self.directory, self.info, release.PLATFORMS)
-        self.fail_upload = False
-        # The draft remembers macOS even when the caller now requests Windows only.
-        release.publish('owner/repo', self.directory, self.info)
-        self.assertEqual(len(self.history[0]['assets']), 4)
-        self.assertEqual(len(release.saved_info(self.history[0])['artifacts']), 2)
-        commands = self.commands.copy()
-        release.publish('owner/repo', self.directory, self.info)
-        self.assertEqual(commands, self.commands)
-
-    def test_macos_failure_does_not_prevent_windows_and_later_success_cannot_add_assets(self):
-        from test_ci_macos import mac_package
-        release.publish('owner/repo', self.directory, self.info)
-        self.assertEqual(len(self.history[0]['assets']), 2)
-        mac_package(self.directory, self.info, self.archive)
-        commands = self.commands.copy()
-        release.publish('owner/repo', self.directory, self.info, release.PLATFORMS)
-        self.assertEqual(commands, self.commands)
-        self.assertEqual(len(self.history[0]['assets']), 2)
-
     def test_changed_draft_package_is_rejected(self):
         self.fail_upload = True
         with self.assertRaises(ValueError):
@@ -235,60 +210,36 @@ class PublicationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Draft artifacts changed'):
             release.publish('owner/repo', self.directory, self.info)
 
-    def test_macos_rejects_missing_or_changed_qol_bridge(self):
-        from test_ci_macos import mac_package
-        import package_macos
-        for damage in ('missing', 'changed'):
-            with self.subTest(damage=damage):
-                mac = mac_package(self.directory, self.info, self.archive)
-                release.validate_package(self.directory, self.info, 'macos-apple-silicon')
-                with zipfile.ZipFile(mac) as archive:
-                    members = [(entry, archive.read(entry)) for entry in archive.infolist()]
-                with zipfile.ZipFile(mac, 'w') as archive:
-                    for entry, data in members:
-                        if entry.filename.endswith('/game/QolInput.dll'):
-                            if damage == 'missing': continue
-                            data = b'MZchanged bridge'
-                        archive.writestr(entry, data)
-                mac.with_suffix('.zip.sha256').write_text(f'{package_macos.digest(mac)}  {mac.name}\n')
-                with self.assertRaisesRegex(ValueError, 'payload checksum mismatch'):
-                    release.validate_package(self.directory, self.info, 'macos-apple-silicon')
+    def add_retired_artifact(self):
+        entry = self.history[0]
+        previous = release.saved_info(entry)
+        name = f"StrandedII-{self.info['display_version']}-retired.zip"
+        previous['artifacts'][name] = 'c' * 64
+        entry['body'] = '<!-- stranded-ii-build: ' + json.dumps(previous) + ' -->'
+        entry['assets'].extend({'name': n} for n in (name, name + '.sha256'))
 
-    def test_macos_payload_corruption_and_version_mismatch_fail(self):
-        from test_ci_macos import mac_package
-        import package_macos
-        mac = mac_package(self.directory, self.info, self.archive)
-        release.validate_package(self.directory, self.info, 'macos-apple-silicon')
-        with zipfile.ZipFile(mac) as archive:
-            members = {entry.filename: (entry, archive.read(entry)) for entry in archive.infolist()}
-        name = 'Stranded II.app/Contents/Resources/game/StrandedII.exe'
-        members[name] = (members[name][0], b'changed exe')
-        with zipfile.ZipFile(mac, 'w') as archive:
-            for entry, data in members.values(): archive.writestr(entry, data)
-        mac.with_suffix('.zip.sha256').write_text(f'{package_macos.digest(mac)}  {mac.name}\n')
-        with self.assertRaisesRegex(ValueError, 'executable does not match'):
-            release.validate_package(self.directory, self.info, 'macos-apple-silicon')
+    def test_historical_published_artifacts_remain_immutable_and_complete(self):
+        release.publish('owner/repo', self.directory, self.info)
+        self.add_retired_artifact()
+        commands = self.commands.copy()
+        release.publish('owner/repo', self.directory, self.info)
+        self.assertEqual(commands, self.commands)
+        self.assertEqual(len(self.history[0]['assets']), 4)
+        self.history[0]['assets'].pop()
+        with self.assertRaisesRegex(ValueError, 'incomplete'):
+            release.publish('owner/repo', self.directory, self.info)
+        self.assertEqual(commands, self.commands)
 
-    def test_macos_rejects_wrong_version_and_missing_executable_permissions(self):
-        from test_ci_macos import mac_package
-        import package_macos
-        for damage in ('version', 'permissions'):
-            with self.subTest(damage=damage):
-                mac = mac_package(self.directory, self.info, self.archive)
-                with zipfile.ZipFile(mac) as archive:
-                    members = [(entry, archive.read(entry)) for entry in archive.infolist()]
-                with zipfile.ZipFile(mac, 'w') as archive:
-                    for entry, data in members:
-                        if damage == 'permissions' and entry.filename.endswith('/MacOS/StrandedII'):
-                            entry.external_attr = (0o100644 << 16)
-                        if damage == 'version' and entry.filename.endswith('/macos-build.json'):
-                            metadata = json.loads(data)
-                            metadata['display_version'] = '9.9.9-main'
-                            data = json.dumps(metadata).encode()
-                        archive.writestr(entry, data)
-                mac.with_suffix('.zip.sha256').write_text(f'{package_macos.digest(mac)}  {mac.name}\n')
-                with self.assertRaises(ValueError):
-                    release.validate_package(self.directory, self.info, 'macos-apple-silicon')
+    def test_historical_draft_artifacts_cannot_be_silently_removed(self):
+        self.fail_upload = True
+        with self.assertRaisesRegex(ValueError, 'upload failure'):
+            release.publish('owner/repo', self.directory, self.info)
+        self.add_retired_artifact()
+        self.fail_upload = False
+        commands = self.commands.copy()
+        with self.assertRaisesRegex(ValueError, 'Draft artifacts changed'):
+            release.publish('owner/repo', self.directory, self.info)
+        self.assertEqual(commands, self.commands)
 
     def test_legacy_publication_is_immutable_and_incomplete_assets_are_rejected(self):
         release.publish('owner/repo', self.directory, self.info)

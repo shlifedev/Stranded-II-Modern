@@ -164,92 +164,9 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  macos:
-    needs: build
-    runs-on: macos-15
-    timeout-minutes: 20
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
-        with:
-          python-version: '3.13'
-
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
-        with:
-          name: version-context
-          path: build/ci
-
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
-        with:
-          name: StrandedII-windows
-          path: build/release
-
-      - name: Test packaging and native data preservation
-        run: python -m unittest discover -s tests -p 'test_ci*.py'
-
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: |
-            build/ci/macos-wine.tar.xz
-            build/ci/macos-wine-libraries.tar.xz
-          key: macos-wine-${{ hashFiles('config/macos-wine.json') }}
-
-      - name: Download and verify pinned Wine
-        run: python scripts/package_macos.py download-wine
-
-      - name: Prepare Rosetta on the disposable runner
-        run: |
-          if ! /usr/bin/arch -x86_64 /usr/bin/true; then
-            sudo /usr/sbin/softwareupdate --install-rosetta --agree-to-license
-          fi
-
-      - name: Package and smoke-test Apple Silicon app
-        run: |
-          python - <<'PY'
-          import json, sys
-          from pathlib import Path
-          sys.path.insert(0, 'scripts')
-          from package_macos import package
-          from release import archive_name
-          directory = Path('build/release').resolve()
-          version = Path('build/ci/version.json').resolve()
-          info = json.loads(version.read_text())
-          package(directory / archive_name(info), version,
-                  Path('build/ci/macos-wine.tar.xz').resolve(), directory, smoke_test=True)
-          PY
-
-      - name: Upload macOS ZIP and checksum
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
-        with:
-          name: StrandedII-macos
-          path: |
-            build/release/*-macos-apple-silicon.zip
-            build/release/*-macos-apple-silicon.zip.sha256
-          overwrite: true
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 14
-
-      - name: Upload macOS initialization log
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
-        with:
-          name: macos-reports
-          path: build/release/macos-smoke.log
-          overwrite: true
-          if-no-files-found: ignore
-          retention-days: 14
-
   release:
-    needs: [build, macos]
+    needs: build
     if: >-
-      always() && !cancelled() && needs.build.result == 'success' &&
       (github.event_name == 'push' && github.ref == 'refs/heads/main' ||
        github.event_name == 'workflow_dispatch' && inputs.publish)
     runs-on: windows-2022
@@ -275,23 +192,10 @@ jobs:
           name: StrandedII-windows
           path: build/release
 
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
-        if: needs.macos.result == 'success'
-        with:
-          name: StrandedII-macos
-          path: build/release
-
       - name: Publish immutable Release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          MACOS_RESULT: ${{ needs.macos.result }}
         run: |
-          $platforms = @('windows')
-          if ($env:MACOS_RESULT -eq 'success') {
-            $platforms += 'macos-apple-silicon'
-          } else {
-            "macOS packaging: $env:MACOS_RESULT. Publishing Windows only; see the macOS job log." >> $env:GITHUB_STEP_SUMMARY
-          }
-          python -X utf8 scripts/ci.py release --repo "$env:GH_REPO" --platforms @platforms
+          python -X utf8 scripts/ci.py release --repo "$env:GH_REPO"
           if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }

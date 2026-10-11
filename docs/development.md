@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"f5a0e433cae8a0c2f95faef7106675329a5a20a8b6d76708fe2e3754729cf9b2"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"3777164578737426ed1cca40544702ec0e6377c8fac08b7239989ea143412ca8"} -->
 
 # Development guide
 
@@ -102,7 +102,7 @@ Open `http://127.0.0.1:8765/` in desktop Chrome/Edge. After checking WebGPU and 
 
 Use the Full screen button or `Alt+Enter` to toggle fullscreen. When the browser permits keyboard lock in fullscreen, a short `Esc` reaches the original game; hold it to release the lock. Loading and the main menu display without capture; during gameplay, releasing the pointer or switching windows pauses without covering the game. Click the game to return; if the browser rejects a new capture request, wait briefly and click again. If the server port is blocked, specify another, for example `run --platform web --port 4173`. Do not pass game arguments to web `run`.
 
-Web output goes into `build/web/site/`, with prepared resources in `build/web/runtime/`. Resources come from verified official inputs and shared language packs; Windows runtime saves and settings are never copied. After translation or font changes, run `localize --platform web`, then `build --platform web` to repack.
+Web output goes into `build/web/site/`, with prepared resources in `build/web/runtime/`. Resources come from verified official inputs and shared language packs; Windows runtime saves and settings are never copied. CI uses the dependency ZIP extracted to `build/ci/deps/game`, checking the resource and font hashes again during web setup. Generated runtime directories cannot be used as resource inputs. After translation or font changes, run `localize --platform web`, then `build --platform web` to repack.
 
 WAV encodings unsupported by the web runtime are converted to PCM in `build/web/audio/` using hash-verified FFmpeg and included only in the web package. File paths, sample rates, and channel counts are preserved; source resources remain unchanged. FFmpeg is a preparation tool and is not distributed with the game.
 
@@ -297,9 +297,9 @@ To publish a development release or manually publish a stable release, follow th
 
 For manual runs, `publish=false` only creates ZIPs and runs checks. Other branches and tag pushes do not publish.
 
-CI runs `setup → build → check → package` on Windows Server 2022 with Python 3.13, then packages the same game on an Apple Silicon `macos-15` runner. `check` tests non-graphical runtime behavior; it does not replace actual graphics, rendering FPS, Alt-Tab, or full-playthrough verification. Actual GitHub Actions runs must also be checked separately from local tests.
+CI runs `setup → build → check → package` on Windows Server 2022 with Python 3.13 and publishes Windows packages only. A native macOS port is planned separately. `check` tests non-graphical runtime behavior; it does not replace actual graphics, rendering FPS, Alt-Tab, or full-playthrough verification. Actual GitHub Actions runs must also be checked separately from local tests.
 
-To avoid repeated download traffic to upstream sites, store game resources, the compiler, and the font once in a dependency Release in the same repository. For these Windows build inputs, CI uses only this Release and the Actions cache. Missing files cause a failure with preparation instructions; CI does not automatically download those inputs from upstream sites. macOS runtime downloads are pinned separately as described below.
+To avoid repeated download traffic to upstream sites, store game resources, the compiler, and the font once in a dependency Release in the same repository. For these build inputs, CI uses only this Release and the Actions cache. Missing files cause a failure with preparation instructions; CI does not automatically download those inputs from upstream sites.
 
 ### Setting versions and automatic increments
 
@@ -313,7 +313,7 @@ The baseline is in [config/version.json](../config/version.json) on `main`, init
 
 When publishing, `dev` reads the baseline file from `main` and freezes its commit SHA. Before a stable release exists, development releases start at the baseline with `-dev.1`; otherwise they target the next patch and increment `dev.N`. Development releases do not consume stable patches. `main` uses the baseline file from the release commit.
 
-Automatic and manual release runs share a queue and are serialized from version allocation through publication. Build/check failures create no tags and consume no numbers. Publication interruptions may reserve a number, but rerunning the same edition, source commit, and channel recovers its tag and draft. Published Releases are never overwritten; reruns verify and retain the existing publication. Other editions' tags and `ci-deps-v1` do not affect number allocation. Development releases do not replace the latest stable Release marker.
+Automatic and manual release runs share a queue and are serialized from version allocation through publication. Build/check failures create no tags and consume no numbers. Publication interruptions may reserve a number, but rerunning the same edition, source commit, and channel recovers its tag and draft. Draft retries require the original artifact names and hashes. Published Releases are never overwritten; reruns verify and retain the existing publication, including artifacts from retired targets. Other editions' tags and `ci-deps-v1` do not affect number allocation. Development releases do not replace the latest stable Release marker.
 
 Builds generate `core/version.txt` and `core/version.json`. The game displays the label in the main menu. `build-info.json` includes the edition, version, channel, source commit, baseline-file commit, and executable hash. The build report also records the native source and DLL hashes; packaging checks these against the current shared source and selected runtime. Packaging checks the selected edition's build report and source graph, rejecting another edition's runtime or stale resource overrides. The existing `Cversion="1.0.0.1"` remains unchanged for map/script compatibility. Local builds display `-local`.
 
@@ -353,31 +353,6 @@ Packaging uses an explicit file list, so a used development runtime's personal s
 ```
 
 Output names are `build/release/StrandedII-<display version>-windows.zip` and `.zip.sha256`. An example local build is `StrandedII-1.1.0-local-windows.zip`. Packaging does not compile or run game checks, so first complete `setup → build → check` with the latest sources. CI stores version information in `version-context` and game ZIPs in `StrandedII-windows`.
-
-### macOS test packages
-
-The `macos` job creates `StrandedII-<display version>-macos-apple-silicon.zip` and its `.sha256`, stored in the `StrandedII-macos` artifact. It contains `Stranded II.app` with the unchanged Windows game, a native launcher, WineD3D, and the required Wine libraries. The initial target is Apple Silicon with macOS 15 or later and Rosetta 2. Intel Macs are not a supported test target. Players do not need Python, Homebrew, or a separate Wine installation.
-
-[config/macos-wine.json](../config/macos-wine.json) pins the engine and supporting-library archive URLs and SHA-256 hashes from the official Sikarugir GitHub releases. Both downloads are checked even on cache hits. The packager copies only the needed runtime libraries, excludes the template's launcher and alternate renderers, and omits Mono, Gecko, and the FFmpeg/GStreamer bridges. License notices are included. Updating the pins requires dependency and gameplay verification again.
-
-To reproduce packaging on a Mac, install Python 3.13 or later and Xcode Command Line Tools. Obtain the Windows ZIP, its checksum, and `version-context/version.json` from the **same CI run**, place them under `build/release/` and `build/ci/`, then run:
-
-```sh
-python3 scripts/package_macos.py download-wine
-python3 scripts/package_macos.py package \
-  --windows-zip build/release/StrandedII-<display-version>-windows.zip \
-  --version-info build/ci/version.json \
-  --wine-archive build/ci/macos-wine.tar.xz --smoke-test
-python3 -m unittest discover -s tests -p 'test_ci*.py'
-```
-
-Replace `<display-version>` before running. The engine and `macos-wine-libraries.tar.xz` must be in the same directory. Output defaults to `build/release/`; initialization logs are saved as `macos-smoke.log`. The smoke test uses a new temporary data directory, initializes Wine, and runs a console command; it does **not** launch or verify gameplay. Native tests cover installation, concurrent-launch locking, upgrades, preservation of settings/saves/custom files, interrupted updates, and Unicode paths. The packager also checks executable permissions, library dependencies, signatures, and the game payload against the Windows ZIP.
-
-The app is ad-hoc signed, not Developer ID signed or notarized. After extracting and moving it to Applications, macOS may require **System Settings → Privacy & Security → Open Anyway** after the first launch attempt. If Rosetta is missing, the launcher reports that it must be installed. Verify actual display, audio, keyboard/mouse input, Korean text, focus switching, save/load, and replacement of an older app on a real Mac before describing the package as gameplay-tested.
-
-The launcher stores its Wine prefix, `launcher.log`, and writable game generations under `~/Library/Application Support/Stranded II/`. `current` points to the active game directory. Wine maps it to a private `S:\` drive so Blitz sees an ASCII path even for non-Latin macOS account names. Updates preserve saves, all `.cfg` files, `settings.inf`, `modern.ini`, and user-added files; only previously packaged, non-user files can be removed. A failed update leaves the previous generation active. Older generations remain as recovery copies. App replacement does not remove this data. No Windows or Extended settings are imported.
-
-Publication waits for the macOS job to finish but requires only the Windows build to succeed. A successful macOS package is attached to the same Release; otherwise Windows is published alone and the job summary records the macOS result. A draft freezes its artifact names and hashes. Recover interrupted uploads using the original artifacts; different regenerated ZIPs are rejected. Published Releases remain immutable, including Windows-only releases whose later retries produce a macOS package. `scripts/ci.py release --platforms windows macos-apple-silicon` selects both packages; the default remains Windows only.
 
 ## Generated output and user data
 

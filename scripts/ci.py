@@ -300,7 +300,7 @@ def release(args):
     from release import publish
     info = validate_info(read_json(args.version_info))
     if info['edition'] != args.edition:raise ValueError('Release belongs to another edition')
-    publish(args.repo, args.directory, info, tuple(args.platforms))
+    publish(args.repo, args.directory, info)
 
 
 def main():
@@ -332,7 +332,6 @@ def main():
     command.add_argument('--repo', required=True)
     command.add_argument('--version-info', type=Path, default=ROOT / 'build/ci/version.json')
     command.add_argument('--directory', type=Path, default=ROOT / 'build/release')
-    command.add_argument('--platforms', nargs='+', choices=('windows', 'macos-apple-silicon'), default=['windows'])
     for name in ('package', 'version', 'release'):
         sub.choices[name].add_argument('--edition', choices=NAMES, default='classic')
     args = parser.parse_args()

@@ -50,7 +50,11 @@ def inputs():
 
 def prepare_assets(settings):
     game, font = Path(settings['game']), Path(settings['font'])
-    if game.resolve().is_relative_to((ROOT / 'build').resolve()):
+    # CI unpacks its hash-verified dependency ZIP inside build/. Permit only
+    # that input directory; generated runtimes and their player data stay out.
+    resolved_game = game.resolve()
+    build = (ROOT / 'build').resolve()
+    if resolved_game.is_relative_to(build) and resolved_game != build / 'ci/deps/game':
         raise ValueError('Web assets must come from the official dependency, not a development runtime.')
     dependencies = read(ROOT / 'config/dependencies.json')
     if digest(font) != dependencies['font_sha256']:
