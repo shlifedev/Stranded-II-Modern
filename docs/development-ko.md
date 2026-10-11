@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"11276776692933c835a59043be8bfaecdb7e827fea8a96d7228e1c2d9400e2bc"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"e9047b65e5a8f9dfc6fd1145017d5e86f78fcd1fd131052dc2268b5b73f10081"} -->
 
 # 개발 가이드
 
@@ -12,7 +12,7 @@
 
 Windows 10 이상, Python 3.10 이상, [requirements.txt](../requirements.txt)의 Pillow와 fontTools가 필요합니다. Blitz의 파일 경로 처리를 고려해 `C:\Stranded II`처럼 영문 경로를 사용하세요. 경로에 공백은 있어도 됩니다.
 
-확장판을 빌드하려면 Visual Studio의 MSVC x86/x64 C++ 빌드 도구와 Windows SDK도 설치되어 있어야 합니다. `build --edition extended`가 `src/native/extended/qol_input.c`를 32비트 `QolInput.dll`로 컴파일합니다. 별도 C 런타임 설치는 필요하지 않으며 DLL은 확장판을 로컬에서 패키징할 때 ZIP에 함께 포함됩니다. 기본판 빌드에는 이 도구가 필요하지 않습니다.
+두 판 모두 Visual Studio의 MSVC x86/x64 C++ 빌드 도구와 Windows SDK가 필요합니다. `build`는 QOL 활성화 여부와 관계없이 공통 `src/native/qol_input.c`를 32비트 `QolInput.dll`로 컴파일합니다. 별도 C 런타임 설치는 필요하지 않습니다. 두 판의 패키지에 DLL을 포함하며 네이티브 산출물·보고서는 선택한 판의 `build` 디렉터리 아래 `native/`에 저장합니다.
 
 아래 의존성은 저장소에 포함하지 않으므로 직접 준비합니다.
 
@@ -111,7 +111,7 @@ resources/ 수정 → setup 명령 → build/runtime/의 리소스 갱신
 
 ## 기본판과 확장판
 
-`classic`은 기존 동작을 유지하는 기본판, `extended`는 인벤토리·보관함·건축 QOL을 제공하고 별도 기능·콘텐츠를 개발할 확장판입니다. QOL은 기존 제작·이동·건축 규칙을 호출하며 재료 비용이나 도구 속도를 바꾸지 않습니다. 공통 코드는 한 번 수정해 두 판에서 검증하고, 확장판 전용 변경은 해당 판의 코드·자료에만 작성합니다.
+`classic`은 선택형 QOL을 기본 OFF로 제공하며 원작 게임플레이를 유지하는 기본판입니다. `extended`는 같은 QOL을 기본 ON으로 제공하며 향후 별도 기능·밸런스·콘텐츠를 개발할 확장판으로 유지합니다. 두 판 모두 설정 → QOL에서 다섯 옵션을 각각 선택합니다. QOL은 기존 제작·이동·건축 규칙을 호출하며 재료 비용이나 도구 속도를 바꾸지 않습니다. 공통 코드는 한 번 수정해 두 판에서 검증하고, 확장판 전용 변경은 해당 판의 코드·자료에만 작성합니다.
 
 `classic`은 내부 구분용입니다. 기본판 창 제목·실행 파일명은 `Stranded II`·`StrandedII.exe`로 유지하고, 확장판만 `Stranded II - Extended`·`StrandedII-Extended.exe`를 사용합니다. 빌드·실행·패키징은 이 이름을 함께 사용합니다.
 
@@ -133,9 +133,9 @@ build/runtime/                   기본판 실행·설정·세이브
 build/extended/runtime/          확장판 실행·설정·세이브
 ```
 
-두 `modules.bb`는 기존 UI·입력·건축 구현을 공유하고 판별 QOL 훅을 선택합니다. 기본판 `qol.bb`는 기존 동작을 유지하는 빈 훅이며, 확장판의 `qol.bb`, `qol_inventory.bb`, `qol_recipes.bb`, `qol_search.bb`가 설정·정렬·이동·도감·Unicode 검색을 구현합니다. 검색 입력은 Win32 Unicode EDIT와 IME를 사용하며 선언은 `config/userlibs/qol_*.decls`에 있습니다. 기능이 달라질 때만 필요한 모듈을 분리합니다. 컴파일은 직접 작성한 소스를 사용하며 Python이 엔진 코드를 생성하지 않습니다. 빌드 보고서는 해당 진입점의 실제 `Include` 그래프만 기록합니다. 다른 판의 전용 소스를 포함하면 검사에 실패합니다.
+두 `modules.bb`는 공통 UI·입력·건축과 `includes/qol*.bb` 구현을 선택합니다. 판별 프로필의 `Cedition_qol_default`는 기본판 0, 확장판 1입니다. 저장된 `qol_*` 값이 우선하며 누락·잘못된 값에는 해당 판의 기본값을 사용합니다. QOL은 설정 저장에 성공하면 즉시 적용하고, 언어·화면 변경은 계속 재시작이 필요합니다. 검색 입력은 Win32 Unicode EDIT와 IME를 사용하며 선언은 `config/userlibs/qol_*.decls`에 있습니다. 기능이 달라질 때만 필요한 모듈을 분리합니다. Python은 엔진 코드를 생성하지 않습니다. 빌드 보고서는 해당 진입점의 실제 `Include` 그래프를 기록하며 다른 판의 전용 소스를 포함하면 검사에 실패합니다.
 
-조합법 도감은 로드된 `Tcom` 데이터를 읽습니다. 조리·물 사용 등의 안내는 확장판 변경분의 `mods/Stranded II/sys/qol_guides.inf`에 별도로 작성하며, `source`에 근거 스크립트와 이벤트를 기록합니다. 안내는 스크립트를 대신 실행하지 않습니다. 원본 이벤트를 수정할 때 안내의 조건·수량·확률 설명도 함께 확인하세요. QOL 설정은 해당 판의 `core/modern.ini`에만 저장합니다.
+조합법 도감은 로드된 `Tcom` 데이터를 읽습니다. 조리·물 사용 등의 안내는 공통 변경분의 `mods/Stranded II/sys/qol_guides.inf`에 별도로 작성하며, `source`에 근거 스크립트와 이벤트를 기록합니다. 안내는 스크립트를 대신 실행하지 않습니다. 원본 이벤트를 수정할 때 안내의 조건·수량·확률 설명도 함께 확인하세요. QOL 설정은 해당 판의 `core/modern.ini`에만 저장합니다.
 
 검색창의 네이티브 연결부는 현재 게임 스레드의 해당 EDIT 컨트롤 메시지만 문자 변환 후 Unicode로 전달합니다. Blitz의 기본 메시지 루프에는 이 문자 변환이 없으므로 단순히 EDIT를 만드는 것만으로는 입력할 수 없습니다. 부모 창의 `WS_CLIPCHILDREN`으로 검색창을 게임 화면 출력에서 제외하고, 크기 변경 때만 위치를 갱신합니다. 매 프레임 `InvalidateRect`로 배경을 지우거나 다시 그리지 마세요. 검색창을 닫으면 메시지 훅과 추가한 창 스타일을 복원합니다.
 
@@ -196,15 +196,15 @@ msg "[[loc:quest.island1.arrival]]";
 | `build` | 실제 Blitz3D 컴파일, 실행 파일·소스 해시 | `build/build-report.json` |
 | `check` | 문구 참조·치환 변수·글꼴, 실제 Blitz 로더와 파서, 설정 보존, 시간 보정·프레임 대기, 저장 교체·잠금 실패·백업·5슬롯·저장 큐·계속하기 선택 | `build/check-*/report.json`과 같은 폴더의 상세 결과 |
 | `.\.venv\Scripts\python.exe -X utf8 scripts/verify_game.py` | 격리된 게임에서 실제 지도·저장·백업·빠른 저장/불러오기·자동 저장 상태 복구 | `build/game-smoke-*/report.json` |
-| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_qol_logic.py --language ko` | 실제 Blitz의 QOL 로직·제작·이동·정렬·설정 검사. 그래픽 엔티티와 스크립트는 대역 사용 | `build/extended/qol-logic-*/report.json` |
-| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_qol.py --language ko` | 복사한 확장판에서 실제 제작·이동·스크립트 거부·저장/불러오기 검사. 그래픽 장치 필요 | `build/extended/qol-smoke-*/report.json` |
+| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_qol_logic.py --language ko` | 실제 Blitz의 QOL 로직·제작·이동·정렬·설정 검사. 그래픽 엔티티와 스크립트는 대역 사용 | `build/qol-logic-*/report.json` |
+| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_qol.py --language ko` | 복사한 실행 환경에서 실제 제작·이동·스크립트 거부·저장/불러오기 검사. 그래픽 장치 필요 | `build/qol-smoke-*/report.json` |
 | `.\.venv\Scripts\python.exe -X utf8 scripts/verify_collisions.py --edition classic` | 격리된 Blitz 실행 환경에서 바위 메시 정리, 경사면 접근·후퇴, 점프·착지, 통로·수영, 제어 전환·투사체 충돌 | `build/collision-smoke-*/report.json` |
 
 이동·충돌 변경에는 `verify_collisions.py`를 두 에디션에서 실행합니다. Extended는 `--edition extended`를 사용하고 결과를 `build/extended/collision-smoke-*/`에 저장합니다. 이 검사는 실제 지형과 바위 모델에 60·120·144 Hz 및 100ms 시간 간격을 적용하며 GUI 입력을 보내지 않습니다. 실제 렌더링 FPS와 사용자가 보고한 장소는 별도로 확인합니다. `core/modern.ini`의 기존 `diagnostics=1` 옵션을 켜면 이동 요청·결과, 지형 보정량, 접촉점·법선과 이동 취소 여부가 `core/modern.log`에 최대 초당 4회 기록됩니다.
 
 `check`는 렌더링 없이 타이머·파서·저장 파일 처리 등을 검사합니다. 실제 렌더링 FPS, Alt-Tab, 화면의 부드러움과 전체 진행은 게임에서 따로 확인해야 합니다.
 
-확장판 `check`는 `verify_qol_logic.py`도 실행합니다. 이는 실제 엔진 함수를 컴파일하지만 엔티티·스크립트 대역을 사용하므로 화면, 실제 스크립트, 지도 저장, IME의 검증으로 간주하지 않습니다. `verify_qol.py --interactive`는 사용자 저장 파일을 복사하지 않는 별도 테스트 게임을 준비하며 자동 실행하지 않습니다. 이 복사본을 실행해 한글 조합·확정·취소, 검색창 포커스와 Alt-Tab, 긴 이름·상세 스크롤, Shift 클릭·R·Shift+R, 옵션별 켜기/끄기, 건축 반복 취소를 확인하세요. `--language en`으로 영어를, `--desktop`으로 전체 창을 확인할 수 있습니다. 시뮬레이션한 60·120·144 FPS 건축 간격 검사는 실제 렌더링 FPS 측정과 다릅니다.
+두 판의 `check`는 `verify_qol_logic.py`를 실행합니다. 판별 기본값, 누락·잘못된 설정, 옵션 조합 32가지와 공통 엔진 함수를 엔티티·스크립트 대역으로 검사하며 화면, 실제 스크립트, 지도 저장, IME는 검증하지 않습니다. 두 QOL 검증 명령 모두 `--edition classic|extended`를 받으며 생략하면 기본판, 확장판 결과는 `build/extended/` 아래입니다. `verify_qol.py --interactive`는 QOL을 켠 별도 테스트 게임을 개인 세이브 없이 준비하며 자동 실행하지 않습니다. 이 복사본에서 한글 조합·확정·취소, 검색창 포커스와 Alt-Tab, 긴 이름·상세 스크롤, Shift 클릭·R·Shift+R, 옵션별 켜기/끄기, 건축 반복 취소를 확인하세요. `--language en`은 영어, `--desktop`은 전체 창입니다. 시뮬레이션한 건축 간격은 실제 렌더링 FPS 측정과 다릅니다.
 
 저장 동작을 바꿨다면 `scripts/verify_game.py`로 실제 지도 로딩과 저장·불러오기도 확인하세요. 실행 폴더의 복사본과 빈 세이브 폴더를 사용하며 사용자 게임·세이브에는 쓰지 않습니다. 그래픽 장치가 필요하고 UI 조작은 검사하지 않습니다. 기본은 800×600 창이며, `--desktop`은 모니터에 맞춘 전체 창, `--edition extended`는 확장판을 검사합니다. 확장판 보고서는 `build/extended/` 아래에 생성됩니다.
 
@@ -223,7 +223,7 @@ msg "[[loc:quest.island1.arrival]]";
 
 검증 결과를 공유할 때는 사용한 빌드, 화면 설정, 확인한 동작과 남은 항목을 함께 적습니다. 자동 검사 통과만으로 전체 플레이나 모든 PC의 화면 복귀를 검증했다고 간주하지 않습니다.
 
-확장판 기능과 단축키는 [확장판 추가 기능](extend-features-ko.md)을 참고하세요.
+공통 기능과 단축키는 [QOL 설정](qol-ko.md), 기본값 차이와 개발 상태는 [확장판 차이](extend-features-ko.md)를 참고하세요.
 
 ## 프로젝트 문서 수정
 
@@ -264,7 +264,7 @@ CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → pa
 
 자동·수동 출시 실행은 같은 대기열에서 버전 계산부터 발행까지 직렬 처리합니다. 빌드·검사 실패는 태그를 만들지 않으므로 번호를 소모하지 않습니다. 발행 중 중단되면 번호가 예약될 수 있지만 같은 판·소스 커밋·채널로 재실행하면 태그와 초안을 복구합니다. 공개된 Release는 덮어쓰지 않으며 재실행 시 검증 후 기존 발행을 유지합니다. 다른 판의 태그와 `ci-deps-v1`은 번호 계산에 영향을 주지 않습니다. 개발판은 최신 정식 Release 표시를 대체하지 않습니다.
 
-빌드는 `core/version.txt`와 `core/version.json`을 생성합니다. 게임은 표시값을 메인 메뉴에 표시합니다. `build-info.json`에는 배포판·버전·채널·소스 커밋·기준 파일 커밋과 실행 파일 해시가 포함됩니다. 패키징은 해당 판의 빌드 보고서·소스 그래프와 일치하는지 검사하며 판이 다른 실행 폴더나 오래된 리소스 변경분을 거부합니다. 기존 `Cversion="1.0.0.1"`은 맵·스크립트 호환성을 위해 유지합니다. 로컬 빌드는 `-local`로 표시합니다.
+빌드는 `core/version.txt`와 `core/version.json`을 생성합니다. 게임은 표시값을 메인 메뉴에 표시합니다. `build-info.json`에는 배포판·버전·채널·소스 커밋·기준 파일 커밋과 실행 파일 해시가 포함됩니다. 패키징은 해당 판의 빌드 보고서·소스 그래프와 일치하는지 검사하며 판이 다른 실행 폴더나 오래된 리소스 변경분을 거부합니다. 기존 `Cversion="1.0.0.1"`은 맵·스크립트 호환성을 위해 유지합니다. 로컬 빌드는 `-local`로 표시합니다. 빌드 보고서에는 네이티브 소스·DLL 해시도 기록하며 패키징 시 현재 공통 소스와 선택한 실행 환경의 DLL이 일치하는지 검사합니다.
 
 ### 의존성 Release 최초 준비
 

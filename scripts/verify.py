@@ -147,8 +147,7 @@ End
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_modern.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'modern')],check=True)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_version.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'version')],check=True)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_settings.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'settings')],check=True)
-    if args.edition=='extended':
-        subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_qol_logic.py'),'--output',str(output/'qol')],check=True)
+    subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_qol_logic.py'),'--edition',args.edition,'--output',str(output/'qol')],check=True)
     # Check every emitted reference, including binary map string fields.
     refcount=0
     for p in runtime.rglob('*'):
@@ -173,8 +172,7 @@ End
         assert expected<=glyphs,(code,expected-glyphs)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_fonts.py'),'--runtime',str(runtime),'--output',str(output/'fonts')],check=True)
     report={'localization_runtime':'pass','config_preservation':'pass','timing':'pass','coarse_timer_hook':'pass','modern_save_and_display':'pass','product_version_loader':'pass','initial_settings_and_preservation':'pass','validated_references':refcount,'unicode_glyphs':len(glyphs),'graphics_and_actual_game_save':'requires game smoke test'}
-    if args.edition=='extended':
-        report['qol_logic']='pass; entity/script test doubles, no rendering or IME'
+    report['qol_logic']='pass; entity/script test doubles, no rendering or IME'
     (output/'report.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf8')
     print('Checks passed:',output)
 if __name__=='__main__':main()

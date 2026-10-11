@@ -1,7 +1,8 @@
-"""Exercise Extended QOL in an isolated, real Blitz runtime (no GUI input).
+"""Exercise shared QOL in an isolated, real Blitz runtime (no GUI input).
 
 Use --interactive to prepare a separate fixture for Computer Use visual checks.
-Personal settings and saves are never copied into or written by this fixture.
+Personal saves are excluded and modern.ini is replaced with fixture settings.
+The source runtime and its user data are never written by these checks.
 """
 from pathlib import Path
 import argparse
@@ -12,7 +13,7 @@ import shutil
 import subprocess
 import tempfile
 
-from editions import Edition
+from editions import Edition, NAMES
 from verify_timing import function
 
 
@@ -24,8 +25,10 @@ For fixture_item.Titem=Each Titem
  If fixture_item\parent_class=Cclass_unit And fixture_item\parent_id=g_player Then free_item(fixture_item\id)
 Next
 For fixture_i=1 To 9:in_quickslot(fixture_i)=0:Next
-Global fixture_storage=set_object(-1,181,EntityX(g_cplayer\h)+40,EntityZ(g_cplayer\h))
-Global fixture_corpse=set_unit(-1,2,EntityX(g_cplayer\h)+50,EntityZ(g_cplayer\h))
+set_object(-1,181,EntityX(g_cplayer\h)+40,EntityZ(g_cplayer\h))
+Global fixture_storage=TCobject\id
+set_unit(-1,2,EntityX(g_cplayer\h)+50,EntityZ(g_cplayer\h))
+Global fixture_corpse=TCunit\id
 con_unit(fixture_corpse):TCunit\health#=0
 Global fixture_weight=Dunit_maxweight(g_cplayer\typ)
 Function fixture_add(typ,count,class,id)
@@ -53,7 +56,39 @@ Function qcheck(ok,label$)
  WriteLine qr,"CHECK "+label$
  If ok=0 Then qfailures=qfailures+1:WriteLine qr,"FAIL "+label$
 End Function
-For qi=0 To 4:qcheck(qol_enabled(qi)=1,"QOL enabled by default "+qi):Next
+For qi=0 To 4:qcheck(qol_enabled(qi)=Cedition_qol_default,"edition default for missing key "+qi):Next
+CopyFile set_rootdir$+"core\modern.ini",set_rootdir$+"core\qol-before.ini"
+Global qconfig=OpenFile(set_rootdir$+"core\modern.ini")
+SeekFile qconfig,FileSize(set_rootdir$+"core\modern.ini")
+WriteLine qconfig,"qol_recipes="+(1-Cedition_qol_default)
+WriteLine qconfig,"qol_storage=invalid"
+WriteLine qconfig,"qol_autosort=0"
+WriteLine qconfig,"qol_hold_build=1"
+CloseFile qconfig
+qol_init()
+qcheck(qol_enabled(Cqol_recipes)=1-Cedition_qol_default,"explicit value overrides edition default")
+qcheck(qol_enabled(Cqol_storage)=Cedition_qol_default,"invalid value uses edition default")
+qcheck(qol_enabled(Cqol_close)=Cedition_qol_default,"partial config uses default for absent key")
+qcheck(qol_enabled(Cqol_sort)=0 And qol_enabled(Cqol_build)=1,"existing OFF and ON values retained")
+CopyFile set_rootdir$+"core\qol-before.ini",set_rootdir$+"core\modern.ini"
+DeleteFile set_rootdir$+"core\modern.ini"
+qol_init()
+For qi=0 To 4:qcheck(qol_enabled(qi)=Cedition_qol_default,"missing file uses edition default "+qi):Next
+CopyFile set_rootdir$+"core\qol-before.ini",set_rootdir$+"core\modern.ini"
+qol_init()
+For qmask=0 To 31
+ For qi=0 To 4:qol_pending(qi)=(qmask Shr qi) And 1:Next
+ qol_hold_state=2
+ qcheck(modern_options_save(),"save option combination "+qmask)
+ qcheck(qol_hold_state=3,"applying options cancels held construction")
+ For qi=0 To 4:qcheck(qol_enabled(qi)=((qmask Shr qi) And 1),"immediate option value "+qmask+":"+qi):Next
+ qol_init()
+ For qi=0 To 4:qcheck(qol_enabled(qi)=((qmask Shr qi) And 1),"persisted option value "+qmask+":"+qi):Next
+ qcheck(qol_inventory_enabled()=((qmask Shr Cqol_sort) And 1),"inventory view follows sorting option")
+Next
+; Exercise shared features with all five enabled after checking both edition defaults.
+For qi=0 To 4:qol_enabled(qi)=1:Next
+qol_settings_reset()
 If loc_language$="ko" Then
  qcheck(loc_resolve("[[loc:qol.recipes]]")="조합법 도감","Korean QOL catalog retains Unicode text")
 Else
@@ -133,6 +168,11 @@ qcheck(m_menu=Cmenu_if_exchange,"corpse stays open when items remain")
 Dunit_maxweight(g_cplayer\typ)=fixture_weight
 qcheck(qol_bulk(0)=3,"loot all moves corpse contents")
 qcheck(m_menu=0,"empty corpse closes to game")
+fixture_add(9,1,Cclass_unit,fixture_corpse)
+qol_enabled(Cqol_close)=0:if_exchange(Cclass_unit,fixture_corpse,0)
+qcheck(qol_bulk(0)=1,"collect corpse with auto-close disabled")
+qcheck(m_menu=Cmenu_if_exchange,"auto-close OFF leaves empty corpse open")
+qol_enabled(Cqol_close)=1
 if_exchange(Cclass_object,fixture_storage,1)
 qol_bulk(0):qcheck(m_menu=Cmenu_if_exchange,"empty storage stays open")
 Global vetoid=fixture_add(26,1,Cclass_unit,g_player)
@@ -144,7 +184,8 @@ qcheck(qol_move(TCitem\id,1)=0,"drop script can veto quick transfer")
 qcheck(qol_count(26,Cclass_unit,g_player)=vetocount,"veto preserves quantity")
 Ditem_script$(26)=oldscript$:Ditem_scriptk$(26)=oldkeys$
 ; Hold scheduling runs on game time, independently of frame frequency.
-Global site=set_object(-1,set_buildplaceid,EntityX(cam),EntityZ(cam))
+set_object(-1,set_buildplaceid,EntityX(cam),EntityZ(cam))
+Global site=TCobject\id
 set_state(Cstate_buildplace,Cclass_object,site):TCstate\value=181
 PositionEntity TCobject\h,EntityX(cam),EntityY(cam),EntityZ(cam)
 m_menu=0:in_keydown(Ckey_attack2)=1:in_keyhit(Ckey_attack2)=1
@@ -199,9 +240,10 @@ def main():
     parser.add_argument('--interactive', action='store_true')
     parser.add_argument('--language', choices=('en', 'ko'), default='ko')
     parser.add_argument('--desktop', action='store_true')
+    parser.add_argument('--edition', choices=NAMES, default='classic')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
-    profile = Edition('extended')
+    profile = Edition(args.edition)
     out = Path(tempfile.mkdtemp(prefix='qol-smoke-', dir=profile.build_dir(root)))
     runtime = out/'runtime'
     shutil.copytree(profile.runtime(root), runtime,
@@ -217,7 +259,7 @@ def main():
     init.write_text(init.read_text('utf8').replace('\nunrealsoftware()\n', '\n'), encoding='utf8')
     loop = source/'includes/engine_loop.bb'
     if args.interactive:
-        text = FIXTURE + '\nqol_recipes_open(0)\n' + loop.read_text('utf8').replace('menu_start()', '')
+        text = FIXTURE + '\nFor qi=0 To 4:qol_enabled(qi)=1:Next\nqol_settings_reset():qol_recipes_open(0)\n' + loop.read_text('utf8').replace('menu_start()', '')
     else:
         timing = source/'includes/modern_runtime.bb'
         text = timing.read_text('utf8')
@@ -246,7 +288,7 @@ def main():
     print(result)
     assert 'FAILURES 0' in result and '\nFAIL ' not in '\n'+result, result
     (out/'report.json').write_text(json.dumps({
-        'edition': 'extended', 'language': args.language,
+        'edition': args.edition, 'language': args.language,
         'recipes_transfers_sorting_settings_save_load': 'pass',
         'hold_scheduling': 'pass', 'visual_ui_and_ime': 'not tested by this harness',
     }, indent=2)+'\n', encoding='utf8')

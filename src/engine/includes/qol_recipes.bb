@@ -57,7 +57,7 @@ Function qol_guides_load()
  Next
  Local f=ReadFile("sys\qol_guides.inf"),line$,eq,key$,value$
  recipe=Null
- If f=0 Then con_add("QOL: sys/qol_guides.inf missing; run Extended setup"):Return
+ If f=0 Then con_add("QOL: sys/qol_guides.inf missing; run setup for this edition"):Return
  While (Eof(f)=0)
   line$=Trim(ReadLine(f)):eq=Instr(line$,"=")
   If eq>1 And Left(line$,1)<>"#" Then

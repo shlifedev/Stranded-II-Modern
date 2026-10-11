@@ -123,7 +123,7 @@ jobs:
           FONT_INPUT: ${{ steps.deps.outputs.font }}
         run: python -X utf8 scripts/dev.py setup --game "$env:GAME_INPUT" --blitz "$env:BLITZ_INPUT" --font "$env:FONT_INPUT"
 
-      - name: Compile with Blitz3D
+      - name: Compile Blitz3D and shared QOL input
         run: python -X utf8 scripts/dev.py build --version-info build/ci/version.json
 
       - name: Check resources and non-graphical runtime behavior
@@ -153,6 +153,7 @@ jobs:
           path: |
             build/setup-report.json
             build/build-report.json
+            build/native/report.json
             build/check-*/**/*.json
             build/check-*/**/*.txt
           # Extended reports are disabled with its CI build:

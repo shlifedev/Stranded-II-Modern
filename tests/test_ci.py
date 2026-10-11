@@ -50,13 +50,17 @@ class CIPackagingTests(unittest.TestCase):
         self.put(self.root / 'licenses/LICENSE.txt', b'original license\r\n')
         self.put(self.root / 'config/modern.ini', b'fps=144\nlanguage=en\n')
         self.put(self.runtime / 'StrandedII.exe', b'MZbuilt executable')
+        self.put(self.runtime / 'QolInput.dll', b'MZnative input bridge')
+        self.put(self.root / 'src/native/qol_input.c', b'native source')
+        self.native = dict(edition='classic', dll_sha256=ci.digest(b'MZnative input bridge'),
+                           source_sha256=ci.digest(b'native source'))
         from versioning import make_info
         info = make_info('1.1.0', 'local')
         self.put(self.runtime / 'core/version.json', json.dumps(info).encode())
         self.put(self.runtime / 'core/version.txt', b'1.1.0-local\n')
         self.put(self.root / 'src/engine/StrandedII.bb', b'; fixture\n')
         self.put(self.root / 'build/build-report.json', json.dumps(dict(
-            info, exe_sha256=ci.digest(b'MZbuilt executable'), source_sha256={'src/engine/StrandedII.bb':ci.digest(b'; fixture\n')})).encode())
+            info, native_qol=self.native, exe_sha256=ci.digest(b'MZbuilt executable'), source_sha256={'src/engine/StrandedII.bb':ci.digest(b'; fixture\n')})).encode())
         self.put(self.runtime / 'mods/Stranded II/sys/ko_aliases.dat', b'aliases')
         for code in ('en', 'ko'):
             self.put(self.root / f'locales/{code}.json',
@@ -89,6 +93,11 @@ class CIPackagingTests(unittest.TestCase):
         self.assertIn(f'{profile.executable}를 더블클릭', readme)
         self.assertNotIn('Play.cmd', readme)
         self.assertIn('Settings > Graphics', readme)
+        self.assertIn('Settings > QOL', readme)
+        build = json.loads(members[f'{profile.archive_root}/build-info.json'])
+        self.assertEqual(build['native_qol']['edition'], edition)
+        self.assertEqual(build['native_qol']['dll_sha256'],
+                         ci.digest(members[f'{profile.archive_root}/QolInput.dll']))
 
     def bundle(self):
         archive = self.root / 'bundle.zip'
@@ -221,6 +230,28 @@ class CIPackagingTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Invalid font metadata'):
             ci.release_members(self.runtime, self.game)
 
+    def test_native_input_bridge_must_match_current_source_and_edition(self):
+        for target, value, error in (
+                (self.runtime / 'QolInput.dll', None, 'Missing'),
+                (self.runtime / 'QolInput.dll', b'not a DLL', 'not a Windows DLL'),
+                (self.runtime / 'QolInput.dll', b'MZoutdated', 'Native QOL build report is stale'),
+                (self.root / 'src/native/qol_input.c', b'changed source', 'Native QOL build report is stale')):
+            with self.subTest(target=target, value=value):
+                before = target.read_bytes()
+                if value is None:
+                    target.unlink()
+                else:
+                    target.write_bytes(value)
+                with self.assertRaisesRegex(ValueError, error):
+                    ci.release_members(self.runtime, self.game)
+                target.write_bytes(before)
+        report_path = self.root / 'build/build-report.json'
+        report = json.loads(report_path.read_text('utf8'))
+        report['native_qol']['edition'] = 'extended'
+        report_path.write_text(json.dumps(report), encoding='utf8')
+        with self.assertRaisesRegex(ValueError, 'Native QOL build report is stale'):
+            ci.release_members(self.runtime, self.game)
+
     def test_extended_package_changes_leave_classic_package_unchanged(self):
         from editions import Edition, source_hashes
         from versioning import make_info
@@ -239,12 +270,12 @@ class CIPackagingTests(unittest.TestCase):
         self.put(runtime / 'core/version.json', json.dumps(info).encode())
         self.put(runtime / 'core/version.txt', (info['display_version'] + '\n').encode())
         self.put(profile.build_dir(self.root) / 'build-report.json', json.dumps(dict(
-            info, exe_sha256=ci.digest(b'MZbuilt executable'),
+            info, native_qol=dict(self.native, edition='extended'), exe_sha256=ci.digest(b'MZbuilt executable'),
             source_sha256=source_hashes(self.root, 'extended'))).encode())
         members = ci.release_members(runtime, self.game, 'extended')
         self.assertIn('StrandedII-Extended/StrandedII-Extended.exe', members)
         self.assertEqual(members['StrandedII-Extended/QolInput.dll'], b'MZnative input bridge')
-        self.assertNotIn('StrandedII/QolInput.dll', baseline)
+        self.assertEqual(baseline['StrandedII/QolInput.dll'], b'MZnative input bridge')
         self.assertNotIn('StrandedII-Extended/StrandedII.exe', members)
         self.assert_player_entrypoint(members, 'extended')
         self.assertTrue(members['StrandedII-Extended/README.txt'].startswith(b'Stranded II - Extended\n'))

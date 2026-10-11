@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"2468886c6aa252c8e02452468101ae6807a5deed00e366f171013864c2191fcf"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"7b543434ac73eafd94323cc5b59f3b72c7a7fd08cf68d7b0abca6142f88edf95"} -->
 
 # Development guide
 
@@ -12,7 +12,7 @@ For a first build, follow **environment setup → first build**. Once set up, us
 
 You need Windows 10 or later, Python 3.10 or later, and Pillow and fontTools from [requirements.txt](../requirements.txt). Use an ASCII path such as `C:\Stranded II` because of Blitz's file-path handling. Spaces are allowed.
 
-Building Extended also requires Visual Studio's MSVC x86/x64 C++ build tools and a Windows SDK. `build --edition extended` compiles `src/native/extended/qol_input.c` into the 32-bit `QolInput.dll`. No separate C runtime installation is needed, and the DLL is included when packaging Extended locally. Stranded II builds do not require these tools.
+Both editions require Visual Studio's MSVC x86/x64 C++ build tools and a Windows SDK. `build` compiles the shared `src/native/qol_input.c` into the 32-bit `QolInput.dll`, even when QOL is disabled. No separate C runtime installation is needed. Both packages include the DLL; native outputs and reports are stored under the selected edition's `build` directory in `native/`.
 
 These dependencies are not included in the repository; prepare them yourself:
 
@@ -111,7 +111,7 @@ Changes to generated output may be overwritten by the next `setup` or `build`. K
 
 ## Stranded II and Extended
 
-`classic` preserves existing behavior; `extended` provides inventory, storage, and construction QOL and is the separate edition for new features and content. QOL calls the existing crafting, transfer, and construction rules without changing material costs or tool speed. Change shared code once and verify both editions; write Extended-only changes in that edition's code and resources.
+`classic` preserves original gameplay with optional QOL disabled by default; `extended` enables the same QOL by default and remains the separate edition for future features, balance changes, and content. Both expose five individual Settings > QOL options. QOL calls the existing crafting, transfer, and construction rules without changing material costs or tool speed. Change shared code once and verify both editions; write Extended-only changes in that edition's code and resources.
 
 `classic` is an internal identifier. The base edition keeps the window title `Stranded II` and executable `StrandedII.exe`; only Extended uses `Stranded II - Extended` and `StrandedII-Extended.exe`. Builds, launchers, and packaging use these names consistently.
 
@@ -133,9 +133,9 @@ build/runtime/                   Stranded II runtime, settings and saves
 build/extended/runtime/          Extended runtime, settings and saves
 ```
 
-Both `modules.bb` files share the existing UI, input, and construction implementations and select edition-specific QOL hooks. Stranded II's `qol.bb` contains no-op hooks that preserve existing behavior; Extended's `qol.bb`, `qol_inventory.bb`, `qol_recipes.bb`, and `qol_search.bb` implement settings, sorting, transfers, the recipe book, and Unicode search. Search uses a Win32 Unicode EDIT control and IME, with declarations in `config/userlibs/qol_*.decls`. Separate only the modules needed when behavior diverges. Compilation uses directly authored sources; Python does not generate engine code. Build reports record only the selected entrypoint's actual `Include` graph. Including another edition's private source fails validation.
+Both `modules.bb` files select the shared UI, input, construction, and `includes/qol*.bb` implementations. Edition profiles define `Cedition_qol_default` (0 for Stranded II, 1 for Extended). Saved `qol_*` values take precedence; missing or invalid values use that edition's default. QOL applies immediately after a successful settings save; language and display changes still require restarting. Search uses a Win32 Unicode EDIT control and IME, with declarations in `config/userlibs/qol_*.decls`. Separate only the modules needed when behavior diverges. Python does not generate engine code. Build reports record the selected entrypoint's actual `Include` graph; including another edition's private source fails validation.
 
-The recipe book reads loaded `Tcom` data. Guides for cooking, water use, and similar interactions are maintained separately in the Extended override `mods/Stranded II/sys/qol_guides.inf`; each `source` identifies the supporting script and event. Guides do not execute scripts on the player's behalf. When changing an original event, review the guide's conditions, quantities, and probability descriptions too. QOL settings are saved only in that edition's `core/modern.ini`.
+The recipe book reads loaded `Tcom` data. Guides for cooking, water use, and similar interactions are maintained separately in the shared override `mods/Stranded II/sys/qol_guides.inf`; each `source` identifies the supporting script and event. Guides do not execute scripts on the player's behalf. When changing an original event, review the guide's conditions, quantities, and probability descriptions too. QOL settings are saved only in that edition's `core/modern.ini`.
 
 The native search bridge translates and dispatches Unicode messages only for that EDIT control on the current game thread. Blitz's default message loop lacks character translation, so simply creating an EDIT is insufficient for typing. The parent's `WS_CLIPCHILDREN` excludes the search field from game presentation; its position is updated only when dimensions change. Do not erase and repaint it every frame with `InvalidateRect`. Closing the search field removes the message hook and restores the added window style.
 
@@ -196,15 +196,15 @@ For game-code changes, run `build` and `check`, then verify the changed feature 
 | `build` | Actual Blitz3D compilation and executable/source hashes | `build/build-report.json` |
 | `check` | Text references, substitution variables, fonts, actual Blitz loader/parser, settings preservation, timing/frame waits, save replacement/locking failures/backups/five slots/queue/Continue selection | `build/check-*/report.json` and detailed results in that folder |
 | `.\.venv\Scripts\python.exe -X utf8 scripts/verify_game.py` | Actual map/save/backup/quick save/load/autosave state recovery in an isolated game | `build/game-smoke-*/report.json` |
-| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_qol_logic.py --language ko` | Actual Blitz QOL logic, crafting, transfers, sorting, and settings; uses graphics entity and script test doubles | `build/extended/qol-logic-*/report.json` |
-| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_qol.py --language ko` | Actual crafting, transfers, script vetoes, and save/load in a copied Extended runtime; requires a graphics device | `build/extended/qol-smoke-*/report.json` |
+| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_qol_logic.py --language ko` | Actual Blitz QOL logic, crafting, transfers, sorting, and settings; uses graphics entity and script test doubles | `build/qol-logic-*/report.json` |
+| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_qol.py --language ko` | Actual crafting, transfers, script vetoes, and save/load in a copied runtime; requires a graphics device | `build/qol-smoke-*/report.json` |
 | `.\.venv\Scripts\python.exe -X utf8 scripts/verify_collisions.py --edition classic` | Rock mesh sanitation, slope approach/retreat, jumping/landing, corridors/swimming, control transitions and projectile collisions in an isolated Blitz runtime | `build/collision-smoke-*/report.json` |
 
 For movement and collision changes, run `verify_collisions.py` for both editions. Extended uses `--edition extended` and writes results to `build/extended/collision-smoke-*/`. The check uses real terrain and rock models with 60/120/144 Hz and 100ms time steps and sends no GUI input. Actual rendering FPS and the user's reported location require separate verification. The existing `diagnostics=1` option in `core/modern.ini` logs requested/resolved movement, terrain correction, contact points/normals and rejected moves to `core/modern.log` at most four times per second.
 
 `check` tests timers, parsers, save-file handling, and related behavior without rendering. Actual rendering FPS, Alt-Tab, visual smoothness, and full progression require separate in-game checks.
 
-Extended `check` also runs `verify_qol_logic.py`. It compiles actual engine functions but substitutes entities and scripts, so it does not verify display, real scripts, map saves, or IME. `verify_qol.py --interactive` prepares a separate test game without copying personal saves and does not launch it automatically. Run that copy to check Korean composition/commit/cancel, search focus and Alt-Tab, long names and detail scrolling, Shift-click/R/Shift+R, each option on/off, and cancellation of held construction. Use `--language en` for English and `--desktop` for borderless mode. Construction interval checks at simulated 60/120/144 FPS do not measure actual rendering FPS.
+Both editions' `check` runs `verify_qol_logic.py`. It tests edition defaults, missing/invalid settings, all 32 option combinations, and the shared engine functions with entity/script test doubles; it does not verify display, real scripts, map saves, or IME. Both QOL verification commands accept `--edition classic|extended` and default to Stranded II; Extended reports are under `build/extended/`. `verify_qol.py --interactive` prepares a separate test game with QOL enabled and no personal saves, without launching it. Run that copy to check Korean composition/commit/cancel, search focus and Alt-Tab, long names and detail scrolling, Shift-click/R/Shift+R, each option on/off, and cancellation of held construction. Use `--language en` for English and `--desktop` for borderless mode. Simulated construction intervals do not measure actual rendering FPS.
 
 For save changes, also use `scripts/verify_game.py` to test actual map loading and saving/loading. It uses a copied runtime and an empty save folder without writing to the user's game or saves. It needs a graphics device and does not test UI interaction. The default is an 800×600 window; `--desktop` tests borderless mode fitted to the monitor, and `--edition extended` selects Extended. Extended reports are under `build/extended/`.
 
@@ -223,7 +223,7 @@ Choose relevant checks for the change and verify them in the game:
 
 When sharing results, include the build, display settings, actions checked, and remaining checks. Automated checks passing does not establish full-playthrough coverage or display recovery on every PC.
 
-See [Extended features](extend-features.md) for features and shortcuts exclusive to Extended.
+See [QOL options](qol.md) for shared features and shortcuts, and [Extended differences](extend-features.md) for edition defaults and development status.
 
 ## Editing project documentation
 
@@ -264,7 +264,7 @@ When publishing, `dev` reads the baseline file from `main` and freezes its commi
 
 Automatic and manual release runs share a queue and are serialized from version allocation through publication. Build/check failures create no tags and consume no numbers. Publication interruptions may reserve a number, but rerunning the same edition, source commit, and channel recovers its tag and draft. Published Releases are never overwritten; reruns verify and retain the existing publication. Other editions' tags and `ci-deps-v1` do not affect number allocation. Development releases do not replace the latest stable Release marker.
 
-Builds generate `core/version.txt` and `core/version.json`. The game displays the label in the main menu. `build-info.json` includes the edition, version, channel, source commit, baseline-file commit, and executable hash. Packaging checks the selected edition's build report and source graph, rejecting another edition's runtime or stale resource overrides. The existing `Cversion="1.0.0.1"` remains unchanged for map/script compatibility. Local builds display `-local`.
+Builds generate `core/version.txt` and `core/version.json`. The game displays the label in the main menu. `build-info.json` includes the edition, version, channel, source commit, baseline-file commit, and executable hash. The build report also records the native source and DLL hashes; packaging checks these against the current shared source and selected runtime. Packaging checks the selected edition's build report and source graph, rejecting another edition's runtime or stale resource overrides. The existing `Cversion="1.0.0.1"` remains unchanged for map/script compatibility. Local builds display `-local`.
 
 ### Preparing the dependency Release once
 

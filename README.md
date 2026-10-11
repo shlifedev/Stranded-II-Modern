@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"6f59c7ff49c1ca61974b945745a103d42f57ee97b4648d1c6bee991d77f5b2c4"} -->
+<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"b42caa6eac9a657444365220359523c4d4f3972555940fcd5c7c3374efdca8fe"} -->
 
 # Stranded II : Modern
 
@@ -77,6 +77,7 @@ These are future ideas; features beyond the current improvements have not been f
 
 **Enjoy the game!**
 </details>
+
 
 ### Bugs and feature requests
 

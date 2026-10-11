@@ -78,10 +78,8 @@ def build(args):
     if info['edition']!=PROFILE.name:raise ValueError('Version belongs to another edition')
     if os.environ.get('GITHUB_SHA') and info['commit']!=os.environ['GITHUB_SHA']:
         raise ValueError('Selected version belongs to a different source commit')
-    native_dll=None
-    if PROFILE.name=='extended':
-        import native_qol
-        native_dll=native_qol.build(ROOT)
+    import native_qol
+    native_dll=native_qol.build(ROOT,PROFILE.name)
     shutil.copytree(ROOT/'config/userlibs',SHARED_BUILD/'toolchain/userlibs',dirs_exist_ok=True)
     compiler=SHARED_BUILD/'toolchain/bin/blitzcc.exe'
     for relative,digest in read(ROOT/'config/toolchain-files.json').items():
@@ -94,16 +92,14 @@ def build(args):
     print(result.stdout.decode('utf8',errors='replace'));print(result.stderr.decode('utf8',errors='replace'))
     if result.returncode:raise RuntimeError('Blitz3D compilation failed')
     if not candidate.exists():raise RuntimeError('Compiler did not produce the executable')
-    if native_dll:
-        native_qol.install(native_dll,RUNTIME)
+    native_qol.install(native_dll,RUNTIME)
     try:os.replace(candidate,dest)
     except PermissionError as exc:
         raise RuntimeError(f'Compiled {candidate}; close the development game and run build again to replace {dest}') from exc
     write(RUNTIME/'core/version.json',info)
     (RUNTIME/'core/version.txt').write_text(info['display_version']+'\n',encoding='ascii',newline='\n')
     report=dict(info,exe_sha256=sha(dest),source_sha256=source_hashes(ROOT,PROFILE.name))
-    if native_dll:
-        report['native_qol']=read(BUILD/'native/report.json')
+    report['native_qol']=read(BUILD/'native/report.json')
     write(BUILD/'build-report.json',report)
     print('Built:',dest)
 

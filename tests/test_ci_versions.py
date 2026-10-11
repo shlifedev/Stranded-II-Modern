@@ -117,6 +117,7 @@ class PublicationTests(unittest.TestCase):
             archive.writestr(f'{prefix}/core/version.json', json.dumps(info))
             archive.writestr(f'{prefix}/core/version.txt', info['display_version'] + '\n')
             archive.writestr(f'{prefix}/{Edition(info["edition"]).executable}', exe)
+            archive.writestr(f'{prefix}/QolInput.dll', b'MZnative input bridge')
             archive.writestr(f'{prefix}/build-info.json', json.dumps(dict(info, exe_sha256=hashlib.sha256(exe).hexdigest())))
         checksum = hashlib.sha256(path.read_bytes()).hexdigest()
         path.with_suffix('.zip.sha256').write_text(f'{checksum}  {path.name}\n', encoding='utf8')
@@ -233,6 +234,25 @@ class PublicationTests(unittest.TestCase):
         self.archive.with_suffix('.zip.sha256').write_text(f'{checksum}  {self.archive.name}\n')
         with self.assertRaisesRegex(ValueError, 'Draft artifacts changed'):
             release.publish('owner/repo', self.directory, self.info)
+
+    def test_macos_rejects_missing_or_changed_qol_bridge(self):
+        from test_ci_macos import mac_package
+        import package_macos
+        for damage in ('missing', 'changed'):
+            with self.subTest(damage=damage):
+                mac = mac_package(self.directory, self.info, self.archive)
+                release.validate_package(self.directory, self.info, 'macos-apple-silicon')
+                with zipfile.ZipFile(mac) as archive:
+                    members = [(entry, archive.read(entry)) for entry in archive.infolist()]
+                with zipfile.ZipFile(mac, 'w') as archive:
+                    for entry, data in members:
+                        if entry.filename.endswith('/game/QolInput.dll'):
+                            if damage == 'missing': continue
+                            data = b'MZchanged bridge'
+                        archive.writestr(entry, data)
+                mac.with_suffix('.zip.sha256').write_text(f'{package_macos.digest(mac)}  {mac.name}\n')
+                with self.assertRaisesRegex(ValueError, 'payload checksum mismatch'):
+                    release.validate_package(self.directory, self.info, 'macos-apple-silicon')
 
     def test_macos_payload_corruption_and_version_mismatch_fail(self):
         from test_ci_macos import mac_package

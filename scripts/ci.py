@@ -198,12 +198,15 @@ def release_members(runtime, game, edition='classic'):
     if not exe.startswith(b'MZ'):
         raise ValueError(f'{profile.executable} is not a Windows executable')
     members[profile.executable] = exe
-    if edition == 'extended':
-        bridge = file_bytes(runtime, 'QolInput.dll')
-        if not bridge.startswith(b'MZ'):
-            raise ValueError('QolInput.dll is not a Windows DLL')
-        members['QolInput.dll'] = bridge
+    bridge = file_bytes(runtime, 'QolInput.dll')
+    if not bridge.startswith(b'MZ'):
+        raise ValueError('QolInput.dll is not a Windows DLL')
+    members['QolInput.dll'] = bridge
     report = read_json(profile.build_dir(ROOT) / 'build-report.json')
+    native = report.get('native_qol', {})
+    if (native.get('edition') != edition or native.get('dll_sha256') != digest(bridge) or
+            native.get('source_sha256') != digest(file_bytes(ROOT, 'src/native/qol_input.c'))):
+        raise ValueError('Native QOL build report is stale; rebuild the current sources first')
     sources = source_hashes(ROOT, edition)
     if (validate_info(report) != info or report['exe_sha256'] != digest(exe) or
             report['source_sha256'] != sources):
@@ -246,6 +249,8 @@ def release_members(runtime, game, edition='classic'):
         'Windows 10 이상. 별도 설치는 필요하지 않습니다.\n\n'
         'Display, FPS and language: Settings > Graphics; apply, close and reopen the game.\n'
         '화면·FPS·언어: 설정 > 그래픽에서 적용한 뒤 게임을 종료하고 다시 실행하세요.\n'
+        'Optional QOL: Settings > QOL; apply to activate individual options immediately.\n'
+        '선택형 QOL: 설정 > QOL에서 개별 옵션을 선택하고 적용하면 즉시 반영됩니다.\n'
         'Saves / 저장 파일: mods/Stranded II/saves/\n'
         'Original game / 원작: Peter Schauß / Unreal Software, https://www.unrealsoftware.de/\n'
         'This is an unofficial modified version. / 비공식 수정 버전입니다.\n'
@@ -257,6 +262,7 @@ def release_members(runtime, game, edition='classic'):
         'exe_sha256': digest(exe),
         'languages': list(packs),
         'source_sha256': sources,
+        'native_qol': {key: native[key] for key in ('edition', 'source_sha256', 'dll_sha256')},
     }, ensure_ascii=False, indent=2) + '\n').encode('utf8')
     return {f'{profile.archive_root}/{name}': data for name, data in members.items()}
 

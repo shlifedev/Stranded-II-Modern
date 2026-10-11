@@ -2595,3 +2595,75 @@ modern.windowed	창 모드
 ui.compass_east	동
 ui.keybinding	열쇠
 ui.fishing	물고기
+
+# Shared quality-of-life UI and interaction guides.
+qol.tab	QOL
+qol.recipes	조합법 도감
+qol.storage	빠른 아이템 이동
+qol.autoclose	시체 수집 후 자동 닫기
+qol.autosort	인벤토리 자동 정렬
+qol.hold_build	건축 재료 연속 투입
+qol.on	켜기
+qol.off	끄기
+qol.settings_help	적용하면 즉시 반영됩니다. 시체 자동 닫기는 빠른 아이템 이동을 켜야 동작합니다. 정렬은 빠른 슬롯, 도구, 무기, 탄약, 식량, 물약, 재료, 기타 순입니다.
+qol.related	관련 조합법
+qol.player_items	내 인벤토리
+qol.take_all	모두 수집 [R]
+qol.deposit_matching	같은 종류 맡기기 [Shift+R]
+qol.move_one	1개 [1]
+qol.move_stack	묶음 [F]
+qol.close	닫기
+qol.back	뒤로
+qol.moved	$1개 옮겼습니다.
+qol.remaining	아이템이 남았습니다. 무게와 이동 제한을 확인하세요.
+qol.move_blocked	옮길 수 없습니다. 무게와 보관함 제한을 확인하세요.
+qol.transfer_help	선택 후 1: 1개, F: 묶음 이동. Shift+클릭: 묶음 이동. 일괄 맡기기는 장착 아이템과 빠른 슬롯을 보호합니다.
+qol.script_conditions	재료가 충분해도 제작 조건을 충족해야 합니다. 기존 진행도, 상태, 동작 조건은 제작할 때 확인합니다.
+qol.search_unavailable	검색창을 열지 못했습니다. 분류와 아이템 필터를 사용하세요.
+qol.clear_search	검색 지우기
+qol.clear_filters	모든 조합법
+qol.materials_ready	재료 보유
+qol.materials_missing	재료 부족
+qol.guide	상호작용 안내
+qol.locked	잠김
+qol.no_results	일치하는 조합법이 없습니다. 검색어나 필터를 지워 보세요.
+qol.previous	이전
+qol.next	다음
+qol.result_count	조합법 $1개
+qol.kept	(소모 안 됨)
+qol.result	결과:
+qol.find_recipe	만드는 방법 찾기
+qol.craft_one	1회 제작
+qol.use_at_location	해당 장소에서 안내대로 사용하세요.
+qol.used_in	사용처
+qol.detail_scroll	휠: 상세 스크롤 · 아이템 클릭: 제작법
+qol.cat.all	모든 분류
+qol.cat.tools	도구
+qol.cat.weapons	무기
+qol.cat.ammo	탄약
+qol.cat.food	식량
+qol.cat.potions	물약
+qol.cat.materials	재료
+qol.cat.misc	기타
+qol.cat.actions	동작
+qol.condition.fire	불 또는 꺼지지 않는 불 가까이에서 사용하세요(거리 50 미만).
+qol.condition.water	샘이나 담수 공급원 가까이(거리 50 미만), 또는 담수 구역에서 사용하세요.
+qol.condition.anywhere	주변 시설이 필요하지 않습니다.
+qol.condition.torch	불 가까이에서 사용하세요. 담수에서는 가지 담그기가 우선하므로 먼저 물에서 벗어나세요.
+qol.method.use	인벤토리에서 재료를 선택하고 사용 버튼을 누르세요. 기존 동작에 따라 재료 1개를 소모하고 표시된 결과물을 얻습니다.
+qol.method.clam	인벤토리에서 조개를 사용하세요. 조개 1개를 소모하고 진주 또는 점액 중 하나를 얻습니다. 둘 다 얻는 것은 아닙니다.
+qol.method.bark	나무껍질을 사용해 살펴보세요. 벌레나 점액을 얻거나 아무것도 얻지 못할 수 있습니다. 껍질이 부서질 수도 있으며 아래 결과물은 가능한 결과입니다.
+qol.guide.meat	고기 굽기
+qol.guide.small_meat	작은 고기 굽기
+qol.guide.fish	생선 굽기
+qol.guide.bread	빵 굽기
+qol.guide.cookies	과자 굽기
+qol.guide.dough_water	담수에서 반죽 만들기
+qol.guide.branch_water	가지 담그기
+qol.guide.torch	불에서 횃불 만들기
+qol.guide.harden_branch	유연한 가지 굳히기
+qol.guide.cord	목화나 양털로 줄 만들기
+qol.guide.grain	곡식 다발에서 낟알 얻기
+qol.guide.bottle	병에 물 채우기
+qol.guide.clam	조개 열기
+qol.guide.bark	나무껍질 살펴보기

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"6bf13bca2d134fd8d9fd1e6eecf0ddf9efa0273dddbf95ac3868f9b73bf06236"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"32a8b011ba47768887529d1799bcba1de94a069187374ab8cba8e0ddae4e6107"} -->
 
 # Stranded II development instructions
 
@@ -6,7 +6,7 @@
 
 The architecture has Stranded II and Extended editions using a shared engine, edition-specific resources, and language packs selected at launch (EN/KO/DE bundled). Communicate with the user in Korean.
 
-- Extended provides individual Settings > QOL controls for recipe browsing, storage transfers, closing emptied corpses, display sorting, and held construction input. Extended-only changes must not alter Stranded II gameplay or content. Verify shared engine changes in both editions.
+- Both editions provide individual Settings > QOL controls for recipe browsing, storage transfers, closing emptied corpses, display sorting, and held construction input. Defaults are OFF in Stranded II and ON in Extended; preserve saved selections. Keep their implementation and supporting resources shared. Extended remains available for future separate gameplay and content; Extended-only changes must not alter Stranded II. Verify shared engine changes in both editions.
 - The entrypoints are `src/engine/StrandedII.bb` and `src/engine/StrandedIIExtended.bb`. Select implementations in `editions/<edition>/modules.bb`. When Extended behavior diverges, separate only the required modules rather than copying the whole engine.
 - Commands default to Stranded II when `--edition classic|extended` is omitted. Stranded II uses `build/runtime`; Extended uses `build/extended/runtime`. Do not share or automatically copy settings or saves.
 - Put edition resources in `resources/editions/<edition>/overrides/` and translations in `locales/editions/<edition>/<code>.tsv`. Shared resource/catalog changes affect both editions. Write Extended rebalancing only in its own paths.

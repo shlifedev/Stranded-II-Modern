@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import tempfile
 
-from editions import Edition
+from editions import Edition, NAMES
 from verify_qol import FIXTURE, CHECKS
 from verify_timing import function
 
@@ -50,12 +50,10 @@ End Function
 Function set_object(id=-1,typ,x#=0,z#=0,yaw#=0)
  object_serial=object_serial+1
  TCobject=New Tobject:TCobject\id=object_serial:TCobject\typ=typ
- Return object_serial
 End Function
 Function set_unit(id=-1,typ,x#=0,z#=0)
  unit_serial=unit_serial+1
  TCunit=New Tunit:TCunit\id=unit_serial:TCunit\typ=typ:TCunit\health#=100
- Return unit_serial
 End Function
 Function set_state(typ,class,id)
  TCstate=New Tstate:TCstate\typ=typ:TCstate\parent_class=class:TCstate\parent_id=id
@@ -127,10 +125,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--language', choices=('en', 'ko'), default='ko')
+    parser.add_argument('--edition', choices=NAMES, default='classic')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
-    runtime = Edition('extended').runtime(root)
-    output = args.output or Path(tempfile.mkdtemp(prefix='qol-logic-', dir=root/'build/extended'))
+    profile = Edition(args.edition)
+    runtime = profile.runtime(root)
+    output = args.output or Path(tempfile.mkdtemp(prefix='qol-logic-', dir=profile.build_dir(root)))
     output = output.resolve()
     (output/'sys').mkdir(parents=True, exist_ok=True)
     (output/'core/locales').mkdir(parents=True, exist_ok=True)
@@ -142,13 +142,13 @@ def main():
     (output/'core/modern.ini').write_text(
         f'; retain this comment\nfps=144\ndiagnostics=0\nlanguage={args.language}\n', encoding='utf8')
     inc = root/'src/engine/includes'
-    ext = root/'src/engine/editions/extended'
-    body = (inc/'load_const.bb').read_text('utf8') + '\n' + (inc/'load_vars.bb').read_text('utf8')
+    body = (root/f'src/engine/editions/{args.edition}/profile.bb').read_text('utf8') + '\n'
+    body += (inc/'load_const.bb').read_text('utf8') + '\n' + (inc/'load_vars.bb').read_text('utf8')
     body += '\nGlobal Citem_count=1000,Cunit_count=1000,Cobject_count=1000\n'
     body += '\n' + declarations((inc/'load_items.bb').read_text('utf8'))
     body += '\nDim Dunit_maxweight(Cunit_count),Dobject_maxweight(Cobject_count)\n'
     for name in ('qol.bb', 'qol_inventory.bb', 'qol_recipes.bb'):
-        body += declarations((ext/name).read_text('utf8'))
+        body += declarations((inc/name).read_text('utf8'))
     # qol_query belongs to the omitted native text-input module.
     body += DOUBLES
     body += (inc/'modern_files.bb').read_text('utf8') + '\n'
@@ -174,12 +174,12 @@ def main():
                    'qol_settings_apply', 'qol_settings_restart', 'qol_frame', 'qol_attack2',
                    'qol_build_accept', 'qol_build_result', 'qol_min', 'qol_max'),
         'qol_inventory.bb': ('qol_category', 'qol_rank', 'qol_item.Titem', 'qol_count', 'qol_view',
-                             'qol_protected', 'qol_destination_exists', 'qol_move', 'qol_bulk'),
+                             'qol_inventory_enabled', 'qol_protected', 'qol_destination_exists', 'qol_move', 'qol_bulk'),
         'qol_recipes.bb': ('qol_recipe.Tqolrecipe', 'qol_part', 'qol_guides_load', 'qol_recipe_locked',
                            'qol_recipe_materials', 'qol_recipe_matches', 'qol_craft'),
     }
     for filename, names in selected.items():
-        text = (ext/filename).read_text('utf8')
+        text = (inc/filename).read_text('utf8')
         for name in names:
             body += function(text, name) + '\n'
     body += '\ntest_trace("startup")\nset_rootdir$=SystemProperty("APPDIR"):loc_boot():modern_capture_settings()\ntest_trace("catalogs")\n'
@@ -199,7 +199,7 @@ def main():
     body += 'test_trace("items")\n' + (inc/'load_combinations.bb').read_text('utf8') + '\ntest_trace("combinations")\nqol_init()\ntest_trace("qol init")\n'
     body += 'Dunit_maxweight(1)=25000:Dunit_maxweight(2)=25000:Dobject_maxweight(181)=50000\n'
     fixture = FIXTURE.replace('If load_map("maps\\adventure\\map01.s2","")=0 Then RuntimeError "QOL fixture map missing"',
-                              'g_player=set_unit(-1,1,0,0):g_cplayer=TCunit')
+                              'set_unit(-1,1,0,0):g_player=TCunit\\id:g_cplayer=TCunit')
     checks = CHECKS[:CHECKS.index('qcheck(save_map(')]
     checks += 'WriteLine qr,"FAILURES "+qfailures:CloseFile qr:End\n'
     if args.language == 'en':
@@ -228,7 +228,7 @@ def main():
     assert '; retain this comment' in config and 'diagnostics=0' in config
     assert config.count('qol_autosort=') == 1
     (output/'report.json').write_text(json.dumps({
-        'language': args.language, 'actual_blitz_logic': 'pass',
+        'edition': args.edition, 'language': args.language, 'actual_blitz_logic': 'pass',
         'graphics_entities_scripts_ime_save_load': 'not tested; explicit test doubles',
     }, indent=2)+'\n', encoding='utf8')
     print('QOL logic checks passed:', output)
