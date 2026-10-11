@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"d0fbccd31e320af3265c1a1ace5f3fad38ffd7fad9c87ba95de6070cfbb597a3"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"8f0b1b6d11c064d42e7744ddfda0560f07a803857182a3ca336c21b39d7df56f"} -->
 
 # 개발 가이드
 
@@ -328,6 +328,8 @@ msg "[[loc:quest.island1.arrival]]";
 4. Windows·Mac 빌드와 검사가 모두 성공하면 Release가 발행됩니다.
 
 수동 실행의 `publish=false`는 ZIP 생성과 검증만 수행합니다. 다른 브랜치나 태그 푸시에서는 출시하지 않습니다.
+
+공개 릴리스 제목과 설명은 영어로 작성합니다.
 
 Windows CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행합니다. 출시 단계는 `scripts/ci.py release --include-macos`로 두 플랫폼의 버전·커밋·체크섬을 검증한 뒤 게시합니다. Mac ZIP은 앱 파일 해시·실행 권한·ARM64 형식·네이티브 검사 결과도 확인하며, Mac 파일이 없는 기존 공개 릴리스에 나중에 덧붙이지 않습니다. Windows `check`와 Mac `core`는 비그래픽 검사이며 실제 화면, 렌더링 FPS, 앱 전환과 전체 플레이 검증을 대신하지 않습니다. 로컬 검사와 별도로 실제 GitHub Actions 실행도 확인해야 합니다.
 

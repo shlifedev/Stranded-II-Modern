@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"20e9d253535ead94cd2471bdaa99ec45327fb4d554bc61f4ff5183215b183816"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"7d6bf4930ceb856eeae826c4726a3273b1b5761980d5b2ee69dad49c93ec5170"} -->
 
 # Development guide
 
@@ -328,6 +328,8 @@ To publish a development release or manually publish a stable release, follow th
 4. After both Windows and Mac builds and checks pass, a Release is published.
 
 For manual runs, `publish=false` only creates ZIPs and runs checks. Other branches and tag pushes do not publish.
+
+Write public release titles and descriptions in English.
 
 Windows CI runs `setup → build → check → package` on Windows Server 2022 with Python 3.13. Publication uses `scripts/ci.py release --include-macos` to validate both platforms' versions, commits, and checksums. The Mac ZIP is also checked for app file hashes, execute permissions, ARM64 format, and successful native checks. Mac files cannot be appended to an existing published Windows-only release. Windows `check` and Mac `core` are non-graphical checks; they do not verify display, rendering FPS, app switching, or full gameplay. Verify actual GitHub Actions runs separately from local checks.
 

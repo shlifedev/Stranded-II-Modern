@@ -241,8 +241,9 @@ def publish(repo, directory, info, include_macos=False):
         api(repo, 'git/refs', {'ref': 'refs/tags/' + info['tag'], 'sha': info['commit']})
     notes = directory / 'release-notes.txt'
     recorded = dict(info, zip_sha256=artifacts[archive_name(info)], artifacts=artifacts)
-    mac_note = ('\nmacOS: Apple Silicon용 네이티브 실험판입니다. 로컬 서명이며 공증하지 않았습니다. '
-                'ZIP의 README-ko.txt / README-en.txt에서 실행 방법과 검증 범위를 확인하세요.\n'
+    mac_note = ('\nmacOS: Experimental native build for Apple Silicon, targeting macOS 15.0 or later. '
+                'Ad hoc signed and not notarized. See README-en.txt in the ZIP for launch instructions '
+                'and verification coverage.\n'
                 if include_macos else '')
     notes.write_text('<!-- stranded-ii-build: ' + json.dumps(recorded, separators=(',', ':')) + ' -->\n' + mac_note,
                      encoding='utf8', newline='\n')
