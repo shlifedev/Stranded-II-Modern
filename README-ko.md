@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"README.md","language":"ko","syncedHash":"d4ecddafc6c7f67c07df2a095b3122ef0c12a8e7f79e5d5c403af524c86c47d1"} -->
+<!-- dev-docs-ai-translation: {"document":"README.md","language":"ko","syncedHash":"ebfc92232e0294455661bc22e5bb022d0c93e84ee78aebd885966de77ed3c1ca"} -->
 
 # Stranded II : Modern
 
@@ -10,6 +10,7 @@ Stranded II를 최신 Windows 환경에서 즐기기 위한 비공식 개선판�
 
 ## 시작하기
 
+- **[웹에서 플레이](https://shlifedev.github.io/Stranded-II-Modern/):** 실험용 WebGPU 버전이며, WebGPU와 JSPI를 지원하는 데스크톱 Chrome/Edge가 필요합니다. 게임 언어는 설정에서 선택합니다. 브라우저 저장은 Windows 버전과 별개입니다.
 - **게임 실행:** 배포 ZIP 전체를 풀고 게임 폴더의 `StrandedII.exe`를 더블클릭합니다. Windows 10 이상이 필요하며 별도 설치는 없습니다.
 - **소스에서 빌드:** [개발 가이드](docs/development-ko.md)의 환경 준비와 최초 빌드를 따르세요. 소스 저장소에는 EXE와 원본 게임 리소스가 포함돼 있지 않습니다.
 - **번역 참여:** [현지화 가이드](docs/localization-ko.md)에 따라 `locales/<코드>.tsv`를 수정합니다.
