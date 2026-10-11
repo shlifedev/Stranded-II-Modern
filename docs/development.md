@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"26564106b5b9f8ddafee0fcd0774c06a21be3ca0f44b11c7e578eb5eed9cf01f"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"43150d28cc59a96068bf0fd791190a7fd6f6be5480f7b4d62e261b475572e270"} -->
 
 # Development guide
 
@@ -85,7 +85,7 @@ You can also launch directly through Python:
 
 ## Experimental WebGPU build
 
-All Python development commands accept `--platform windows|web`, defaulting to `windows`. Web builds support the base game only. `--platform web --edition extended` returns an error; Extended CI remains disabled.
+All Python development commands accept `--platform windows|web|macos`, defaulting to `windows`. Web builds support the base game only. `--platform web --edition extended` returns an error; Extended CI remains disabled.
 
 `src/engine/StrandedIIWeb.bb` includes the existing `StrandedII.bb` and browser platform services. Gameplay stays shared: Windows uses Blitz3D 1.118, while the web uses the [pinned Blitz3D NG WebGPU port and Emscripten](../config/web-toolchain.json). Engine changes are maintained in `patches/blitz3d-web/`. No conversion to another game engine or generation of `.bb` game sources is involved.
 
@@ -124,7 +124,7 @@ Results are saved to `build/web/profile-*/report.json`: FPS and p95/p99 interval
 
 In the browser, verify the menu, the roughly 53-second intro in `maps/adventure/map01.s2`, and the first playable island, `map02.s2`, in sequence. Terrain, models, Korean UI, audible sound, movement, collision, gathering, crafting, saving/loading, recovery after refresh/browser restart, and focus/pointer-lock return require separate gameplay verification. A successful build does not establish that these checks passed.
 
-The current scope is an experimental single-player web build. Native Mac builds, mobile, web Extended, the editor, and the full campaign are outside the completed support scope. Raw TCP/UDP operations unavailable in browsers return connection failure.
+The current scope is an experimental single-player web build. Mobile, web Extended, the editor, and the full campaign are outside the completed support scope. Raw TCP/UDP operations unavailable in browsers return connection failure.
 
 ### GitHub Pages deployment
 
@@ -139,6 +139,32 @@ Before the first publication, set the repository's **Settings → Pages → Buil
 ```
 
 `web_pages.py` stages only the eight runtime files from the current checked build in `build/web/pages/`. It excludes `/checks/`, logs, and personal saves, uses relative paths and a deployment-specific cache key, and records file hashes in `build/web/pages-report.json`. Unexpected output files cause an error instead of being deleted. Deployments are serialized, and build/check failures leave the existing site in place. Post-deployment checks compare HTTP file hashes and the WASM media type; actual gameplay still needs separate verification.
+
+## Experimental native macOS build
+
+The base game has a local Apple Silicon prototype. It compiles `StrandedIIMac.bb` and the shared game to an ARM64 Mach-O executable with LLVM. The existing WebGPU renderer uses Dawn's Metal backend through SDL2. Blitz integers and floats stay 32-bit; engine pointers are 64-bit and the game uses 32-bit resource IDs. [Pinned dependencies](../config/macos-toolchain.json), `patches/blitz3d-macos/`, and `src/native/macos/` define this target. Windows remains the default platform; Extended Mac builds are rejected.
+
+Build on Apple Silicon with Xcode Command Line Tools, Git, Python 3.12+, CMake, Ninja, FFmpeg/ffprobe, and zstd. The bundled Dawn library sets the deployment target to macOS 15.0. Building and running on the minimum OS version still requires separate verification. Preparation downloads a private compiler and dependencies under `deps/blitz3d-macos/` and `deps/dawn-macos/`; it can take substantial time and disk space. Supply verified official game resources and the pinned font, never a runtime containing player data.
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python scripts/dev.py setup --platform macos --game deps/game --font deps/fonts/NotoSansKR.ttf
+.venv/bin/python scripts/dev.py build --platform macos
+.venv/bin/python scripts/dev.py check --platform macos
+.venv/bin/python scripts/macos_package.py
+.venv/bin/python scripts/dev.py run --platform macos
+```
+
+`build` prints the locally signed `build/macos/apps/<build-id>/Stranded II.app` path and records it in `build/macos/build-report.json`. Double-clicking the app prepares its resources and stores settings/saves in `~/Library/Application Support/Stranded II Native Preview/`. Existing settings and saves survive resource refreshes. `run --platform macos` uses the app with the isolated `build/macos/runtime/` profile instead. Neither path imports Windows or browser data. Fresh profiles start windowed at 1280×720. `localize --platform macos` refreshes development language packs; rebuild to update the app. Unsupported source WAV encodings are converted to PCM in the native runtime; original files are preserved.
+
+`check --platform macos --suite core` opens no windows. It compares 613 bytes against the original Blitz3D 1.118 result and checks reused Type storage, app resources/signature/execute permissions, ARM64/minimum OS, and system-only library dependencies. The default `--suite full` additionally checks actual Metal rendering/readback, shared menu/intro/island scenarios, Korean glyphs, audio decoding, save/backup/reload, Cocoa text roundtrips, fresh profile installation, and data preservation during resource refresh. `--suite` is exclusive to Mac checks. The latest result is `build/macos/verification.json`; suite-specific results are `verification-core.json` and `verification-full.json`. Synthetic game time does not verify real-time FPS, audible sound, IME composition, focus/fullscreen transitions, or the campaign.
+
+`macos_package.py` creates `build/macos/release/StrandedII-<version>-macos-arm64-preview-<build-id>.zip` and `.zip.sha256` only when the latest successful check matches the current sources, tools, executable, and app. The ZIP contains the app, English/Korean launch instructions, and a verification summary without local paths; it excludes personal settings/saves. Extraction rechecks contents, permissions, and signing. Packages checked with `core` mark graphical checks `not_run`. Output paths are recorded in `build/macos/distribution-report.json`.
+
+[Mac CI](../.github/workflows/macos.yml) runs only through manual `workflow_dispatch`. On ARM64 `macos-15`, it validates the pinned dependencies, extracts them under `deps/ci-macos/`, and runs preparation → build → `core` checks → ZIP packaging. ZIP/checksum and report artifacts are retained for 14 days; it does not publish releases. Verify remote workflow results separately from local checks.
+
+Test the ZIP on another Apple Silicon Mac, especially macOS 15: extraction, launch/relaunch, and data preservation after replacing the app. IME composition, fullscreen/app switching and input recovery, music/effects, and a 30-minute session followed by save/quit/reload require manual checks and must not be reported as automatically passed. The app is locally ad hoc signed and not notarized. Native movies/raw TCP/UDP, Intel, and native Extended are unsupported. Distribution signing and notarization are a separate step.
 
 ## Where to make changes
 
@@ -303,7 +329,7 @@ To publish a development release or manually publish a stable release, follow th
 
 For manual runs, `publish=false` only creates ZIPs and runs checks. Other branches and tag pushes do not publish.
 
-CI runs `setup → build → check → package` on Windows Server 2022 with Python 3.13 and publishes Windows packages only. A native macOS port is planned separately. `check` tests non-graphical runtime behavior; it does not replace actual graphics, rendering FPS, Alt-Tab, or full-playthrough verification. Actual GitHub Actions runs must also be checked separately from local tests.
+Windows CI runs `setup → build → check → package` on Windows Server 2022 with Python 3.13 and publishes Windows releases. Manual Mac CI retains only test ZIP and report artifacts. Windows `check` and Mac `core` are non-graphical checks; they do not verify display, rendering FPS, app switching, or full gameplay. Verify actual GitHub Actions runs separately from local checks.
 
 To avoid repeated download traffic to upstream sites, store game resources, the compiler, and the font once in a dependency Release in the same repository. For these build inputs, CI uses only this Release and the Actions cache. Missing files cause a failure with preparation instructions; CI does not automatically download those inputs from upstream sites.
 

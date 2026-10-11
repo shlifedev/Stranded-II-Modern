@@ -126,15 +126,22 @@ def main():
     p=sub.add_parser('run',help='Launch the isolated development game')
     p.add_argument('--port',type=int,default=8765,help='Local web preview port; use the same port to retain browser saves')
     p.add_argument('game_args',nargs=argparse.REMAINDER)
-    sub.add_parser('check',help='Check catalogs, resources and compiled runtime functions')
+    p=sub.add_parser('check',help='Check catalogs, resources and compiled runtime functions')
+    p.add_argument('--suite',choices=('core','full'),help='Mac only: core skips graphical checks; defaults to full')
     for command in sub.choices.values():
         command.add_argument('--edition',choices=NAMES,default='classic')
-        command.add_argument('--platform',choices=('windows','web'),default='windows')
+        command.add_argument('--platform',choices=('windows','web','macos'),default='windows')
     args=parser.parse_args()
     global PROFILE,BUILD,RUNTIME
     PROFILE=Edition(args.edition);BUILD=PROFILE.build_dir(ROOT);RUNTIME=PROFILE.runtime(ROOT)
     try:
-        if args.platform=='web':
+        if getattr(args,'suite',None) and args.platform!='macos':
+            raise ValueError('--suite is only supported by check --platform macos.')
+        if args.platform=='macos':
+            if args.edition!='classic':raise ValueError('The native Mac experiment currently supports Stranded II only.')
+            import macos_build
+            getattr(macos_build,args.command)(args)
+        elif args.platform=='web':
             if args.edition!='classic':raise ValueError('The web preview currently supports Stranded II only; Extended web is not available.')
             import web_build
             getattr(web_build,args.command)(args)

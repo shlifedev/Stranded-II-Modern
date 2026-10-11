@@ -1,0 +1,1385 @@
+diff --git a/blitz3d-ng/CMakeLists.txt b/blitz3d-ng/CMakeLists.txt
+--- a/blitz3d-ng/CMakeLists.txt
++++ b/blitz3d-ng/CMakeLists.txt
+@@ -13,6 +13,13 @@
+ set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_CXX_STANDARD_REQUIRED true)
+ 
++option(BB_LEGACY32 "32-bit Blitz numbers with native-width pointers" OFF)
++option(S2_NATIVE_GAME "Build the native Stranded II runtime" OFF)
++option(S2_CONSOLE_ONLY "Build the native compatibility test runtime" OFF)
++if(BB_LEGACY32)
++  add_compile_definitions(BB_LEGACY32)
++  add_compile_options(-fwrapv -ffp-contract=off)
++endif()
+ include(src/bin2h.cmake)
+ 
+ if(ANDROID)
+@@ -231,7 +238,10 @@
+ ELSEIF(BB_MACOS)
+   execute_process(COMMAND sw_vers -productVersion OUTPUT_VARIABLE BB_PLATFORM_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+   set(BB_VENDOR apple)
+-  set(BB_SYS darwin${BB_PLATFORM_VERSION})
++  if(CMAKE_OSX_DEPLOYMENT_TARGET)
++    set(BB_PLATFORM_VERSION ${CMAKE_OSX_DEPLOYMENT_TARGET})
++  endif()
++  set(BB_SYS macosx${BB_PLATFORM_VERSION})
+ ELSEIF(BB_LINUX)
+   set(BB_VENDOR linux)
+   set(BB_SYS gnu)
+@@ -367,8 +377,15 @@
+   endif()
+ endfunction()
+ 
++if(BB_MACOS AND S2_NATIVE_GAME)
++  find_package(Threads REQUIRED)
++  find_package(Dawn CONFIG REQUIRED)
++  set(BB_WEBGPU ON)
++  add_definitions(-DBB_WEBGPU)
++endif()
++
+ if(APPLE)
+-  enable_language(OBJC) # TODO: needed after adding SDL...seems like a deep root cmake bug
++  enable_language(OBJC OBJCXX) # TODO: needed after adding SDL...seems like a deep root cmake bug
+ endif()
+ add_subdirectory(deps EXCLUDE_FROM_ALL)
+ 
+@@ -423,7 +440,11 @@
+ endif()
+ add_subdirectory(src/modules)
+ add_subdirectory(src/runtime)
+-add_subdirectory(src/tools)
++if(S2_CONSOLE_ONLY OR S2_NATIVE_GAME)
++  add_subdirectory(src/tools/compiler)
++else()
++  add_subdirectory(src/tools)
++endif()
+ 
+ # extras...
+ add_subdirectory(src/bindings)
+diff --git a/blitz3d-ng/deps/CMakeLists.txt b/blitz3d-ng/deps/CMakeLists.txt
+--- a/blitz3d-ng/deps/CMakeLists.txt
++++ b/blitz3d-ng/deps/CMakeLists.txt
+@@ -18,9 +18,21 @@
+ add_subdirectory(stackwalker)
+ add_subdirectory(utf8.h)
+ 
+-if(S2_COMPILER_ONLY)
++if(S2_COMPILER_ONLY OR S2_CONSOLE_ONLY)
+   add_subdirectory(json-hpp)
+   add_subdirectory(toml11)
++  return()
++endif()
++
++if(S2_NATIVE_GAME)
++  add_subdirectory(json-hpp)
++  add_subdirectory(toml11)
++  add_subdirectory(sdl)
++  add_subdirectory(freetype2)
++  add_subdirectory(ogg)
++  add_subdirectory(vorbis)
++  add_subdirectory(minimp3)
++  file(COPY "${S2_DAWN_ROOT}/lib/libwebgpu_dawn.a" DESTINATION "${TOOLCHAIN_PATH}/lib")
+   return()
+ endif()
+ 
+diff --git a/blitz3d-ng/deps/freetype2/CMakeLists.txt b/blitz3d-ng/deps/freetype2/CMakeLists.txt
+--- a/blitz3d-ng/deps/freetype2/CMakeLists.txt
++++ b/blitz3d-ng/deps/freetype2/CMakeLists.txt
+@@ -15,5 +15,7 @@
+ 
+ add_subdirectory(tree)
+ 
+-target_link_libraries(freetype PUBLIC png_static ${ZLIB})
++if(NOT S2_NATIVE_GAME)
++  target_link_libraries(freetype PUBLIC png_static ${ZLIB})
++endif()
+ target_output_to_toolchain(freetype)
+diff --git a/blitz3d-ng/src/config.h b/blitz3d-ng/src/config.h
+--- a/blitz3d-ng/src/config.h
++++ b/blitz3d-ng/src/config.h
+@@ -26,7 +26,7 @@
+ 
+ #define VERSION		(BASE_VER|PRO_F|DEMO_F|EDU_F)
+ 
+-#ifdef BB64
++#if defined(BB64) && (!defined(BB_LEGACY32) || defined(BB_COMPILER))
+ typedef long long int bb_int_t;
+ typedef double        bb_float_t;
+ #else
+@@ -34,6 +34,6 @@
+ typedef float bb_float_t;
+ #endif
+ 
+-typedef bb_int_t bb_ptr_t;
++typedef intptr_t bb_ptr_t;
+ 
+ #endif
+diff --git a/blitz3d-ng/src/modules/CMakeLists.txt b/blitz3d-ng/src/modules/CMakeLists.txt
+--- a/blitz3d-ng/src/modules/CMakeLists.txt
++++ b/blitz3d-ng/src/modules/CMakeLists.txt
+@@ -202,6 +202,19 @@
+     file_write_changes(${CMAKE_CURRENT_LIST_DIR}/commands.h "${HEADER_SRC}")
+   endif()
+ 
++  if(BB_LEGACY32 AND EXISTS "${CMAKE_CURRENT_LIST_DIR}/commands.decls")
++    find_package(Python3 COMPONENTS Interpreter REQUIRED)
++    set(WRAPPERS ${CMAKE_CURRENT_BINARY_DIR}/legacy32.cpp)
++    execute_process(COMMAND ${Python3_EXECUTABLE}
++      ${PROJECT_SOURCE_DIR}/src/modules/legacy32.py
++      ${CMAKE_CURRENT_LIST_DIR} ${MODULE_ID} ${WRAPPERS}
++      OUTPUT_VARIABLE WRAPPED COMMAND_ERROR_IS_FATAL ANY)
++    target_sources(bb.${MODULE_ID} PRIVATE ${WRAPPERS})
++    foreach(symbol IN LISTS WRAPPED)
++      list(TRANSFORM FUNCTIONS REPLACE ":${symbol}$" ":s2_${symbol}")
++    endforeach()
++  endif()
++
+   if(NOT "${FUNCTIONS}" STREQUAL "")
+     list(JOIN FUNCTIONS "\",\n  \"" symbols)
+     list(APPEND MODULE_IFACE "symbols = [\n  \"${symbols}\"\n]")
+@@ -213,6 +226,16 @@
+ 
+ # add all modules in bb/
+ file(GLOB modules RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} bb/*)
++if(S2_CONSOLE_ONLY)
++  set(modules bb/blitz bb/hook bb/event bb/math bb/string bb/stdio bb/stream
++      bb/system bb/filesystem bb/filesystem.posix bb/timer bb/bank bb/runtime
++      bb/runtime.console bb/stub)
++elseif(S2_NATIVE_GAME)
++  set(modules bb/blitz bb/hook bb/event bb/math bb/string bb/stdio bb/stream
++      bb/system bb/filesystem bb/filesystem.posix bb/timer bb/bank bb/runtime
++      bb/stub bb/input bb/pixmap bb/graphics bb/graphics.webgpu bb/blitz3d
++      bb/blitz3d.webgpu bb/audio bb/audio.openal bb/runtime.sdl)
++endif()
+ foreach(module ${modules})
+   if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${module}/CMakeLists.txt)
+     set(MODULE_IFACE )
+diff --git a/blitz3d-ng/src/modules/bb/audio.openal/audio.openal.cpp b/blitz3d-ng/src/modules/bb/audio.openal/audio.openal.cpp
+--- a/blitz3d-ng/src/modules/bb/audio.openal/audio.openal.cpp
++++ b/blitz3d-ng/src/modules/bb/audio.openal/audio.openal.cpp
+@@ -5,8 +5,13 @@
+ #include <bb/audio/wav_stream.h>
+ #include <bb/audio/mp3_stream.h>
+ 
++#ifdef BB_MACOS
++#include <OpenAL/al.h>
++#include <OpenAL/alc.h>
++#else
+ #include <AL/al.h>
+ #include <AL/alc.h>
++#endif
+ 
+ #include <string.h>
+ #include <stdio.h>
+@@ -14,7 +19,12 @@
+ #include <set>
+ #include <vector>
+ 
++#ifdef BB_EMSCRIPTEN
+ #include <emscripten.h>
++#else
++#include <chrono>
++static double emscripten_get_now(){ return std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now().time_since_epoch()).count(); }
++#endif
+ 
+ #define NUM_BUFFERS 8
+ #define BUFFER_SIZE 32768
+@@ -265,10 +275,12 @@
+ static void em_pump( void* );
+ 
+ static void em_schedule( int ms ){
++#ifdef BB_EMSCRIPTEN
+ 	if( !em_pump_scheduled ){
+ 		em_pump_scheduled=true;
+ 		emscripten_async_call( em_pump,0,ms );
+ 	}
++#endif
+ }
+ 
+ static double em_pump_total_ms=0,em_pump_max_ms=0,em_pump_report=0;
+@@ -309,6 +321,14 @@
+ 	}
+ }
+ 
++#ifdef BB_MACOS
++void s2MacPumpAudio(){
++ static double last=0;
++ double now=emscripten_get_now();
++ if(now-last>=10){last=now;em_pump(nullptr);}
++}
++#endif
++
+ static void em_register_stream( OpenALChannel *c ){
+ 	em_streams.insert( c );
+ 	em_schedule( EM_PUMP_NORMAL_MS );
+diff --git a/blitz3d-ng/src/modules/bb/bank/bank.cpp b/blitz3d-ng/src/modules/bb/bank/bank.cpp
+--- a/blitz3d-ng/src/modules/bb/bank/bank.cpp
++++ b/blitz3d-ng/src/modules/bb/bank/bank.cpp
+@@ -94,8 +94,8 @@
+ }
+ 
+ bb_int_t BBCALL bbPeekHandle( bbBank *b,bb_int_t offset ){
+-	debugBank( b,offset+sizeof(bb_ptr_t)-1 );
+-	return *(bb_ptr_t*)(b->data+offset);
++	debugBank( b,offset+sizeof(bb_int_t)-1 );
++	return *(bb_int_t*)(b->data+offset);
+ }
+ 
+ void BBCALL bbPokeByte( bbBank *b,bb_int_t offset,bb_int_t value ){
+@@ -120,7 +120,7 @@
+ 
+ void BBCALL bbPokeHandle( bbBank *b,bb_int_t offset,bb_int_t value ){
+ 	debugBank( b,offset );
+-	*(bb_ptr_t*)(b->data+offset)=value;
++	*(bb_int_t*)(b->data+offset)=value;
+ }
+ 
+ bb_int_t BBCALL  bbReadBytes( bbBank *b,BBStream *s,bb_int_t offset,bb_int_t count ){
+diff --git a/blitz3d-ng/src/modules/bb/blitz/CMakeLists.txt b/blitz3d-ng/src/modules/bb/blitz/CMakeLists.txt
+--- a/blitz3d-ng/src/modules/bb/blitz/CMakeLists.txt
++++ b/blitz3d-ng/src/modules/bb/blitz/CMakeLists.txt
+@@ -1,5 +1,8 @@
+ bb_start_module(blitz)
+ set(SOURCES app.cpp app.h basic.cpp basic.h debug.cpp debug.h env.cpp env.h ex.cpp ex.h module.h commands.h)
++if(BB_LEGACY32)
++  list(APPEND SOURCES legacy32.cpp legacy32.h)
++endif()
+ set(LIBS stdutil)
+ 
+ if(BB_NDK)
+diff --git a/blitz3d-ng/src/modules/bb/blitz/basic.cpp b/blitz3d-ng/src/modules/bb/blitz/basic.cpp
+--- a/blitz3d-ng/src/modules/bb/blitz/basic.cpp
++++ b/blitz3d-ng/src/modules/bb/blitz/basic.cpp
+@@ -257,7 +257,7 @@
+ 			o->fields[k].VEC=_bbVecAlloc( (BBVecType*)type->fieldTypes[k] );
+ 			break;
+ 		default:
+-			o->fields[k].INT=0;
++			memset(&o->fields[k],0,sizeof(BBField));
+ 		}
+ 	}
+ 	insertObj( o,&type->used );
+diff --git a/blitz3d-ng/src/modules/bb/blitz/blitz.h b/blitz3d-ng/src/modules/bb/blitz/blitz.h
+--- a/blitz3d-ng/src/modules/bb/blitz/blitz.h
++++ b/blitz3d-ng/src/modules/bb/blitz/blitz.h
+@@ -17,7 +17,9 @@
+ 	BBTYPE_OBJ=5,BBTYPE_VEC=6
+ };
+ 
++#ifndef BB_LEGACY32
+ #pragma pack( push,1 )
++#endif
+ 
+ struct BBObj;
+ typedef struct BBObj BBObj;
+@@ -135,7 +137,9 @@
+ };
+ typedef struct BBData BBData;
+ 
++#ifndef BB_LEGACY32
+ #pragma pack( pop )
++#endif
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff --git a/blitz3d-ng/src/modules/bb/blitz/legacy32.cpp b/blitz3d-ng/src/modules/bb/blitz/legacy32.cpp
+new file mode 100644
+--- /dev/null
++++ b/blitz3d-ng/src/modules/bb/blitz/legacy32.cpp
+@@ -0,0 +1,48 @@
++#include "legacy32.h"
++#include <unordered_map>
++#include <limits>
++
++static_assert(sizeof(bb_int_t)==4 && sizeof(bb_float_t)==4, "Blitz numeric ABI must stay 32-bit");
++static_assert(sizeof(void*)==8 && sizeof(BBField)==8 && sizeof(BBObj)==40 && sizeof(BBData)==16, "Native Blitz pointer layout mismatch");
++
++namespace {
++std::unordered_map<void*, bb_int_t> handles;
++std::unordered_map<bb_int_t, void*> pointers;
++uint32_t nextHandle=0;
++}
++
++bb_int_t s2Handle(void *pointer) {
++    if(!pointer) return 0;
++    auto found=handles.find(pointer);
++    if(found!=handles.end()) return found->second;
++    if(nextHandle>=uint32_t(std::numeric_limits<bb_int_t>::max())) {
++        RTEX("Native handle space exhausted");
++        return 0;
++    }
++    bb_int_t handle=++nextHandle;
++    handles.emplace(pointer,handle);
++    pointers.emplace(handle,pointer);
++    return handle;
++}
++
++void *s2Pointer(bb_int_t handle) {
++    if(!handle) return nullptr;
++    auto found=pointers.find(handle);
++    if(found==pointers.end()) {
++        RTEX("Invalid or released native handle");
++        return nullptr;
++    }
++    return found->second;
++}
++
++void s2ForgetHandle(bb_int_t handle) {
++    auto found=pointers.find(handle);
++    if(found==pointers.end()) return;
++    handles.erase(found->second);
++    pointers.erase(found);
++}
++
++void s2ForgetPointer(void *pointer){
++    auto found=handles.find(pointer);
++    if(found!=handles.end()) s2ForgetHandle(found->second);
++}
+diff --git a/blitz3d-ng/src/modules/bb/blitz/legacy32.h b/blitz3d-ng/src/modules/bb/blitz/legacy32.h
+new file mode 100644
+--- /dev/null
++++ b/blitz3d-ng/src/modules/bb/blitz/legacy32.h
+@@ -0,0 +1,10 @@
++#ifndef S2_LEGACY32_H
++#define S2_LEGACY32_H
++#include "blitz.h"
++
++// Public Blitz handles are IDs. Native pointers never pass through a Blitz int.
++bb_int_t s2Handle(void *pointer);
++void *s2Pointer(bb_int_t handle);
++void s2ForgetHandle(bb_int_t handle);
++void s2ForgetPointer(void *pointer);
++#endif
+diff --git a/blitz3d-ng/src/modules/bb/blitz3d.webgpu/CMakeLists.txt b/blitz3d-ng/src/modules/bb/blitz3d.webgpu/CMakeLists.txt
+--- a/blitz3d-ng/src/modules/bb/blitz3d.webgpu/CMakeLists.txt
++++ b/blitz3d-ng/src/modules/bb/blitz3d.webgpu/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-if(BB_EMSCRIPTEN AND TARGET SDL2)
++if((BB_EMSCRIPTEN OR (BB_MACOS AND S2_NATIVE_GAME)) AND TARGET SDL2)
+   bin2h(SOURCE_FILE default3d.wgsl HEADER_FILE default3d.wgsl.h VARIABLE_NAME DEFAULT3D_WGSL)
+ 
+   bb_start_module(blitz3d.webgpu)
+@@ -7,5 +7,9 @@
+   set(LIBS SDL2)
+   bb_end_module()
+ 
++  if(BB_EMSCRIPTEN)
+   target_compile_options(bb.blitz3d.webgpu PRIVATE "--use-port=emdawnwebgpu")
++  else()
++    target_link_libraries(bb.blitz3d.webgpu dawn::webgpu_dawn)
++  endif()
+ endif()
+diff --git a/blitz3d-ng/src/modules/bb/blitz3d/entity.cpp b/blitz3d-ng/src/modules/bb/blitz3d/entity.cpp
+--- a/blitz3d-ng/src/modules/bb/blitz3d/entity.cpp
++++ b/blitz3d-ng/src/modules/bb/blitz3d/entity.cpp
+@@ -1,3 +1,6 @@
++#ifdef BB_LEGACY32
++#include <bb/blitz/legacy32.h>
++#endif
+ 
+ #include "std.h"
+ #include "entity.h"
+@@ -53,6 +56,9 @@
+ }
+ 
+ Entity::~Entity(){
++#ifdef BB_LEGACY32
++	s2ForgetPointer(this);
++#endif
+ 	while( children() ) delete children();
+ 	remove();
+ }
+diff --git a/blitz3d-ng/src/modules/bb/blitz3d/surface.cpp b/blitz3d-ng/src/modules/bb/blitz3d/surface.cpp
+--- a/blitz3d-ng/src/modules/bb/blitz3d/surface.cpp
++++ b/blitz3d-ng/src/modules/bb/blitz3d/surface.cpp
+@@ -1,3 +1,6 @@
++#ifdef BB_LEGACY32
++#include <bb/blitz/legacy32.h>
++#endif
+ 
+ #include "std.h"
+ #include "surface.h"
+@@ -14,6 +17,9 @@
+ }
+ 
+ Surface::~Surface(){
++#ifdef BB_LEGACY32
++	s2ForgetPointer(this);
++#endif
+ 	if( mesh ) bbScene->freeMesh( mesh );
+ }
+ 
+diff --git a/blitz3d-ng/src/modules/bb/graphics.webgpu/CMakeLists.txt b/blitz3d-ng/src/modules/bb/graphics.webgpu/CMakeLists.txt
+--- a/blitz3d-ng/src/modules/bb/graphics.webgpu/CMakeLists.txt
++++ b/blitz3d-ng/src/modules/bb/graphics.webgpu/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-if(BB_EMSCRIPTEN AND TARGET SDL2)
++if((BB_EMSCRIPTEN OR (BB_MACOS AND S2_NATIVE_GAME)) AND TARGET SDL2)
+   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/default.wgsl")
+   bin2h(SOURCE_FILE default.wgsl HEADER_FILE default.wgsl.h VARIABLE_NAME DEFAULT_WGSL)
+ 
+@@ -6,7 +6,14 @@
+   set(DEPENDS_ON bb.graphics)
+   set(SOURCES graphics.webgpu.cpp graphics.webgpu.h canvas.webgpu.cpp canvas.webgpu.h default.wgsl.h)
+   set(LIBS SDL2)
++  if(BB_MACOS)
++    set(SYSTEM_LIBS webgpu_dawn "-framework Metal" "-framework QuartzCore" "-framework IOSurface" "-framework Foundation")
++  endif()
+   bb_end_module()
+ 
++  if(BB_EMSCRIPTEN)
+   target_compile_options(bb.graphics.webgpu PUBLIC "--use-port=emdawnwebgpu")
++  else()
++    target_link_libraries(bb.graphics.webgpu dawn::webgpu_dawn)
++  endif()
+ endif()
+diff --git a/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.cpp b/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.cpp
+--- a/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.cpp
++++ b/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.cpp
+@@ -274,7 +274,7 @@
+ }
+ 
+ bool WebGPUCanvas::readbackInto( unsigned char *dst ){
+-	if( !dst || !res->device || width<=0 || height<=0 || wide_format ) return false;
++	if( !dst || !res->device || width<=0 || height<=0 ) return false;
+ 
+ 	WGPUTexture tex;
+ 	WGPUTextureFormat fmt=format();
+@@ -321,7 +321,7 @@
+ 
+ 	BBMapRequest req;
+ 	WGPUBufferMapCallbackInfo cb={};
+-	cb.mode=WGPUCallbackMode_AllowSpontaneous;
++	cb.mode=BB_WGPU_CALLBACK_MODE;
+ 	cb.callback=bbOnMapped;
+ 	cb.userdata1=&req;
+ 	wgpuBufferMapAsync( buf,WGPUMapMode_Read,0,size,cb );
+@@ -343,7 +343,15 @@
+ 	for( int y=0;y<height;y++ ){
+ 		const unsigned char *in=mapped+(size_t)y*bpr;
+ 		unsigned char *out=dst+(size_t)y*width*4;
+-		if( bgra ){
++		if(fmt==WGPUTextureFormat_RGB10A2Unorm){
++			for(int x=0;x<width;++x){
++				uint32_t value;memcpy(&value,in+x*4,4);
++				out[x*4+0]=((value&1023)*255+511)/1023;
++				out[x*4+1]=(((value>>10)&1023)*255+511)/1023;
++				out[x*4+2]=(((value>>20)&1023)*255+511)/1023;
++				out[x*4+3]=(value>>30)*85;
++			}
++		}else if( bgra ){
+ 			for( int x=0;x<width;x++ ){
+ 				out[x*4+0]=in[x*4+2];
+ 				out[x*4+1]=in[x*4+1];
+diff --git a/blitz3d-ng/src/modules/bb/graphics.webgpu/graphics.webgpu.cpp b/blitz3d-ng/src/modules/bb/graphics.webgpu/graphics.webgpu.cpp
+--- a/blitz3d-ng/src/modules/bb/graphics.webgpu/graphics.webgpu.cpp
++++ b/blitz3d-ng/src/modules/bb/graphics.webgpu/graphics.webgpu.cpp
+@@ -3,12 +3,18 @@
+ #include "canvas.webgpu.h"
+ 
+ #include <cstring>
++#ifdef BB_EMSCRIPTEN
+ #include <emscripten/heap.h>
++#else
++#include <SDL_metal.h>
++static double emscripten_get_now(){ return 1000.0*SDL_GetPerformanceCounter()/SDL_GetPerformanceFrequency(); }
++#endif
+ #include <vector>
+ #include <fstream>
+ 
+ #include "default.wgsl.h"
+ 
++#ifdef BB_EMSCRIPTEN
+ EM_JS( int,bbgpu_movie_open,(const uint8_t *data,int len),{
+ 	if( !Module.bbMovies ) Module.bbMovies={};
+ 	if( !Module.bbMovieNextId ) Module.bbMovieNextId=1;
+@@ -137,19 +143,29 @@
+ };
+ 
+ 
++#endif
++
+ void bbWebGPUWait( WebGPUContextResources *res,volatile bool *done ){
+ 	if( res && res->device ){
+ 		res->flush();
+ 		res->releaseSurfaceTexture();
+ 	}
+ 	while( !*done ){
++#ifdef BB_EMSCRIPTEN
+ 		emscripten_sleep( 1 );
+-	}
+-}
+-
++#else
++		wgpuInstanceProcessEvents(res->instance);
++		if(!*done) SDL_Delay(1);
++#endif
++	}
++}
++
++#ifdef BB_EMSCRIPTEN
+ EM_ASYNC_JS( void,bbWebGPURafYield,(void),{
+ 	await new Promise( function( r ){ requestAnimationFrame( r ); } );
+ } );
++
++#endif
+ 
+ static void bbUncapturedError( WGPUDevice const *device,WGPUErrorType type,WGPUStringView message,void *userdata1,void *userdata2 ){
+ 	LOGD( "[webgpu] uncaptured error (%d): %.*s",(int)type,(int)message.length,message.data?message.data:"" );
+@@ -199,10 +215,18 @@
+ 		return false;
+ 	}
+ 
++#ifdef BB_MACOS
++	metalView=SDL_Metal_CreateView(window);
++	if(!metalView) return false;
++	WGPUSurfaceSourceMetalLayer canvas_src={};
++	canvas_src.chain.sType=WGPUSType_SurfaceSourceMetalLayer;
++	canvas_src.layer=SDL_Metal_GetLayer(metalView);
++#else
+ 	WGPUEmscriptenSurfaceSourceCanvasHTMLSelector canvas_src={};
+ 	canvas_src.chain.next=0;
+ 	canvas_src.chain.sType=WGPUSType_EmscriptenSurfaceSourceCanvasHTMLSelector;
+ 	canvas_src.selector=bbStrView( canvas_selector );
++#endif
+ 
+ 	WGPUSurfaceDescriptor surf_desc={};
+ 	surf_desc.nextInChain=&canvas_src.chain;
+@@ -217,8 +241,11 @@
+ 	BBAdapterRequest areq;
+ 	WGPURequestAdapterOptions aopts={};
+ 	aopts.compatibleSurface=surface;
++#ifdef BB_MACOS
++	aopts.backendType=WGPUBackendType_Metal;
++#endif
+ 	WGPURequestAdapterCallbackInfo acb={};
+-	acb.mode=WGPUCallbackMode_AllowSpontaneous;
++	acb.mode=BB_WGPU_CALLBACK_MODE;
+ 	acb.callback=bbOnAdapter;
+ 	acb.userdata1=&areq;
+ 	wgpuInstanceRequestAdapter( instance,&aopts,acb );
+@@ -230,11 +257,11 @@
+ 	WGPUDeviceDescriptor ddesc={};
+ 	ddesc.label=bbStrView( "bb.device" );
+ 	ddesc.defaultQueue.label=bbStrView( "bb.queue" );
+-	ddesc.deviceLostCallbackInfo.mode=WGPUCallbackMode_AllowSpontaneous;
++	ddesc.deviceLostCallbackInfo.mode=BB_WGPU_CALLBACK_MODE;
+ 	ddesc.deviceLostCallbackInfo.callback=bbDeviceLost;
+ 	ddesc.uncapturedErrorCallbackInfo.callback=bbUncapturedError;
+ 	WGPURequestDeviceCallbackInfo dcb={};
+-	dcb.mode=WGPUCallbackMode_AllowSpontaneous;
++	dcb.mode=BB_WGPU_CALLBACK_MODE;
+ 	dcb.callback=bbOnDevice;
+ 	dcb.userdata1=&dreq;
+ 	wgpuAdapterRequestDevice( adapter,&ddesc,dcb );
+@@ -270,7 +297,11 @@
+ 	WGPUSurfaceConfiguration config={};
+ 	config.device=device;
+ 	config.format=surface_format;
++	#ifdef BB_MACOS
++	config.usage=WGPUTextureUsage_RenderAttachment;
++#else
+ 	config.usage=WGPUTextureUsage_RenderAttachment|WGPUTextureUsage_TextureBinding|WGPUTextureUsage_CopySrc|WGPUTextureUsage_CopyDst;
++#endif
+ 	config.width=(uint32_t)width;
+ 	config.height=(uint32_t)height;
+ 	config.alphaMode=WGPUCompositeAlphaMode_Opaque;
+@@ -889,6 +920,9 @@
+ 	delete fb;fb=0;
+ 
+ 	res.destroy();
++#ifdef BB_MACOS
++	if(res.metalView) SDL_Metal_DestroyView(res.metalView);
++#endif
+ 
+ 	SDL_DestroyWindow( wnd );wnd=0;
+ }
+@@ -912,9 +946,15 @@
+ }
+ 
+ bool WebGPUGraphics::init(){
++#ifdef BB_MACOS
++	res.window=wnd;
++#endif
+ 	if( !res.initDevice( "#canvas",drawable_width,drawable_height ) ) return false;
+ 
+-	def_font=(BBImageFont*)loadFont( "GFX/font/cour/Courier New.ttf",12,0 );
++#ifdef BB_MACOS
++	def_font=(BBImageFont*)loadFont("/System/Library/Fonts/Monaco.ttf",12,0);
++#endif
++	if(!def_font) def_font=(BBImageFont*)loadFont( "GFX/font/cour/Courier New.ttf",12,0 );
+ 	if( def_font==0 ) def_font=(BBImageFont*)loadFont( "/GFX/cour.ttf",12,0 );
+ 	if( def_font==0 ) def_font=(BBImageFont*)loadFont( "GFX/cour.ttf",12,0 );
+ 	if( def_font==0 ) fprintf( stderr,"[webgpu] warning: no default font found, continuing without one\n" );
+@@ -976,6 +1016,9 @@
+ 	wgpuRenderPassEncoderRelease( p );
+ 
+ 	res.flush();
++#ifdef BB_MACOS
++	wgpuSurfacePresent(res.surface);
++#endif
+ 	res.releaseSurfaceTexture();
+ }
+ 
+@@ -1061,6 +1104,7 @@
+ }
+ 
+ BBMovie *WebGPUGraphics::openMovie( const std::string &file,int flags ){
++#ifdef BB_EMSCRIPTEN
+ 	std::ifstream f( canonicalpath(file).c_str(),std::ios::binary );
+ 	if( !f ) return 0;
+ 	std::vector<unsigned char> data( (std::istreambuf_iterator<char>(f)),std::istreambuf_iterator<char>() );
+@@ -1070,6 +1114,10 @@
+ 	if( id<=0 ) return 0;
+ 
+ 	return d_new WebGPUMovie( this,id );
++#else
++	LOGD("%s","Native movie decoding is unavailable");
++	return 0;
++#endif
+ }
+ 
+ 
+@@ -1114,7 +1162,11 @@
+ 		return 0;
+ 	}
+ 
+-	SDL_Window *wnd=SDL_CreateWindow( bbApp().title.c_str(),SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,1,1,0 );
++	Uint32 windowFlags=0;
++#ifdef BB_MACOS
++	windowFlags=SDL_WINDOW_METAL;
++#endif
++	SDL_Window *wnd=SDL_CreateWindow( bbApp().title.c_str(),SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,w,h,windowFlags );
+ 	if( wnd==NULL ){
+ 		LOGD( "%s","failed to create window" );
+ 		return 0;
+@@ -1149,7 +1201,7 @@
+ 	if( !g ) return;
+ 
+ 	g->present();
+-
++#ifdef BB_EMSCRIPTEN
+ 	double now=emscripten_get_now();
+ 	if( now-bb_load_report_time>=1000.0 ){
+ 		bb_load_report_time=now;
+@@ -1170,6 +1222,9 @@
+ 	}else{
+ 		emscripten_sleep( 0 );
+ 	}
++#else
++	wgpuInstanceProcessEvents(g->res.instance);
++#endif
+ }
+ 
+ static BBContextDriver *createWebGPUContext( const std::string &name ){
+diff --git a/blitz3d-ng/src/modules/bb/graphics.webgpu/graphics.webgpu.h b/blitz3d-ng/src/modules/bb/graphics.webgpu/graphics.webgpu.h
+--- a/blitz3d-ng/src/modules/bb/graphics.webgpu/graphics.webgpu.h
++++ b/blitz3d-ng/src/modules/bb/graphics.webgpu/graphics.webgpu.h
+@@ -10,8 +10,13 @@
+ #include <utility>
+ #include <vector>
+ 
++#ifdef BB_EMSCRIPTEN
+ #include <emscripten.h>
+ #include <emscripten/html5.h>
++#define BB_WGPU_CALLBACK_MODE WGPUCallbackMode_AllowSpontaneous
++#else
++#define BB_WGPU_CALLBACK_MODE WGPUCallbackMode_AllowProcessEvents
++#endif
+ 
+ #include <SDL.h>
+ 
+@@ -51,6 +56,10 @@
+ 
+ struct WebGPUContextResources{
+ 	WGPUInstance instance=0;
++#ifdef BB_MACOS
++	void *metalView=0;
++	SDL_Window *window=0;
++#endif
+ 	WGPUAdapter adapter=0;
+ 	WGPUDevice device=0;
+ 	WGPUQueue queue=0;
+diff --git a/blitz3d-ng/src/modules/bb/graphics/canvas.cpp b/blitz3d-ng/src/modules/bb/graphics/canvas.cpp
+--- a/blitz3d-ng/src/modules/bb/graphics/canvas.cpp
++++ b/blitz3d-ng/src/modules/bb/graphics/canvas.cpp
+@@ -1,6 +1,12 @@
++#ifdef BB_LEGACY32
++#include <bb/blitz/legacy32.h>
++#endif
+ #include "canvas.h"
+ 
+ BBCanvas::~BBCanvas(){
++#ifdef BB_LEGACY32
++	s2ForgetPointer(this);
++#endif
+ }
+ 
+ void BBCanvas::getLogicalViewport( int *x,int *y,int *w,int *h )const{
+diff --git a/blitz3d-ng/src/modules/bb/graphics/font.cpp b/blitz3d-ng/src/modules/bb/graphics/font.cpp
+--- a/blitz3d-ng/src/modules/bb/graphics/font.cpp
++++ b/blitz3d-ng/src/modules/bb/graphics/font.cpp
+@@ -1,3 +1,6 @@
++#ifdef BB_LEGACY32
++#include <bb/blitz/legacy32.h>
++#endif
+ #include "../stdutil/stdutil.h"
+ #include "font.h"
+ #include <bb/filesystem/filesystem.h>
+@@ -15,6 +18,9 @@
+ std::map<std::string,BBFontData> bbFontCache;
+ 
+ BBFont::~BBFont(){
++#ifdef BB_LEGACY32
++	s2ForgetPointer(this);
++#endif
+ }
+ 
+ BBImageFont::BBImageFont( FT_Face f,int h,float d ):atlas(0),dirty(false),height(h),face(f){
+diff --git a/blitz3d-ng/src/modules/bb/graphics/graphics.cpp b/blitz3d-ng/src/modules/bb/graphics/graphics.cpp
+--- a/blitz3d-ng/src/modules/bb/graphics/graphics.cpp
++++ b/blitz3d-ng/src/modules/bb/graphics/graphics.cpp
+@@ -1,3 +1,4 @@
++#include <fstream>
+ 
+ #include "../stdutil/stdutil.h"
+ #include "graphics.h"
+@@ -619,7 +620,20 @@
+ }
+ 
+ static bool saveCanvas( BBCanvas *c,const std::string &f ){
+-	return false;
++    const int w=c->getWidth(),h=c->getHeight();
++    if(w<=0 || h<=0 || w>32768 || h>32768) return false;
++    const uint32_t stride=(uint32_t(w)*3+3)&~3u;
++    std::ofstream output(canonicalpath(f),std::ios::binary|std::ios::trunc);
++    if(!output || !c->lock()) return false;
++    auto word=[&](uint32_t value,int bytes){for(int i=0;i<bytes;++i) output.put(char(value>>(i*8)));};
++    output.write("BM",2);word(54+stride*h,4);word(0,4);word(54,4);
++    word(40,4);word(w,4);word(h,4);word(1,2);word(24,2);word(0,4);
++    word(stride*h,4);word(0,4);word(0,4);word(0,4);word(0,4);
++    for(int y=h-1;y>=0;--y){
++        for(int x=0;x<w;++x) word(c->getPixelFast(x,y)&0xffffff,3);
++        for(uint32_t p=w*3;p<stride;++p) output.put(0);
++    }
++    c->unlock();output.flush();bool ok=bool(output);output.close();return ok && !output.fail();
+ }
+ 
+ bb_int_t BBCALL bbLoadBuffer( BBCanvas *c,BBStr *str ){
+diff --git a/blitz3d-ng/src/modules/bb/pixmap/CMakeLists.txt b/blitz3d-ng/src/modules/bb/pixmap/CMakeLists.txt
+--- a/blitz3d-ng/src/modules/bb/pixmap/CMakeLists.txt
++++ b/blitz3d-ng/src/modules/bb/pixmap/CMakeLists.txt
+@@ -2,7 +2,9 @@
+ set(DEPENDS_ON bb.filesystem)
+ set(SOURCES pixmap.cpp pixmap.h)
+ 
+-IF(TARGET freeimage)
++IF(S2_NATIVE_GAME)
++  set(SOURCES ${SOURCES} stb.loader.cpp)
++ELSEIF(TARGET freeimage)
+   set(SOURCES ${SOURCES} freeimage.loader.cpp)
+   set(LIBS freeimage png ${ZLIB})
+ ELSEIF(BB_IOS)
+diff --git a/blitz3d-ng/src/modules/bb/pixmap/stb.loader.cpp b/blitz3d-ng/src/modules/bb/pixmap/stb.loader.cpp
+new file mode 100644
+--- /dev/null
++++ b/blitz3d-ng/src/modules/bb/pixmap/stb.loader.cpp
+@@ -0,0 +1,85 @@
++#include <bb/blitz/blitz.h>
++#include <bb/filesystem/filesystem.h>
++#include "pixmap.h"
++
++#include <string>
++#include <cstring>
++#include <cstdint>
++
++#define STB_IMAGE_IMPLEMENTATION
++#define STBI_ONLY_JPEG
++#define STBI_ONLY_PNG
++#define STBI_ONLY_BMP
++#define STBI_ONLY_TGA
++#define STBI_NO_STDIO
++#include "../graphics.webgpu/stb_image.h"
++
++static bool pngHasAlpha( const std::string &d ){
++	static const unsigned char sig[8]={ 137,80,78,71,13,10,26,10 };
++	if( d.size()<33 || memcmp( d.data(),sig,8 )!=0 ) return false;
++
++	unsigned char color_type=(unsigned char)d[25];
++	if( color_type==4 || color_type==6 ) return true;
++
++	size_t pos=8;
++	while( pos+8<=d.size() ){
++		uint32_t len=((uint32_t)(unsigned char)d[pos]<<24)|((uint32_t)(unsigned char)d[pos+1]<<16)|
++		             ((uint32_t)(unsigned char)d[pos+2]<<8)|(uint32_t)(unsigned char)d[pos+3];
++		const char *tag=d.data()+pos+4;
++		if( memcmp( tag,"tRNS",4 )==0 ) return true;
++		if( memcmp( tag,"IDAT",4 )==0 ) return false;
++		pos+=12+(size_t)len;
++	}
++	return false;
++}
++
++BBPixmap *bbLoadPixmapWithFreeImage( const std::string &path ){
++	std::streambuf *sb=gx_filesys->openFile( path,std::ios_base::in );
++	if( !sb ) return 0;
++	std::string data; char tmp[8192]; std::streamsize n;
++	while( (n=sb->sgetn(tmp,sizeof tmp))>0 ) data.append( tmp,(size_t)n );
++	delete sb;
++	if( data.empty() ) return 0;
++
++	int w=0,h=0,ch=0;
++	stbi_uc *pix=stbi_load_from_memory( (const stbi_uc*)data.data(),(int)data.size(),&w,&h,&ch,4 );
++	if( !pix ) return 0;
++
++	BBPixmap *pm=new BBPixmap();
++	pm->format=PF_RGBA;
++	pm->width=w; pm->height=h; pm->depth=32; pm->pitch=w*4; pm->bpp=4;
++	pm->trans=(ch==4) || pngHasAlpha( data );
++	pm->bits=new unsigned char[(size_t)w*4*h];
++	for( int y=0;y<h;y++ ){
++		uint32_t *dst=(uint32_t*)(pm->bits+(size_t)(h-1-y)*w*4);
++		const uint32_t *src=(const uint32_t*)(pix+(size_t)y*w*4);
++		for( int x=0;x<w;x++ ){
++			uint32_t v=src[x];
++			dst[x]=(v&0xFF00FF00u)|((v&0x00FF0000u)>>16)|((v&0x000000FFu)<<16);
++		}
++	}
++	stbi_image_free( pix );
++	return pm;
++}
++
++BBPixmap *bbLoadPixmapRGBA( const std::string &path ){
++	std::streambuf *sb=gx_filesys->openFile( path,std::ios_base::in );
++	if( !sb ) return 0;
++	std::string data; char tmp[65536]; std::streamsize n;
++	while( (n=sb->sgetn(tmp,sizeof tmp))>0 ) data.append( tmp,(size_t)n );
++	delete sb;
++	if( data.empty() ) return 0;
++
++	int w=0,h=0,ch=0;
++	stbi_uc *pix=stbi_load_from_memory( (const stbi_uc*)data.data(),(int)data.size(),&w,&h,&ch,4 );
++	if( !pix ) return 0;
++
++	BBPixmap *pm=new BBPixmap();
++	pm->format=PF_RGBA;
++	pm->width=w; pm->height=h; pm->depth=32; pm->pitch=w*4; pm->bpp=4;
++	pm->trans=(ch==4) || pngHasAlpha( data );
++	pm->bits=new unsigned char[(size_t)w*4*h];
++	memcpy( pm->bits,pix,(size_t)w*4*h );
++	stbi_image_free( pix );
++	return pm;
++}
+diff --git a/blitz3d-ng/src/modules/bb/runtime.sdl/CMakeLists.txt b/blitz3d-ng/src/modules/bb/runtime.sdl/CMakeLists.txt
+--- a/blitz3d-ng/src/modules/bb/runtime.sdl/CMakeLists.txt
++++ b/blitz3d-ng/src/modules/bb/runtime.sdl/CMakeLists.txt
+@@ -9,7 +9,7 @@
+ 
+   set(LIBS SDL2)
+   if(BB_MACOS)
+-    set(SYSTEM_LIBS "-framework Cocoa" "-framework IOKit" "-framework CoreFoundation" "-framework CoreVideo" "-framework CoreAudio" "-framework ForceFeedback" "-framework AudioToolBox" "-framework Metal" "-framework GameController" "-framework CoreHaptics" "-framework Carbon" iconv)
++    set(SYSTEM_LIBS "-framework Cocoa" "-framework IOKit" "-framework CoreFoundation" "-framework CoreVideo" "-framework CoreAudio" "-framework ForceFeedback" "-framework AudioToolbox" "-framework Metal" "-framework GameController" "-framework CoreHaptics" "-framework Carbon" iconv)
+   endif()
+   bb_end_module()
+ endif()
+diff --git a/blitz3d-ng/src/modules/bb/runtime.sdl/runtime.sdl.cpp b/blitz3d-ng/src/modules/bb/runtime.sdl/runtime.sdl.cpp
+--- a/blitz3d-ng/src/modules/bb/runtime.sdl/runtime.sdl.cpp
++++ b/blitz3d-ng/src/modules/bb/runtime.sdl/runtime.sdl.cpp
+@@ -7,7 +7,9 @@
+ #include <bb/hook/hook.h>
+ #ifdef BB_WEBGPU
+ #include <bb/graphics.webgpu/graphics.webgpu.h>
++#ifdef BB_EMSCRIPTEN
+ #include <emscripten.h>
++#endif
+ #endif
+ 
+ #include "scancodes.cpp"
+@@ -54,6 +56,10 @@
+ 	}
+ };
+ 
++#ifdef BB_MACOS
++extern bool s2MacSearchFocused();
++#endif
++
+ BBRuntime *bbCreateOpenGLRuntime(){
+ 	return d_new SDLRuntime();
+ }
+@@ -97,12 +103,16 @@
+ }
+ 
+ bool SDLRuntime::idle(){
++#ifdef BB_MACOS
++	extern void s2MacPumpAudio();
++	s2MacPumpAudio();
++#endif
+ 	SDL_Event event;
+ 	while( SDL_PollEvent(&event) ){
+ 		if( event.type == SDL_QUIT ){
+ 			RTEX( 0 );
+ 		}else if( event.type==SDL_MOUSEMOTION ){
+-#ifdef BB_WEBGPU
++#if defined(BB_WEBGPU) && defined(BB_EMSCRIPTEN)
+ 			if( EM_ASM_INT({ return document.pointerLockElement===Module.canvas; }) ){
+ #else
+ 			if( SDL_GetRelativeMouseMode()==SDL_TRUE ){
+@@ -144,12 +154,15 @@
+ 				BBEvent ev( event.type==SDL_MOUSEBUTTONDOWN?BBEVENT_MOUSEDOWN:BBEVENT_MOUSEUP,button );
+ 				bbOnEvent.run( &ev );
+ 				if( event.type==SDL_MOUSEBUTTONUP && button==1 ){
+-#ifdef BB_WEBGPU
++#if defined(BB_WEBGPU) && defined(BB_EMSCRIPTEN)
+ 					EM_ASM({ Module.s2SearchClick?.($0,$1); },em_virt_x,em_virt_y);
+ #endif
+ 				}
+ 			}
+ 		}else if( (event.type==SDL_KEYDOWN||event.type==SDL_KEYUP) && event.key.repeat==0 ){
++			#ifdef BB_MACOS
++			if(s2MacSearchFocused()) continue;
++#endif
+ 			int code=event.key.keysym.scancode;
+ 			if( code>=MAX_SDL_SCANCODES ) continue;
+ 
+@@ -224,7 +237,7 @@
+ }
+ 
+ void SDLRuntime::setPointerVisible( bool vis ){
+-#ifndef BB_WEBGPU
++#if !defined(BB_WEBGPU) || defined(BB_MACOS)
+ 	SDL_bool rel=vis?SDL_FALSE:SDL_TRUE;
+ 	if( SDL_GetRelativeMouseMode()!=rel ) SDL_SetRelativeMouseMode( rel );
+ #endif
+diff --git a/blitz3d-ng/src/modules/bb/stub/stub.posix.cpp b/blitz3d-ng/src/modules/bb/stub/stub.posix.cpp
+--- a/blitz3d-ng/src/modules/bb/stub/stub.posix.cpp
++++ b/blitz3d-ng/src/modules/bb/stub/stub.posix.cpp
+@@ -90,6 +90,7 @@
+ 		if( strncmp( "--trace",argv[i],strlen("--trace")+1 )==0 ){
+ 			trace=true;
+ 		}
++		if(!cmd_line.empty()) cmd_line+=" ";
+ 		cmd_line+=argv[i];
+ 	}
+ 	bbStartup( argv[0],cmd_line.c_str() );
+diff --git a/blitz3d-ng/src/modules/bb/system/CMakeLists.txt b/blitz3d-ng/src/modules/bb/system/CMakeLists.txt
+--- a/blitz3d-ng/src/modules/bb/system/CMakeLists.txt
++++ b/blitz3d-ng/src/modules/bb/system/CMakeLists.txt
+@@ -13,3 +13,9 @@
+   set(SOURCES ${SOURCES} system.ndk.cpp)
+ endif()
+ bb_end_module()
++
++if(S2_NATIVE_GAME)
++  target_sources(bb.system PRIVATE "${S2_MACOS_SERVICES}")
++  target_compile_definitions(bb.system PRIVATE S2_NATIVE_GAME)
++  target_link_libraries(bb.system SDL2)
++endif()
+diff --git a/blitz3d-ng/src/modules/bb/system/system.cpp b/blitz3d-ng/src/modules/bb/system/system.cpp
+--- a/blitz3d-ng/src/modules/bb/system/system.cpp
++++ b/blitz3d-ng/src/modules/bb/system/system.cpp
+@@ -8,6 +8,9 @@
+ #include <time.h>
+ #include <unistd.h>
+ #include <sys/time.h>
++#ifdef BB_MACOS
++extern "C" int bbMacOpenURL(const char *);
++#endif
+ #ifdef BB_EMSCRIPTEN
+ #include <emscripten.h>
+ #endif
+@@ -68,8 +71,12 @@
+ 	if( !t.size() ) return false;
+ 	if( !bbRuntimeIdle() ) RTEX( 0 );
+ 	if( t.compare( 0,7,"http://" )==0||t.compare( 0,8,"https://" )==0 ){
++#ifdef BB_EMSCRIPTEN
+ 		EM_ASM( { window.open( UTF8ToString( $0 ),'_blank','noopener' ); },t.c_str() );
+ 		return 1;
++#elif defined(BB_MACOS)
++        return bbMacOpenURL(t.c_str());
++#endif
+ 	}
+ 	return 0;
+ }
+@@ -104,6 +111,18 @@
+ }
+ 
+ BBStr * BBCALL bbSystemProperty( BBStr *p ){
++#ifdef S2_NATIVE_GAME
++	extern std::string strandedMacProperty(const std::string &);
++	if(p->rfind("StrandedMac:",0)==0){
++		std::string request=p->substr(12);delete p;
++		return d_new BBStr(strandedMacProperty(request));
++	}
++	if(tolower(*p)=="apphwnd"){delete p;return d_new BBStr("1");}
++	if(tolower(*p)=="appdir"){
++		extern std::string strandedMacAppDirectory(const std::string &);
++		delete p;return d_new BBStr(strandedMacAppDirectory(bbApp().executable_path));
++	}
++#endif
+ #ifdef BB_EMSCRIPTEN
+ 	extern std::string strandedWebProperty( const std::string & );
+ 	if( p->rfind("StrandedWeb:",0)==0 ){
+@@ -221,3 +240,7 @@
+ 	}
+ 	return true;
+ }
++
++#ifdef S2_NATIVE_GAME
++void strandedMacError(const char *message){RTEX(message);}
++#endif
+diff --git a/blitz3d-ng/src/modules/bb/system/system.macos.m b/blitz3d-ng/src/modules/bb/system/system.macos.m
+--- a/blitz3d-ng/src/modules/bb/system/system.macos.m
++++ b/blitz3d-ng/src/modules/bb/system/system.macos.m
+@@ -1,5 +1,12 @@
+ #import <Foundation/Foundation.h>
+ #import <AppKit/AppKit.h>
++
++int bbMacOpenURL(const char *value) {
++  @autoreleasepool {
++    NSURL *url=[NSURL URLWithString:[NSString stringWithUTF8String:value]];
++    return url && [[NSWorkspace sharedWorkspace] openURL:url];
++  }
++}
+ 
+ const char *lookupFontFile( const char *fontName ){
+   NSString *fn = [NSString stringWithUTF8String:fontName];
+diff --git a/blitz3d-ng/src/modules/legacy32.py b/blitz3d-ng/src/modules/legacy32.py
+new file mode 100644
+--- /dev/null
++++ b/blitz3d-ng/src/modules/legacy32.py
+@@ -0,0 +1,53 @@
++"""Generate native-pointer marshalling from the engine's typed command declarations."""
++from pathlib import Path
++import re
++import sys
++
++directory, module, output = sys.argv[1:]
++pattern = re.compile(r'(\w+)([%#$]|\.\w+)?\((.*)\):"(\w+)"')
++parameter = re.compile(r'(\w+)([%#$]|\.\w+)(?:=.*)?')
++types = {'%': 'bb_int_t', '#': 'bb_float_t', '$': 'BBStr*', None: 'void'}
++lines = [f'#include <bb/{module}/commands.h>', '#include <bb/blitz/legacy32.h>']
++wrapped = []
++for declaration in (Path(directory) / 'commands.decls').read_text().splitlines():
++    match = pattern.fullmatch(declaration.strip())
++    if not match:
++        continue  # Internal compiler intrinsics have their own pointer-aware ABI.
++    _, result, parameters, symbol = match.groups()
++    args = []
++    expressions = []
++    pointers = []
++    for index, item in enumerate(parameters.split(',') if parameters.strip() else []):
++        found = parameter.fullmatch(item.strip())
++        if not found:
++            raise ValueError(f'Cannot marshal {declaration}: {item}')
++        _, kind = found.groups()
++        name = f'arg{index}'
++        if kind.startswith('.'):
++            args.append(f'bb_int_t {name}')
++            expressions.append(f'static_cast<{kind[1:]}*>(s2Pointer({name}))')
++            pointers.append(name)
++        else:
++            args.append(f'{types[kind]} {name}')
++            expressions.append(name)
++    pointer_result = result is not None and result.startswith('.')
++    if not pointers and not pointer_result:
++        continue
++    wrapped.append(symbol)
++    signature = 'bb_int_t' if pointer_result else types[result]
++    invocation = f'{symbol}({", ".join(expressions)})'
++    if pointer_result:
++        statement = f'return s2Handle({invocation});'
++    elif result is not None:
++        statement = f'return {invocation};'
++    else:
++        statement = invocation + ';'
++        # Freeing a resource invalidates its public handle permanently.
++        if symbol.startswith(('bbFree', 'bbClose')) and len(pointers) == 1:
++            statement += f' s2ForgetHandle({pointers[0]});'
++    lines.append(f'extern "C" {signature} s2_{symbol}({", ".join(args)}) {{ {statement} }}')
++generated = '\n'.join(lines) + '\n'
++path = Path(output)
++if not path.exists() or path.read_text() != generated:
++    path.write_text(generated)
++print(';'.join(wrapped), end='')
+diff --git a/blitz3d-ng/src/runtime/CMakeLists.txt b/blitz3d-ng/src/runtime/CMakeLists.txt
+--- a/blitz3d-ng/src/runtime/CMakeLists.txt
++++ b/blitz3d-ng/src/runtime/CMakeLists.txt
+@@ -178,7 +178,7 @@
+     set_property(TARGET ${name}.static APPEND_STRING PROPERTY COMPILE_FLAGS " ${BB_COVERAGE}")
+   endif()
+ 
+-  if(BB_EMSCRIPTEN OR BB_NX)
++  if(BB_EMSCRIPTEN OR BB_NX OR BB_LEGACY32)
+     return()
+   endif()
+ 
+@@ -237,6 +237,11 @@
+ 
+ # bring in all the runtimes
+ file(GLOB runtimes RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *)
++if(S2_CONSOLE_ONLY)
++  set(runtimes base s2console)
++elseif(S2_NATIVE_GAME)
++  set(runtimes base s2macos)
++endif()
+ foreach(runtime ${runtimes})
+   if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${runtime}/CMakeLists.txt)
+     set(RUNTIME_IFACE )
+diff --git a/blitz3d-ng/src/runtime/s2console/CMakeLists.txt b/blitz3d-ng/src/runtime/s2console/CMakeLists.txt
+new file mode 100644
+--- /dev/null
++++ b/blitz3d-ng/src/runtime/s2console/CMakeLists.txt
+@@ -0,0 +1,5 @@
++bb_start_runtime(s2console "Stranded II compatibility" bbCreateConsoleRuntime)
++foreach(module stub blitz hook event math string stdio stream system filesystem.posix timer bank runtime.console)
++  bb_addmodule(${module})
++endforeach()
++bb_end_runtime()
+diff --git a/blitz3d-ng/src/runtime/s2macos/CMakeLists.txt b/blitz3d-ng/src/runtime/s2macos/CMakeLists.txt
+new file mode 100644
+--- /dev/null
++++ b/blitz3d-ng/src/runtime/s2macos/CMakeLists.txt
+@@ -0,0 +1,5 @@
++bb_start_runtime(s2macos "Stranded II Metal" bbCreateOpenGLRuntime)
++foreach(module stub blitz hook event math string stdio stream system filesystem.posix timer bank input audio audio.openal graphics.webgpu blitz3d.webgpu runtime.sdl)
++  bb_addmodule(${module})
++endforeach()
++bb_end_runtime()
+diff --git a/blitz3d-ng/src/tools/compiler/CMakeLists.txt b/blitz3d-ng/src/tools/compiler/CMakeLists.txt
+--- a/blitz3d-ng/src/tools/compiler/CMakeLists.txt
++++ b/blitz3d-ng/src/tools/compiler/CMakeLists.txt
+@@ -125,6 +125,7 @@
+ )
+ 
+ set_target_properties(blitzcc PROPERTIES UNITY_BUILD_MODE GROUP)
++target_compile_definitions(blitzcc PRIVATE BB_COMPILER)
+ set_source_files_properties(${TREE_SOURCES} PROPERTIES UNITY_GROUP "tree")
+ 
+ if(BB64 AND BB_WINDOWS)
+diff --git a/blitz3d-ng/src/tools/compiler/codegen_llvm/codegen_llvm.cpp b/blitz3d-ng/src/tools/compiler/codegen_llvm/codegen_llvm.cpp
+--- a/blitz3d-ng/src/tools/compiler/codegen_llvm/codegen_llvm.cpp
++++ b/blitz3d-ng/src/tools/compiler/codegen_llvm/codegen_llvm.cpp
+@@ -278,7 +278,11 @@
+ 	if( count ){
+ 		std::vector<llvm::Value*> indices;
+ 		indices.push_back( llvm::ConstantInt::get( *context,llvm::APInt( 32,count*2 ) ) );
+-		t=builder->CreateGEP( intTy,t,indices );
++		auto wordTy=intTy;
++#ifdef BB_LEGACY32
++        wordTy=llvm::IntegerType::get(*context,module->getDataLayout().getPointerSizeInBits());
++#endif
++        t=builder->CreateGEP(wordTy,t,indices);
+ 	}
+ 
+ 	CallIntrinsic( "_bbRestore",voidTy,1,builder->CreateBitOrPointerCast( t,llvm::PointerType::get( intTy,0 ) ) );
+diff --git a/blitz3d-ng/src/tools/compiler/libs.cpp b/blitz3d-ng/src/tools/compiler/libs.cpp
+--- a/blitz3d-ng/src/tools/compiler/libs.cpp
++++ b/blitz3d-ng/src/tools/compiler/libs.cpp
+@@ -283,7 +283,11 @@
+ 	home=realpath( p,buff );
+ #endif
+ 
+-	if( t.host ){
++	#ifdef BB_LEGACY32
++    if(t.host && t.type!="macos"){
++#else
++    if(t.host){
++#endif
+ 		linkerLib=linkerGetLinker();
+ 
+ 		runtimeHMOD=OPENLIB( (home+LIBPATH).c_str() );
+@@ -395,7 +399,11 @@
+ }
+ 
+ const char *linkLibs( const Target &t,const std::string &rt ){
+-	if( t.host ){
++	#ifdef BB_LEGACY32
++    if(t.host && t.type!="macos"){
++#else
++    if(t.host){
++#endif
+ 		if( const char *p=linkRuntime( rt ) ) return p;
+ 
+ 		if( const char *p=linkUserLibs() ) return p;
+diff --git a/blitz3d-ng/src/tools/compiler/linker_lld/linker_lld.cpp b/blitz3d-ng/src/tools/compiler/linker_lld/linker_lld.cpp
+--- a/blitz3d-ng/src/tools/compiler/linker_lld/linker_lld.cpp
++++ b/blitz3d-ng/src/tools/compiler/linker_lld/linker_lld.cpp
+@@ -22,6 +22,9 @@
+ #endif
+ 
+ #ifdef BB_MACOS
++#include <spawn.h>
++#include <sys/wait.h>
++extern char **environ;
+ #define FORMAT macho
+ #define UNAME "darwin"
+ #endif
+@@ -142,7 +145,9 @@
+ #ifdef BB_MACOS
+ 		args.push_back( "-dead_strip" );
+ 		args.push_back( "-dead_strip_dylibs" );
++#ifndef BB_LEGACY32
+ 		args.push_back( "--deduplicate-strings" );
++#endif
+ 
+ 		if( !debug ){
+ 		  args.push_back( "-S" );args.push_back( "-x" );
+@@ -253,7 +258,16 @@
+ 		}
+ 
+ 		args.push_back("-syslibroot");
+-		args.push_back( "/Applications/Xcode.app/Contents/Developer/Platforms/"+sdkname+".platform/Developer/SDKs/"+sdkname+".sdk" );
++		std::string sdkroot;
++        if(const char *sdk=getenv("SDKROOT")) sdkroot=sdk;
++        if(sdkroot.empty()){
++            FILE *fp=popen("xcrun --sdk macosx --show-sdk-path","r");
++            char buffer[4096];
++            if(fp){if(fgets(buffer,sizeof(buffer),fp)) sdkroot=buffer;pclose(fp);}
++            while(!sdkroot.empty() && (sdkroot.back()=='\n'||sdkroot.back()=='\r')) sdkroot.pop_back();
++        }
++        if(sdkroot.empty()) throw std::runtime_error("Cannot locate the macOS SDK");
++        args.push_back(sdkroot);
+ 
+ 		libs.push_back( "objc" );
+ 		libs.push_back( "c" );
+@@ -489,6 +503,21 @@
+ 	}
+ 
+ 	bool success=false;
++#if defined(BB_MACOS) && defined(BB_LEGACY32)
++    if(target.type=="macos") {
++        // Use the installed Apple linker: LLVM 19 cannot parse newer SDK TAPI
++        // architecture names. Pass argv directly to preserve Unicode and spaces.
++        std::vector<std::string> command={"xcrun","--sdk","macosx","ld"};
++        for(const auto &arg:args) if(arg.rfind("--error-limit=",0)!=0) command.push_back(arg);
++        std::vector<char*> argv;
++        for(auto &arg:command) argv.push_back(arg.data());
++        argv.push_back(nullptr);
++        pid_t pid; int status=0;
++        if(posix_spawnp(&pid,"xcrun",nullptr,nullptr,argv.data(),environ)==0) {
++            success=waitpid(pid,&status,0)==pid && WIFEXITED(status) && WEXITSTATUS(status)==0;
++        }
++    } else
++#endif
+ 	if( nx ){
+ 		std::string cmdline="";
+ 		for( auto arg:args ) cmdline+=arg+" ";
+diff --git a/blitz3d-ng/src/tools/compiler/main.cpp b/blitz3d-ng/src/tools/compiler/main.cpp
+--- a/blitz3d-ng/src/tools/compiler/main.cpp
++++ b/blitz3d-ng/src/tools/compiler/main.cpp
+@@ -446,7 +446,10 @@
+ 	if( ti==-1 ) err( "Invalid target" );
+ 
+ 	Target target=targets[ti];
+-	if( !target.host ){
++	#ifdef BB_LEGACY32
++    if(target.type=="macos") compileonly=true; // native AOT; never load a mismatched JIT ABI
++#endif
++    if( !target.host ){
+ 		compileonly=true;
+ 	}
+ 
+@@ -530,7 +533,10 @@
+ #ifdef USE_LLVM
+ 		bbTarget32 = ( target.type=="emscripten" || target.arch=="wasm32" ||
+ 		               target.arch=="asmjs" || target.arch=="i686" );
+-		Codegen_LLVM codegen2( debug );
++		#ifdef BB_LEGACY32
++        if(target.type=="macos") bbTarget32=true;
++#endif
++        Codegen_LLVM codegen2( debug );
+ 		codegen2.SetTarget( target );
+ #endif
+ 
+diff --git a/blitz3d-ng/src/tools/compiler/tree/decl/data_decl.cpp b/blitz3d-ng/src/tools/compiler/tree/decl/data_decl.cpp
+--- a/blitz3d-ng/src/tools/compiler/tree/decl/data_decl.cpp
++++ b/blitz3d-ng/src/tools/compiler/tree/decl/data_decl.cpp
+@@ -49,12 +49,16 @@
+ 	}
+ 
+ 	values_idx=g->data_values.size();
+-	g->data_values.push_back( g->constantInt( ty ) );
++	auto wordTy=g->intTy;
++#ifdef BB_LEGACY32
++    wordTy=llvm::IntegerType::get(*g->context,g->module->getDataLayout().getPointerSizeInBits());
++#endif
++    g->data_values.push_back(llvm::ConstantInt::get(wordTy,ty));
+ 	if( v ){
+-		g->data_values.push_back( v );
++		g->data_values.push_back(llvm::ConstantInt::get(wordTy,llvm::cast<llvm::ConstantInt>(v)->getZExtValue()));
+ 	}else{
+ 		size_t slot=g->data_values.size();
+-		g->data_values.push_back( g->constantInt( 0 ) );
++		g->data_values.push_back(llvm::ConstantInt::get(wordTy,0));
+ 		g->data_str_fixups.push_back( { slot, g->constantString( c->stringValue() ) } );
+ 	}
+ }
+diff --git a/blitz3d-ng/src/tools/compiler/tree/parser.cpp b/blitz3d-ng/src/tools/compiler/tree/parser.cpp
+--- a/blitz3d-ng/src/tools/compiler/tree/parser.cpp
++++ b/blitz3d-ng/src/tools/compiler/tree/parser.cpp
+@@ -155,6 +155,7 @@
+ 				inc=tolower( inc );
+ #endif
+ 
++				inc=canonicalpath(inc);
+ 				if( included.find( inc )!=included.end() ) break;
+ 
+ 				std::ifstream i_stream( inc.c_str() );
+diff --git a/blitz3d-ng/src/tools/compiler/tree/prognode.cpp b/blitz3d-ng/src/tools/compiler/tree/prognode.cpp
+--- a/blitz3d-ng/src/tools/compiler/tree/prognode.cpp
++++ b/blitz3d-ng/src/tools/compiler/tree/prognode.cpp
+@@ -232,7 +232,11 @@
+ 	g->builder->SetInsertPoint( block );
+ 
+ 	datas->translate2( g );
+-	auto ty=llvm::ArrayType::get( g->intTy,g->data_values.size() );
++	auto wordTy=g->intTy;
++#ifdef BB_LEGACY32
++    wordTy=llvm::IntegerType::get(*g->context,g->module->getDataLayout().getPointerSizeInBits());
++#endif
++    auto ty=llvm::ArrayType::get(wordTy,g->data_values.size());
+ 	g->bbData=new llvm::GlobalVariable( *g->module,ty,false,llvm::GlobalValue::ExternalLinkage,nullptr,"bbData" );
+ 	g->bbData->setInitializer( llvm::ConstantArray::get( ty,g->data_values ) );
+ 
+@@ -246,7 +250,7 @@
+ 		llvm::Value *idx[2]={ g->constantInt( 0 ),
+ 			llvm::ConstantInt::get( g->intTy,(uint64_t)fx.first ) };
+ 		llvm::Value *slot=g->builder->CreateGEP( g->bbData->getValueType(),g->bbData,idx );
+-		llvm::Value *asInt=g->builder->CreatePtrToInt( fx.second,g->intTy );
++		llvm::Value *asInt=g->builder->CreatePtrToInt( fx.second,wordTy );
+ 		g->builder->CreateStore( asInt,slot );
+ 	}
+ 
+diff --git a/blitz3d-ng/src/tools/compiler/tree/var/field_var.cpp b/blitz3d-ng/src/tools/compiler/tree/var/field_var.cpp
+--- a/blitz3d-ng/src/tools/compiler/tree/var/field_var.cpp
++++ b/blitz3d-ng/src/tools/compiler/tree/var/field_var.cpp
+@@ -25,7 +25,15 @@
+ 	indices.push_back( llvm::ConstantInt::get( *g->context,llvm::APInt( 32,0 ) ) );
+ 	indices.push_back( llvm::ConstantInt::get( *g->context,llvm::APInt( 32,sem_field->offset/4+1 ) ) );
+ 
+-	return g->builder->CreateGEP( expr->sem_type->structType()->structtype,expr->translate2( g ),indices );
++	#ifdef BB_LEGACY32
++    // C++ stores Type fields in pointer-sized BBField union slots.
++    auto obj=expr->translate2(g);
++    auto fields=g->builder->CreateLoad(g->voidPtr,g->builder->CreateStructGEP(g->bbObj,obj,0));
++    auto slot=llvm::IntegerType::get(*g->context,g->module->getDataLayout().getPointerSizeInBits());
++    return g->builder->CreateGEP(slot,fields,g->constantInt(sem_field->offset/4));
++#else
++    return g->builder->CreateGEP( expr->sem_type->structType()->structtype,expr->translate2( g ),indices );
++#endif
+ }
+ #endif
+ 
+diff --git a/blitz3d-ng/src/tools/compiler/tree/var/vector_var.cpp b/blitz3d-ng/src/tools/compiler/tree/var/vector_var.cpp
+--- a/blitz3d-ng/src/tools/compiler/tree/var/vector_var.cpp
++++ b/blitz3d-ng/src/tools/compiler/tree/var/vector_var.cpp
+@@ -36,7 +36,7 @@
+ 			}
+ 			p=mul( p,iconst( sz ) );
+ 		}
+-		sz=sz*vec_type->sizes[k];
++		sz=sz*vec_type->sizes[k]/4;
+ 		t=t ? add( t,p ) : p;
+ 	}
+ 	return add( t,expr->translate( g ) );

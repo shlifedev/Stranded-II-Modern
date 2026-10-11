@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"a5d9f95f0ddc1bec180aa03485cdb18fcf0b0f261482bebbdd00ed69e80ebfa2"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"249aaecf1fdc8d54a4e2dd12dff212c53fd2dcc35d236c78054478249ef4f1d6"} -->
 
 # 개발 가이드
 
@@ -85,7 +85,7 @@ Python으로 직접 실행할 수도 있습니다.
 
 ## 실험용 WebGPU 빌드
 
-모든 Python 개발 명령은 `--platform windows|web`를 받으며 기본값은 `windows`입니다. 웹은 기본판만 빌드합니다. `--platform web --edition extended`는 오류를 반환하며 Extended CI는 계속 비활성 상태입니다.
+모든 Python 개발 명령은 `--platform windows|web|macos`를 받으며 기본값은 `windows`입니다. 웹은 기본판만 빌드합니다. `--platform web --edition extended`는 오류를 반환하며 Extended CI는 계속 비활성 상태입니다.
 
 `src/engine/StrandedIIWeb.bb`는 기존 `StrandedII.bb`와 웹 플랫폼 서비스를 함께 포함합니다. 게임 로직은 공유하고, Windows는 Blitz3D 1.118, 웹은 [고정한 Blitz3D NG WebGPU 포트와 Emscripten](../config/web-toolchain.json)을 사용합니다. 엔진 수정은 `patches/blitz3d-web/`에 관리합니다. 다른 게임 엔진으로 변환하거나 `.bb` 게임 소스를 생성하지 않습니다.
 
@@ -124,7 +124,7 @@ WebGPU의 동일 버퍼 `CopyRect`는 임시 텍스처를 재사용하고, 앞�
 
 브라우저에서는 메뉴, `maps/adventure/map01.s2`의 약 53초 인트로, 첫 플레이 섬인 `map02.s2`를 순서대로 확인합니다. 지형·모델·한국어 UI·실제 소리, 이동·충돌·채집·제작, 저장·불러오기, 새로고침·브라우저 재시작 후 복구, 포커스·마우스 잠금 복귀는 별도 플레이 검증 대상입니다. 빌드 성공은 이 검증의 완료를 뜻하지 않습니다.
 
-현재 범위는 실험용 싱글플레이 웹 빌드입니다. Mac 네이티브 빌드, 모바일, 웹 Extended, 에디터, 전체 캠페인은 지원 완료 범위에 포함하지 않습니다. 브라우저에 없는 원시 TCP/UDP 기능은 연결 실패로 반환합니다.
+현재 범위는 실험용 싱글플레이 웹 빌드입니다. 모바일, 웹 Extended, 에디터, 전체 캠페인은 지원 완료 범위에 포함하지 않습니다. 브라우저에 없는 원시 TCP/UDP 기능은 연결 실패로 반환합니다.
 
 ### GitHub Pages 배포
 
@@ -139,6 +139,32 @@ WebGPU의 동일 버퍼 `CopyRect`는 임시 텍스처를 재사용하고, 앞�
 ```
 
 `web_pages.py`는 검사를 통과한 현재 빌드의 실행 파일 8개만 `build/web/pages/`에 모읍니다. `/checks/`, 로그, 개인 저장은 게시하지 않습니다. 상대 경로와 배포별 캐시 키를 사용하며 배포 목록·해시는 `build/web/pages-report.json`에 기록합니다. 출력 폴더에 예상하지 못한 파일이 있으면 삭제하지 않고 중단합니다. 배포 작업은 직렬화하고, 빌드·검사 실패 시 기존 사이트를 유지합니다. 게시 후 HTTP 파일 해시·WASM 형식을 확인하지만 실제 플레이 검증은 별도로 수행해야 합니다.
+
+## 실험용 macOS 네이티브 빌드
+
+기본판의 Apple Silicon 로컬 시제품입니다. `StrandedIIMac.bb`와 공통 게임을 LLVM으로 ARM64 Mach-O 실행 파일로 컴파일하고, 기존 WebGPU 렌더러를 SDL2와 Dawn의 Metal 백엔드에 연결합니다. Blitz 정수·실수는 32비트를 유지하며 엔진 포인터는 64비트, 게임에 노출하는 리소스 ID는 32비트로 분리합니다. [고정 의존성](../config/macos-toolchain.json), `patches/blitz3d-macos/`, `src/native/macos/`에서 이 타깃을 관리합니다. 기본 플랫폼은 계속 Windows이며 Extended Mac 빌드는 오류를 반환합니다.
+
+Apple Silicon Mac에 Xcode Command Line Tools, Git, Python 3.12 이상, CMake, Ninja, FFmpeg/ffprobe, zstd가 필요합니다. 포함하는 Dawn 라이브러리에 맞춰 배포 타깃은 macOS 15.0입니다. 최소 OS 버전에서의 빌드·실행은 별도 검증이 필요합니다. 준비 과정은 `deps/blitz3d-macos/`, `deps/dawn-macos/`에 전용 컴파일러와 의존성을 다운로드하므로 시간과 디스크 공간이 필요합니다. 입력은 해시가 일치하는 공식 게임 리소스와 고정 글꼴이어야 하며 플레이어 데이터가 있는 실행 폴더를 지정하지 마세요.
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python scripts/dev.py setup --platform macos --game deps/game --font deps/fonts/NotoSansKR.ttf
+.venv/bin/python scripts/dev.py build --platform macos
+.venv/bin/python scripts/dev.py check --platform macos
+.venv/bin/python scripts/macos_package.py
+.venv/bin/python scripts/dev.py run --platform macos
+```
+
+`build`는 로컬 서명한 `build/macos/apps/<build-id>/Stranded II.app` 경로를 출력하고 `build/macos/build-report.json`에 기록합니다. 앱을 더블클릭하면 `~/Library/Application Support/Stranded II Native Preview/`에 리소스를 준비하고 설정·세이브를 저장합니다. 리소스를 갱신해도 기존 설정·세이브를 유지합니다. `run --platform macos`는 같은 앱을 격리된 `build/macos/runtime/` 프로필로 실행합니다. 두 경로 모두 Windows·브라우저 데이터를 가져오지 않습니다. 새 프로필은 1280×720 창 모드로 시작합니다. `localize --platform macos`는 개발용 언어팩을 갱신하며, 앱에 반영하려면 다시 빌드합니다. 지원하지 않는 원본 WAV 인코딩은 네이티브 실행 폴더에서 PCM으로 변환하고 원본 파일은 보존합니다.
+
+`check --platform macos --suite core`는 화면을 열지 않고 원본 Blitz3D 1.118 결과 613바이트, Type 메모리 재사용, 앱 리소스·서명·실행 권한, ARM64·최소 OS와 시스템 라이브러리 의존성을 검사합니다. `--suite full`이 기본값이며 실제 Metal 렌더링·픽셀 읽기, 공통 메뉴·인트로·섬, 한국어 글꼴, 오디오 디코딩, 저장·백업·재불러오기, Cocoa 문자열 왕복, 새 프로필 설치와 리소스 갱신 시 데이터 보존을 추가로 검사합니다. `--suite`는 Mac 검사에만 사용할 수 있습니다. 최신 결과는 `build/macos/verification.json`, 검사별 결과는 `verification-core.json`·`verification-full.json`에 기록합니다. 게임 시간은 가상으로 진행하므로 실제 FPS·소리·IME 조합 입력·포커스·전체 화면·캠페인 검증을 대신하지 않습니다.
+
+`macos_package.py`는 최신 성공 검사와 현재 소스·도구·실행 파일·앱이 일치할 때만 `build/macos/release/StrandedII-<version>-macos-arm64-preview-<build-id>.zip`과 `.zip.sha256`을 만듭니다. ZIP에는 앱, 영어·한국어 실행 안내, 로컬 경로를 제외한 검증 요약을 넣으며 개인 설정·세이브를 제외합니다. 압축 해제 후 내용·권한·서명을 재검사합니다. `core`만 수행한 패키지는 그래픽 검사를 `not_run`으로 명시합니다. 결과 경로는 `build/macos/distribution-report.json`에 기록합니다.
+
+[Mac CI](../.github/workflows/macos.yml)는 수동 `workflow_dispatch` 전용입니다. `macos-15` ARM64에서 고정 의존성을 검증해 `deps/ci-macos/`에 풀고 준비 → 빌드 → `core` 검사 → ZIP 생성을 실행합니다. ZIP·체크섬과 보고서는 Actions 아티팩트로 14일 보관하며 릴리스를 게시하지 않습니다. 원격 실행 결과는 로컬 검사와 별도로 확인하세요.
+
+테스트 ZIP은 별도 Apple Silicon Mac, 특히 macOS 15에서 압축 해제·실행·재실행·앱 교체 후 데이터 보존을 확인하세요. 한글 조합 입력, 전체 화면·앱 전환 후 입력 복귀, 배경음·효과음, 30분 플레이 후 저장·종료·재불러오기는 수동 검사 대상이며 자동 통과로 표시하지 않습니다. 앱은 로컬 임시 서명으로 공증하지 않았습니다. 네이티브 동영상·원시 TCP/UDP, Intel과 네이티브 Extended는 지원하지 않습니다. 정식 배포 서명·공증은 별도 단계입니다.
 
 ## 어디를 수정하나요?
 
@@ -303,7 +329,7 @@ msg "[[loc:quest.island1.arrival]]";
 
 수동 실행의 `publish=false`는 ZIP 생성과 검증만 수행합니다. 다른 브랜치나 태그 푸시에서는 출시하지 않습니다.
 
-CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행하고 Windows 패키지만 게시합니다. macOS 네이티브 포팅은 별도로 계획합니다. `check`는 비그래픽 런타임 검사이며 실제 화면, 렌더링 FPS, Alt-Tab과 전체 플레이 검증을 대신하지 않습니다. 로컬 검사와 별도로 실제 GitHub Actions 실행도 확인해야 합니다.
+Windows CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행하고 Windows 릴리스를 게시합니다. Mac 수동 CI는 테스트 ZIP과 보고서만 아티팩트로 보관합니다. Windows `check`와 Mac `core`는 비그래픽 검사이며 실제 화면, 렌더링 FPS, 앱 전환과 전체 플레이 검증을 대신하지 않습니다. 로컬 검사와 별도로 실제 GitHub Actions 실행도 확인해야 합니다.
 
 원본 사이트에 반복 다운로드 트래픽을 발생시키지 않도록 게임 리소스·컴파일러·글꼴은 같은 저장소의 의존성용 Release에 한 번 보관합니다. 이 빌드 입력에는 해당 Release와 Actions 캐시만 사용합니다. 파일이 없으면 준비 방법을 안내하고 실패하며, 해당 입력을 원본 사이트에서 자동 다운로드하지 않습니다.
 

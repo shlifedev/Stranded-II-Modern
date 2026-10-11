@@ -78,9 +78,10 @@ def source_files(root, edition='classic', platform='windows'):
             visit(child.replace('\\', '/'))
         visiting.remove(key)
 
-    if platform not in ('windows','web') or (platform=='web' and edition!='classic'):
+    if platform not in ('windows','web','macos') or (platform!='windows' and edition!='classic'):
         raise ValueError(f'Unsupported source target: {edition}/{platform}')
-    visit('StrandedIIWeb.bb' if platform=='web' else profile.entry)
+    entry = {'web': 'StrandedIIWeb.bb', 'macos': 'StrandedIIMac.bb'}.get(platform, profile.entry)
+    visit(entry)
     return result
 
 

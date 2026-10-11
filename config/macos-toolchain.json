@@ -1,0 +1,15 @@
+{
+  "repository": "https://github.com/q8j-dev/scpcb-web-port.git",
+  "commit": "d8e0ba5c69197003a897ff4952a9aa764366ce91",
+  "engine_directory": "blitz3d-ng",
+  "llvm": "19.1.5",
+  "architecture": "arm64",
+  "deployment_target": "15.0",
+  "numeric_abi": "blitz32-pointer64",
+  "dawn": {
+    "revision": "31e25af254ab572c77054edec4946d2244e184dd",
+    "url": "https://github.com/google/dawn/releases/download/v20260423.175430/Dawn-31e25af254ab572c77054edec4946d2244e184dd-macos-latest-Release.tar.gz",
+    "sha256": "8d1db80315ab55ad2c61857d1c7ae4c242a9cc67d0639c709a052fc6af3a7bac",
+    "directory": "Dawn-31e25af254ab572c77054edec4946d2244e184dd-macos-latest-Release"
+  }
+}
