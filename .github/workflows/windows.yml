@@ -1,4 +1,4 @@
-name: Windows build and release
+name: Desktop build and release
 
 on:
   workflow_dispatch:
@@ -164,8 +164,17 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  release:
+  macos:
     needs: build
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main' ||
+       github.event_name == 'workflow_dispatch' && inputs.publish)
+    uses: ./.github/workflows/macos.yml
+    with:
+      version_artifact: version-context
+
+  release:
+    needs: [build, macos]
     if: >-
       (github.event_name == 'push' && github.ref == 'refs/heads/main' ||
        github.event_name == 'workflow_dispatch' && inputs.publish)
@@ -192,10 +201,15 @@ jobs:
           name: StrandedII-windows
           path: build/release
 
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: StrandedII-macos-arm64
+          path: build/release
+
       - name: Publish immutable Release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          python -X utf8 scripts/ci.py release --repo "$env:GH_REPO"
+          python -X utf8 scripts/ci.py release --repo "$env:GH_REPO" --include-macos
           if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }

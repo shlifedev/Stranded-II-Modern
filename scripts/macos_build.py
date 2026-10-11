@@ -11,7 +11,7 @@ import wave
 from editions import source_hashes, override_files
 from locales import prepare, validate, languages
 from language_pack import refresh
-from versioning import local_info, validate_info
+from versioning import git, local_info, validate_info
 import macos_toolchain
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -197,6 +197,7 @@ def asset_payload():
 
 def package_app(executable, parent=None):
     payload = asset_payload()
+    version = validate_info(json.loads(payload['core/version.json']))['version'].split('-')[0]
     hashes = {name: hashlib.sha256(data).hexdigest() for name, data in payload.items()}
     fingerprint = hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest()
     recipe = digest(Path(__file__))[:8]
@@ -224,8 +225,7 @@ def package_app(executable, parent=None):
     (app / 'Contents/Info.plist').write_bytes(plistlib.dumps({
         'CFBundleExecutable': 'StrandedII', 'CFBundleName': 'Stranded II',
         'CFBundleIdentifier': 'local.strandedii.modern.native-preview', 'CFBundlePackageType': 'APPL',
-        'CFBundleVersion': read(ROOT / 'config/version.json')['version'],
-        'CFBundleShortVersionString': read(ROOT / 'config/version.json')['version'],
+        'CFBundleVersion': version, 'CFBundleShortVersionString': version,
         'LSMinimumSystemVersion': macos_toolchain.config()['deployment_target'],
         'NSHighResolutionCapable': False, 'LSApplicationCategoryType': 'public.app-category.games',
     }))
@@ -254,6 +254,8 @@ def build(args):
     info = validate_info(read(args.version_info)) if args.version_info else local_info(ROOT, 'classic')
     if info['edition'] != 'classic':
         raise ValueError('Native version belongs to another edition.')
+    if info['channel'] != 'local' and info['commit'] != git(ROOT, 'rev-parse', 'HEAD'):
+        raise ValueError('Native release version belongs to another source commit.')
     compiler = macos_toolchain.build(graphics=True)
     candidate = RUNTIME / 'StrandedII.next'
     compile_source(compiler, 'StrandedIIMac.bb', candidate, 's2macos')

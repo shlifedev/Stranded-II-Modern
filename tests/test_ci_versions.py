@@ -123,6 +123,51 @@ class PublicationTests(unittest.TestCase):
         path.with_suffix('.zip.sha256').write_text(f'{checksum}  {path.name}\n', encoding='utf8')
         return path
 
+    def make_mac_package(self, info, metadata=None, execute=True, cpu=0x100000c):
+        import plistlib
+        import stat
+        import struct
+        metadata = metadata or info
+        prefix = 'Stranded II.app/'
+        numeric = metadata['version'].split('-')[0]
+        contents = {
+            'Contents/MacOS/StrandedII': struct.pack('<II', 0xfeedfacf, cpu) + bytes(24),
+            'Contents/_CodeSignature/CodeResources': b'fixture signature',
+            'Contents/Resources/game/core/version.json': json.dumps(metadata).encode(),
+            'Contents/Resources/game/core/version.txt': (metadata['display_version'] + '\n').encode(),
+            'Contents/Info.plist': plistlib.dumps({'CFBundleExecutable': 'StrandedII',
+                'CFBundleVersion': numeric, 'CFBundleShortVersionString': numeric,
+                'LSMinimumSystemVersion': '15.0'}),
+        }
+        directories = {p.as_posix() for name in contents for p in Path(name).parents if p != Path('.')}
+        records = {name: {'type': 'directory', 'mode': 0o755} for name in directories}
+        for name, data in contents.items():
+            records[name] = {'type': 'file', 'mode': 0o755 if name.endswith('/StrandedII') and execute else 0o644,
+                             'sha256': hashlib.sha256(data).hexdigest()}
+        summary = {'version_info': metadata, 'version': metadata['version'], 'source_commit': metadata['commit'],
+                   'app_sha256': hashlib.sha256(json.dumps(records, sort_keys=True).encode()).hexdigest(),
+                   'platform': 'macos-arm64', 'minimum_macos': '15.0', 'personal_data_included': False,
+                   'suite': 'core', 'checks': {'app_structure_and_signature': 'pass',
+                    'abi': {'bytes_equal_to_blitz_1_118': 613, 'type_reuse': 'pass'}}}
+        path = self.directory / release.macos_archive_name(info)
+        members = {prefix: (b'', stat.S_IFDIR | 0o755),
+                   'verification-summary.json': (json.dumps(summary).encode(), stat.S_IFREG | 0o644),
+                   'README-en.txt': (b'instructions', stat.S_IFREG | 0o644),
+                   'README-ko.txt': (b'instructions', stat.S_IFREG | 0o644)}
+        for name, record in records.items():
+            is_dir = record['type'] == 'directory'
+            members[prefix + name + ('/' if is_dir else '')] = (
+                b'' if is_dir else contents[name], (stat.S_IFDIR if is_dir else stat.S_IFREG) | record['mode'])
+        with zipfile.ZipFile(path, 'w') as archive:
+            for name, (data, mode) in sorted(members.items()):
+                entry = zipfile.ZipInfo(name)
+                entry.create_system = 3
+                entry.external_attr = mode << 16
+                archive.writestr(entry, data)
+        checksum = hashlib.sha256(path.read_bytes()).hexdigest()
+        path.with_suffix('.zip.sha256').write_text(f'{checksum}  {path.name}\n', encoding='utf8')
+        return path
+
     def api(self, repo, path, payload):
         self.assertEqual(path, 'git/refs')
         self.tags[payload['ref'].removeprefix('refs/tags/')] = payload['sha']
@@ -198,6 +243,52 @@ class PublicationTests(unittest.TestCase):
     def test_local_preview_cannot_be_published(self):
         with self.assertRaisesRegex(ValueError, 'cannot be published'):
             release.publish('owner/repo', self.directory, make_info('1.1.0', 'local'))
+
+    def test_both_platforms_resume_together_and_remain_immutable(self):
+        mac = self.make_mac_package(self.info)
+        self.fail_upload = True
+        with self.assertRaisesRegex(ValueError, 'upload failure'):
+            release.publish('owner/repo', self.directory, self.info, include_macos=True)
+        self.assertEqual(set(release.saved_info(self.history[0])['artifacts']), {self.archive.name, mac.name})
+        self.fail_upload = False
+        release.publish('owner/repo', self.directory, self.info, include_macos=True)
+        self.assertEqual(len(self.history[0]['assets']), 4)
+        commands = self.commands.copy()
+        release.publish('owner/repo', self.directory, self.info, include_macos=True)
+        self.assertEqual(commands, self.commands)
+
+    def test_missing_mac_cannot_publish_a_windows_only_release(self):
+        with self.assertRaises(OSError):
+            release.publish('owner/repo', self.directory, self.info, include_macos=True)
+        self.assertFalse(self.commands)
+        self.assertFalse(self.tags)
+
+    def test_mac_from_another_commit_cannot_publish(self):
+        self.make_mac_package(self.info, metadata=dict(self.info, commit=OLDER))
+        with self.assertRaisesRegex(ValueError, 'does not match'):
+            release.publish('owner/repo', self.directory, self.info, include_macos=True)
+        self.assertFalse(self.tags)
+
+    def test_mac_must_keep_execute_permission_and_arm64_architecture(self):
+        for options in ({'execute': False}, {'cpu': 0x1000007}):
+            with self.subTest(options=options):
+                self.make_mac_package(self.info, **options)
+                with self.assertRaisesRegex(ValueError, 'executable ARM64 app'):
+                    release.publish('owner/repo', self.directory, self.info, include_macos=True)
+                self.assertFalse(self.tags)
+
+    def test_mac_cannot_be_added_to_an_existing_published_release(self):
+        release.publish('owner/repo', self.directory, self.info)
+        commands = self.commands.copy()
+        with self.assertRaisesRegex(ValueError, 'publish a new version'):
+            release.publish('owner/repo', self.directory, self.info, include_macos=True)
+        self.assertEqual(commands, self.commands)
+
+    def test_extended_mac_publication_is_rejected(self):
+        info = make_info('0.1.0', 'main', COMMIT, edition='extended')
+        with self.assertRaisesRegex(ValueError, 'only support Stranded II'):
+            release.publish('owner/repo', self.directory, info, include_macos=True)
+        self.assertFalse(self.tags)
 
     def test_changed_draft_package_is_rejected(self):
         self.fail_upload = True

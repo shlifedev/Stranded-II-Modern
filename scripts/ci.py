@@ -300,7 +300,7 @@ def release(args):
     from release import publish
     info = validate_info(read_json(args.version_info))
     if info['edition'] != args.edition:raise ValueError('Release belongs to another edition')
-    publish(args.repo, args.directory, info)
+    publish(args.repo, args.directory, info, include_macos=args.include_macos)
 
 
 def main():
@@ -329,6 +329,7 @@ def main():
     command.add_argument('--output', type=Path, default=ROOT / 'build/ci/version.json')
     command.add_argument('--github-output', type=Path)
     command = sub.add_parser('release', help='Publish the validated ZIP through a resumable draft Release')
+    command.add_argument('--include-macos', action='store_true', help='Require the matching native Mac ZIP and checksum')
     command.add_argument('--repo', required=True)
     command.add_argument('--version-info', type=Path, default=ROOT / 'build/ci/version.json')
     command.add_argument('--directory', type=Path, default=ROOT / 'build/release')

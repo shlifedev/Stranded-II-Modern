@@ -11,9 +11,10 @@ import zipfile
 
 import macos_build as build
 from macos_validation import fingerprint, tree_records, validate_app, verified_build
+from versioning import validate_info
 
 GUIDES = {
-    'en': '''Stranded II — Mac test build
+    'en': '''Stranded II — Native Mac build (experimental)
 
 Requires Apple Silicon and targets macOS 15.0 or later. No browser, Python,
 Homebrew, or separate game download is required to play.
@@ -40,7 +41,7 @@ selected language/display mode, and reproduction steps. Attach the verification
 summary; do not attach your entire data folder. Test saving, quit/relaunch and
 loading, Korean input, app switching, fullscreen, music/effects, and progression.
 ''',
-    'ko': '''Stranded II — Mac 테스트 빌드
+    'ko': '''Stranded II — Mac 네이티브 빌드 (실험용)
 
 Apple Silicon용이며 macOS 15.0 이상을 대상으로 합니다. 플레이에 브라우저,
 Python, Homebrew 또는 별도 게임 리소스 다운로드가 필요하지 않습니다.
@@ -77,6 +78,7 @@ def summary(report, verification):
         game = {key: game[key] for key in ('checks_passed', 'synthetic_time', 'app_bundle')}
     return {
         'product': 'Stranded II', 'version': report['version'], 'source_commit': report['commit'],
+        'version_info': validate_info(report),
         'source_fingerprint': fingerprint({'engine': report['source_sha256'],
                                            'implementation': report['implementation_sha256']}),
         'platform': 'macos-arm64', 'minimum_macos': app['minimum_macos'],
@@ -117,7 +119,11 @@ def package():
                                       'packager': build.digest(Path(__file__))})[:16]
     directory = build.BUILD / 'release'
     directory.mkdir(parents=True, exist_ok=True)
-    filename = f'StrandedII-{report["version"]}-macos-arm64-preview-{public["build_id"]}.zip'
+    if report['channel'] == 'local':
+        filename = f'StrandedII-{report["version"]}-macos-arm64-preview-{public["build_id"]}.zip'
+    else:
+        from release import macos_archive_name
+        filename = macos_archive_name(report)
     destination = directory / filename
     with tempfile.TemporaryDirectory(prefix='package-', dir=build.BUILD) as temporary:
         temporary = Path(temporary)

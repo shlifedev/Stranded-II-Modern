@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"249aaecf1fdc8d54a4e2dd12dff212c53fd2dcc35d236c78054478249ef4f1d6"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"d0fbccd31e320af3265c1a1ace5f3fad38ffd7fad9c87ba95de6070cfbb597a3"} -->
 
 # 개발 가이드
 
@@ -142,9 +142,9 @@ WebGPU의 동일 버퍼 `CopyRect`는 임시 텍스처를 재사용하고, 앞�
 
 ## 실험용 macOS 네이티브 빌드
 
-기본판의 Apple Silicon 로컬 시제품입니다. `StrandedIIMac.bb`와 공통 게임을 LLVM으로 ARM64 Mach-O 실행 파일로 컴파일하고, 기존 WebGPU 렌더러를 SDL2와 Dawn의 Metal 백엔드에 연결합니다. Blitz 정수·실수는 32비트를 유지하며 엔진 포인터는 64비트, 게임에 노출하는 리소스 ID는 32비트로 분리합니다. [고정 의존성](../config/macos-toolchain.json), `patches/blitz3d-macos/`, `src/native/macos/`에서 이 타깃을 관리합니다. 기본 플랫폼은 계속 Windows이며 Extended Mac 빌드는 오류를 반환합니다.
+기본판의 Apple Silicon 실험용 빌드입니다. `StrandedIIMac.bb`와 공통 게임을 LLVM으로 ARM64 Mach-O 실행 파일로 컴파일하고, 기존 WebGPU 렌더러를 SDL2와 Dawn의 Metal 백엔드에 연결합니다. Blitz 정수·실수는 32비트를 유지하며 엔진 포인터는 64비트, 게임에 노출하는 리소스 ID는 32비트로 분리합니다. [고정 의존성](../config/macos-toolchain.json), `patches/blitz3d-macos/`, `src/native/macos/`에서 이 타깃을 관리합니다. 기본 플랫폼은 계속 Windows이며 Extended Mac 빌드는 오류를 반환합니다.
 
-Apple Silicon Mac에 Xcode Command Line Tools, Git, Python 3.12 이상, CMake, Ninja, FFmpeg/ffprobe, zstd가 필요합니다. 포함하는 Dawn 라이브러리에 맞춰 배포 타깃은 macOS 15.0입니다. 최소 OS 버전에서의 빌드·실행은 별도 검증이 필요합니다. 준비 과정은 `deps/blitz3d-macos/`, `deps/dawn-macos/`에 전용 컴파일러와 의존성을 다운로드하므로 시간과 디스크 공간이 필요합니다. 입력은 해시가 일치하는 공식 게임 리소스와 고정 글꼴이어야 하며 플레이어 데이터가 있는 실행 폴더를 지정하지 마세요.
+Apple Silicon Mac에 Xcode Command Line Tools, Git, Python 3.12 이상, CMake, Ninja, FFmpeg/ffprobe, zstd가 필요합니다. 포함하는 Dawn 라이브러리에 맞춰 배포 타깃은 macOS 15.0입니다. CI는 macOS 15에서 빌드와 비그래픽 실행을 검사하며 실제 그래픽 플레이는 별도 검증이 필요합니다. 준비 과정은 `deps/blitz3d-macos/`, `deps/dawn-macos/`에 전용 컴파일러와 의존성을 다운로드하므로 시간과 디스크 공간이 필요합니다. 입력은 해시가 일치하는 공식 게임 리소스와 고정 글꼴이어야 하며 플레이어 데이터가 있는 실행 폴더를 지정하지 마세요.
 
 ```sh
 python3 -m venv .venv
@@ -160,9 +160,9 @@ python3 -m venv .venv
 
 `check --platform macos --suite core`는 화면을 열지 않고 원본 Blitz3D 1.118 결과 613바이트, Type 메모리 재사용, 앱 리소스·서명·실행 권한, ARM64·최소 OS와 시스템 라이브러리 의존성을 검사합니다. `--suite full`이 기본값이며 실제 Metal 렌더링·픽셀 읽기, 공통 메뉴·인트로·섬, 한국어 글꼴, 오디오 디코딩, 저장·백업·재불러오기, Cocoa 문자열 왕복, 새 프로필 설치와 리소스 갱신 시 데이터 보존을 추가로 검사합니다. `--suite`는 Mac 검사에만 사용할 수 있습니다. 최신 결과는 `build/macos/verification.json`, 검사별 결과는 `verification-core.json`·`verification-full.json`에 기록합니다. 게임 시간은 가상으로 진행하므로 실제 FPS·소리·IME 조합 입력·포커스·전체 화면·캠페인 검증을 대신하지 않습니다.
 
-`macos_package.py`는 최신 성공 검사와 현재 소스·도구·실행 파일·앱이 일치할 때만 `build/macos/release/StrandedII-<version>-macos-arm64-preview-<build-id>.zip`과 `.zip.sha256`을 만듭니다. ZIP에는 앱, 영어·한국어 실행 안내, 로컬 경로를 제외한 검증 요약을 넣으며 개인 설정·세이브를 제외합니다. 압축 해제 후 내용·권한·서명을 재검사합니다. `core`만 수행한 패키지는 그래픽 검사를 `not_run`으로 명시합니다. 결과 경로는 `build/macos/distribution-report.json`에 기록합니다.
+`macos_package.py`는 최신 성공 검사와 현재 소스·도구·실행 파일·앱이 일치할 때만 ZIP과 `.zip.sha256`을 만듭니다. 로컬 빌드는 `build/macos/release/StrandedII-<version>-macos-arm64-preview-<build-id>.zip`, 출시 빌드는 `StrandedII-<display_version>-macos-arm64.zip`입니다. 출시 버전은 `build --platform macos --version-info build/ci/version.json`으로 전달하며 현재 커밋과 일치해야 합니다. 앱 번들 버전에는 숫자 부분을, 게임과 검증 요약에는 전체 버전 정보를 기록합니다. ZIP에는 앱, 영어·한국어 실행 안내, 로컬 경로를 제외한 검증 요약을 넣으며 개인 설정·세이브를 제외합니다. 압축 해제 후 내용·권한·서명을 재검사합니다. `core`만 수행한 패키지는 그래픽 검사를 `not_run`으로 명시합니다. 결과 경로는 `build/macos/distribution-report.json`에 기록합니다.
 
-[Mac CI](../.github/workflows/macos.yml)는 수동 `workflow_dispatch` 전용입니다. `macos-15` ARM64에서 고정 의존성을 검증해 `deps/ci-macos/`에 풀고 준비 → 빌드 → `core` 검사 → ZIP 생성을 실행합니다. ZIP·체크섬과 보고서는 Actions 아티팩트로 14일 보관하며 릴리스를 게시하지 않습니다. 원격 실행 결과는 로컬 검사와 별도로 확인하세요.
+[Mac CI](../.github/workflows/macos.yml)는 수동 미리보기와 데스크톱 출시 워크플로의 재사용 빌드를 지원합니다. `macos-15` ARM64에서 고정 의존성을 검증해 `deps/ci-macos/`에 풀고 준비 → 빌드 → `core` 검사 → ZIP 생성을 실행합니다. 출시 빌드는 Windows와 동일한 버전 아티팩트와 소스 커밋을 사용합니다. ZIP·체크섬과 보고서는 Actions 아티팩트로 14일 보관합니다. 수동 Mac 실행만으로는 릴리스를 게시하지 않으며, 실제 게시는 아래 데스크톱 출시 절차에서 담당합니다.
 
 테스트 ZIP은 별도 Apple Silicon Mac, 특히 macOS 15에서 압축 해제·실행·재실행·앱 교체 후 데이터 보존을 확인하세요. 한글 조합 입력, 전체 화면·앱 전환 후 입력 복귀, 배경음·효과음, 30분 플레이 후 저장·종료·재불러오기는 수동 검사 대상이며 자동 통과로 표시하지 않습니다. 앱은 로컬 임시 서명으로 공증하지 않았습니다. 네이티브 동영상·원시 TCP/UDP, Intel과 네이티브 Extended는 지원하지 않습니다. 정식 배포 서명·공증은 별도 단계입니다.
 
@@ -318,18 +318,18 @@ msg "[[loc:quest.island1.arrival]]";
 
 ## GitHub CI와 배포 ZIP
 
-[Windows 워크플로](../.github/workflows/windows.yml)는 `main`·`dev` 푸시, PR, 수동 실행에서 기본 게임을 빌드·검사하고 게임 ZIP과 SHA-256 파일을 산출물로 저장합니다. `main` 푸시는 검사 성공 후 안정판 Release를 자동 발행하고 patch 번호를 올립니다. `dev` 푸시와 PR은 `-local` 검증용 ZIP만 만들며 Release를 발행하거나 번호를 소모하지 않습니다. Extended의 CI 판 선택·빌드·배포 경로는 주석 처리되어 있으며 당분간 로컬에서만 개발합니다.
+[데스크톱 워크플로](../.github/workflows/windows.yml)는 `main`·`dev` 푸시, PR, 수동 실행에서 기본 게임의 Windows 빌드·검사를 수행합니다. `main` 푸시는 같은 버전의 Mac 빌드도 실행하고, 양쪽 검사 성공 후 ZIP 두 개와 각 SHA-256 파일을 하나의 안정판 Release에 게시하며 patch 번호를 올립니다. 어느 한쪽이 실패하면 게시하지 않습니다. `dev` 푸시와 PR은 Windows `-local` 검증용 ZIP만 만들며 Release를 발행하거나 번호를 소모하지 않습니다. Extended의 CI 판 선택·빌드·배포 경로는 주석 처리되어 있으며 당분간 로컬에서만 개발합니다.
 
 개발판을 출시하거나 안정판 출시를 수동 실행하려면 GitHub에서 다음 순서로 진행합니다.
 
-1. **Actions → Windows build and release → Run workflow**를 엽니다.
+1. **Actions → Desktop build and release → Run workflow**를 엽니다.
 2. 정식판은 `main`, 시험판은 `dev` 브랜치를 선택합니다.
 3. `publish`를 켭니다.
-4. 빌드·검사가 성공하면 Release가 발행됩니다.
+4. Windows·Mac 빌드와 검사가 모두 성공하면 Release가 발행됩니다.
 
 수동 실행의 `publish=false`는 ZIP 생성과 검증만 수행합니다. 다른 브랜치나 태그 푸시에서는 출시하지 않습니다.
 
-Windows CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행하고 Windows 릴리스를 게시합니다. Mac 수동 CI는 테스트 ZIP과 보고서만 아티팩트로 보관합니다. Windows `check`와 Mac `core`는 비그래픽 검사이며 실제 화면, 렌더링 FPS, 앱 전환과 전체 플레이 검증을 대신하지 않습니다. 로컬 검사와 별도로 실제 GitHub Actions 실행도 확인해야 합니다.
+Windows CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행합니다. 출시 단계는 `scripts/ci.py release --include-macos`로 두 플랫폼의 버전·커밋·체크섬을 검증한 뒤 게시합니다. Mac ZIP은 앱 파일 해시·실행 권한·ARM64 형식·네이티브 검사 결과도 확인하며, Mac 파일이 없는 기존 공개 릴리스에 나중에 덧붙이지 않습니다. Windows `check`와 Mac `core`는 비그래픽 검사이며 실제 화면, 렌더링 FPS, 앱 전환과 전체 플레이 검증을 대신하지 않습니다. 로컬 검사와 별도로 실제 GitHub Actions 실행도 확인해야 합니다.
 
 원본 사이트에 반복 다운로드 트래픽을 발생시키지 않도록 게임 리소스·컴파일러·글꼴은 같은 저장소의 의존성용 Release에 한 번 보관합니다. 이 빌드 입력에는 해당 Release와 Actions 캐시만 사용합니다. 파일이 없으면 준비 방법을 안내하고 실패하며, 해당 입력을 원본 사이트에서 자동 다운로드하지 않습니다.
 

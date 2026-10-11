@@ -18,6 +18,7 @@ import macos_package as package
 import macos_validation as validation
 import verify_macos as verify
 from editions import source_files
+from versioning import make_info
 
 
 class ResourceBoundaries(TestCase):
@@ -87,7 +88,8 @@ class AppValidation(TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         self.app = self.root / 'Stranded II.app'
-        self.payload = {'core/modern.ini': b'language=en\n'}
+        self.payload = {'core/modern.ini': b'language=en\n',
+                        'core/version.json': json.dumps(make_info('1.1.0', 'local')).encode()}
         self.cfg = {'architecture': 'arm64', 'deployment_target': '15.0'}
         for name, data in self.payload.items():
             path = self.app / 'Contents/Resources/game' / name
@@ -105,7 +107,8 @@ class AppValidation(TestCase):
         signature.write_bytes(b'fake signature')
         (self.app / 'Contents/Info.plist').write_bytes(plistlib.dumps({
             'CFBundleExecutable': 'StrandedII', 'CFBundleIdentifier': 'local.strandedii.modern.native-preview',
-            'LSMinimumSystemVersion': '15.0', 'CFBundleVersion': '1.1.0'}))
+            'LSMinimumSystemVersion': '15.0', 'CFBundleVersion': '1.1.0',
+            'CFBundleShortVersionString': '1.1.0'}))
         build.write(self.root / 'config/version.json', {'version': '1.1.0'})
         self.report = {'asset_sha256': hashes, 'signed_executable_sha256': build.digest(self.executable)}
         for patcher in (mock.patch.object(build, 'ROOT', self.root),

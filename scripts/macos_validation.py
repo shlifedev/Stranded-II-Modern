@@ -85,11 +85,12 @@ def validate_app(app, package_report):
     if not os.access(executable, os.X_OK) or executable.stat().st_mode & 0o111 != 0o111:
         raise ValueError('Native app lost its executable permissions.')
     info = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
+    version = validate_info(json.loads(payload['core/version.json']))['version'].split('-')[0]
     cfg = build.macos_toolchain.config()
     if (info.get('CFBundleExecutable') != 'StrandedII' or
             info.get('CFBundleIdentifier') != 'local.strandedii.modern.native-preview' or
             info.get('LSMinimumSystemVersion') != cfg['deployment_target'] or
-            info.get('CFBundleVersion') != build.read(build.ROOT / 'config/version.json')['version']):
+            info.get('CFBundleVersion') != version or info.get('CFBundleShortVersionString') != version):
         raise ValueError('Native app metadata differs from its build configuration.')
     subprocess.run(['codesign', '--verify', '--deep', '--strict', str(app)], check=True)
     architecture = subprocess.check_output(['xcrun', 'lipo', '-archs', str(executable)], text=True).strip()
