@@ -392,6 +392,9 @@ Function editor_gencolormap(updatecolorset=1)
 	
 	If m_section=Csection_editor Then UpdateWorld()
 	
+	; Keep the texture on the CPU for the whole pass. WebGPU would otherwise
+	; download and upload it once per pixel (including blended coast colours).
+	LockBuffer TextureBuffer(ter_tex_color)
 	For x=0 To texsize
 		For y=0 To texsize
 			;Get Height
@@ -437,7 +440,7 @@ Function editor_gencolormap(updatecolorset=1)
 			;Draw Normal
 			If a#=1 Then
 				rgb=255*$1000000 + r*$10000 + g*$100 + b
-				WritePixel x,y,rgb
+				WritePixelFast x,y,rgb
 			;Draw Alphamixed
 			Else
 				editor_gencolormap_apm(r,g,b,r2,g2,b2,a#,x,y)
@@ -452,6 +455,7 @@ Function editor_gencolormap(updatecolorset=1)
 		Next
 	Next
 	
+	UnlockBuffer TextureBuffer(ter_tex_color)
 	SetBuffer BackBuffer()
 End Function
 
@@ -477,7 +481,7 @@ Function editor_gencolormap_apm(r#,g#,b#,r2#,g2#,b2#,a#,x,y)
 		nb=255
 	EndIf
 	Local rgb=255*$1000000+nr*$10000+ng*$100+nb
-	WritePixel x,y,rgb
+	WritePixelFast x,y,rgb
 End Function
 
 

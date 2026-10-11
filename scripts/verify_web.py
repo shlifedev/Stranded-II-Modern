@@ -5,6 +5,8 @@ import subprocess
 import tempfile
 import json
 import shutil
+import re
+import struct
 
 import web_toolchain
 from web_build import ROOT, BUILD, compiler_environment
@@ -60,6 +62,16 @@ clear_parsecache()
     return body, fixture
 
 
+def colormap_fixture():
+    """Keep the real colour algorithm; replace only graphics and random inputs."""
+    source = (ROOT / 'src/engine/includes/editor_functions.bb').read_text('utf8')
+    body = '\n'.join(function(source, name) for name in ('editor_gencolormap', 'editor_gencolormap_apm'))
+    commands = ('TextureHeight', 'TextureBuffer', 'BackBuffer', 'SetBuffer', 'LockBuffer',
+                'UnlockBuffer', 'WritePixel', 'WritePixelFast', 'TerrainY', 'Rand', 'UpdateWorld')
+    body = re.sub(r'\b(' + '|'.join(commands) + r')\b', r'probe_\1', body)
+    return (ROOT / 'tests/web_colormap.bb').read_text('utf8').replace('; COLORMAP_FUNCTIONS', body)
+
+
 def verify_semantics():
     output = Path(tempfile.mkdtemp(prefix='semantics-', dir=BUILD))
     windows = output / 'windows'
@@ -69,7 +81,9 @@ def verify_semantics():
         raise ValueError('Numeric parity checks also require the private Windows compiler (setup --platform windows).')
     script_checks, fixture = script_fixture(output)
     source = output / 'semantics.bb'
-    source.write_text((ROOT / 'tests/web_semantics.bb').read_text('utf8').replace('; SCRIPT_CHECKS', script_checks), encoding='utf8')
+    source.write_text((ROOT / 'tests/web_semantics.bb').read_text('utf8')
+                      .replace('; SCRIPT_CHECKS', script_checks)
+                      .replace('; COLORMAP_CHECKS', colormap_fixture()), encoding='utf8')
     shutil.copytree(fixture, windows / 'fixtures')
     web_toolchain.run([native / 'bin/blitzcc.exe', '-o', windows / 'test.exe', source],
                       cwd=windows, env=dict(os.environ, blitzpath=str(native)))
@@ -109,9 +123,15 @@ def verify_semantics():
     if actual != expected:
         differences = [(i, a, b) for i, (a, b) in enumerate(zip(expected, actual)) if a != b]
         raise ValueError(f'Windows/wasm numeric or binary mismatch in {output}; lengths {len(expected)}/{len(actual)}, first differences: {differences[:12]}')
+    transfers, writes, invalid, colours, locks, buffer = struct.unpack('<6i', actual[-24:])
+    if not (0 < transfers <= 4 and writes == 128 * 128 and (invalid, colours, locks, buffer) == (0, 0, 0, 2)):
+        raise ValueError(f'Terrain colour map regression: transfers={transfers}, writes={writes}, '
+                         f'invalid={invalid}, colour_errors={colours}, locks={locks}, buffer={buffer}')
+    print(f'Terrain colour map: {writes} pixels, {transfers} full-buffer transfers, colour bands passed (CPU fixture).')
     print(f'Windows/wasm binary parity passed ({len(actual)} bytes): {output}')
     (output / 'report.json').write_text(json.dumps({'windows_wasm_parity': 'pass',
         'bytes': len(actual), 'scripts': ['menu', 'map01', 'intro'],
+        'colormap_cpu_fixture': {'pixels': writes, 'full_buffer_transfers': transfers},
         'rendering_and_gameplay': 'not tested'}, indent=2) + '\n', encoding='utf8')
     return output
 

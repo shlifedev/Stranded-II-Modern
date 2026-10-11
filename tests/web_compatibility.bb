@@ -27,6 +27,23 @@ Function compat_sound(path$)
  If sound<>0 Then FreeSound sound
 End Function
 
+Function compat_colormap(label$)
+ Local size=TextureHeight(ter_tex_color),coloured,matches
+ compat_check(size=128 And TextureWidth(ter_tex_color)=128,label$+" colour map size")
+ LockBuffer TextureBuffer(ter_tex_color)
+ For x=0 To size-1
+  For y=0 To size-1
+   Local rgb=ReadPixelFast(x,y,TextureBuffer(ter_tex_color)) And $FFFFFF
+   If rgb<>0 Then coloured=coloured+1
+   Local grassRGB=grass_rgb(x,y,0)*$10000+grass_rgb(x,y,1)*$100+grass_rgb(x,y,2)
+   If rgb=grassRGB Then matches=matches+1
+  Next
+ Next
+ UnlockBuffer TextureBuffer(ter_tex_color)
+ compat_check(coloured=size*size,label$+" colour map covers every pixel")
+ compat_check(matches=size*size,label$+" colour map feeds grass")
+End Function
+
 ; Colour keys must work with GPU-created images as well as file-backed atlases.
 Global compat_image=CreateImage(4,4)
 SetBuffer ImageBuffer(compat_image):ClsColor 255,0,255:Cls
@@ -118,6 +135,29 @@ FreeEntity frameCamera:FreeTexture frameTexture:ShowEntity cam
 ClsColor 0,0,0
 set_musicvolume#=0:set_fxvolume#=0
 ; AUDIO_CHECKS
+
+; Generated worlds take a different path from scenarios with saved textures.
+; Use real elapsed time here: per-pixel GPU readbacks used to stall this path.
+Local generationStart=MilliSecs()
+m_section=Csection_editor
+editor_ini()
+compat_check(MilliSecs()-generationStart<30000,"editor initializes within 30 seconds")
+compat_check(ter<>0 And ter_size=16 And in_editor_sidebar=1,"editor opens a generated world")
+compat_colormap("editor")
+RenderWorld():Flip False
+editor_quit()
+
+in_opt(3)=1:in_opt(4)=0
+load_randommap(1)
+generationStart=MilliSecs()
+randommapcreate():parse_all()
+compat_check(MilliSecs()-generationStart<30000,"random island initializes within 30 seconds")
+compat_check(ter<>0 And ter_size=32,"random island creates terrain")
+compat_check(g_cplayer<>Null,"random island creates player")
+If g_cplayer<>Null Then compat_check(g_cplayer\h<>0,"random island places player")
+compat_check(p_error=0,"random island scripts complete without parser errors")
+compat_colormap("random island")
+RenderWorld():Flip False
 
 ; Menu scripts must initialise the moving camera and restart their 80 s cycle.
 compat_phase$="menu"

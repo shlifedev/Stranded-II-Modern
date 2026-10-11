@@ -92,6 +92,7 @@ For eventProbe=Each EventProbe
  Delete eventProbe
 Next
 ; SCRIPT_CHECKS
+; COLORMAP_CHECKS
 FreeBank bank
 CloseFile output
 End
