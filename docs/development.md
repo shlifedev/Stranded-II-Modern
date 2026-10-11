@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"bcf87c2d0f9be4b3ff4cd41ddf68e21919b91dd4a76b6d98eb8cb524290f35c2"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"26564106b5b9f8ddafee0fcd0774c06a21be3ca0f44b11c7e578eb5eed9cf01f"} -->
 
 # Development guide
 
@@ -115,6 +115,12 @@ After building the web version, prepare an actual-engine comparison with the com
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 scripts/verify_web_game.py
 ```
+
+WebGPU reuses a temporary texture for same-buffer `CopyRect` operations and batches source regions unaffected by earlier writes, reducing copies and draws for water and underwater effects. Overlapping copies see earlier results; scaled copies keep the original path. The C++ CPU fixture in `check --platform web` runs the actual copy methods to check pixels, colour keys, clipping, ordering, two snapshots per water update, and texture reuse. Actual GPU performance requires gameplay verification.
+
+For frame-drop comparisons, prepare `scripts/profile_web.py --serve`, then open `http://127.0.0.1:8766/` in Chrome/Edge and start the comparison. It uses a separate engine copy with real WebGPU and real clocks, without mounting IndexedDB or player saves. Select the island or menu scene and resolution. Water qualities 6, 3 and 0 at a 144 FPS cap, and quality 0 at a 60 FPS cap, each run three times for 30 seconds after a 5-second warmup. Every trial uses a fresh WASM instance; losing window focus invalidates the trial. Keep the window foreground for about seven minutes per scene.
+
+Results are saved to `build/web/profile-*/report.json`: FPS and p95/p99 intervals between completed Flip calls; CPU time for water, reflections, main rendering and frame waiting; and texture creation, copy and draw-call counts. Reflection time is part of water time, so do not add them together. These values are not GPU execution time or display scanout FPS, and instrumentation adds overhead. The automatic camera and muted audio do not replace input, audio or full-gameplay verification. Use `--existing build/web/profile-<name>` to serve a prepared profiler again.
 
 In the browser, verify the menu, the roughly 53-second intro in `maps/adventure/map01.s2`, and the first playable island, `map02.s2`, in sequence. Terrain, models, Korean UI, audible sound, movement, collision, gathering, crafting, saving/loading, recovery after refresh/browser restart, and focus/pointer-lock return require separate gameplay verification. A successful build does not establish that these checks passed.
 

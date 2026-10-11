@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stranded II · WebGPU 성능 진단</title>
+<style>
+body{margin:20px;background:#162028;color:#e5edf2;font:15px system-ui}button,select,input{font:inherit;padding:6px}input{width:85px}label{display:inline-block;margin:5px}button{cursor:pointer}iframe{width:100%;height:65vh;border:0}canvas{display:block;max-width:100%;max-height:90vh;object-fit:contain}pre{white-space:pre-wrap}table{border-collapse:collapse}td,th{padding:6px 10px;border-bottom:1px solid #456;text-align:right}.runner #controls,.runner #summary,.runner h1{display:none}.runner{margin:0}#canvas{display:none}.runner #canvas{display:block}
+</style>
+<h1>WebGPU 성능 진단</h1>
+<div id="controls">
+<p>사용자 세이브를 연결하지 않는 별도 실행입니다. 각 조건을 30초씩 3회 측정하며 준비 시간을 포함해 장면당 약 7분 걸립니다. 측정 중에는 이 창을 앞에 두세요.</p>
+<label>장면 <select id="scene"><option value="island">첫 번째 섬</option><option value="menu">메뉴 배경</option></select></label>
+<label>너비 <input id="width" type="number" min="800" max="1920"></label>
+<label>높이 <input id="height" type="number" min="600" max="1080"></label>
+<button id="start">비교 측정 시작</button>
+<button id="stop" disabled>중단</button>
+</div>
+<p id="status">준비 중…</p>
+<div id="viewport"></div>
+<canvas id="canvas" tabindex="0"></canvas>
+<div id="summary"></div>
+<pre id="log"></pre>
+<script src="profile-ui.js"></script>
+</html>

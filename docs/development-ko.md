@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"825a65cd9d07242d87aa8f9f6ad3d2e2d204dab10b196bbc0d106d353e23ea14"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"a5d9f95f0ddc1bec180aa03485cdb18fcf0b0f261482bebbdd00ed69e80ebfa2"} -->
 
 # 개발 가이드
 
@@ -115,6 +115,12 @@ Python으로 직접 실행할 수도 있습니다.
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 scripts/verify_web_game.py
 ```
+
+WebGPU의 동일 버퍼 `CopyRect`는 임시 텍스처를 재사용하고, 앞선 쓰기와 겹치지 않는 원본 영역들을 묶어 물결·수중 효과의 복사와 그리기를 줄입니다. 겹치는 복사는 앞선 결과를 반영하며 확대·축소는 기존 경로를 사용합니다. `check --platform web`의 C++ CPU 검사에서는 실제 복사 함수를 실행해 픽셀·투명색·잘림·순서와 물결 갱신당 스냅샷 2회, 텍스처 재사용을 확인합니다. 실제 GPU 성능은 플레이로 확인해야 합니다.
+
+프레임 드랍 비교는 `scripts/profile_web.py --serve`로 준비하고 Chrome/Edge에서 `http://127.0.0.1:8766/`를 열어 시작합니다. 실제 WebGPU와 실제 시계를 사용하는 별도 엔진 복사본이며 IndexedDB나 사용자 저장을 연결하지 않습니다. 섬 또는 메뉴 장면과 해상도를 선택하면 물 품질 6·3·0(144 FPS 제한), 물 품질 0(60 FPS 제한)을 준비 5초 후 각각 30초씩 3회 측정합니다. 조건마다 새 WASM 인스턴스를 사용하며 창이 포커스를 잃으면 해당 측정은 무효입니다. 장면당 약 7분 동안 창을 앞에 두세요.
+
+결과는 `build/web/profile-*/report.json`에 저장됩니다. 완료된 Flip 사이의 FPS·p95/p99 간격, 물·반사·주 렌더링·프레임 대기의 CPU 시간, 텍스처 생성·복사·그리기 호출 수를 기록합니다. 반사 시간은 물 처리 시간의 일부이며 더해서 계산하지 않습니다. 이 값은 GPU 실행 시간이나 실제 화면 스캔아웃 FPS가 아니며, 계측에도 비용이 듭니다. 자동 카메라와 음소거 상태의 비교는 조작·오디오·전체 플레이 검증을 대신하지 않습니다. `--existing build/web/profile-<이름>`으로 준비한 측정 서버를 다시 열 수 있습니다.
 
 브라우저에서는 메뉴, `maps/adventure/map01.s2`의 약 53초 인트로, 첫 플레이 섬인 `map02.s2`를 순서대로 확인합니다. 지형·모델·한국어 UI·실제 소리, 이동·충돌·채집·제작, 저장·불러오기, 새로고침·브라우저 재시작 후 복구, 포커스·마우스 잠금 복귀는 별도 플레이 검증 대상입니다. 빌드 성공은 이 검증의 완료를 뜻하지 않습니다.
 

@@ -1,0 +1,162 @@
+diff --git a/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.h b/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.h
+--- a/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.h
++++ b/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.h
+@@ -36,6 +36,18 @@
+ 	int mip_levels;
+ 	WGPUTextureView level0_view;
+ 	bool mips_dirty;
++
++	// A snapshot may serve consecutive self-blits while their source rectangles
++	// do not overlap writes made since the snapshot. Water/underwater strips
++	// then share one copy and one render pass per independent group.
++	WGPUTexture blit_texture=0;
++	WGPUTextureView blit_view=0;
++	int blit_width=0,blit_height=0;
++	WGPUTextureFormat blit_format=WGPUTextureFormat_Undefined;
++	bool blit_snapshot_valid=false;
++	int blit_left=0,blit_top=0,blit_right=0,blit_bottom=0;
++	void releaseBlitSnapshot();
++	bool blitSelf( int x,int y,int src_x,int src_y,int src_w,int src_h,bool solid );
+ 
+ 	std::vector<unsigned char> hit_mask;
+ 	bool hit_valid;
+diff --git a/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.cpp b/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.cpp
+--- a/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.cpp
++++ b/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.cpp
+@@ -30,6 +30,7 @@
+ 
+ WebGPUCanvas::~WebGPUCanvas(){
+ 	if( res->pass_target==this ) res->endPass();
++	releaseBlitSnapshot();
+ 	res->notifyCanvasDestroyed( this );
+ 	if( level0_view ){
+ 		wgpuTextureViewRelease( level0_view );
+@@ -53,6 +54,7 @@
+ }
+ 
+ void WebGPUCanvas::resize( int w,int h,float d ){
++	blit_snapshot_valid=false;
+ 	width=w;height=h;
+ 	vx=vy=0;vw=w;vh=h;
+ }
+@@ -68,6 +70,7 @@
+ 
+ 	int w=width>0?width:1,h=height>0?height:1;
+ 	if( texture && twidth==w && theight==h ) return;
++	blit_snapshot_valid=false;
+ 
+ 	if( level0_view ){
+ 		wgpuTextureViewRelease( level0_view );
+@@ -148,6 +151,7 @@
+ 
+ 
+ void WebGPUCanvas::uploadData(){
++	blit_snapshot_valid=false;
+ 	if( !res->device ) return;
+ 	if( wide_format ){
+ 		dirty=false;
+@@ -437,6 +441,7 @@
+ 	if( cx+cw>width ) cw=width-cx;
+ 	if( cy+ch>height ) ch=height-cy;
+ 	if( cw<=0 || ch<=0 ) return;
++	blit_snapshot_valid=false;
+ 
+ 	bool texenabled=( tex!=0 );
+ 	if( !tex ) tex=res->white_view;
+@@ -544,6 +549,7 @@
+ }
+ 
+ void WebGPUCanvas::cls(){
++	blit_snapshot_valid=false;
+ 	bool full=( vx<=0 && vy<=0 && vx+vw>=width && vy+vh>=height );
+ 	if( full ){
+ 		if( res->pass_target==this ) res->endPass();
+@@ -724,10 +730,88 @@
+ 	font_pass=false;
+ }
+ 
++void WebGPUCanvas::releaseBlitSnapshot(){
++	blit_snapshot_valid=false;
++	if( blit_view ){
++		res->invalidateBindGroupsFor( blit_view );
++		wgpuTextureViewRelease( blit_view );
++		blit_view=0;
++	}
++	if( blit_texture ){
++		wgpuTextureRelease( blit_texture );
++		blit_texture=0;
++	}
++}
++
++bool WebGPUCanvas::blitSelf( int x,int y,int src_x,int src_y,int src_w,int src_h,bool solid ){
++	// Keep scaled/clamped sampling on the original path. Integer CopyRect
++	// strips can share a snapshot whenever their sources are still unchanged.
++	if( scale_x!=1.f || scale_y!=1.f ) return false;
++	if( x>=width || y>=height || (float)x+src_w<=0 || (float)y+src_h<=0 ) return true;
++	if( src_x<0 || src_y<0 || src_x>width-src_w || src_y>height-src_h ) return false;
++	if( is_surface ){
++		if( !res->acquireSurfaceView() ) return true;
++	}else{
++		if( dirty ) uploadData();
++		ensureTexture();
++	}
++	bool matching=blit_view && blit_width==width && blit_height==height && blit_format==format();
++	bool independent=matching && blit_snapshot_valid && res->pass && res->pass_target==this &&
++	                 (src_x+src_w<=blit_left || src_x>=blit_right ||
++	                  src_y+src_h<=blit_top || src_y>=blit_bottom);
++	if( !independent ){
++		// Complete prior draws before overwriting the texture sampled by them.
++		res->endPass();
++		res->ensureEncoder();
++		if( !matching ){
++			releaseBlitSnapshot();
++			WGPUTextureDescriptor desc={};
++			desc.label=bbStrView( "bb.blit.temp" );
++			desc.usage=WGPUTextureUsage_TextureBinding|WGPUTextureUsage_CopyDst;
++			desc.dimension=WGPUTextureDimension_2D;
++			desc.size={ (uint32_t)width,(uint32_t)height,1 };
++			desc.format=format();
++			desc.mipLevelCount=1;
++			desc.sampleCount=1;
++			blit_texture=wgpuDeviceCreateTexture( res->device,&desc );
++			blit_view=wgpuTextureCreateView( blit_texture,0 );
++			blit_width=width;blit_height=height;blit_format=format();
++		}
++		WGPUTexelCopyTextureInfo from={};
++		from.texture=is_surface?res->surface_texture:texture;
++		from.aspect=WGPUTextureAspect_All;
++		WGPUTexelCopyTextureInfo to={};
++		to.texture=blit_texture;
++		to.aspect=WGPUTextureAspect_All;
++		WGPUExtent3D extent={ (uint32_t)width,(uint32_t)height,1 };
++		wgpuCommandEncoderCopyTextureToTexture( res->encoder,&from,&to,&extent );
++	}
++	// Uniforms stay equal across strips; draw2d merges their vertex ranges.
++	float l=(float)x,t=(float)y,r=l+src_w,b=t+src_h;
++	float u0=(float)src_x/width,v0=(float)src_y/height;
++	float u1=(float)(src_x+src_w)/width,v1=(float)(src_y+src_h)/height;
++	const BBWebGPUVertex verts[6]={
++		{ l,t,u0,v0 },{ l,b,u0,v1 },{ r,t,u1,v0 },
++		{ r,t,u1,v0 },{ l,b,u0,v1 },{ r,b,u1,v1 }
++	};
++	float white[3]={ 1.f,1.f,1.f },xywh[4]={ 0.f,0.f,1.f,1.f },scale[2]={ 1.f,1.f };
++	draw2d( WGPUPrimitiveTopology_TriangleList,!solid,blit_view,res->sampler_nearest,
++	        xywh,white,scale,verts,6,solid?2:1,mask );
++	if( independent ){
++		blit_left=std::min( blit_left,x );blit_top=std::min( blit_top,y );
++		blit_right=std::max( blit_right,x+src_w );blit_bottom=std::max( blit_bottom,y+src_h );
++	}else{
++		blit_left=x;blit_top=y;blit_right=x+src_w;blit_bottom=y+src_h;
++	}
++	blit_snapshot_valid=true;
++	return true;
++}
++
+ void WebGPUCanvas::blit( int x,int y,BBCanvas *s,int src_x,int src_y,int src_w,int src_h,bool solid ){
+ 	if( !s || width<=0 || height<=0 || s->getWidth()<=0 || s->getHeight()<=0 || src_w<=0 || src_h<=0 ) return;
+ 
+ 	WebGPUCanvas *src=(WebGPUCanvas*)s;
++	if( src==this && blitSelf( x,y,src_x,src_y,src_w,src_h,solid ) ) return;
+ 
+ 	float sx,sy,dx,dy;
+ 	src->getScale( &sx,&sy );
