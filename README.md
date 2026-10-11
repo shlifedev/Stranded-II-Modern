@@ -8,12 +8,14 @@
 
 An unofficial update of Stranded II for modern Windows systems. Built with Blitz3D 1.118.
 
-## Getting started
 
-- **[WebPlay](https://shlifedev.github.io/Stranded-II-Modern/):** experimental WebGPU preview; requires desktop Chrome/Edge with WebGPU and JSPI. Game language is selected in Settings. Browser saves are separate from the Windows version.
-- **Play:** extract the entire release ZIP and double-click `StrandedII.exe` in the game folder. Windows 10 or later is required; no separate installation is needed.
-- **Build from source:** follow environment setup and the first build in the [development guide](docs/development.md). The source checkout does not include the EXE or original game resources.
-- **Translate:** edit `locales/<code>.tsv` following the [localization guide](docs/localization.md).
+## Support
+
+- [Windows 10 & 11](https://github.com/shlifedev/Stranded-II-Modern/releases)
+- **[WebBrowser](https://shlifedev.github.io/Stranded-II-Modern/):** experimental WebGPU preview; requires desktop Chrome/Edge with WebGPU and JSPI. 
+- [MacOS](https://github.com/shlifedev/Stranded-II-Modern/releases)
+ 
+ 
 
 ## Improvements
 
