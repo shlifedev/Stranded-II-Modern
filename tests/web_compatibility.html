@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Stranded II compatibility checks</title>
+<style>body { background:#182027;color:#eee;font:16px system-ui } canvas { width:800px;height:600px } pre { white-space:pre-wrap }</style>
+<button id="start" disabled>Run isolated renderer / intro checks</button>
+<canvas id="canvas" width="800" height="600"></canvas>
+<pre id="result">Loading. This check uses temporary memory and never mounts player saves.</pre>
+<script>
+const result=document.getElementById('result'),start=document.getElementById('start');
+const log=text=>{result.textContent+='\n'+text;console.log(text)};
+const words=n=>{n=BigInt(Math.floor(n));return Number(BigInt.asIntN(32,n))+String.fromCharCode(31)+Number(BigInt.asIntN(32,n>>32n))};
+var Module={canvas:document.getElementById('canvas'),noInitialRun:true,
+ locateFile:path=>path.endsWith('.data')?'../'+path:path,
+ print:log,printErr:log,onAbort:log,
+ s2Bridge:async request=>{
+  const [op]=request.split(String.fromCharCode(31));
+  if(op==='counter')return words(performance.now()*1000);
+  if(op==='walltime')return words(performance.now()*10000);
+  if(op==='width'||op==='canvas-width')return 800;
+  if(op==='height'||op==='canvas-height')return 600;
+  if(op==='focus'||op==='sync'||op==='control-focus')return 1;
+  if(op.startsWith('search-'))return '';
+  throw new Error('Unexpected test service '+op);
+ },
+ onRuntimeInitialized:()=>{start.disabled=false;log('Ready. Synthetic sequence time; real engine and GPU.')} };
+start.onclick=async()=>{
+ start.disabled=true;
+ try {
+  Module.FS.writeFile('/game/core/modern.ini','fps=144\ndisplay=windowed\nresolution=custom\nrender_width=800\nrender_height=600\nlanguage=ko\ndiagnostics=0\n');
+  await Module.callMain([]);
+  const actual=Module.FS.readFile('/game/web-compatibility.txt',{encoding:'utf8'});
+  const response=await fetch('windows-reference.txt');
+  if(!response.ok)throw new Error('Windows reference not available');
+  const expected=await response.text();
+  const lines=text=>text.trim().split(/\r?\n/);
+  const a=lines(actual),b=lines(expected),differences=[];
+  if(a.length!==b.length)differences.push('Line count differs');
+  for(let i=0;i<Math.max(a.length,b.length);++i){
+   if(a[i]===b[i])continue;
+   const x=a[i]?.split(' '),y=b[i]?.split(' ');
+   if(x?.[0]==='POSITION'&&y?.[0]==='POSITION'&&x[1]===y[1]&&
+      x.slice(2).every((value,k)=>Number.isFinite(Number(value))&&Math.abs(Number(value)-Number(y[k+2]))<=0.05))continue;
+   differences.push('Line '+(i+1)+': '+a[i]+' / reference: '+b[i]);
+  }
+  const passed=actual.includes('FAILURES 0')&&!actual.includes('\nFAIL ')&&!differences.length;
+  log(actual);log(JSON.stringify({passed,differences}));
+  await fetch('/__diagnostics',{method:'POST',body:'COMPATIBILITY '+JSON.stringify({passed,differences,report:actual})});
+ } catch(error){log(error.stack||error);}
+};
+</script>
+<script src="../assets.js"></script>
+<script src="compatibility.js"></script>
+</html>

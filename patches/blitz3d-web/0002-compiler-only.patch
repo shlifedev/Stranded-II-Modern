@@ -1,0 +1,98 @@
+diff --git a/blitz3d-ng/CMakeLists.txt b/blitz3d-ng/CMakeLists.txt
+index 8369aec..281e3d4 100644
+--- a/blitz3d-ng/CMakeLists.txt
++++ b/blitz3d-ng/CMakeLists.txt
+@@ -417,6 +417,10 @@ add_definitions(-DBB_COMMIT_HASH="${GIT_COMMIT_HASH}")
+ add_definitions(-DBB_BRANCH="${GIT_BRANCH}")
+ 
+ add_subdirectory(src/stdutil)
++if(S2_COMPILER_ONLY)
++  add_subdirectory(src/tools/compiler)
++  return()
++endif()
+ add_subdirectory(src/modules)
+ add_subdirectory(src/runtime)
+ add_subdirectory(src/tools)
+diff --git a/blitz3d-ng/deps/CMakeLists.txt b/blitz3d-ng/deps/CMakeLists.txt
+index 6df1b10..b7eff88 100644
+--- a/blitz3d-ng/deps/CMakeLists.txt
++++ b/blitz3d-ng/deps/CMakeLists.txt
+@@ -18,6 +18,12 @@ add_subdirectory(zlib)
+ add_subdirectory(stackwalker)
+ add_subdirectory(utf8.h)
+ 
++if(S2_COMPILER_ONLY)
++  add_subdirectory(json-hpp)
++  add_subdirectory(toml11)
++  return()
++endif()
++
+ # ide
+ add_subdirectory(wxwidgets)
+ 
+diff --git a/blitz3d-ng/src/modules/bb/blitz/module.h b/blitz3d-ng/src/modules/bb/blitz/module.h
+index 3584498..2cc88ab 100644
+--- a/blitz3d-ng/src/modules/bb/blitz/module.h
++++ b/blitz3d-ng/src/modules/bb/blitz/module.h
+@@ -5,7 +5,11 @@
+ 
+ #undef CDECL
+ 
++#ifdef _MSC_VER
++#define BBDECL __declspec(dllexport)
++#else
+ #define BBDECL __attribute__((visibility("default")))
++#endif
+ #define BBCALL
+ #define CDECL
+ 
+diff --git a/blitz3d-ng/src/tools/compiler/CMakeLists.txt b/blitz3d-ng/src/tools/compiler/CMakeLists.txt
+index 43c0e08..1e29196 100644
+--- a/blitz3d-ng/src/tools/compiler/CMakeLists.txt
++++ b/blitz3d-ng/src/tools/compiler/CMakeLists.txt
+@@ -1,7 +1,7 @@
+ set (CMAKE_EXECUTABLE_SUFFIX_ )
+ 
+ if(BB64 AND NOT BB_MINGW)
+-  set(REQUIRED_LLVM_VERSION 19)
++  set(REQUIRED_LLVM_VERSION 19.1.5)
+ 
+   set(LLVM_KNOWN_PATHS
+     $ENV{LLVM_ROOT}
+@@ -16,6 +16,14 @@ if(BB64 AND NOT BB_MINGW)
+   find_package(LLVM ${REQUIRED_LLVM_VERSION} PATHS ${LLVM_KNOWN_PATHS} NO_DEFAULT_PATH)
+   find_package(LLD PATHS ${LLVM_KNOWN_PATHS} NO_DEFAULT_PATH)
+ 
++  # The pinned LLVM archive contains the CI machine's absolute DIA SDK path.
++  if(MSVC AND TARGET LLVMDebugInfoPDB)
++    get_target_property(dia_libraries LLVMDebugInfoPDB INTERFACE_LINK_LIBRARIES)
++    file(TO_CMAKE_PATH "$ENV{VSINSTALLDIR}" vs_install)
++    string(REGEX REPLACE "[A-Za-z]:/[^;]*diaguids.lib" "${vs_install}/DIA SDK/lib/amd64/diaguids.lib" dia_libraries "${dia_libraries}")
++    set_target_properties(LLVMDebugInfoPDB PROPERTIES INTERFACE_LINK_LIBRARIES "${dia_libraries}")
++  endif()
++
+   # TODO: this will go away once CI is sorted...
+   if(NOT LLVM_FOUND OR NOT LLD_FOUND)
+     return()
+diff --git a/build.py b/build.py
+index 51d51e7..8cbb427 100644
+--- a/build.py
++++ b/build.py
+@@ -54,7 +54,7 @@ os.environ.setdefault("EMSDK_PYTHON", sys.executable)
+ NATIVE_BUILD = os.path.join(NG, "build", f"{ARCH}-{BB_PLATFORM}-release")
+ RUNTIME_BUILD = os.path.join(NG, "build", "webgpu-emscripten-jspi-release")
+ RUNTIME_OUT = os.path.join(NG, "_release_webgpu_jspi")
+-BLITZCC = os.path.join(NG, "_release", "bin", "blitzcc" + EXE)
++BLITZCC = os.path.join(NG, "_release", "bin", ("blitzcc64" if SYSTEM == "Windows" else "blitzcc") + EXE)
+ 
+ 
+ def log(msg):
+@@ -251,7 +251,7 @@ def step_blitzcc():
+     need("cmake", "Install CMake.")
+     need("ninja", "Install Ninja.")
+     cfg = ["cmake", "-G", "Ninja", "-S", NG, "-B", NATIVE_BUILD, CMAKE_COMPAT,
+-           f"-DBB_PLATFORM={BB_PLATFORM}", "-DBB_ENV=release", f"-DARCH={ARCH}"]
++           f"-DBB_PLATFORM={BB_PLATFORM}", "-DBB_ENV=release", f"-DARCH={ARCH}", "-DS2_COMPILER_ONLY=ON"]
+     if SYSTEM != "Windows":
+         cfg.append("-DOUTPUT_PATH=")
+     if SYSTEM == "Darwin":

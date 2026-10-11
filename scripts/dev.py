@@ -124,12 +124,20 @@ def main():
     p=sub.add_parser('build',help='Compile directly edited src/engine with private Blitz3D')
     p.add_argument('--version-info',type=Path,help='CI-selected version metadata; defaults to config/version.json with -local')
     p=sub.add_parser('run',help='Launch the isolated development game')
+    p.add_argument('--port',type=int,default=8765,help='Local web preview port; use the same port to retain browser saves')
     p.add_argument('game_args',nargs=argparse.REMAINDER)
     sub.add_parser('check',help='Check catalogs, resources and compiled runtime functions')
-    for command in sub.choices.values():command.add_argument('--edition',choices=NAMES,default='classic')
+    for command in sub.choices.values():
+        command.add_argument('--edition',choices=NAMES,default='classic')
+        command.add_argument('--platform',choices=('windows','web'),default='windows')
     args=parser.parse_args()
     global PROFILE,BUILD,RUNTIME
     PROFILE=Edition(args.edition);BUILD=PROFILE.build_dir(ROOT);RUNTIME=PROFILE.runtime(ROOT)
-    try:globals()[args.command](args)
-    except (ValueError,OSError,RuntimeError) as exc:parser.exit(1,f'Error: {exc}\n')
+    try:
+        if args.platform=='web':
+            if args.edition!='classic':raise ValueError('The web preview currently supports Stranded II only; Extended web is not available.')
+            import web_build
+            getattr(web_build,args.command)(args)
+        else:globals()[args.command](args)
+    except (ValueError,OSError,RuntimeError,subprocess.CalledProcessError) as exc:parser.exit(1,f'Error: {exc}\n')
 if __name__=='__main__':main()

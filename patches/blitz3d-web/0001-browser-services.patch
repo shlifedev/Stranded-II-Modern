@@ -1,0 +1,20 @@
+diff --git a/blitz3d-ng/src/modules/bb/system/system.cpp b/blitz3d-ng/src/modules/bb/system/system.cpp
+index 5bdc38b..2f6a6f7 100644
+--- a/blitz3d-ng/src/modules/bb/system/system.cpp
++++ b/blitz3d-ng/src/modules/bb/system/system.cpp
+@@ -104,6 +104,15 @@ bb_int_t BBCALL bbMilliSecs(){
+ }
+ 
+ BBStr * BBCALL bbSystemProperty( BBStr *p ){
++#ifdef BB_EMSCRIPTEN
++	extern std::string strandedWebProperty( const std::string & );
++	if( p->rfind("StrandedWeb:",0)==0 ){
++		std::string request=p->substr(12);delete p;
++		return d_new BBStr( strandedWebProperty(request) );
++	}
++	if( tolower(*p)=="apphwnd" ){ delete p;return d_new BBStr("1"); }
++	if( tolower(*p)=="appdir" ){ delete p;return d_new BBStr("/game/"); }
++#endif
+ 	std::string t=tolower(*p);
+ 	delete p;return d_new BBStr( bbSystemProperties[t] );
+ }

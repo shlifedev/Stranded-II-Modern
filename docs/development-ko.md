@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"e9047b65e5a8f9dfc6fd1145017d5e86f78fcd1fd131052dc2268b5b73f10081"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"b7e705a682e8ecbe95663a476ea9193e6224efc359ec39740c2d2379fcde247b"} -->
 
 # 개발 가이드
 
@@ -82,6 +82,57 @@ Python으로 직접 실행할 수도 있습니다.
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 scripts/dev.py run -- -win -fps 120
 ```
+
+## 실험용 WebGPU 빌드
+
+모든 Python 개발 명령은 `--platform windows|web`를 받으며 기본값은 `windows`입니다. 웹은 기본판만 빌드합니다. `--platform web --edition extended`는 오류를 반환하며 Extended CI는 계속 비활성 상태입니다.
+
+`src/engine/StrandedIIWeb.bb`는 기존 `StrandedII.bb`와 웹 플랫폼 서비스를 함께 포함합니다. 게임 로직은 공유하고, Windows는 Blitz3D 1.118, 웹은 [고정한 Blitz3D NG WebGPU 포트와 Emscripten](../config/web-toolchain.json)을 사용합니다. 엔진 수정은 `patches/blitz3d-web/`에 관리합니다. 다른 게임 엔진으로 변환하거나 `.bb` 게임 소스를 생성하지 않습니다.
+
+위 Windows 개발 환경에 Git과 Visual Studio의 CMake/Ninja 도구, DIA SDK가 필요합니다. `setup`은 `deps/blitz3d-web/`, `deps/emsdk/`, `deps/ffmpeg-web/`에 고정한 도구를 다운로드하므로 첫 준비에는 시간과 디스크 공간이 필요합니다. 먼저 Windows 준비를 마친 뒤 실행합니다.
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 scripts/dev.py setup --platform web
+.\.venv\Scripts\python.exe -X utf8 scripts/dev.py build --platform web
+.\.venv\Scripts\python.exe -X utf8 scripts/dev.py check --platform web
+.\.venv\Scripts\python.exe -X utf8 scripts/dev.py run --platform web
+```
+
+데스크톱 Chrome/Edge에서 `http://127.0.0.1:8765/`를 엽니다. WebGPU와 WebAssembly JSPI 지원 여부를 확인한 뒤 리소스·저장소 준비가 끝나면 원래 게임이 자동 실행됩니다. 별도 시작·언어 선택 화면은 없으며, HTML 안내는 영어입니다. 게임 언어는 게임 설정에서 변경하고 저장된 선택을 유지합니다. 첫 실행 기본값은 영어입니다. 첫 화면 클릭으로 마우스와 오디오를 활성화하며 이 클릭은 게임 입력으로 전달하지 않습니다.
+
+전체화면 버튼이나 `Alt+Enter`로 전체화면을 전환합니다. 전체화면에서 브라우저가 키보드 잠금을 허용하면 짧은 `Esc`는 원래 게임에 전달되고 길게 누르면 잠금에서 빠져나옵니다. 로딩·메인 메뉴는 잠금 없이 표시되며, 플레이 중 잠금 해제나 창 전환 시에는 화면을 가리지 않고 일시정지합니다. 게임 화면을 클릭하면 돌아오고, 브라우저가 잠금 재요청을 거부하면 잠시 후 다시 클릭합니다. 서버 포트가 차단돼 있으면 `run --platform web --port 4173`처럼 지정합니다. 게임 인자는 웹 `run`에 전달하지 않습니다.
+
+웹 출력은 `build/web/site/`, 준비된 리소스는 `build/web/runtime/`입니다. 리소스는 검증한 공식 원본과 공통 언어팩에서 준비하며 Windows 실행 폴더의 저장·설정을 복사하지 않습니다. 번역·폰트 수정은 `localize --platform web` 뒤 `build --platform web`로 다시 패키징합니다.
+
+웹에서 지원하지 않는 WAV 인코딩은 해시를 검증한 FFmpeg로 `build/web/audio/`에 PCM 변환하고 웹 패키지에만 반영합니다. 파일 경로·샘플레이트·채널 수를 유지하며 원본 리소스는 수정하지 않습니다. FFmpeg는 준비 도구이며 배포 파일에 포함하지 않습니다.
+
+저장·설정은 브라우저의 IndexedDB에 기본판 전용으로 보관합니다. 저장 교체와 백업은 기록 완료를 기다리며, 설정은 첫 실행 때만 기본값을 적용합니다. 같은 브라우저·프로필·주소·포트로 접속해야 같은 저장소를 사용합니다. 사이트 데이터를 지우면 저장도 삭제됩니다. 같은 주소에서 두 탭이 동시에 저장소를 사용하지 못하도록 잠급니다.
+
+`check --platform web`는 산출물·소스 해시, 배포 리소스 경계, 변환 오디오, Windows/wasm 숫자·문자열·바이너리 일치, 실제 메뉴·인트로 스크립트의 줄 분리와 웹 파일시스템의 저장 교체·실패 복구를 검사합니다. 자동 시작, 신규 영어 설정·기존 한국어 설정 보존, 입력·전체화면 상태 전환은 모의 DOM으로 검사합니다. 결과는 `build/web/verification.json`에 기록합니다. 모의 DOM·저장 거래 검사는 실제 브라우저·IndexedDB 검증을 대신하지 않습니다.
+
+실제 엔진 비교는 웹 빌드 후 아래 명령으로 준비합니다. 별도 복사본에서 Windows 기준 검사를 실행하며 현재 게임과 저장을 사용하지 않습니다. 오디오 비교에는 양쪽 모두 웹용으로 준비한 파일을 사용합니다. 웹 서버의 `/checks/`를 열고 검사 버튼을 누르면 같은 시나리오의 WebGPU 결과를 비교합니다. 한글 비트맵·이미지 투명색, 화면 복사와 모션 블러의 상하 방향, 오디오 디코딩, 메뉴 카메라 반복, 원본 인트로의 배·카메라·이벤트, 첫 섬 전환과 건너뛰기를 검사합니다. 인위적으로 진행시킨 시간은 실제 재생 속도나 FPS 검증을 대신하지 않습니다.
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 scripts/verify_web_game.py
+```
+
+브라우저에서는 메뉴, `maps/adventure/map01.s2`의 약 53초 인트로, 첫 플레이 섬인 `map02.s2`를 순서대로 확인합니다. 지형·모델·한국어 UI·실제 소리, 이동·충돌·채집·제작, 저장·불러오기, 새로고침·브라우저 재시작 후 복구, 포커스·마우스 잠금 복귀는 별도 플레이 검증 대상입니다. 빌드 성공은 이 검증의 완료를 뜻하지 않습니다.
+
+현재 범위는 실험용 싱글플레이 웹 빌드입니다. Mac 네이티브 빌드, 모바일, 웹 Extended, 에디터, 전체 캠페인은 지원 완료 범위에 포함하지 않습니다. 브라우저에 없는 원시 TCP/UDP 기능은 연결 실패로 반환합니다.
+
+### GitHub Pages 배포
+
+[WebPlay 워크플로](../.github/workflows/web.yml)는 main 푸시와 main 대상 수동 실행에서 빌드·검사 후 Pages에 배포합니다. PR은 검사와 아티팩트 생성만 수행합니다. Windows에서 기존 CI 의존성 ZIP과 고정한 웹 도구로 빌드하고 Ubuntu에서 게시하며, 웹 워크플로는 Release·태그를 생성하지 않습니다. 기존 Windows 릴리스 정책은 유지됩니다.
+
+최초 게시 전에 저장소 **Settings → Pages → Build and deployment → Source**를 **GitHub Actions**로 설정하고 `github-pages` 환경에서 main 배포를 허용합니다. 주소는 `https://shlifedev.github.io/Stranded-II-Modern/`입니다. 로컬 주소와 Pages의 브라우저 저장소는 별개이며 자동 이전하지 않습니다.
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 scripts/dev.py build --platform web
+.\.venv\Scripts\python.exe -X utf8 scripts/dev.py check --platform web
+.\.venv\Scripts\python.exe -X utf8 scripts/web_pages.py
+```
+
+`web_pages.py`는 검사를 통과한 현재 빌드의 실행 파일 8개만 `build/web/pages/`에 모읍니다. `/checks/`, 로그, 개인 저장은 게시하지 않습니다. 상대 경로와 배포별 캐시 키를 사용하며 배포 목록·해시는 `build/web/pages-report.json`에 기록합니다. 출력 폴더에 예상하지 못한 파일이 있으면 삭제하지 않고 중단합니다. 배포 작업은 직렬화하고, 빌드·검사 실패 시 기존 사이트를 유지합니다. 게시 후 HTTP 파일 해시·WASM 형식을 확인하지만 실제 플레이 검증은 별도로 수행해야 합니다.
 
 ## 어디를 수정하나요?
 

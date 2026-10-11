@@ -50,7 +50,7 @@ class Edition:
         return (root / 'resources/overrides', root / 'resources/editions' / self.name / 'overrides')
 
 
-def source_files(root, edition='classic'):
+def source_files(root, edition='classic', platform='windows'):
     """Follow the actual static Include graph, using Blitz's source-root paths."""
     profile = Edition(edition)
     root = root.resolve()
@@ -78,13 +78,15 @@ def source_files(root, edition='classic'):
             visit(child.replace('\\', '/'))
         visiting.remove(key)
 
-    visit(profile.entry)
+    if platform not in ('windows','web') or (platform=='web' and edition!='classic'):
+        raise ValueError(f'Unsupported source target: {edition}/{platform}')
+    visit('StrandedIIWeb.bb' if platform=='web' else profile.entry)
     return result
 
 
-def source_hashes(root, edition='classic'):
+def source_hashes(root, edition='classic', platform='windows'):
     return {name: hashlib.sha256(path.read_bytes()).hexdigest()
-            for name, path in source_files(root, edition).items()}
+            for name, path in source_files(root, edition, platform).items()}
 
 
 def override_files(root, edition='classic'):

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"7b543434ac73eafd94323cc5b59f3b72c7a7fd08cf68d7b0abca6142f88edf95"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"f5a0e433cae8a0c2f95faef7106675329a5a20a8b6d76708fe2e3754729cf9b2"} -->
 
 # Development guide
 
@@ -82,6 +82,57 @@ You can also launch directly through Python:
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 scripts/dev.py run -- -win -fps 120
 ```
+
+## Experimental WebGPU build
+
+All Python development commands accept `--platform windows|web`, defaulting to `windows`. Web builds support the base game only. `--platform web --edition extended` returns an error; Extended CI remains disabled.
+
+`src/engine/StrandedIIWeb.bb` includes the existing `StrandedII.bb` and browser platform services. Gameplay stays shared: Windows uses Blitz3D 1.118, while the web uses the [pinned Blitz3D NG WebGPU port and Emscripten](../config/web-toolchain.json). Engine changes are maintained in `patches/blitz3d-web/`. No conversion to another game engine or generation of `.bb` game sources is involved.
+
+In addition to the Windows development environment above, install Git, Visual Studio's CMake/Ninja tools, and the DIA SDK. `setup` downloads pinned tools into `deps/blitz3d-web/`, `deps/emsdk/`, and `deps/ffmpeg-web/`, so initial preparation needs time and disk space. Complete Windows setup first, then run:
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 scripts/dev.py setup --platform web
+.\.venv\Scripts\python.exe -X utf8 scripts/dev.py build --platform web
+.\.venv\Scripts\python.exe -X utf8 scripts/dev.py check --platform web
+.\.venv\Scripts\python.exe -X utf8 scripts/dev.py run --platform web
+```
+
+Open `http://127.0.0.1:8765/` in desktop Chrome/Edge. After checking WebGPU and WebAssembly JSPI support and preparing resources and storage, the original game starts automatically. There is no separate start or language selection screen; HTML messages are English. Select the game language in its Settings; saved selections are preserved, with English as the first-run default. The first canvas click enables mouse capture and audio without also acting as game input.
+
+Use the Full screen button or `Alt+Enter` to toggle fullscreen. When the browser permits keyboard lock in fullscreen, a short `Esc` reaches the original game; hold it to release the lock. Loading and the main menu display without capture; during gameplay, releasing the pointer or switching windows pauses without covering the game. Click the game to return; if the browser rejects a new capture request, wait briefly and click again. If the server port is blocked, specify another, for example `run --platform web --port 4173`. Do not pass game arguments to web `run`.
+
+Web output goes into `build/web/site/`, with prepared resources in `build/web/runtime/`. Resources come from verified official inputs and shared language packs; Windows runtime saves and settings are never copied. After translation or font changes, run `localize --platform web`, then `build --platform web` to repack.
+
+WAV encodings unsupported by the web runtime are converted to PCM in `build/web/audio/` using hash-verified FFmpeg and included only in the web package. File paths, sample rates, and channel counts are preserved; source resources remain unchanged. FFmpeg is a preparation tool and is not distributed with the game.
+
+Saves and settings use a separate base-game store in the browser's IndexedDB. Save replacement and backups wait for persistence to finish; settings defaults are seeded only on first use. Keep the same browser, profile, address, and port to access the same store. Clearing site data deletes these saves. A lock prevents two tabs at the same address from using the store simultaneously.
+
+`check --platform web` checks artifact/source hashes, packaged-resource boundaries, converted audio, Windows/wasm numeric/string/binary parity, line splitting of the actual menu and intro scripts, and save replacement/failure recovery in the web filesystem. A simulated DOM checks autostart, new English settings and preservation of existing Korean settings, and input/fullscreen transitions. Results are written to `build/web/verification.json`. Simulated DOM and storage transactions do not verify a real browser or IndexedDB.
+
+After building the web version, prepare an actual-engine comparison with the command below. It runs the Windows reference in a separate copy without using the current game or saves. Audio comparison uses the web-prepared files in both engines. Open `/checks/` on the web server and click the check button to compare the same scenario in WebGPU. This checks Korean bitmap glyphs and image colour keys, vertical orientation through frame copies and motion blur, audio decoding, the menu camera loop, the original intro's ship/camera/events, transition to the first island, and skipping the intro. Synthetic time does not verify real-time playback speed or FPS.
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 scripts/verify_web_game.py
+```
+
+In the browser, verify the menu, the roughly 53-second intro in `maps/adventure/map01.s2`, and the first playable island, `map02.s2`, in sequence. Terrain, models, Korean UI, audible sound, movement, collision, gathering, crafting, saving/loading, recovery after refresh/browser restart, and focus/pointer-lock return require separate gameplay verification. A successful build does not establish that these checks passed.
+
+The current scope is an experimental single-player web build. Native Mac builds, mobile, web Extended, the editor, and the full campaign are outside the completed support scope. Raw TCP/UDP operations unavailable in browsers return connection failure.
+
+### GitHub Pages deployment
+
+The [WebPlay workflow](../.github/workflows/web.yml) builds, checks, and deploys to Pages on main pushes and manual runs targeting main. PRs only run checks and create artifacts. Windows builds with the existing CI dependency ZIP and pinned web tools; Ubuntu publishes the site. The web workflow creates no Releases or tags. The existing Windows release policy remains in effect.
+
+Before the first publication, set the repository's **Settings → Pages → Build and deployment → Source** to **GitHub Actions** and allow main deployments in the `github-pages` environment. The address is `https://shlifedev.github.io/Stranded-II-Modern/`. Local and Pages browser saves are separate and are not migrated automatically.
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 scripts/dev.py build --platform web
+.\.venv\Scripts\python.exe -X utf8 scripts/dev.py check --platform web
+.\.venv\Scripts\python.exe -X utf8 scripts/web_pages.py
+```
+
+`web_pages.py` stages only the eight runtime files from the current checked build in `build/web/pages/`. It excludes `/checks/`, logs, and personal saves, uses relative paths and a deployment-specific cache key, and records file hashes in `build/web/pages-report.json`. Unexpected output files cause an error instead of being deleted. Deployments are serialized, and build/check failures leave the existing site in place. Post-deployment checks compare HTTP file hashes and the WASM media type; actual gameplay still needs separate verification.
 
 ## Where to make changes
 

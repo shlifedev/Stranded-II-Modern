@@ -1,0 +1,148 @@
+diff --git a/blitz3d-ng/src/modules/bb/graphics.webgpu/CMakeLists.txt b/blitz3d-ng/src/modules/bb/graphics.webgpu/CMakeLists.txt
+index 5e9fb3e..839f579 100644
+--- a/blitz3d-ng/src/modules/bb/graphics.webgpu/CMakeLists.txt
++++ b/blitz3d-ng/src/modules/bb/graphics.webgpu/CMakeLists.txt
+@@ -1,4 +1,5 @@
+ if(BB_EMSCRIPTEN AND TARGET SDL2)
++  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/default.wgsl")
+   bin2h(SOURCE_FILE default.wgsl HEADER_FILE default.wgsl.h VARIABLE_NAME DEFAULT_WGSL)
+ 
+   bb_start_module(graphics.webgpu)
+diff --git a/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.cpp b/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.cpp
+index 3fd3659..b7ca2f1 100644
+--- a/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.cpp
++++ b/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.cpp
+@@ -160,7 +160,7 @@ void WebGPUCanvas::uploadData(){
+ 	if( pixels ){
+ 		data=pixels;
+ 	}else if( pixmap && pixmap->bits ){
+-		if( flags&CANVAS_TEX_MASK ){
++		if( (flags&CANVAS_TEXTURE) && (flags&CANVAS_TEX_MASK) ){
+ 			pm=d_new BBPixmap;
+ 			pm->format=pixmap->format;
+ 			pm->width=pixmap->width;
+@@ -224,6 +224,11 @@ void WebGPUCanvas::uploadData(){
+ 	wgpuQueueWriteTexture( res->queue,&dst,src,(size_t)width*height*4,&layout,&extent );
+ 	if( mip_levels>1 && fmt==WGPUTextureFormat_RGBA8Unorm ) res->generateMips( tex,mip_levels );
+ 
++	// LockBuffer writes must also invalidate/update the retained CPU copy.
++	if( pixels && pixmap && pixmap->bits && pixmap->bpp==4 &&
++	    pixmap->width==width && pixmap->height==height ){
++		memcpy( pixmap->bits,pixels,(size_t)width*height*4 );
++	}
+ 	pixmap_stale=false;
+ 	delete pm;
+ 
+@@ -421,7 +426,8 @@ void WebGPUCanvas::setPixmap( BBPixmap *pm ){
+ 
+ void WebGPUCanvas::draw2d( WGPUPrimitiveTopology topology,bool blend,WGPUTextureView tex,
+                            WGPUSampler sampler,const float xywh[4],const float col[3],
+-                           const float scale[2],const BBWebGPUVertex *verts,int nverts ){
++                           const float scale[2],const BBWebGPUVertex *verts,int nverts,
++                           unsigned image_mode,unsigned image_mask ){
+ 	if( !res->device || width<=0 || height<=0 || nverts<=0 ) return;
+ 
+ 	int cx=vx,cy=vy,cw=vw,ch=vh;
+@@ -454,6 +460,7 @@ void WebGPUCanvas::draw2d( WGPUPrimitiveTopology topology,bool blend,WGPUTexture
+ 	state.color[0]=col[0];state.color[1]=col[1];state.color[2]=col[2];
+ 	state.texenabled=texenabled?( font_pass?4:1 ):0;
+ 	state.scale[0]=scale[0];state.scale[1]=scale[1];
++	state.image_mode=image_mode;state.image_mask=image_mask;
+ 	uint32_t uoffset=res->pushUniformsCached( state );
+ 
+ 	WGPURenderPassEncoder pass=res->ensurePass( this );
+@@ -793,8 +800,10 @@ void WebGPUCanvas::blit( int x,int y,BBCanvas *s,int src_x,int src_y,int src_w,i
+ 	float white[3]={ 1.f,1.f,1.f };
+ 	float xywh[4]={ dx0,dy0,dw,dh };
+ 	float scale[2]={ 1.f,1.f };
+-	draw2d( WGPUPrimitiveTopology_TriangleList,false,view,res->sampler_nearest,
+-	        xywh,white,scale,verts,6 );
++	// Blitz images use a per-draw RGB colour key. Keep the source pixels intact
++	// so DrawBlock, CopyImage, animated frames and changed masks all work too.
++	draw2d( WGPUPrimitiveTopology_TriangleList,!solid,view,res->sampler_nearest,
++	        xywh,white,scale,verts,6,solid?2:1,src->mask );
+ 
+ 	if( temp_view ){
+ 		res->invalidateBindGroupsFor( temp_view );
+@@ -874,12 +883,7 @@ bool WebGPUCanvas::stretchTo( BBCanvas *c,bool filter ){
+ 
+ void WebGPUCanvas::image( BBCanvas *c,int x,int y,bool solid ){
+ 	WebGPUCanvas *src=(WebGPUCanvas*)c;
+-
+-	WGPUTextureView view=src->sampleView();
+-	if( !view ) return;
+-
+-	float white[3]={ 1.f,1.f,1.f };
+-	quad( x-src->handle_x,y-src->handle_y,src->getWidth(),src->getHeight(),true,true,view,white );
++	blit( x-src->handle_x,y-src->handle_y,c,0,0,src->getWidth(),src->getHeight(),solid );
+ }
+ 
+ void WebGPUCanvas::readPixels( std::vector<unsigned char> &out ){
+@@ -1029,8 +1033,10 @@ void WebGPUCanvas::setFont( BBFont *f ){
+ void WebGPUCanvas::setMask( unsigned argb ){
+ 	mask=argb;
+ 	flags|=CANVAS_TEX_MASK;
+-	ensureCpuCopy();
+-	dirty=true;
++	if( flags&CANVAS_TEXTURE ){
++		ensureCpuCopy();
++		dirty=true;
++	}
+ 	hit_valid=false;
+ }
+ 
+diff --git a/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.h b/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.h
+index 4663e5e..4d544fd 100644
+--- a/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.h
++++ b/blitz3d-ng/src/modules/bb/graphics.webgpu/canvas.webgpu.h
+@@ -46,7 +46,8 @@ protected:
+ 
+ 	void draw2d( WGPUPrimitiveTopology topology,bool blend,WGPUTextureView tex,
+ 	             WGPUSampler sampler,const float xywh[4],const float col[3],
+-	             const float scale[2],const BBWebGPUVertex *verts,int nverts );
++	             const float scale[2],const BBWebGPUVertex *verts,int nverts,
++	             unsigned image_mode=0,unsigned image_mask=0 );
+ 	void quad( int x,int y,int w,int h,bool solid,bool blend,
+ 	           WGPUTextureView tex,float col[3] );
+ 
+diff --git a/blitz3d-ng/src/modules/bb/graphics.webgpu/default.wgsl b/blitz3d-ng/src/modules/bb/graphics.webgpu/default.wgsl
+index f435146..eff903f 100644
+--- a/blitz3d-ng/src/modules/bb/graphics.webgpu/default.wgsl
++++ b/blitz3d-ng/src/modules/bb/graphics.webgpu/default.wgsl
+@@ -6,6 +6,8 @@ struct BBRenderState {
+   color : vec3<f32>,
+   texenabled : i32,
+   scale : vec2<f32>,
++  image_mask : u32,
++  image_mode : u32,
+ };
+ 
+ @group(0) @binding(0) var<uniform> RS : BBRenderState;
+@@ -92,6 +94,13 @@ fn fs_main( v : BBPerVertex ) -> @location(0) vec4<f32> {
+     }else{
+       c = textureSample( u_tex,u_sampler,v.texcoord ) * vec4<f32>( v.color,1.0 );
+     }
++    if( RS.image_mode!=0u ){
++      let rgb = vec3<u32>(round(clamp(c.rgb, vec3<f32>(0.0), vec3<f32>(1.0))*255.0));
++      let key = vec3<u32>((RS.image_mask>>16u)&255u, (RS.image_mask>>8u)&255u, RS.image_mask&255u);
++      if( RS.image_mode==1u && all(rgb==key) ){ discard; }
++      // DirectDraw's DrawImage/DrawBlock copy RGB; the key is their only alpha.
++      c.a = 1.0;
++    }
+     if( RS.texenabled==2 || RS.texenabled==3 ){
+       c = vec4<f32>( c.rgb + ditherNoise( v.position.xy ) / 255.0, c.a );
+     }
+diff --git a/blitz3d-ng/src/modules/bb/graphics.webgpu/graphics.webgpu.h b/blitz3d-ng/src/modules/bb/graphics.webgpu/graphics.webgpu.h
+index 6961752..6be9ccf 100644
+--- a/blitz3d-ng/src/modules/bb/graphics.webgpu/graphics.webgpu.h
++++ b/blitz3d-ng/src/modules/bb/graphics.webgpu/graphics.webgpu.h
+@@ -38,7 +38,8 @@ struct BBWebGPURenderState{
+ 	float color[3];
+ 	int32_t texenabled;
+ 	float scale[2];
+-	float _pad[2];
++	uint32_t image_mask;
++	uint32_t image_mode;
+ };
+ static_assert( sizeof(BBWebGPURenderState)==64,"BBRenderState layout mismatch" );
+ 

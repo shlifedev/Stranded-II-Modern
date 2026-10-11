@@ -1,0 +1,18 @@
+diff --git a/blitz3d-ng/src/tools/compiler/main.cpp b/blitz3d-ng/src/tools/compiler/main.cpp
+index bf026a6..94b9e17 100644
+--- a/blitz3d-ng/src/tools/compiler/main.cpp
++++ b/blitz3d-ng/src/tools/compiler/main.cpp
+@@ -405,7 +405,12 @@ int main( int argc,char *argv[] ){
+ 
+ 	std::vector<std::string> rts;
+ #ifdef WIN32
+-	if( const char *er=enumRuntimes( rts ) ) err( er );
++	if( targetid=="emscripten" || targetid=="wasm32-unknown-emscripten" ){
++		for( const auto &t:targets ) if( t.type=="emscripten" ){
++			for( const auto &runtime:t.runtimes ) rts.push_back(runtime.first);
++		}
++	}else if( const char *er=enumRuntimes( rts ) ) err( er );
++	if( rts.empty() ) err("No runtimes found");
+ 
+ 	if( rtinfo ){
+ 		if( !quiet ) std::cout<<"Found "<<rts.size()<<" runtimes:"<<std::endl;

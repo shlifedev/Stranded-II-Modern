@@ -1,0 +1,176 @@
+name: WebPlay build and Pages deployment
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-pages-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
+  cancel-in-progress: false
+
+env:
+  PYTHONUTF8: '1'
+  PYTHONUNBUFFERED: '1'
+
+jobs:
+  build:
+    if: github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: windows-2022
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - name: Install preparation tools
+        run: python -m pip install -r requirements.txt
+
+      - name: Read dependency pin
+        id: pin
+        run: python -X utf8 scripts/ci.py config --github-output "$env:GITHUB_OUTPUT"
+
+      - name: Cache pinned game dependencies
+        id: game-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: build/ci/downloads
+          key: ci-deps-${{ steps.pin.outputs.sha256 }}
+
+      - name: Download pinned dependency archive
+        if: steps.game-cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPENDENCY_REPOSITORY: ${{ github.event.pull_request.base.repo.full_name || github.repository }}
+          DEPENDENCY_RELEASE: ${{ steps.pin.outputs.release }}
+          DEPENDENCY_ASSET: ${{ steps.pin.outputs.asset }}
+        run: |
+          New-Item -ItemType Directory -Force -Path build/ci/downloads | Out-Null
+          gh release download "$env:DEPENDENCY_RELEASE" --repo "$env:DEPENDENCY_REPOSITORY" --pattern "$env:DEPENDENCY_ASSET" --dir build/ci/downloads
+          if ($LASTEXITCODE -ne 0) { throw 'Could not download the pinned CI dependency archive.' }
+
+      - name: Validate and unpack dependencies
+        id: deps
+        env:
+          DEPENDENCY_ASSET: ${{ steps.pin.outputs.asset }}
+        run: python -X utf8 scripts/ci.py dependencies --archive "build/ci/downloads/$env:DEPENDENCY_ASSET" --github-output "$env:GITHUB_OUTPUT"
+
+      - name: Identify build environment
+        id: image
+        run: '"version=$env:ImageVersion" >> $env:GITHUB_OUTPUT'
+
+      - name: Cache pinned web toolchain
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            deps/blitz3d-web
+            deps/emsdk
+            deps/ffmpeg-web
+          key: web-windows-2022-${{ steps.image.outputs.version }}-${{ hashFiles('config/web-toolchain.json', 'patches/blitz3d-web/*.patch', 'scripts/web_toolchain.py', 'scripts/web_audio.py') }}
+
+      - name: Prepare native reference compiler
+        env:
+          GAME_INPUT: ${{ steps.deps.outputs.game }}
+          BLITZ_INPUT: ${{ steps.deps.outputs.blitz }}
+          FONT_INPUT: ${{ steps.deps.outputs.font }}
+        run: python -X utf8 scripts/dev.py setup --game "$env:GAME_INPUT" --blitz "$env:BLITZ_INPUT" --font "$env:FONT_INPUT"
+
+      - name: Prepare web resources and toolchain
+        env:
+          GAME_INPUT: ${{ steps.deps.outputs.game }}
+          FONT_INPUT: ${{ steps.deps.outputs.font }}
+        run: python -X utf8 scripts/dev.py setup --platform web --game "$env:GAME_INPUT" --font "$env:FONT_INPUT"
+
+      - name: Build WebPlay
+        run: python -X utf8 scripts/dev.py build --platform web
+
+      - name: Check WebPlay and Windows/WASM parity
+        run: python -X utf8 scripts/dev.py check --platform web
+
+      - name: Stage verified Pages files
+        run: python -X utf8 scripts/web_pages.py
+
+      - name: Upload checked site
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: WebPlay-site
+          path: build/web/pages/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload verification reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: WebPlay-reports
+          path: |
+            build/web/build-report.json
+            build/web/verification.json
+            build/web/pages-report.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: WebPlay-site
+          path: site
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: site
+      - name: Deploy WebPlay
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+      - name: Check published files
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: |
+          python - <<'PY'
+          import hashlib, os, time, urllib.request
+          from pathlib import Path
+          base = os.environ['PAGE_URL'].rstrip('/') + '/'
+          for attempt in range(6):
+              try:
+                  for path in Path('site').iterdir():
+                      expected = hashlib.sha256(path.read_bytes()).hexdigest()
+                      request = urllib.request.Request(base + path.name + '?v=' + os.environ['EXPECTED_COMMIT'],
+                                                       headers={'Cache-Control': 'no-cache'})
+                      with urllib.request.urlopen(request, timeout=60) as response:
+                          if path.suffix == '.wasm' and response.headers.get_content_type() != 'application/wasm':
+                              raise ValueError('Incorrect WASM Content-Type')
+                          actual = hashlib.file_digest(response, 'sha256').hexdigest()
+                      if actual != expected:
+                          raise ValueError('Published artifact differs: ' + path.name)
+                  print('Published files match the checked build. Browser gameplay needs separate verification.')
+                  break
+              except Exception:
+                  if attempt == 5:
+                      raise
+                  time.sleep(10)
+          PY

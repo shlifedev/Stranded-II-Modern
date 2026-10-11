@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stranded II · WebGPU preview</title>
+<style>
+  :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #101b20; color: #edf2e8 }
+  body { margin: 0; height: 100dvh; overflow: hidden; display: grid; place-items: center }
+  main { width: 100%; position: relative }
+  canvas { display: block; width: 100%; height: auto; background: #000; outline: none }
+  #cover { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; padding: 2rem; background: #101b20e8 }
+  #cover[hidden], [hidden] { display: none !important }
+  #status { max-width: 42rem; line-height: 1.6 }
+  button { font: inherit; padding: .7rem 1.2rem; border-radius: .3rem; border: 1px solid #65796b }
+  button { cursor: pointer; color: #101b20; background: #cedab0 }
+  button:disabled { cursor: wait; opacity: .55 }
+  #fullscreen { position: absolute; top: .75rem; right: .75rem; z-index: 3; padding: .5rem .8rem; font-size: .85rem }
+  #input-hint { position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); max-width: 80%; margin: 0; padding: .45rem .8rem; background: #101b20c9; border-radius: .3rem; text-align: center; font-size: .85rem; pointer-events: none }
+  #warning { position: absolute; bottom: .5rem; left: 1rem; right: 1rem; color: #fff; background: #812d24; padding: .7rem; z-index: 4 }
+  #search { position: absolute; box-sizing: border-box; background: #eee; color: #111; border: 1px solid #777; font: 16px system-ui; z-index: 2 }
+  details { position: absolute; right: 1rem; bottom: .5rem; font-size: .75rem; z-index: 3 }
+  pre { max-height: 12rem; max-width: 70vw; overflow: auto; text-align: left; background: #000e; padding: .5rem; white-space: pre-wrap }
+</style>
+<main>
+  <canvas id="canvas" width="1280" height="720" tabindex="0" aria-label="Stranded II"></canvas>
+  <input id="search" hidden aria-label="Recipe search" maxlength="128" autocomplete="off" spellcheck="false">
+  <section id="cover">
+    <p id="status" role="status">Preparing the game…</p>
+  </section>
+  <button id="fullscreen" type="button" aria-pressed="false" title="Alt+Enter" hidden>Full screen</button>
+  <p id="input-hint" role="status" hidden></p>
+  <p id="warning" role="alert" hidden></p>
+  <details><summary>Log</summary><pre id="log"></pre></details>
+</main>
+<script src="shell.js"></script>
+</html>
