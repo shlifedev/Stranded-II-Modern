@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"6fce18eac94c97f6ed0f905ec65bc495cc18c68c26dd5b1e96cad9dd39a0f097"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"abacf942d4a9a43e145ce79af03e46557ad9fab29a1f97e9cc2bcb5f95c1a31c"} -->
 
 # Development guide
 
@@ -128,7 +128,7 @@ The current scope is an experimental single-player web build. Mobile, web Extend
 
 ### GitHub Pages deployment
 
-The [WebPlay workflow](../.github/workflows/web.yml) builds, checks, and deploys to Pages on main pushes and manual runs targeting main. PRs only run checks and create artifacts. Windows builds with the existing CI dependency ZIP and pinned web tools; Ubuntu publishes the site. The web workflow creates no Releases or tags. The existing Windows release policy remains in effect.
+The [WebPlay workflow](../.github/workflows/web.yml) builds, checks, and deploys to Pages on main pushes and manual runs targeting main. Pushes and PRs that change only files with the lowercase `.md` extension are excluded; this filter does not apply to manual runs. PRs only run checks and create artifacts. Windows builds with the existing CI dependency ZIP and pinned web tools; Ubuntu publishes the site. The web workflow creates no Releases or tags. The existing Windows release policy remains in effect.
 
 Before the first publication, set the repository's **Settings → Pages → Build and deployment → Source** to **GitHub Actions** and allow main deployments in the `github-pages` environment. The address is `https://shlifedev.github.io/Stranded-II-Modern/`. Local and Pages browser saves are separate and are not migrated automatically.
 
@@ -319,6 +319,8 @@ As an exception, `README-ko.md` is maintained by the user and agents do not chan
 ## GitHub CI and release ZIPs
 
 The [desktop workflow](../.github/workflows/windows.yml) builds and checks the base game for Windows on pushes to `main`/`dev`, pull requests, and manual runs. A `main` push also builds the same version for Mac, then publishes both ZIPs and their SHA-256 files in one stable Release and advances the patch number after both platforms pass. If either platform fails, publication stops. Pushes to `dev` and PRs only produce Windows `-local` verification ZIPs without publishing Releases or consuming version numbers. Extended CI edition selection, build and release routing are commented out; Extended remains under local development for now.
+
+Desktop and web pushes/PRs use `paths-ignore: ["**.md"]`. If every changed file has the lowercase `.md` extension, at the root or in a subdirectory, automatic CI is skipped along with the Mac build, Release publication, and Pages redeployment on `main`. If any file with another extension is included, the existing execution conditions apply. Manual runs are unaffected by this filter.
 
 To publish a development release or manually publish a stable release, follow these steps on GitHub:
 

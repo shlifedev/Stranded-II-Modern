@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"22bbc0d6ceccf08c24ea2293e02923961a460afc26b5a5e314669cc716452985"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"6bf53898c34694b4511ea8523260f003ca409e584177ab35340d87ca268cd83f"} -->
 
 # 개발 가이드
 
@@ -128,7 +128,7 @@ WebGPU의 동일 버퍼 `CopyRect`는 임시 텍스처를 재사용하고, 앞�
 
 ### GitHub Pages 배포
 
-[WebPlay 워크플로](../.github/workflows/web.yml)는 main 푸시와 main 대상 수동 실행에서 빌드·검사 후 Pages에 배포합니다. PR은 검사와 아티팩트 생성만 수행합니다. Windows에서 기존 CI 의존성 ZIP과 고정한 웹 도구로 빌드하고 Ubuntu에서 게시하며, 웹 워크플로는 Release·태그를 생성하지 않습니다. 기존 Windows 릴리스 정책은 유지됩니다.
+[WebPlay 워크플로](../.github/workflows/web.yml)는 main 푸시와 main 대상 수동 실행에서 빌드·검사 후 Pages에 배포합니다. 변경 파일이 모두 소문자 `.md`인 푸시·PR은 제외하며, 수동 실행에는 이 필터를 적용하지 않습니다. PR은 검사와 아티팩트 생성만 수행합니다. Windows에서 기존 CI 의존성 ZIP과 고정한 웹 도구로 빌드하고 Ubuntu에서 게시하며, 웹 워크플로는 Release·태그를 생성하지 않습니다. 기존 Windows 릴리스 정책은 유지됩니다.
 
 최초 게시 전에 저장소 **Settings → Pages → Build and deployment → Source**를 **GitHub Actions**로 설정하고 `github-pages` 환경에서 main 배포를 허용합니다. 주소는 `https://shlifedev.github.io/Stranded-II-Modern/`입니다. 로컬 주소와 Pages의 브라우저 저장소는 별개이며 자동 이전하지 않습니다.
 
@@ -319,6 +319,8 @@ msg "[[loc:quest.island1.arrival]]";
 ## GitHub CI와 배포 ZIP
 
 [데스크톱 워크플로](../.github/workflows/windows.yml)는 `main`·`dev` 푸시, PR, 수동 실행에서 기본 게임의 Windows 빌드·검사를 수행합니다. `main` 푸시는 같은 버전의 Mac 빌드도 실행하고, 양쪽 검사 성공 후 ZIP 두 개와 각 SHA-256 파일을 하나의 안정판 Release에 게시하며 patch 번호를 올립니다. 어느 한쪽이 실패하면 게시하지 않습니다. `dev` 푸시와 PR은 Windows `-local` 검증용 ZIP만 만들며 Release를 발행하거나 번호를 소모하지 않습니다. Extended의 CI 판 선택·빌드·배포 경로는 주석 처리되어 있으며 당분간 로컬에서만 개발합니다.
+
+데스크톱·웹의 푸시·PR에는 `paths-ignore: ["**.md"]`를 적용합니다. 루트와 하위 폴더의 변경 파일이 모두 소문자 `.md`이면 자동 CI를 건너뛰므로 `main`의 Mac 빌드·Release 게시·Pages 재배포도 실행하지 않습니다. 다른 확장자의 파일이 하나라도 포함되면 기존 조건대로 실행하며, 수동 실행은 이 필터와 관계없이 동작합니다.
 
 개발판을 출시하거나 안정판 출시를 수동 실행하려면 GitHub에서 다음 순서로 진행합니다.
 
