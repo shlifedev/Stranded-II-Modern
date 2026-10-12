@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"6bf53898c34694b4511ea8523260f003ca409e584177ab35340d87ca268cd83f"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"c4cbdb29511cd2ce69c39d9d93002b876e9d935d9c0d49bea699f4f09dead696"} -->
 
 # 개발 가이드
 
@@ -165,6 +165,10 @@ python3 -m venv .venv
 [Mac CI](../.github/workflows/macos.yml)는 수동 미리보기와 데스크톱 출시 워크플로의 재사용 빌드를 지원합니다. `macos-15` ARM64에서 고정 의존성을 검증해 `deps/ci-macos/`에 풀고 준비 → 빌드 → `core` 검사 → ZIP 생성을 실행합니다. 출시 빌드는 Windows와 동일한 버전 아티팩트와 소스 커밋을 사용합니다. ZIP·체크섬과 보고서는 Actions 아티팩트로 14일 보관합니다. 수동 Mac 실행만으로는 릴리스를 게시하지 않으며, 실제 게시는 아래 데스크톱 출시 절차에서 담당합니다.
 
 테스트 ZIP은 별도 Apple Silicon Mac, 특히 macOS 15에서 압축 해제·실행·재실행·앱 교체 후 데이터 보존을 확인하세요. 한글 조합 입력, 전체 화면·앱 전환 후 입력 복귀, 배경음·효과음, 30분 플레이 후 저장·종료·재불러오기는 수동 검사 대상이며 자동 통과로 표시하지 않습니다. 앱은 로컬 임시 서명으로 공증하지 않았습니다. 네이티브 동영상·원시 TCP/UDP, Intel과 네이티브 Extended는 지원하지 않습니다. 정식 배포 서명·공증은 별도 단계입니다.
+
+## Extended 제작 앱
+
+[Stranded II Studio](studio-ko.md)는 독립 GUI와 JSON CLI로 콘텐츠·맵을 편집합니다. 실제 Blitz/Extended 엔진을 사용하는 3D 화면, 실행 취소, 검증, 네이티브 리소스 내보내기를 제공합니다. 전용 명령은 `python scripts/studio.py`, 앱은 `npm --prefix studio start`이며 준비 절차와 사용법은 Studio 가이드를 따릅니다. 산출물은 `build/studio/`에 저장하고 일반 게임·CI·릴리스 에디션 선택은 변경하지 않습니다.
 
 ## 어디를 수정하나요?
 

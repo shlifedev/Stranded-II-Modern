@@ -2,6 +2,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
+import os
 import subprocess
 import sys
 
@@ -30,7 +31,7 @@ class WebSelfBlit(TestCase):
                 str(output / 'probe.cpp'), '-std=c++17', '-O2', '-sDEFAULT_TO_CXX', '-sASSERTIONS=1', '-sENVIRONMENT=node',
                 '-sEXIT_RUNTIME=1', '-o', str(output / 'probe.js')], env=env, text=True, capture_output=True)
             self.assertEqual(compile_result.returncode, 0, compile_result.stdout + compile_result.stderr)
-            node = next((sdk / 'node').glob('*/node.exe'))
+            node = next((sdk / 'node').glob('*/node.exe' if os.name == 'nt' else '*/bin/node'))
             result = subprocess.run([str(node), str(output / 'probe.js')], text=True, capture_output=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn('2 snapshots per water update', result.stdout)

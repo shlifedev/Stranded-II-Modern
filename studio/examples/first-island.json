@@ -1,0 +1,6 @@
+[
+  {"op":"map.create","name":"island","size":32},
+  {"op":"entity.add","map":"island","kind":"object","type":5,"values":{"x":128,"z":64,"yaw":30}},
+  {"op":"entity.add","map":"island","kind":"item","type":24,"values":{"x":32,"z":32,"count":5}},
+  {"op":"map.script","map":"island","text":"on:start {\n msg \"새 섬에 오신 것을 환영합니다.\";\n}"}
+]

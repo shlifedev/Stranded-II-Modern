@@ -146,7 +146,9 @@ def pack_assets(env):
         destination = package / target.removeprefix('/game/')
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(audio.get(target, path), destination)
-    command += [str(package) + '@/game']
+    # Emscripten uses @ as its source/destination separator. Escape actual @ in
+    # checkout paths, otherwise e.g. /work/@src would select the parent folder.
+    command += [str(package).replace('@', '@@') + '@/game']
     web_toolchain.run(command, env=env)
     writable = [target for path, target in allowed
                 if path.suffix.lower() == '.cfg' or path.name in ('modern.ini', 'settings.inf')]

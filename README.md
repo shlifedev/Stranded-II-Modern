@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"ba6c55f3aa7b890ecf799d718cf9b8dcc7f86beb15924b5f6c5be8a35ec1e8ae"} -->
+<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"ca6ff117e0ac843b144c63cf0b87c0ccb228fc7e697c9abcec51a0d3615b29f8"} -->
 
 # Stranded II : Modern
 
@@ -8,14 +8,12 @@
 
 An unofficial update of Stranded II for modern Windows systems. Built with Blitz3D 1.118.
 
+## Getting started
 
-## Support
-
-- [Windows 10 & 11](https://github.com/shlifedev/Stranded-II-Modern/releases)
-- **[WebBrowser](https://shlifedev.github.io/Stranded-II-Modern/):** experimental WebGPU preview; requires desktop Chrome/Edge with WebGPU and JSPI. 
-- [MacOS](https://github.com/shlifedev/Stranded-II-Modern/releases)
- 
- 
+- **[Play on the web](https://shlifedev.github.io/Stranded-II-Modern/):** an experimental WebGPU version requiring desktop Chrome/Edge with WebGPU and JSPI. Select the game language in Settings. Browser saves are separate from the Windows version.
+- **Run the game:** Extract the entire distribution ZIP and double-click `StrandedII.exe` in the game folder. Windows 10 or later is required; no separate installation is needed.
+- **Build from source:** Follow environment setup and the first build in the [development guide](docs/development.md). The source repository does not include the EXE or original game resources.
+- **Contribute translations:** Edit `locales/<코드>.tsv` following the [localization guide](docs/localization.md).
 
 ## Improvements
 

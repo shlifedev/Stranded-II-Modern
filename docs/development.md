@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"abacf942d4a9a43e145ce79af03e46557ad9fab29a1f97e9cc2bcb5f95c1a31c"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"931ed09a06670a33398225b08070caf74ab9d0c39feed37a4054907ad5491a6d"} -->
 
 # Development guide
 
@@ -165,6 +165,10 @@ python3 -m venv .venv
 [Mac CI](../.github/workflows/macos.yml) supports manual previews and reusable builds called by the desktop release workflow. On ARM64 `macos-15`, it validates the pinned dependencies, extracts them under `deps/ci-macos/`, and runs preparation → build → `core` checks → ZIP packaging. Release builds share the Windows version artifact and source commit. ZIP/checksum and report artifacts are retained for 14 days. Manual Mac runs do not publish releases; publication is handled by the desktop release procedure below.
 
 Test the ZIP on another Apple Silicon Mac, especially macOS 15: extraction, launch/relaunch, and data preservation after replacing the app. IME composition, fullscreen/app switching and input recovery, music/effects, and a 30-minute session followed by save/quit/reload require manual checks and must not be reported as automatically passed. The app is locally ad hoc signed and not notarized. Native movies/raw TCP/UDP, Intel, and native Extended are unsupported. Distribution signing and notarization are a separate step.
+
+## Extended authoring app
+
+[Stranded II Studio](studio.md) edits content and maps through a standalone GUI and JSON CLI. It provides a 3D viewport using the actual Blitz/Extended engine, undo, validation and native resource exports. Use `python scripts/studio.py` for its commands and `npm --prefix studio start` for the app; follow the Studio guide for preparation and usage. Outputs stay under `build/studio/`; ordinary game, CI and release edition selection remain unchanged.
 
 ## Where to make changes
 

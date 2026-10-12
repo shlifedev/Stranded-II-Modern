@@ -1,0 +1,10 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Blitz Studio viewport</title>
+<link rel="icon" href="data:,"><style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#171c22;color:#adb9c5;font:13px system-ui}
+body{display:flex;align-items:center;justify-content:center}canvas{max-width:100%;max-height:100%;object-fit:contain;outline:0}
+#status{position:absolute;left:20px;top:16px;pointer-events:none;white-space:pre-wrap}#search{position:absolute;display:none}
+#gizmo{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;touch-action:none}
+#gizmo [data-axis]{pointer-events:stroke;cursor:grab;stroke-linecap:round}
+#gizmo .center{pointer-events:all;cursor:move;fill:#e8eaf0;stroke:#212c39;stroke-width:2}
+#gizmo text{font:bold 12px system-ui;paint-order:stroke;stroke:#151b23;stroke-width:3;pointer-events:none}
+</style></head><body><canvas id="canvas" tabindex="0"></canvas><svg id="gizmo" xmlns="http://www.w3.org/2000/svg"></svg><input id="search"><div id="status">Blitz 엔진 준비 중…</div><script src="gizmo.js"></script><script src="studio.js"></script></body></html>
