@@ -6,8 +6,7 @@
 
 <img width="2560" height="1440" alt="image" src="https://github.com/user-attachments/assets/d7553612-613b-4a5f-8ba7-77e4774af408" />
 
-An unofficial update of Stranded II for modern Windows systems. Built with Blitz3D 1.118.
-
+An unofficial update of Stranded II for modern Windows/Mac/Browser systems. Built with Blitz3D 1.118.
 
 ## Support
 
