@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"4a768fa1f0ae329d8cc817a4a35611f7d708cc11d85adbf5583739cb9d42d8fd"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"3820a5050d0c4c78ccf2b99ae288d41eb4ed198a27ed4f2f75f4cf8ddc7a0eaf"} -->
 
 # Stranded II Studio
 
@@ -8,9 +8,13 @@ A standalone development app for Extended content. The Electron/React interface 
 
 ## Preparation and launch
 
-Requirements: Python 3.12+ with the [Python dependencies](../requirements.txt), Node.js 22.12+, Git, CMake and Ninja. macOS needs Xcode Command Line Tools and FFmpeg/ffprobe on PATH; Windows needs the MSVC C++ build tools and Windows SDK. The 3D viewport uses Electron's WebGPU and JSPI support. This is a development version launched from the repository; installer packages are not provided.
+Requirements: Python 3.12+, Node.js 22.12+ and Git. macOS needs Xcode Command Line Tools and FFmpeg/ffprobe on PATH; Windows needs the MSVC C++ build tools and Windows SDK. The 3D viewport uses Electron's WebGPU and JSPI support. This is a development version launched from the repository; installer packages are not provided.
 
-Run from the repository root with a Python virtual environment activated. See the [development guide](development.md) for the official game resources and pinned font.
+On Windows, double-click [Studio.cmd](../Studio.cmd) in the repository root. On macOS/Linux, run [Studio.sh](../Studio.sh) with `sh ./Studio.sh`. Both launchers also work from another directory when called by their path. The [shared launcher](../scripts/studio_launch.py) creates `.venv`, installs missing or changed Python/Node dependencies, prepares resources, builds and verifies the engine, then builds and starts the app. Outside Windows, missing CMake/Ninja tools are also installed in the virtual environment. Preparation failures prevent the app from opening.
+
+Resources and the engine are refreshed on every launch; no separate engine commands are needed. Game/font paths are found in existing Studio, web and Windows preparation settings, in that order, falling back to `deps/game` and `deps/fonts/NotoSansKR[wght].ttf` when no saved path is valid. Pass `--game PATH --font PATH` to the launcher for external inputs. See the [development guide](development.md) for official resources and the pinned font. Projects and personal saves are not reset.
+
+Use `Studio.cmd --prepare-only` or `sh ./Studio.sh --prepare-only` to prepare everything without opening the app. To run individual steps manually, activate a Python virtual environment from the repository root and use:
 
 ```sh
 python -m pip install -r requirements.txt cmake ninja
@@ -21,7 +25,7 @@ npm --prefix studio ci
 npm --prefix studio start
 ```
 
-If web/Studio preparation settings already exist, the path arguments to `engine setup` may be omitted. Initial preparation downloads the pinned Blitz web toolchain and SDK. Outputs stay under `build/studio/`. The app prefers the repository's `.venv` Python; set `S2_STUDIO_PYTHON` to use another interpreter.
+If web/Studio preparation settings already exist, the path arguments to `engine setup` may be omitted. Initial preparation downloads the pinned Blitz web toolchain and SDK. Engine outputs stay under `build/studio/`; app outputs go to `studio/dist/`. The launchers and app prefer the repository's `.venv` Python; set `S2_STUDIO_PYTHON` to use another interpreter.
 
 Create a project in an empty folder or open an existing project on the start screen. Use **`build/studio/runtime`** as the base resources for 3D preview. The CLI can edit, validate and export projects using other prepared bases, but preview requires the same base path as its bundled resources.
 
@@ -38,8 +42,12 @@ Create a project in an empty folder or open an existing project on the start scr
 | Content | Search items, objects, units, map information, buildings and recipes; clone definitions, edit properties/materials, and import models, images or audio. |
 | Scripts | Edit definition, entity-event or global-map scripts. Game-command completion is available; **Apply script** saves changes. |
 | Resources | Saved definition, model, translation and font changes display **Resources pending**. **Apply resources** applies them together and restores camera, selection and tool. Until then, the scene uses the last applied appearance. |
-| Test | Apply the latest saved state and pending resources, then play in the actual Blitz game. Click the viewport to capture the mouse, Esc to release, and **Stop** to reload the authoring map. Play-session changes do not enter the project. |
+| Test | Play the latest saved map in the Blitz engine already running in the editor. Click the viewport to capture the mouse, Esc to release, and **Stop** to restore the editor map and camera. Play-session changes do not enter the project. |
 | Diagnostics | Check definition IDs, references, asset paths, recipe structure and player starts. Static validation does not guarantee script execution results. |
+
+**Test** reuses the current engine and its loaded resources. It checks the latest saved map immediately before rebuilding the playable world in that engine, running `on:preload`, `on:start` and `on:load` in their existing order. The engine and resources are not reinitialized, but map loading and startup scripts still take time. After changing definitions, models, translations or fonts, use **Apply resources** before testing. Unapplied drafts are excluded from play.
+
+Use **Cancel start** during the transition. **Stop** reloads the saved map and preserves the editor camera, selection, tool and drafts. There is no separate player engine or background preparation.
 
 Placement, properties, deletion, terrain, undo, redo and CLI edits update the scene through deltas without reloading the map. Hierarchy scroll, camera, selection and tool are retained. Dragging displays a transient position; release saves once, producing one undo entry. Multiple selections share a movement delta; the center handle preserves each entity’s height offset above terrain. External changes wait during a drag. A revision conflict cancels the transient move and reconciles the latest saved state.
 
@@ -90,4 +98,4 @@ npm --prefix studio run check
 npm --prefix studio test
 ```
 
-Tests cover data preservation, transactions, deltas/ACKs, pending resources, movement math, cancellation/conflicts and IPC without launching a GUI. `engine check` verifies actual Blitz build artifacts, Extended catalogs, allowlisted resources and audio conversion. Display, selection, dragging, play mode and Korean rendering still require separate checks in the app.
+Tests cover data preservation, transactions, deltas/ACKs, pending resources, movement math, cancellation/conflicts, IPC, engine reuse, the latest saved map, stale requests, canceled starts, and map/camera restoration without launching a GUI. `engine check` verifies actual Blitz build artifacts, Extended catalogs, allowlisted resources and audio conversion. After changing the shared map loader, build/check both editions and run `python scripts/verify_game.py` and `python scripts/verify_game.py --edition extended` to check existing save/load behavior. View switching, selection, dragging, mouse capture, Alt-Tab, scaling, sound and Korean rendering still require separate checks in the app. The diagnostic log's time from start request to first game frame is not an FPS measurement.

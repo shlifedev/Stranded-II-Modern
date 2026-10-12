@@ -7,11 +7,25 @@ let initial,loaded=false,starting=false,playing=false,tool='select',selection=nu
 let pitch=25,yaw=0,pickSerial=0,lastX=0,lastY=0,snapshotPending=null;
 let acknowledged=null,inFlight=null,requested=false,wantSync=false,syncFailed=false,resourceBlocked=false,mapSize=0;
 let selected=[],revision=0,snap=0,projection=null,drag=null,dragSerial=0,transient=null,editorPose=null;
+let firstFrame=false,transition=null,playRequest=null,playId=0,stopPending=false;
 
 const send=(type,value={})=>parent.postMessage({source:'blitz-studio',type,...value},location.origin);
 const command=(...parts)=>queue.push(parts.join(SEP));
 const words=value=>{const n=BigInt(Math.floor(value));return Number(BigInt.asIntN(32,n))+SEP+Number(BigInt.asIntN(32,n>>32n));};
-function fail(error){statusText.textContent=String(error?.message||error);send('error',{message:statusText.textContent});}
+const playState=(state,value={})=>send('play-state',{state,id:playId,...value});
+function cancelPlay(message){
+  playRequest=null;transition=null;firstFrame=false;playState('idle',message?{message}:{});drawGizmo();maybeSync();
+}
+function fail(error){
+  statusText.textContent=String(error?.message||error);
+  if(transition||playing){playing=false;stopPending=false;cancelPlay();document.exitPointerLock();}
+  send('error',{message:statusText.textContent});
+}
+function audioState(paused){
+  // The Blitz port uses OpenAL; SDL audio may also be present.
+  const contexts=[Module.SDL2?.audioContext,...Object.values(typeof AL==='undefined'?{}:AL.contexts).map(context=>context.audioCtx)];
+  return Promise.all([...new Set(contexts.filter(Boolean))].map(context=>context[paused?'suspend':'resume']()));
+}
 function normalize(path){
   const full=path.startsWith('/')?path:Module.FS.cwd()+'/'+path;
   const parts=[];for(const part of full.replaceAll('\\','/').split('/')){if(part==='..')parts.pop();else if(part&&part!=='.')parts.push(part);}
@@ -59,7 +73,7 @@ async function bridge(request){
     case 'height':return 800;
     case 'canvas-width':return canvas.width;
     case 'canvas-height':return canvas.height;
-    case 'focus':return !document.hidden&&(!playing||document.pointerLockElement===canvas||document.activeElement===search)?1:0;
+    case 'focus':return transition||firstFrame||(!document.hidden&&(!playing||document.pointerLockElement===canvas||document.activeElement===search))?1:0;
     case 'sync':return 1; // Deliberately ephemeral; project persistence belongs to the shared core.
     case 'copy':try{const dst=normalize(args[1]);if(Number(args[2])&&FS.analyzePath(dst).exists)return 0;FS.writeFile(dst,FS.readFile(normalize(args[0])));return 1;}catch{return 0;}
     case 'move':try{FS.rename(normalize(args[0]),normalize(args[1]));return 1;}catch{return 0;}
@@ -72,6 +86,11 @@ async function bridge(request){
     case 'search-focus':Number(args[0])===2?search.focus():canvas.focus();return 1;
     case 'control-focus':return document.activeElement===search?2:1;
     case 'studio-poll':
+      if(stopPending){
+        // Gameplay may write its MEMFS map. Restore the authoring snapshot only
+        // after the current game frame/load has finished, before loading editor.
+        stopPending=false;applyFiles(initial.files);return 'stop';
+      }
       // Commands such as drag rollback run before a pending authoritative patch.
       if(!queue.length&&snapshotPending&&!drag&&!playing&&!inFlight){
         const next=snapshotPending;snapshotPending=null;
@@ -85,21 +104,40 @@ async function bridge(request){
         return ['patch',next.token].join(SEP);
       }
       if(!queue.length&&transient){const value=transient;transient=null;return value;}
+      if(!queue.length&&playRequest&&!requested&&!snapshotPending&&!inFlight){
+        if(!playRequest.requested){
+          playRequest.requested=true;send('request-preview',{since:acknowledged,playId});
+        }else if(playRequest.snapshot&&!playRequest.committed){
+          const next=playRequest.snapshot;
+          applyFiles(next.files);initial.files={...initial.files,...next.files};
+          acknowledged=next.token;playRequest.committed=true;firstFrame=true;
+          return 'play';
+        }
+      }
       maybeSync();
       if(queue.length)return queue.shift();
-      if(!playing&&loaded&&!drag&&(rotating||keys.size)){
+      if(!playing&&!transition&&loaded&&!drag&&(rotating||keys.size)){
         const speed=keys.has('ShiftLeft')?15:5;
         return ['camera',pitch,yaw,((keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0))*speed,
           ((keys.has('KeyE')?1:0)-(keys.has('KeyQ')?1:0))*speed,((keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0))*speed].join(SEP);
       }
       return '';
     case 'studio-event':
-      if(args[0]==='ready'){command(initial?.startPlaying?'play':'load',0);return 1;}
+      if(args[0]==='ready'){command('load',0);return 1;}
+      if(args[0]==='playing'){
+        firstFrame=false;
+        if(transition==='starting'&&playRequest?.committed){
+          const startMs=Math.round(performance.now()-playRequest.at);
+          playRequest=null;transition=null;playState('playing',{startMs});
+        }return 1;
+      }
       if(args[0]==='loaded'){
         loaded=true;mapSize=Number(args[2]);playing=Number(args[1])===1;keys.clear();statusText.textContent='';fitCanvas();
         if(!acknowledged){acknowledged=initial?.token;editorPose=initial?.restorePose||null;}
         if(!playing&&editorPose)command('restore-pose',...editorPose);
-        command('pose');send('loaded',{playing,size:Number(args[2])});
+        if(!playing)command('pose');
+        send('loaded',{playing,size:Number(args[2])});
+        if(!playing&&transition==='stopping')cancelPlay();
         send('resources',{pending:false,available:initial?.available||[]});maybeSync();return 1;
       }
       if(args[0]==='applied'){
@@ -147,23 +185,31 @@ async function boot(){
   if(!await navigator.gpu.requestAdapter())throw new Error('WebGPU 장치를 사용할 수 없습니다.');
   for(const name of ['assets.js','game.js'])await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='/engine/'+name;script.onload=resolve;script.onerror=()=>reject(new Error('Blitz 엔진 파일을 읽지 못했습니다: '+name));document.body.append(script);});
 }
-window.addEventListener('message',event=>{
-  if(event.source!==parent||event.origin!==location.origin||event.data?.source!=='studio-ui')return;
-  const message=event.data;
+function receive(message){
   if(message.type==='project'){
-    if(!initial){initial=message.preview;boot().catch(fail);}
+    if(message.playId!==undefined){
+      if(message.playId!==playId||!playRequest||playRequest.committed)return;
+      const next=message.preview;
+      if(next.mode!=='delta'||next.baseToken!==acknowledged){cancelPlay('미리보기 기준이 달라졌습니다. 리소스 적용 후 다시 테스트하세요.');return;}
+      if(next.resourcesPending||next.resourcesRequired){
+        send('resources',{pending:true,required:next.resourcesRequired,available:next.available});
+        cancelPlay('변경된 리소스를 적용한 후 다시 테스트하세요.');return;
+      }
+      playRequest.snapshot=next;
+    }else if(!initial){initial=message.preview;boot().catch(fail);}
     else{
       requested=false;snapshotPending=message.preview;
       send('resources',{pending:message.preview.resourcesPending,required:message.preview.resourcesRequired,available:message.preview.available});
     }
   }else if(message.type==='refresh'){wantSync=true;maybeSync();}
+  else if(message.type==='play-error'){if(message.id===playId&&playRequest)cancelPlay(message.message);}
   else if(message.type==='sync-error'){requested=false;syncFailed=true;fail(message.message);}
   else if(message.type==='tool'){
     const identities=entities=>entities.map(e=>e.kind+'/'+e.id).join(',');
     if(drag&&!drag.finishing&&(tool!==message.tool||identities(selected)!==identities(message.entities||[])))cancelDrag();
     tool=message.tool;selection=message.selection||null;selected=message.entities||[];revision=message.revision;snap=message.snap||0;
     command('select',selection?.class||0,selection?.id||0);drawGizmo();
-  }else if(message.type==='focus'&&message.selection&&!drag){command('focus',message.selection.class,message.selection.id);command('pose');}
+  }else if(message.type==='focus'&&message.selection&&!drag&&!playing&&!transition){command('focus',message.selection.class,message.selection.id);command('pose');}
   else if(message.type==='drag-result'){
     if(drag?.id===message.id){
       // A successful gesture remains visible until its authoritative patch;
@@ -171,17 +217,33 @@ window.addEventListener('message',event=>{
       if(!message.ok){transient=null;command('drag-cancel');}
       drag=null;send('drag-state',{active:false});wantSync=true;maybeSync();drawGizmo();
     }
-  }else if(message.type==='play'&&!drag&&!inFlight&&!snapshotPending&&!requested){command('play');}
-  else if(message.type==='stop'){playing=false;document.exitPointerLock();keys.clear();command('stop');}
+  }else if(message.type==='play'){
+    if(playing||transition)return;
+    playId=message.id;
+    if(!loaded||drag||syncFailed){playState('idle',{message:'장면 연결과 편집을 완료한 후 다시 테스트하세요.'});return;}
+    playRequest={at:performance.now(),requested:false,snapshot:null,committed:false};
+    transition='starting';wantSync=false;keys.clear();rotating=dragging=false;
+    playState('starting');drawGizmo();
+  }else if(message.type==='stop'){
+    playId=message.id;document.exitPointerLock();keys.clear();
+    if(playing||playRequest?.committed||stopPending){
+      transition='stopping';playRequest=null;firstFrame=false;playing=false;
+      stopPending=true;playState('stopping');
+    }else cancelPlay();
+  }
+}
+window.addEventListener('message',event=>{
+  if(event.source!==parent||event.origin!==location.origin||event.data?.source!=='studio-ui')return;
+  receive(event.data);
 });
 function maybeSync(){
-  if(wantSync&&loaded&&!playing&&!drag&&!inFlight&&!snapshotPending&&!requested&&!syncFailed){
+  if(wantSync&&loaded&&!playing&&!transition&&!drag&&!inFlight&&!snapshotPending&&!requested&&!syncFailed){
     requested=true;wantSync=false;send('request-preview',{since:acknowledged});
   }
 }
 function drawGizmo(){
   if(!overlay)return;
-  if(!loaded||playing||tool!=='move'||!selection||!projection||projection[2]<=0){overlay.innerHTML='';return;}
+  if(!loaded||playing||transition||tool!=='move'||!selection||!projection||projection[2]<=0){overlay.innerHTML='';return;}
   const rect=canvas.getBoundingClientRect(),sx=rect.width/canvas.width,sy=rect.height/canvas.height;
   const origin=projection.slice(0,3),x=rect.left+origin[0]*sx,y=rect.top+origin[1]*sy;
   const axes=['x','y','z'],colors=['#ff6871','#72df8d','#67aeff'];
@@ -196,7 +258,7 @@ function drawGizmo(){
 }
 function beginDrag(event){
   const axis=event.target.dataset?.axis;
-  if(!axis||event.button!==0||drag||playing||inFlight||requested||snapshotPending||syncFailed||resourceBlocked||!projection||!selected.length)return;
+  if(!axis||event.button!==0||drag||playing||transition||inFlight||requested||snapshotPending||syncFailed||resourceBlocked||!projection||!selected.length)return;
   event.preventDefault();canvas.focus();keys.clear();rotating=false;
   const rect=canvas.getBoundingClientRect(),index=['x','y','z'].indexOf(axis);
   const vector=index<0?null:StudioGizmo.axis(projection.slice(0,3),projection.slice(3+index*3,6+index*3),rect.width/canvas.width,rect.height/canvas.height);
@@ -245,19 +307,19 @@ overlay?.addEventListener('pointerup',event=>{if(event.button===0)moveDrag(event
 overlay?.addEventListener('pointercancel',()=>{if(!drag?.finishing)cancelDrag();});
 overlay?.addEventListener('lostpointercapture',()=>{if(!drag?.finishing)cancelDrag();});
 canvas.addEventListener('pointerdown',event=>{
-  canvas.focus();Module.SDL2?.audioContext?.resume();
+  canvas.focus();void audioState(false).catch(fail);
   if(playing){canvas.requestPointerLock()?.catch(fail);return;}
-  if(drag)return;
+  if(drag||transition)return;
   canvas.setPointerCapture(event.pointerId);
   if(event.button===2){rotating=true;lastX=event.clientX;lastY=event.clientY;}
   if(event.button===0){dragging=true;if(tool==='select'||tool==='move')pick(event,'select');}
 });
 canvas.addEventListener('pointermove',event=>{
-  if(playing)return;
+  if(playing||transition)return;
   if(rotating){yaw+=(event.clientX-lastX)*.25;pitch=Math.max(-85,Math.min(85,pitch+(event.clientY-lastY)*.25));lastX=event.clientX;lastY=event.clientY;}
 });
 canvas.addEventListener('pointerup',event=>{
-  if(playing)return;
+  if(playing||transition)return;
   if(event.button===2)rotating=false;
   if(event.button===0&&dragging){
     dragging=false;
@@ -265,9 +327,9 @@ canvas.addEventListener('pointerup',event=>{
     else if(tool==='terrain')pick(event,'terrain',true);
   }
 });
-canvas.addEventListener('wheel',event=>{if(!playing&&!drag){event.preventDefault();command('camera',pitch,yaw,0,0,-Math.sign(event.deltaY)*25);}},{passive:false});
+canvas.addEventListener('wheel',event=>{if(!playing&&!transition&&!drag){event.preventDefault();command('camera',pitch,yaw,0,0,-Math.sign(event.deltaY)*25);}},{passive:false});
 window.addEventListener('keydown',event=>{
-  if(playing)return;
+  if(playing||transition)return;
   if(event.code==='Escape'&&drag&&!drag.finishing){event.preventDefault();cancelDrag();return;}
   if(drag)return;
   let shortcut;
@@ -280,9 +342,9 @@ window.addEventListener('keydown',event=>{
 window.addEventListener('keyup',event=>keys.delete(event.code));
 window.addEventListener('blur',()=>{keys.clear();rotating=dragging=false;if(!drag?.finishing)cancelDrag();});
 canvas.addEventListener('contextmenu',event=>event.preventDefault());
-canvas.addEventListener('dragover',event=>{if(!playing&&event.dataTransfer.types.includes('application/s2-content')){event.preventDefault();event.dataTransfer.dropEffect='copy';}});
+canvas.addEventListener('dragover',event=>{if(!playing&&!transition&&event.dataTransfer.types.includes('application/s2-content')){event.preventDefault();event.dataTransfer.dropEffect='copy';}});
 canvas.addEventListener('drop',event=>{
-  if(playing||drag)return;event.preventDefault();
+  if(playing||transition||drag)return;event.preventDefault();
   try{const content=JSON.parse(event.dataTransfer.getData('application/s2-content'));if(content&&['object','unit','item','info','building'].includes(content.kind))pick(event,'place',true,content);}catch(error){fail(error);}
 });
 function fitCanvas(){

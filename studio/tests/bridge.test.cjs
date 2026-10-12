@@ -23,14 +23,105 @@ function viewport(){
   return {context,document,canvas,overlay,messages,writes,send,canvasListeners,overlayListeners,listeners,bridge:context.Module.s2Bridge};
 }
 
-test('stopping a paused play session releases focus before the engine polls',async()=>{
-  const host=viewport();
-  await host.bridge('studio-event\x1floaded\x1f1\x1f32');
-  assert.equal(await host.bridge('focus\x1fplay'),0);
-  host.send({type:'stop'});
-  assert.equal(await host.bridge('focus\x1fplay'),1);
-  assert.equal(await host.bridge('studio-poll\x1f'),'pose');
-  assert.equal(await host.bridge('studio-poll\x1f'),'stop');
+test('play reuses the loaded engine, fetches the latest saved map and starts only once',async()=>{
+  const h=viewport();ready(h);const engine=h.context.Module;
+  h.send({type:'play',id:1});h.send({type:'play',id:1});
+  assert.equal(await h.bridge('studio-poll'),'');
+  const request=h.messages.find(m=>m.type==='request-preview');
+  assert.equal(request.since,'a');assert.equal(request.playId,1);
+  assert.equal(h.messages.filter(m=>m.type==='request-preview').length,1);
+  assert.equal(h.writes.length,0);
+  h.send({type:'project',playId:1,preview:delta()});
+  assert.equal(await h.bridge('studio-poll'),'play');
+  assert.equal(Buffer.from(h.writes[0].data).toString(),'native-map');
+  assert.equal(h.writes.length,1);assert.equal(h.context.Module,engine);
+  assert.equal(await h.bridge('studio-poll'),'');
+  await h.bridge('studio-event\x1floaded\x1f1\x1f32');
+  assert.equal(await h.bridge('focus'),1); // first frame before pointer capture
+  await h.bridge('studio-event\x1fplaying');
+  assert.equal(h.messages.at(-1).state,'playing');assert.ok(h.messages.at(-1).startMs>=0);
+  assert.equal(await h.bridge('focus'),0); // Esc/unlocked pauses normally
+  h.document.pointerLockElement=h.canvas;
+  assert.equal(await h.bridge('focus'),1);
+});
+
+test('play waits for an outstanding scene ACK and uses its new baseline',async()=>{
+  const h=viewport();ready(h);h.send({type:'refresh'});h.send({type:'play',id:1});
+  assert.equal(await h.bridge('studio-poll'),'');
+  h.send({type:'project',preview:delta()});
+  assert.equal(await h.bridge('studio-poll'),'patch\x1fb');
+  assert.equal(await h.bridge('studio-poll'),'');
+  assert.equal(h.messages.filter(m=>m.playId===1).length,0);
+  await h.bridge('studio-event\x1fapplied\x1fb');
+  await h.bridge('studio-poll');
+  const request=h.messages.find(m=>m.playId===1);
+  assert.equal(request.since,'b');
+  h.send({type:'project',playId:1,preview:delta('c','b')});
+  assert.equal(await h.bridge('studio-poll'),'play');
+});
+
+test('canceled starts ignore late snapshots and allow a fresh request',async()=>{
+  const h=viewport();ready(h);h.send({type:'play',id:1});await h.bridge('studio-poll');
+  h.send({type:'stop',id:2});
+  h.send({type:'project',playId:1,preview:delta()});
+  assert.equal(await h.bridge('studio-poll'),'');assert.equal(h.writes.length,0);
+  assert.equal(h.messages.at(-1).state,'idle');
+  h.send({type:'play',id:3});await h.bridge('studio-poll');
+  h.send({type:'project',playId:1,preview:delta()});
+  assert.equal(await h.bridge('studio-poll'),'');
+  h.send({type:'project',playId:3,preview:delta()});
+  assert.equal(await h.bridge('studio-poll'),'play');
+});
+
+test('changed resources and stale play baselines leave the editor intact',async()=>{
+  for(const next of [{...delta(),resourcesPending:true},{...delta(),resourcesRequired:true},{...delta(),baseToken:'old'}]){
+    const h=viewport();ready(h);h.send({type:'play',id:1});await h.bridge('studio-poll');
+    h.send({type:'project',playId:1,preview:next});
+    assert.equal(h.messages.at(-1).state,'idle');assert.ok(h.messages.at(-1).message);
+    assert.equal(await h.bridge('studio-poll'),'');assert.equal(h.writes.length,0);
+    assert.equal(vm.runInContext('syncFailed',h.context),false);
+  }
+});
+
+test('failed play validation can be retried without restarting the engine',async()=>{
+  const h=viewport();ready(h);h.send({type:'play',id:1});await h.bridge('studio-poll');
+  h.send({type:'play-error',id:1,message:'Invalid saved map'});
+  assert.equal(h.messages.at(-1).state,'idle');assert.equal(h.messages.at(-1).message,'Invalid saved map');
+  h.send({type:'play',id:2});await h.bridge('studio-poll');
+  h.send({type:'play-error',id:1,message:'Old failure'});
+  h.send({type:'project',playId:2,preview:delta()});
+  assert.equal(await h.bridge('studio-poll'),'play');
+});
+
+test('stop releases paused focus and restores the authoring map, camera and selection',async()=>{
+  const h=viewport();ready(h);select(h);await h.bridge('studio-poll');
+  h.send({type:'play',id:1});await h.bridge('studio-poll');
+  h.send({type:'project',playId:1,preview:delta()});assert.equal(await h.bridge('studio-poll'),'play');
+  await h.bridge('studio-event\x1fcamera\x1f25\x1f45\x1f1\x1f2\x1f3');
+  await h.bridge('studio-event\x1floaded\x1f1\x1f32');await h.bridge('studio-event\x1fplaying');
+  h.context.Module.FS.writeFile('/game/mods/Stranded II/maps/studio.s2','gameplay-changes');
+  assert.equal(await h.bridge('focus'),0);
+  h.send({type:'stop',id:2});assert.equal(await h.bridge('focus'),1);
+  assert.equal(h.writes.at(-1).data,'gameplay-changes'); // restore only at frame boundary
+  assert.equal(await h.bridge('studio-poll'),'stop');
+  assert.equal(Buffer.from(h.writes.at(-1).data).toString(),'native-map');
+  await h.bridge('studio-event\x1floaded\x1f0\x1f32');
+  assert.equal(await h.bridge('studio-poll'),'restore-pose\x1f1\x1f2\x1f3\x1f25\x1f45');
+  assert.equal(vm.runInContext('selection.id',h.context),100);
+  assert.equal(h.messages.findLast(m=>m.type==='play-state').state,'idle');
+  await h.bridge('studio-poll');h.send({type:'play',id:3});await h.bridge('studio-poll');
+  assert.equal(h.messages.at(-1).since,'b');
+});
+
+test('stop during native loading waits for the editor and ignores the stale first frame',async()=>{
+  const h=viewport();ready(h);h.send({type:'play',id:1});await h.bridge('studio-poll');
+  h.send({type:'project',playId:1,preview:delta()});assert.equal(await h.bridge('studio-poll'),'play');
+  h.send({type:'stop',id:2});
+  await h.bridge('studio-event\x1floaded\x1f1\x1f32');await h.bridge('studio-event\x1fplaying');
+  assert.equal(h.messages.filter(m=>m.state==='playing').length,0);
+  assert.equal(await h.bridge('focus'),1);assert.equal(await h.bridge('studio-poll'),'stop');
+  await h.bridge('studio-event\x1floaded\x1f0\x1f32');
+  assert.equal(h.messages.findLast(m=>m.type==='play-state').state,'idle');
 });
 
 test('canvas picks account for scale and drop retains content identity',async()=>{
@@ -157,8 +248,8 @@ test('camera survives explicit resource initialization and play-stop',async()=>{
   const host=viewport();
   vm.runInContext("initial={files:{},token:'a',available:[],restorePose:[1,2,3,25,45]};starting=true;",host.context);
   await host.bridge('studio-event\x1floaded\x1f1\x1f32');
-  assert.equal(await host.bridge('studio-poll\x1f'),'pose');
-  host.send({type:'stop'});
+  assert.equal(await host.bridge('studio-poll\x1f'),'');
+  host.send({type:'stop',id:1});
   assert.equal(await host.bridge('studio-poll\x1f'),'stop');
   await host.bridge('studio-event\x1floaded\x1f0\x1f32');
   assert.equal(await host.bridge('studio-poll\x1f'),'restore-pose\x1f1\x1f2\x1f3\x1f25\x1f45');

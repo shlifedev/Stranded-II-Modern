@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"931ed09a06670a33398225b08070caf74ab9d0c39feed37a4054907ad5491a6d"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"e04c11adefd0698c84bae5263aee81833555b35e8f1f010d7cad5665720ca1fd"} -->
 
 # Development guide
 
@@ -168,7 +168,9 @@ Test the ZIP on another Apple Silicon Mac, especially macOS 15: extraction, laun
 
 ## Extended authoring app
 
-[Stranded II Studio](studio.md) edits content and maps through a standalone GUI and JSON CLI. It provides a 3D viewport using the actual Blitz/Extended engine, undo, validation and native resource exports. Use `python scripts/studio.py` for its commands and `npm --prefix studio start` for the app; follow the Studio guide for preparation and usage. Outputs stay under `build/studio/`; ordinary game, CI and release edition selection remain unchanged.
+[Stranded II Studio](studio.md) edits content and maps through a standalone GUI and JSON CLI. It provides a 3D viewport using the actual Blitz/Extended engine, undo, validation and native resource exports. Use `python scripts/studio.py` for its commands. `Studio.cmd` on Windows or `sh ./Studio.sh` on macOS/Linux automatically prepares dependencies and the engine before launching the app. Follow the Studio guide for details. Engine outputs stay under `build/studio/` and app outputs under `studio/dist/`; ordinary game, CI and release edition selection remain unchanged.
+
+Studio uses the same iframe and Blitz engine for editing and play. `studio/engine/studio.js` waits for pending scene ACKs and checks the latest saved map; `studio_load` in `src/engine/studio/runtime.bb` reloads that map while retaining the engine and definitions. Resource changes require explicit **Apply resources** initialization. Stop restores the authoring map in the in-memory filesystem and the editor camera without writing to the project. Changes to this path require Studio builds/checks; changes to the shared engine also require both editions' builds/checks and relevant game verification.
 
 ## Where to make changes
 

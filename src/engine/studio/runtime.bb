@@ -2,6 +2,7 @@
 ; Project mutations are committed by the common CLI/UI core. The engine picks,
 ; renders and plays those native maps, and applies transient drag previews.
 Global studio_playing,studio_loaded,studio_class,studio_id,studio_handle
+Global studio_firstframe
 Global studio_command$,studio_path$="maps\studio.s2"
 Global studio_selection$="",studio_out$
 
@@ -46,6 +47,7 @@ Function studio_load(play=0,keepcamera=0)
  Local pitch#=EntityPitch(cam),yaw#=EntityYaw(cam)
  studio_handle=0
  studio_playing=play
+ studio_firstframe=0
  If play Then
   HidePointer()
   m_section=Csection_game_sp
@@ -85,6 +87,9 @@ Function studio_load(play=0,keepcamera=0)
   studio_handle=studio_find(studio_class,studio_id)
  EndIf
  modern_reset_clock()
+ ; Present the loaded game once before waiting for mouse capture. Keep the
+ ; engine and its resource definitions alive across editor/play transitions.
+ If play Then blackframe=0:studio_firstframe=1
  web_service("studio-event","loaded"+Chr(31)+play+Chr(31)+ter_size)
 End Function
 
@@ -135,6 +140,8 @@ Function studio_process(command$)
   Case "load"
    studio_load(0,Int(studio_arg(command$,1)))
   Case "play"
+   ; Capture the exact editor pose before replacing the world with gameplay.
+   studio_process("pose")
    studio_load(1)
   Case "stop"
    studio_load(0)
@@ -218,6 +225,10 @@ While Not m_performquit
  gframe=gframe+1
  modern_present()
  qol_present()
+ If studio_firstframe Then
+  studio_firstframe=0
+  web_service("studio-event","playing")
+ EndIf
 Wend
 qol_shutdown()
 e_clear()

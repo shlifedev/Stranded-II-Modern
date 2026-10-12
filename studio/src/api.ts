@@ -5,7 +5,7 @@ export type Diagnostic = {severity:string;code:string;message:string;location:st
 export type Snapshot = {name:string;project:string;base:string;revision:number;maps:string[];activeMap:string|null;catalog:RecordInfo[];baseMaps:string[];assets:string[];canUndo:boolean;canRedo:boolean;
   map:{size:number;worldSize:number;entities:Entity[];script:string;attachments:string[]}|null;diagnostics:Diagnostic[]};
 export type Operation = Record<string,unknown> & {op:string};
-export type Preview = {files:Record<string,string>;map:string;revision:number;mode:'full'|'delta';token:string;baseToken?:string;available:string[];resourcesPending:boolean;resourcesRequired:boolean;patch?:string;restorePose?:number[];startPlaying?:boolean};
+export type Preview = {files:Record<string,string>;map:string;revision:number;mode:'full'|'delta';token:string;baseToken?:string;available:string[];resourcesPending:boolean;resourcesRequired:boolean;patch?:string;restorePose?:number[]};
 declare global {
   interface Window {studio:{
     storage:{getItem:(key:string)=>string|null;setItem:(key:string,value:string)=>void;removeItem:(key:string)=>void};

@@ -16,6 +16,8 @@ export function App(){
   const [tool,setTool]=useState<Tool>('select'),[selection,setSelection]=useState<Selection[]>([]),[contentSelection,setContentSelection]=useState<{kind:Kind;id:number|string}|null>(null);
   const [filter,setFilter]=useState<Kind>('object'),[query,setQuery]=useState(''),[tab,setTab]=useState<'assets'|'console'|'script'>('assets');
   const [logs,setLogs]=useState<string[]>([]),[playing,setPlaying]=useState(false),[radius,setRadius]=useState(2),[strength,setStrength]=useState(.005),[brush,setBrush]=useState('raise');
+  const [playState,setPlayState]=useState<'idle'|'starting'|'playing'|'stopping'>('idle');
+  const playId=useRef(0);
   const [snap,setSnap]=useState(0),[bottomHeight,setBottomHeight]=useState(285),[preview,setPreview]=useState<Preview|null>(null);
   const [frameVersion,setFrameVersion]=useState(0),[resourcesPending,setResourcesPending]=useState(false),[available,setAvailable]=useState<string[]>([]),[dragActive,setDragActive]=useState(false);
   const sceneIdentity=useRef(''),cameraPose=useRef<number[]|undefined>(undefined),session=useRef(0),dragLock=useRef(false),pendingExternal=useRef(false);
@@ -52,14 +54,14 @@ export function App(){
     const entities=state.selection.map(s=>state.snapshot?.map?.entities.find(e=>e.kind===s.kind&&e.id===s.id)).filter((e):e is Entity=>!!e).map(e=>({...e,class:classes[e.kind]}));
     post('tool',{tool:state.tool,selection:primary?{...primary,class:classes[primary.kind]}:null,entities,revision:state.snapshot?.revision,snap:state.snap});
   }
-  async function fullPreview(dir:string,map:string,startPlaying=false){
+  async function fullPreview(dir:string,map:string){
     const value=await request<Preview>({command:'preview',project:dir,map});
     const identity=dir+'\n'+map;
     if(sceneIdentity.current===identity)value.restorePose=cameraPose.current;
     else cameraPose.current=undefined;
-    value.startPlaying=startPlaying;sceneIdentity.current=identity;session.current++;
+    sceneIdentity.current=identity;session.current++;
     setResourcesPending(false);setAvailable(value.available);setPreview(value);current.current.preview=value;
-    setPlaying(startPlaying);setEngineStatus('Blitz 연결 중');setFrameVersion(v=>v+1);
+    setEngineStatus('Blitz 연결 중');setFrameVersion(v=>v+1);
   }
   async function refresh(dir=project,map=activeMap){
     const next=await request<Snapshot>({command:'inspect',project:dir,map:map||undefined});
@@ -73,13 +75,13 @@ export function App(){
     }else if(!map){setPreview(null);current.current.preview=null;sceneIdentity.current='';}
     else {setResourcesPending(true);setEngineStatus('검증 오류 · 마지막 정상 화면');}
   }
-  async function applyResources(startPlaying=false){
+  async function applyResources(){
     if(dragLock.current)return;
     await run(async()=>{
       const state=current.current;
       // Refresh the authoritative saved state even if the CLI edited it just now.
       await refresh(state.project,state.activeMap);
-      await fullPreview(state.project,current.current.activeMap,startPlaying);
+      await fullPreview(state.project,current.current.activeMap);
     });
   }
   async function mutate(operations:Operation[],expected?:number){
@@ -95,6 +97,13 @@ export function App(){
     window.studio.environment().then(env=>{setBase(env.base);setEngineReady(env.engineReady);setProjectPath(window.studio.storage.getItem('studio.project')||env.root+'/build/my-extended-project');});
     request<{commands:{name:string;parameters:string}[]}>({command:'commands'}).then(value=>setCommands(value.commands)).catch(()=>{});
   },[]);
+  const validPlay=!!snapshot&&!!activeMap&&engineReady&&!snapshot.diagnostics.some(d=>d.severity==='error');
+  function togglePlay(){
+    if(current.current.playing){setPlayState('stopping');post('stop',{id:++playId.current});return;}
+    if(!validPlay||!current.current.preview||engineStatus!=='Blitz 연결됨'||current.current.busy||dragLock.current)return;
+    current.current.playing=true;setPlaying(true);setPlayState('starting');setError('');
+    post('play',{id:++playId.current});
+  }
   useEffect(()=>{
     sendTool();
   },[tool,selection,snapshot,snap]);
@@ -103,6 +112,7 @@ export function App(){
     const timer=setInterval(async()=>{
       if(current.current.busy||playing)return;
       try{const next=await request<{revision:number}>({command:'revision',project});
+        if(current.current.busy||current.current.playing)return;
         if(next.revision!==current.current.snapshot?.revision){
           if(dragLock.current){pendingExternal.current=true;return;}
           log('외부 변경을 불러왔습니다.');await refresh(project,current.current.activeMap);
@@ -115,15 +125,22 @@ export function App(){
       if(event.origin!==location.origin||event.source!==frame.current?.contentWindow||event.data?.source!=='blitz-studio')return;
       const data=event.data,state=current.current;
       if(data.type==='ready-for-project'&&state.preview){post('project',{preview:state.preview});return;}
-      if(data.type==='loaded'){setEngineStatus('Blitz 연결됨');setPlaying(data.playing);sendTool();return;}
+      if(data.type==='loaded'){setEngineStatus('Blitz 연결됨');if(!data.playing)sendTool();return;}
+      if(data.type==='play-state'){
+        if(data.id!==playId.current)return;
+        const active=data.state!=='idle';current.current.playing=active;setPlaying(active);setPlayState(data.state);
+        if(data.message){setError(data.message);log(data.message);}
+        if(data.state==='playing')log(`플레이 시작: 시작 요청부터 첫 게임 프레임까지 ${data.startMs}ms`);
+        return;
+      }
       if(data.type==='pose'){cameraPose.current=data.pose;return;}
       if(data.type==='resources'){setResourcesPending(data.pending);setAvailable(data.available||[]);if(data.required)setError('새 콘텐츠를 장면에 표시하려면 리소스 적용이 필요합니다.');return;}
       if(data.type==='applied'){setEngineStatus('Blitz 연결됨');return;}
       if(data.type==='request-preview'){
         const identity=session.current;
         void request<Preview>({command:'preview',project:state.project,map:state.activeMap,since:data.since}).then(value=>{
-          if(identity===session.current)post('project',{preview:value});
-        }).catch(reason=>{if(identity===session.current)post('sync-error',{message:String(reason)});});return;
+          if(identity===session.current)post('project',{preview:value,playId:data.playId});
+        }).catch(reason=>{if(identity===session.current)post(data.playId===undefined?'sync-error':'play-error',{id:data.playId,message:String(reason)});});return;
       }
       if(data.type==='drag-state'){dragLock.current=data.active;setDragActive(data.active);if(!data.active&&pendingExternal.current)void run(()=>refresh(state.project,state.activeMap));return;}
       if(data.type==='drag-commit'){
@@ -158,9 +175,9 @@ export function App(){
     };
     window.addEventListener('message',listener);return()=>window.removeEventListener('message',listener);
   },[engineReady,playing]);
-  async function removeSelected(){const state=current.current;if(dragLock.current)return;if(state.selection.length)await mutate(state.selection.map(s=>({op:'entity.remove',map:state.activeMap,...s})));setSelection([]);}
+  async function removeSelected(){const state=current.current;if(state.playing||dragLock.current)return;if(state.selection.length)await mutate(state.selection.map(s=>({op:'entity.remove',map:state.activeMap,...s})));setSelection([]);}
   async function duplicateSelected(){
-    const state=current.current;if(dragLock.current||!state.snapshot?.map)return;
+    const state=current.current;if(state.playing||dragLock.current||!state.snapshot?.map)return;
     const entities=state.snapshot.map.entities;
     const nextIds:Partial<Record<Kind,number>>={},operations:Operation[]=[];
     for(const s of state.selection){
@@ -204,7 +221,7 @@ export function App(){
     const op:Operation=selectedEntity?{op:'entity.script',map:activeMap,kind:selectedEntity.kind,id:selectedEntity.id,text:script}:selectedContent?{op:'content.set',kind:selectedContent.kind,id:selectedContent.id,properties:{script}}:{op:'map.script',map:activeMap,text:script};
     if(await mutate([op],scriptRevision.current)){window.studio.storage.removeItem(scriptKey);setScriptDirty(false);}
   }
-  const selectContent=(record:RecordInfo)=>{if(dragLock.current)return;setContentSelection({kind:record.kind,id:record.id});setSelection([]);};
+  const selectContent=(record:RecordInfo)=>{if(dragLock.current||current.current.playing)return;setContentSelection({kind:record.kind,id:record.id});setSelection([]);};
   const entityLabel=(entity:Entity)=>snapshot?.catalog.find(r=>r.kind===entity.kind&&r.id===entity.type)?.name||`${entity.kind} ${entity.type}`;
   const filtered=snapshot?.catalog.filter(r=>r.kind===filter&&(!query||(r.name+' '+r.id).toLowerCase().includes(query.toLowerCase())))||[];
 
@@ -222,24 +239,26 @@ export function App(){
     {modal}
     <header className="topbar"><div className="brand">S<span>II</span><strong>STUDIO</strong><small>EXTENDED</small></div><div className="project-name">{snapshot.name}<span> / {activeMap||'맵을 선택하세요'}</span></div><span className="revision">r{snapshot.revision} · 자동 저장</span><button disabled={playing||dragActive||busy} onClick={()=>{setSnapshot(null);setPreview(null);current.current.preview=null;sceneIdentity.current='';session.current++;}}>프로젝트</button><button disabled={busy} onClick={()=>void run(async()=>{const out=await window.studio.choose({directory:true,title:'비어 있는 내보내기 폴더'});if(out){await request({command:'export',project,out});log('내보내기 완료: '+out);}})}>내보내기 ↗</button></header>
     <div className="toolbar"><div className="tool-group">{([['select','↖','선택'],['move','✥','이동'],['place','＋','배치'],['terrain','▱','지형']] as const).map(([key,icon,label])=><button key={key} className={tool===key?'active':''} disabled={playing||dragActive} onClick={()=>setTool(key)} title={label}><span>{icon}</span>{label}</button>)}</div><div className="toolbar-options">{tool==='terrain'?<><select value={brush} onChange={e=>setBrush(e.target.value)}><option value="raise">높이기</option><option value="lower">낮추기</option><option value="flatten">평탄화</option><option value="smooth">부드럽게</option></select><label>반경 <input type="number" min="1" max="32" value={radius} onChange={e=>setRadius(Number(e.target.value))}/></label><label>강도 <input type="number" step="0.001" min="0.001" max="0.1" value={strength} onChange={e=>setStrength(Number(e.target.value))}/></label></>:<label>스냅 <select value={snap} onChange={e=>setSnap(Number(e.target.value))}><option value="0">자유</option><option value="16">16</option><option value="32">32</option><option value="64">64</option></select></label>}</div>
-      <div className="play-controls"><button className={resourcesPending?'resource-pending':''} disabled={busy||playing||dragActive||!activeMap} onClick={()=>void applyResources()} title="정의·모델·언어·폰트 변경을 모아서 적용합니다">{resourcesPending?'● 리소스 적용 필요':'리소스 적용'}</button><button className={playing?'playing':'primary'} disabled={!activeMap||!preview||busy||dragActive||engineStatus!=='Blitz 연결됨'} onClick={()=>{if(playing)post('stop');else void applyResources(true);}}>{playing?'■ 정지':'▶ 테스트'}</button></div>
+      <div className="play-controls"><button className={resourcesPending?'resource-pending':''} disabled={busy||playing||dragActive||!activeMap} onClick={()=>void applyResources()} title="정의·모델·언어·폰트 변경을 모아서 적용합니다">{resourcesPending?'● 리소스 적용 필요':'리소스 적용'}</button><button className={playing?'playing':'primary'} disabled={playState==='stopping'||(!playing&&(!validPlay||!preview||engineStatus!=='Blitz 연결됨'||busy||dragActive))} onClick={togglePlay}>{playState==='stopping'?'■ 복원 중':playing?(playState==='playing'?'■ 정지':'■ 시작 취소'):'▶ 테스트'}</button></div>
       <button disabled={!snapshot.canUndo||busy||playing||dragActive} onClick={()=>void history()} title="Ctrl/Cmd+Z">↶</button><button disabled={!snapshot.canRedo||busy||playing||dragActive} onClick={()=>void history(true)} title="Ctrl/Cmd+Shift+Z">↷</button><button disabled={busy||playing||dragActive} onClick={()=>void run(()=>refresh())}>새로고침</button></div>
     <aside className="hierarchy panel"><div className="panel-title">월드<span>HIERARCHY</span></div><div className="map-controls"><select disabled={busy||playing||dragActive} value={activeMap} onChange={e=>{setSelection([]);void run(()=>refresh(project,e.target.value));}}><option value="">맵 선택</option>{snapshot.maps.map(name=><option key={name}>{name}</option>)}</select><button onClick={()=>void newMap()} disabled={busy||playing||dragActive} title="새 맵">＋</button><button onClick={()=>void importMap()} disabled={busy||playing||dragActive} title="맵 가져오기">↥</button></div>
-      <button className="map-script" disabled={!activeMap||dragActive} onClick={()=>{setSelection([]);setContentSelection(null);setTab('script');}}>맵 전체 스크립트</button><div className="hierarchy-list">{snapshot.map?.entities.map(entity=><button key={entity.kind+entity.id} className={selection.some(s=>s.kind===entity.kind&&s.id===entity.id)?'entity selected':'entity'} disabled={dragActive||playing} onClick={e=>{setSelection(previous=>e.shiftKey?[...previous.filter(s=>s.kind!==entity.kind||s.id!==entity.id),{kind:entity.kind,id:entity.id}]:[{kind:entity.kind,id:entity.id}]);setContentSelection(null);}} onDoubleClick={()=>post('focus',{selection:{...entity,class:classes[entity.kind]}})}><span className={'kind-icon '+entity.kind}>{entity.kind==='object'?'◇':entity.kind==='unit'?'♟':entity.kind==='item'?'◈':'⚑'}</span><span>{entityLabel(entity)}</span><small>{entity.id}</small></button>)}</div>
+      <button className="map-script" disabled={!activeMap||dragActive||playing} onClick={()=>{setSelection([]);setContentSelection(null);setTab('script');}}>맵 전체 스크립트</button><div className="hierarchy-list">{snapshot.map?.entities.map(entity=><button key={entity.kind+entity.id} className={selection.some(s=>s.kind===entity.kind&&s.id===entity.id)?'entity selected':'entity'} disabled={dragActive||playing} onClick={e=>{setSelection(previous=>e.shiftKey?[...previous.filter(s=>s.kind!==entity.kind||s.id!==entity.id),{kind:entity.kind,id:entity.id}]:[{kind:entity.kind,id:entity.id}]);setContentSelection(null);}} onDoubleClick={()=>post('focus',{selection:{...entity,class:classes[entity.kind]}})}><span className={'kind-icon '+entity.kind}>{entity.kind==='object'?'◇':entity.kind==='unit'?'♟':entity.kind==='item'?'◈':'⚑'}</span><span>{entityLabel(entity)}</span><small>{entity.id}</small></button>)}</div>
       <div className="panel-footer"><span>{snapshot.map?.entities.length||0} 개체</span><button disabled={!selection.length||busy||playing||dragActive} onClick={()=>void duplicateSelected()}>복제</button><button disabled={!selection.length||busy||playing||dragActive} onClick={()=>void removeSelected()}>삭제</button></div></aside>
-    <main className="scene panel"><div className="panel-title">장면<span>BLITZ · {engineStatus}</span><span className="scene-size">{snapshot.map?`${snapshot.map.size} × ${snapshot.map.size}`:''}</span></div>
+    <main className="scene panel"><div className="panel-title">장면<span>BLITZ · {engineStatus}</span><span className="play-status" role="status">{playState==='playing'?'플레이 중':playState==='starting'?'플레이로 전환 중…':playState==='stopping'?'편집 화면 복원 중…':''}</span><span className="scene-size">{snapshot.map?`${snapshot.map.size} × ${snapshot.map.size}`:''}</span></div>
+      <div className="scene-viewport">
       {activeMap&&engineReady&&preview?<iframe key={frameVersion} ref={frame} src="/engine/index.html" title="Blitz 3D 월드" allow="autoplay; fullscreen"/>:<div className="scene-empty"><div className="island-symbol">⌁</div><h2>{activeMap?'Blitz 엔진을 빌드해주세요':'첫 번째 섬을 만들어보세요'}</h2><p>{activeMap?'python scripts/studio.py engine build':'왼쪽 + 버튼으로 새 맵을 만들거나 기존 .s2 맵을 가져올 수 있습니다.'}</p></div>}
+      </div>
       <div className="scene-hint">{playing?'화면을 클릭하면 플레이 · Esc로 마우스 해제':tool==='place'?`${selectedContent?.name||'아래에서 콘텐츠를 선택하세요'} · 지형을 클릭하여 배치`:tool==='terrain'?'지형을 클릭하면 브러시 적용':tool==='move'?'축: 방향 이동 · 가운데: 지형 위 이동 · Esc: 취소 · Shift 클릭: 다중 선택':'우클릭 드래그: 시점 · WASD/QE: 이동 · F: 선택 개체 보기 · 휠: 줌'}</div>
     </main>
     <aside className="inspector panel"><div className="panel-title">속성<span>INSPECTOR</span></div>
-      {selectedEntity?<><div className="selection-title"><span className="kind-badge">{labels[selectedEntity.kind]} #{selectedEntity.id}</span><h2>{entityLabel(selectedEntity)}</h2></div><fieldset disabled={busy||playing||dragActive}><PropertyForm key={project+activeMap+selectedEntity.kind+selectedEntity.id} draftKey={'studio.entity:'+project+':'+activeMap+':'+selectedEntity.kind+selectedEntity.id} revision={snapshot.revision} values={Object.fromEntries(Object.entries(selectedEntity).filter(([key])=>['x','y','z','yaw','pitch','health','health_max','count','vars'].includes(key)))} onSave={(values,expected)=>mutate([{op:'entity.set',map:activeMap,kind:selectedEntity.kind,id:selectedEntity.id,values}],expected)}/></fieldset><button className="wide" onClick={()=>{setContentSelection({kind:selectedEntity.kind,id:selectedEntity.type});setSelection([]);}}>콘텐츠 정의 열기 →</button><button className="wide" onClick={()=>setTab('script')}>개체 이벤트 스크립트</button></>:
+      {selectedEntity?<><div className="selection-title"><span className="kind-badge">{labels[selectedEntity.kind]} #{selectedEntity.id}</span><h2>{entityLabel(selectedEntity)}</h2></div><fieldset disabled={busy||playing||dragActive}><PropertyForm key={project+activeMap+selectedEntity.kind+selectedEntity.id} draftKey={'studio.entity:'+project+':'+activeMap+':'+selectedEntity.kind+selectedEntity.id} revision={snapshot.revision} values={Object.fromEntries(Object.entries(selectedEntity).filter(([key])=>['x','y','z','yaw','pitch','health','health_max','count','vars'].includes(key)))} onSave={(values,expected)=>mutate([{op:'entity.set',map:activeMap,kind:selectedEntity.kind,id:selectedEntity.id,values}],expected)}/></fieldset><button className="wide" disabled={playing||dragActive} onClick={()=>{setContentSelection({kind:selectedEntity.kind,id:selectedEntity.type});setSelection([]);}}>콘텐츠 정의 열기 →</button><button className="wide" onClick={()=>setTab('script')}>개체 이벤트 스크립트</button></>:
       selectedContent?<><div className="selection-title"><span className="kind-badge">{labels[selectedContent.kind]} · {selectedContent.id}</span><h2>{selectedContent.name}</h2><p>{selectedContent.path.split('/').pop()}</p></div><fieldset disabled={busy||playing||dragActive}><ContentForm key={project+selectedContent.kind+selectedContent.id} draftKey={'studio.content:'+project+':'+selectedContent.kind+selectedContent.id} revision={snapshot.revision} record={selectedContent} catalog={snapshot.catalog} onSave={(properties,expected)=>mutate([{op:'content.set',kind:selectedContent.kind,id:selectedContent.id,properties}],expected)}/></fieldset><button className="wide" disabled={busy||playing||dragActive} onClick={()=>void cloneContent()}>새 콘텐츠로 복제</button><button className="wide" onClick={()=>setTab('script')}>정의 스크립트 편집</button></>:
       <div className="inspector-empty"><h3>선택한 콘텐츠의 속성</h3><p>장면의 개체 또는 아래 콘텐츠 목록에서 항목을 선택하세요.</p>{activeMap&&<button onClick={()=>setTab('script')}>맵 전체 스크립트</button>}</div>}
     </aside>
     <section className="bottom panel"><div className="resize-handle" onPointerDown={e=>{const start=e.clientY,old=bottomHeight;e.currentTarget.setPointerCapture(e.pointerId);const move=(event:PointerEvent)=>setBottomHeight(Math.max(180,Math.min(600,old+start-event.clientY)));const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);}}/>
       <div className="tabs"><button className={tab==='assets'?'active':''} onClick={()=>setTab('assets')}>콘텐츠 <small>PROJECT</small></button><button className={tab==='script'?'active':''} onClick={()=>setTab('script')}>스크립트 {scriptDirty?'●':''}</button><button className={tab==='console'?'active':''} onClick={()=>setTab('console')}>진단 <span className={snapshot.diagnostics.length?'error-count':'count'}>{snapshot.diagnostics.length}</span></button></div>
       {tab==='assets'?<div className="asset-browser"><nav>{(Object.keys(labels) as Kind[]).map(kind=><button key={kind} className={filter===kind?'active':''} onClick={()=>setFilter(kind)}>{labels[kind]}<small>{snapshot.catalog.filter(r=>r.kind===kind).length}</small></button>)}</nav><div className="asset-main"><div className="asset-toolbar"><input placeholder="이름 또는 ID 검색…" value={query} onChange={e=>setQuery(e.target.value)}/><button disabled={busy||playing||!selectedContent} onClick={()=>void cloneContent()}>선택 항목 복제</button><button disabled={busy||playing||dragActive} onClick={()=>void run(async()=>{const path=await window.studio.choose({title:'모델·이미지·오디오 가져오기'});if(!path)return;const filename=path.replaceAll('\\','/').split('/').pop();const destination=await ask('게임 리소스 경로','mods/Stranded II/gfx/'+filename);if(!destination)return;await request({command:'apply',project,expectRevision:snapshot.revision,operations:{op:'asset.import',path,destination}});await refresh();})}>에셋 가져오기</button></div>
-        <div className="asset-grid">{filtered.map(record=><button key={record.kind+record.id} className={contentSelection?.kind===record.kind&&contentSelection.id===record.id?'asset selected':'asset'} draggable={!playing&&!dragActive&&(!classes[record.kind]||available.includes(record.kind+'/'+record.id))} title={classes[record.kind]&&!available.includes(record.kind+'/'+record.id)?'리소스 적용 후 배치 가능':undefined} onDragStart={event=>event.dataTransfer.setData('application/s2-content',JSON.stringify({kind:record.kind,id:record.id}))} onClick={()=>selectContent(record)} onDoubleClick={()=>{selectContent(record);if(classes[record.kind]||record.kind==='building')setTool('place');}}><span className={'asset-icon '+record.kind}>{record.kind==='building'?'⌂':record.kind==='recipe'?'⇌':record.kind==='object'?'◇':record.kind==='unit'?'♟':record.kind==='item'?'◈':'⚑'}</span><strong>{record.name}</strong><small>{classes[record.kind]&&!available.includes(record.kind+'/'+record.id)?'적용 대기':record.kind==='recipe'?'조합':`#${record.id}`}</small></button>)}</div></div></div>:
+        <div className="asset-grid">{filtered.map(record=><button key={record.kind+record.id} className={contentSelection?.kind===record.kind&&contentSelection.id===record.id?'asset selected':'asset'} disabled={playing||dragActive} draggable={!playing&&!dragActive&&(!classes[record.kind]||available.includes(record.kind+'/'+record.id))} title={classes[record.kind]&&!available.includes(record.kind+'/'+record.id)?'리소스 적용 후 배치 가능':undefined} onDragStart={event=>event.dataTransfer.setData('application/s2-content',JSON.stringify({kind:record.kind,id:record.id}))} onClick={()=>selectContent(record)} onDoubleClick={()=>{selectContent(record);if(classes[record.kind]||record.kind==='building')setTool('place');}}><span className={'asset-icon '+record.kind}>{record.kind==='building'?'⌂':record.kind==='recipe'?'⇌':record.kind==='object'?'◇':record.kind==='unit'?'♟':record.kind==='item'?'◈':'⚑'}</span><strong>{record.name}</strong><small>{classes[record.kind]&&!available.includes(record.kind+'/'+record.id)?'적용 대기':record.kind==='recipe'?'조합':`#${record.id}`}</small></button>)}</div></div></div>:
       tab==='console'?<div className="console">{snapshot.diagnostics.map((d,i)=><div key={i} className="diagnostic"><b>{d.code}</b><span>{d.message}</span><small>{d.location}</small></div>)}{!snapshot.diagnostics.length&&<p className="valid">✓ 콘텐츠 참조와 맵 구조 검사를 통과했습니다.</p>}{logs.map((line,i)=><pre key={i}>{line}</pre>)}</div>:
       <div className="script-panel"><div className="script-toolbar"><span>{scriptTarget||'맵이나 콘텐츠를 선택하세요'} {scriptDirty&&scriptRevision.current!==snapshot.revision?'· 이전 버전의 초안':''}</span><button disabled={!scriptDirty||busy} onClick={resetScript}>초안 취소</button><button className="primary" disabled={!scriptTarget||busy||playing||!scriptDirty} onClick={()=>void saveScript()}>스크립트 적용</button></div><ScriptEditor value={script} onChange={changeScript} commands={commands}/></div>}
     </section>

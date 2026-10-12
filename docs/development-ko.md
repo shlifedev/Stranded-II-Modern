@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"c4cbdb29511cd2ce69c39d9d93002b876e9d935d9c0d49bea699f4f09dead696"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"d1b3ec3c04907398e72047b66323fda70e457fed73e0995629b1d3622734e95c"} -->
 
 # 개발 가이드
 
@@ -168,7 +168,9 @@ python3 -m venv .venv
 
 ## Extended 제작 앱
 
-[Stranded II Studio](studio-ko.md)는 독립 GUI와 JSON CLI로 콘텐츠·맵을 편집합니다. 실제 Blitz/Extended 엔진을 사용하는 3D 화면, 실행 취소, 검증, 네이티브 리소스 내보내기를 제공합니다. 전용 명령은 `python scripts/studio.py`, 앱은 `npm --prefix studio start`이며 준비 절차와 사용법은 Studio 가이드를 따릅니다. 산출물은 `build/studio/`에 저장하고 일반 게임·CI·릴리스 에디션 선택은 변경하지 않습니다.
+[Stranded II Studio](studio-ko.md)는 독립 GUI와 JSON CLI로 콘텐츠·맵을 편집합니다. 실제 Blitz/Extended 엔진을 사용하는 3D 화면, 실행 취소, 검증, 네이티브 리소스 내보내기를 제공합니다. 전용 명령은 `python scripts/studio.py`이며, Windows는 `Studio.cmd`, macOS/Linux는 `sh ./Studio.sh`로 의존성·엔진 준비부터 앱 실행까지 자동 처리합니다. 자세한 사용법은 Studio 가이드를 따릅니다. 엔진 산출물은 `build/studio/`, 앱 산출물은 `studio/dist/`에 저장하고 일반 게임·CI·릴리스 에디션 선택은 변경하지 않습니다.
+
+Studio는 편집·플레이에 동일한 iframe과 Blitz 엔진을 사용합니다. `studio/engine/studio.js`가 기존 차분 ACK를 기다린 뒤 최신 저장 맵을 확인하고, `src/engine/studio/runtime.bb`의 `studio_load`가 엔진·정의를 유지한 채 맵을 다시 불러옵니다. 리소스 변경은 명시적인 **리소스 적용**으로 초기화합니다. 정지는 메모리 파일 시스템의 편집 맵 원본과 카메라를 복원하며 프로젝트에는 쓰지 않습니다. 이 경로를 수정하면 Studio 빌드·검사를 실행하고, 공통 엔진도 수정했다면 두 판의 빌드·검사와 관련 게임 검증을 추가합니다.
 
 ## 어디를 수정하나요?
 
