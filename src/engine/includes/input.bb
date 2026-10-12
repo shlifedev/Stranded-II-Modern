@@ -5,6 +5,12 @@ Function getinput(gametimer=1)
 	
 	;Millisecs
 	modern_frame()
+	; Raw look input during play; menus and Unicode controls keep normal clicks.
+	Local capturemouse=0
+	If in_console=0 And (m_section=Csection_game_sp Or m_section=Csection_game_mp) Then
+		capturemouse=(m_menu=0) Or (m_menu=Cmenu_if_movie And seq_cpoint=4)
+	EndIf
+	modern_mouse_capture(capturemouse)
 	
 	;Mouse
 	Local downcache

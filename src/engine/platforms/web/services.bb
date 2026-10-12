@@ -35,6 +35,11 @@ Function modern_dpi_aware()
  Return True
 End Function
 
+Function modern_mouse_capture(enabled)
+ ; The browser shell owns capture through an explicit user gesture.
+ Return True
+End Function
+
 Function modern_win_foreground()
  ; Let the original loading screen and main menu render before a user gesture.
  ; Gameplay still pauses without capture; browser focus is required in both.

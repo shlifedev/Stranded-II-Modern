@@ -4,6 +4,7 @@ Save serialization is stubbed here; real game save/load remains a graphics smoke
 test. Filesystem replacement and failure handling use the actual Windows APIs.
 """
 from pathlib import Path
+import blitz3d_toolchain as engine
 import argparse, ctypes, json, os, subprocess
 from verify_timing import function
 from verify_qol_logic import declarations
@@ -11,7 +12,7 @@ from verify_qol_logic import declarations
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--blitz', type=Path, required=True)
+    ap.add_argument('--blitz', type=Path, help=argparse.SUPPRESS)
     ap.add_argument('--output', type=Path, required=True)
     args = ap.parse_args()
     root = Path(__file__).resolve().parents[1]
@@ -197,11 +198,9 @@ End
 '''
     source = out / 'modern.bb'
     source.write_bytes(body.replace('\n', '\r\n').encode('utf8'))
-    blitz = args.blitz.resolve()
     exe = out / 'modern.exe'
     try:
-        subprocess.run([str(blitz / 'bin/blitzcc.exe'), '-o', str(exe), str(source)],
-                       env=dict(os.environ, blitzpath=str(blitz)), cwd=out, check=True)
+        engine.compile_test(source, exe, cwd=out)
         subprocess.run([str(exe)], cwd=out, timeout=30, check=True,
                        creationflags=subprocess.CREATE_NO_WINDOW)
     finally:

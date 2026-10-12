@@ -1,5 +1,5 @@
-; Windowed Direct3D, focus recovery and elapsed-time pacing.
-; Win32 declarations are installed in a private compiler copy by the builder.
+; Shared presentation, focus recovery and elapsed-time pacing.
+; Windows services are compiled into the embedded Blitz runtime.
 Include "includes\modern_math.bb"
 Global modern_fps=144,modern_borderless=1,modern_width=1280,modern_height=720
 Global modern_hwnd,modern_ui_ready,modern_previous,modern_reset=1

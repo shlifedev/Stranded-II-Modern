@@ -1,5 +1,6 @@
 """Experimental native ARM64/Metal build in an isolated development runtime."""
 from pathlib import Path
+import blitz3d_toolchain as engine_toolchain
 import hashlib
 import json
 import os
@@ -142,11 +143,11 @@ def license_sources():
         result.update({p.relative_to(folder).as_posix(): p for p in folder.rglob('*') if p.is_file()})
     source, engine = macos_toolchain.SOURCE, macos_toolchain.ENGINE
     for path, name in [
-        (source / 'LICENSE', 'WebGPU-port-MIT.txt'), (engine / 'LICENSE.TXT', 'Blitz3D-NG.txt'),
-        (engine / 'deps/sdl/tree/LICENSE.txt', 'SDL2.txt'),
-        (engine / 'deps/freetype2/tree/docs/FTL.TXT', 'FreeType.txt'),
-        (engine / 'deps/ogg/tree/COPYING', 'Ogg.txt'), (engine / 'deps/vorbis/tree/COPYING', 'Vorbis.txt'),
-        (engine / 'deps/minimp3/tree/LICENSE', 'minimp3.txt'), (engine / 'deps/zlib/tree/README', 'zlib.txt'),
+        (engine_toolchain.ENGINE / 'WEBGPU-LICENSE.txt', 'WebGPU-port-MIT.txt'), (engine / 'LICENSE.TXT', 'Blitz3D-NG.txt'),
+        (engine_toolchain.library('sdl') / 'LICENSE.txt', 'SDL2.txt'),
+        (engine_toolchain.library('freetype2') / 'docs/FTL.TXT', 'FreeType.txt'),
+        (engine_toolchain.library('ogg') / 'COPYING', 'Ogg.txt'), (engine_toolchain.library('vorbis') / 'COPYING', 'Vorbis.txt'),
+        (engine_toolchain.library('minimp3') / 'LICENSE', 'minimp3.txt'), (engine_toolchain.library('zlib') / 'README', 'zlib.txt'),
     ]:
         result[name] = path
     return result
@@ -242,10 +243,8 @@ def implementation_hashes():
         'config/game-files.json', 'scripts/macos_toolchain.py', 'scripts/macos_build.py',
         'scripts/locales.py', 'scripts/language_pack.py', 'scripts/web_audio.py',
         'scripts/editions.py', 'scripts/versioning.py')]
-    paths += list((ROOT / 'patches/blitz3d-web').glob('*.patch'))
-    paths += list((ROOT / 'patches/blitz3d-macos').glob('*.patch'))
     paths += [p for p in (ROOT / 'src/native/macos').rglob('*') if p.is_file()]
-    return {p.relative_to(ROOT).as_posix(): digest(p) for p in sorted(paths)}
+    return {**{p.relative_to(ROOT).as_posix(): digest(p) for p in sorted(paths)}, **engine_toolchain.sources()}
 
 
 def build(args):

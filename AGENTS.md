@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"32a8b011ba47768887529d1799bcba1de94a069187374ab8cba8e0ddae4e6107"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"532693de9daae1a4b9e41985769432e48652fd2a3b22b4a94f295c271e109fbf"} -->
 
 # Stranded II development instructions
 
@@ -15,7 +15,8 @@ The architecture has Stranded II and Extended editions using a shared engine, ed
 
 - Edit `src/engine/**/*.bb` directly. These files are tracked sources, not generated output. Do not run the old `src/ko-full` generators against the current engine.
 - Follow `scripts/dev.py setup|localize|build|run|check` and the directory structure in `docs/development.md`. Python handles preparation, fonts, and verification only; it does not regenerate engine code.
-- Development dependencies are in `deps/game`, `deps/Blitz3D-V1.118`, and `deps/fonts`. `games/`, `dist/`, `archive/`, `tools/`, `src/ko-full/`, and `src/upstream/` are local cleanup targets requested by the user and are not needed for active builds. Specify external dependencies through setup arguments.
+- Edit the shared Blitz compiler/runtime directly in `src/blitz3d/`; do not restore upstream sources or overlay patches. External SDK/library pins are in `config/blitz3d-toolchain.json`; generated files belong in `build/engine/`.
+- Development dependencies are in `deps/game`, `deps/blitz3d`, and `deps/fonts`. `deps/Blitz3D-V1.118` is an optional original reference, not the production compiler. `games/`, `dist/`, `archive/`, `tools/`, `src/ko-full/`, and `src/upstream/` are local cleanup targets requested by the user and are not needed for active builds. Specify external dependencies through setup arguments.
 - Local cleanup of `tools/` was deferred because the existing Blitz3D editor was running. The user was asked to save and close it. Confirm that it has closed, then recheck the cleanup scope and Git tracking before cleanup. Do not interrupt the current game.
 - Do not overwrite the user's game or saves, or forcibly terminate a running user game. Verify changes in `build/runtime` or a separate copy. Preserve current saves and existing user data in `build/runtime/preserved`; do not delete them as generated output during cleanup.
 - `language=<registered code>` takes effect on restart. Language packs pair `locales/<code>.tsv` with `.json` metadata; `localize` refreshes catalogs and fonts without rebuilding the EXE. Do not force the game to close through the language Apply button. Preserve FPS and display settings.

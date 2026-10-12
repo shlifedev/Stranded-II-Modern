@@ -1,0 +1,44 @@
+name: OpenGL
+
+platforms:
+  - desktop
+  - mobile
+  - ovr
+  - emscripten
+  - nx
+
+modules:
+  - stub
+  - blitz
+  - runtime
+  - hook
+  - event
+  - math
+  - string
+  - stdio
+  - stream
+  - sockets
+  - enet
+  - system.windows
+  - system.macos
+  - system.linux
+  - system.ios
+  - system.android
+  - filesystem.windows
+  - filesystem.posix
+  - timer.windows
+  - timer.noop
+  - bank
+  - input
+  # - input.directinput8
+  - audio
+  - audio.fmod
+  - audio.openal
+  - blitz3d.gl
+  - userlibs
+  # - runtime.glfm
+  - runtime.sdl
+  - runtime.html
+
+entry:
+  runtime: bbCreateOpenGLRuntime

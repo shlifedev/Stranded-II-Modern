@@ -9,6 +9,7 @@ import re
 import struct
 
 import web_toolchain
+import blitz3d_toolchain as engine
 from web_build import ROOT, BUILD, compiler_environment
 from s2map import Map
 from verify_timing import function
@@ -76,17 +77,16 @@ def verify_semantics():
     output = Path(tempfile.mkdtemp(prefix='semantics-', dir=BUILD))
     windows = output / 'windows'
     windows.mkdir()
-    native = ROOT / 'build/toolchain'
-    if not (native / 'bin/blitzcc.exe').is_file():
-        raise ValueError('Numeric parity checks also require the private Windows compiler (setup --platform windows).')
+    engine.build_native(False)
+    from verify_engine import check_abi
+    check_abi(output / 'original-reference')
     script_checks, fixture = script_fixture(output)
     source = output / 'semantics.bb'
     source.write_text((ROOT / 'tests/web_semantics.bb').read_text('utf8')
                       .replace('; SCRIPT_CHECKS', script_checks)
                       .replace('; COLORMAP_CHECKS', colormap_fixture()), encoding='utf8')
     shutil.copytree(fixture, windows / 'fixtures')
-    web_toolchain.run([native / 'bin/blitzcc.exe', '-o', windows / 'test.exe', source],
-                      cwd=windows, env=dict(os.environ, blitzpath=str(native)))
+    engine.compile_test(source, windows / 'test.exe', cwd=windows, graphics=False)
     subprocess.run([str(windows / 'test.exe')], cwd=windows, check=True, timeout=30)
     env = compiler_environment()
     pre = output / 'pre.js'
@@ -107,9 +107,7 @@ def verify_semantics():
   }
 };
 ''', encoding='utf8')
-    # The upstream console-test runtime registers GL drivers too; no graphics
-    # context is opened by this fixture, but their symbols must still link.
-    env['SCPCB_EMCC_EXTRA'] += f' -sUSE_WEBGL2=1 -sFULL_ES3=1 --pre-js "{pre}" --embed-file "{fixture}@/game/fixtures"'
+    env['SCPCB_EMCC_EXTRA'] += f' --pre-js "{pre}" --embed-file "{fixture}@/game/fixtures"'
     web_toolchain.run([web_toolchain.upstream().BLITZCC, '-target', 'emscripten', '-r', 'test',
                       '-o', output / 'test', source], cwd=output, env=env)
     node = next((web_toolchain.paths()[1] / 'node').glob('*/node.exe'))

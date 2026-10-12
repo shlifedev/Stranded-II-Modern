@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"ko","syncedHash":"688971210fe00ecb8776111a762e8ea4ff54ad6d67877c286af40e16100bd14f"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"ko","syncedHash":"01bd97f1c8aa6632a1eacda8978d95c4bf88c0bcf8dd0605e2ccb94ebcfc12cc"} -->
 
 # Stranded II 개발 지침
 
@@ -15,7 +15,8 @@
 
 - 직접 편집하는 엔진은 `src/engine/**/*.bb`다. Git에 포함하며 생성물로 취급하지 않는다. `src/ko-full`의 옛 생성기를 새 엔진에 실행하지 않는다.
 - 명령과 폴더 구조는 `docs/development.md`의 `scripts/dev.py setup|localize|build|run|check`를 따른다. Python은 준비·글꼴·검증만 담당하며 엔진 코드를 재생성하지 않는다.
-- 개발 의존성은 `deps/game`, `deps/Blitz3D-V1.118`, `deps/fonts`다. `games/`, `dist/`, `archive/`, `tools/`, `src/ko-full/`, `src/upstream/`는 사용자가 요청한 로컬 정리 대상이며 활성 빌드에 필요하지 않다. 외부 의존성은 setup 인자로 명시한다.
+- 공통 Blitz 컴파일러·런타임은 `src/blitz3d/`에서 직접 수정한다. 업스트림 소스 복원이나 패치 덮어쓰기를 하지 않는다. 외부 SDK·라이브러리 고정 버전은 `config/blitz3d-toolchain.json`, 생성 파일은 `build/engine/`에 둔다.
+- 개발 의존성은 `deps/game`, `deps/blitz3d`, `deps/fonts`다. `deps/Blitz3D-V1.118`은 선택형 원본 비교용이며 실제 빌드 컴파일러가 아니다. `games/`, `dist/`, `archive/`, `tools/`, `src/ko-full/`, `src/upstream/`는 사용자가 요청한 로컬 정리 대상이며 활성 빌드에 필요하지 않다. 외부 의존성은 setup 인자로 명시한다.
 - 로컬 정리에서 `tools/`만 기존 Blitz3D 편집기 실행 때문에 보류됐다. 사용자에게 저장 후 종료를 요청했다. 종료를 확인한 뒤 범위와 Git 추적 여부를 다시 확인하고 정리한다. 현재 게임 실행은 방해하지 않는다.
 - 사용자 게임/세이브를 덮어쓰거나 실행 중인 사용자 게임을 강제 종료하지 않는다. 검증은 `build/runtime` 또는 별도 복사본에서 한다. 현재 세이브와 `build/runtime/preserved`의 기존 사용자 데이터는 모두 보존한다. 폴더 정리 시에도 이를 생성물로 취급해 삭제하지 않는다.
 - `language=<등록된 코드>`는 재시작 시 적용한다. 언어팩은 `locales/<코드>.tsv`와 `.json` 메타데이터로 구성하며 `localize`로 EXE 재빌드 없이 번역·폰트를 갱신한다. 언어 적용 버튼으로 강제 종료하지 않는다. FPS·화면 설정을 보존한다.

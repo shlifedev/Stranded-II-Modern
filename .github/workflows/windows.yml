@@ -40,7 +40,7 @@ env:
 jobs:
   build:
     runs-on: windows-2022
-    timeout-minutes: 25
+    timeout-minutes: 90
     # Extended CI is paused. Restore edition routing and artifact names
     # together with this matrix when public Extended builds resume.
     # strategy:
@@ -120,14 +120,19 @@ jobs:
           DEPENDENCY_ASSET: ${{ steps.pin.outputs.asset }}
         run: python -X utf8 scripts/ci.py dependencies --archive "build/ci/downloads/$env:DEPENDENCY_ASSET" --github-output "$env:GITHUB_OUTPUT"
 
+      - name: Cache pinned engine dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: deps/blitz3d
+          key: blitz3d-windows-x64-${{ hashFiles('config/blitz3d-toolchain.json', 'scripts/blitz3d_toolchain.py') }}
+
       - name: Prepare runtime resources
         env:
           GAME_INPUT: ${{ steps.deps.outputs.game }}
-          BLITZ_INPUT: ${{ steps.deps.outputs.blitz }}
           FONT_INPUT: ${{ steps.deps.outputs.font }}
-        run: python -X utf8 scripts/dev.py setup --game "$env:GAME_INPUT" --blitz "$env:BLITZ_INPUT" --font "$env:FONT_INPUT"
+        run: python -X utf8 scripts/dev.py setup --game "$env:GAME_INPUT" --font "$env:FONT_INPUT"
 
-      - name: Compile Blitz3D and shared QOL input
+      - name: Compile embedded Blitz3D and game
         run: python -X utf8 scripts/dev.py build --version-info build/ci/version.json
 
       - name: Check resources and non-graphical runtime behavior
@@ -157,7 +162,6 @@ jobs:
           path: |
             build/setup-report.json
             build/build-report.json
-            build/native/report.json
             build/check-*/**/*.json
             build/check-*/**/*.txt
           # Extended reports are disabled with its CI build:

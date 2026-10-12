@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"3820a5050d0c4c78ccf2b99ae288d41eb4ed198a27ed4f2f75f4cf8ddc7a0eaf"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"f26afebfec50f4a0a59bd1b2a1cbbfffc042994560ad0a7ba37ccdfaaf5735ed"} -->
 
 # Stranded II Studio
 
@@ -25,7 +25,7 @@ npm --prefix studio ci
 npm --prefix studio start
 ```
 
-If web/Studio preparation settings already exist, the path arguments to `engine setup` may be omitted. Initial preparation downloads the pinned Blitz web toolchain and SDK. Engine outputs stay under `build/studio/`; app outputs go to `studio/dist/`. The launchers and app prefer the repository's `.venv` Python; set `S2_STUDIO_PYTHON` to use another interpreter.
+If web/Studio preparation settings already exist, the path arguments to `engine setup` may be omitted. The engine is edited directly in the shared `src/blitz3d/` sources. Preparation downloads pinned external SDKs/libraries; compiler/runtime outputs stay in `build/engine/`, Studio game outputs in `build/studio/`, and app outputs in `studio/dist/`. The launchers and app prefer the repository's `.venv` Python; set `S2_STUDIO_PYTHON` to use another interpreter.
 
 Create a project in an empty folder or open an existing project on the start screen. Use **`build/studio/runtime`** as the base resources for 3D preview. The CLI can edit, validate and export projects using other prepared bases, but preview requires the same base path as its bundled resources.
 

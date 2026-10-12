@@ -14,7 +14,7 @@ import web_toolchain
 class WebSelfBlit(TestCase):
     def test_actual_self_blits_keep_pixels_and_batch_water_snapshots(self):
         source, sdk = web_toolchain.paths()
-        directory = source / 'blitz3d-ng/src/modules/bb/graphics.webgpu'
+        directory = source / 'src/modules/bb/graphics.webgpu'
         cpp = (directory / 'canvas.webgpu.cpp').read_text('utf8')
         header = (directory / 'canvas.webgpu.h').read_text('utf8')
         methods = cpp[cpp.index('void WebGPUCanvas::releaseBlitSnapshot()'):

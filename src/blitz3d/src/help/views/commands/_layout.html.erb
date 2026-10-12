@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= title || 'Blitz Basic Command Reference' %></title>
+  <link rel="stylesheet" href="<%= relative_to_root %>/../assets/style.css" type="text/css" />
+</head>
+<body class="command-reference">
+  <nav>
+    <h1>Command Reference</h1>
+    <a href="<%= relative_to_root %>/../index.html">
+      <img src="<%= relative_to_root %>/../b3dlogo.jpg" />
+    </a>
+  </nav>
+  <main>
+    <div class="sidebar v-stack">
+      <ul>
+        <li><a target=_top href="<%= relative_to_root %>/index.html">Index</a></li>
+        <li><a href=ascii.htm target="main">ASCII Codes</a></li>
+        <li><a href="./scancodes.html">Scancodes</a></li>
+      </ul>
+
+      <div class="toggle-group">
+        <a href>Category</a>
+        <a href>A-Z</a>
+        <a href>Module</a>
+      </div>
+
+      <form>
+        <input autofocus id="search" type="text" />
+      </form>
+
+      <div class="command-list">
+        <ul>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <%= yield %>
+  </div>
+  <script src="<%= relative_to_root %>/commands.js"></script>
+  <script src="<%= relative_to_root %>/../assets/reference.js"></script>
+</body>
+</html>

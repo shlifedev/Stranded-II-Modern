@@ -4,6 +4,7 @@ No GUI input is sent. Only branding, focus waiting and the interactive loop are
 replaced. Use Computer Use separately for visual menu and options checks.
 """
 from pathlib import Path
+import blitz3d_toolchain as engine
 from editions import Edition, NAMES
 import argparse, json, os, shutil, subprocess, tempfile
 from verify_timing import function
@@ -101,11 +102,9 @@ EndGraphics()
 End
 '''
     entry.write_bytes(text.replace('\n','\r\n').encode('utf8'))
-    blitz = root/'build/toolchain'
     exe = runtime/'SaveSmoke.exe'
     print('Isolated runtime:', runtime, flush=True)
-    subprocess.run([str(blitz/'bin/blitzcc.exe'), '-o', str(exe), str(source/profile.entry)],
-                   cwd=source, env=dict(os.environ, blitzpath=str(blitz)), check=True)
+    engine.compile_test(source / profile.entry, exe, cwd=source)
     startup = subprocess.STARTUPINFO()
     startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     startup.wShowWindow = 0

@@ -5,6 +5,7 @@ Personal saves are excluded and modern.ini is replaced with fixture settings.
 The source runtime and its user data are never written by these checks.
 """
 from pathlib import Path
+import blitz3d_toolchain as engine
 import argparse
 import json
 import os
@@ -269,15 +270,11 @@ def main():
         if args.language == 'en':
             text = text.replace('qol_query$="밀가루"', 'qol_query$="Flour"')
     loop.write_text(text, encoding='utf8')
-    blitz = root/'build/toolchain'
     exe = runtime/'QolSmoke.exe'
-    result = subprocess.run([str(blitz/'bin/blitzcc.exe'), '-o', str(exe), str(source/profile.entry)],
-                            cwd=source, env=dict(os.environ, blitzpath=str(blitz)), capture_output=True)
-    if result.returncode:
-        raise RuntimeError(result.stdout.decode('utf8', errors='replace'))
+    engine.compile_test(source / profile.entry, exe, cwd=source)
     print('Isolated runtime:', runtime, flush=True)
     if args.interactive:
-        print('Prepared for Computer Use:', exe)
+        print('Prepared for manual testing:', exe)
         return
     startup = subprocess.STARTUPINFO()
     startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW

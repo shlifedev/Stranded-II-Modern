@@ -1,5 +1,6 @@
 """Run the real Blitz version-file loader without opening a graphics window."""
 from pathlib import Path
+import blitz3d_toolchain as engine
 import argparse
 import json
 import os
@@ -8,7 +9,7 @@ import subprocess
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--blitz', type=Path, required=True)
+    parser.add_argument('--blitz', type=Path, help=argparse.SUPPRESS)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     output = args.output.resolve()
@@ -26,10 +27,7 @@ End
     source = output / 'version-test.bb'
     source.write_text(body, encoding='utf8')
     exe = output / 'version-test.exe'
-    result = subprocess.run([str(args.blitz.resolve() / 'bin/blitzcc.exe'), '-o', str(exe), str(source)],
-                            cwd=output, env=dict(os.environ, blitzpath=str(args.blitz.resolve())), capture_output=True)
-    if result.returncode:
-        raise ValueError(result.stdout.decode('utf8', errors='replace') + result.stderr.decode('utf8', errors='replace'))
+    engine.compile_test(source, exe, cwd=output)
     cases = [(None, 'development'), ('1.1.0-main\n', '1.1.0-main'),
              ('extended-0.1.0-local\n', 'extended-0.1.0-local'),
              ('extended-0.1.0-dev.1\n', 'extended-0.1.0-dev.1'),

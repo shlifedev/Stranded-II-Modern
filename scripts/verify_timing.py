@@ -5,6 +5,7 @@ The pacing check uses real interrupt time, omitting ONLY Flip (no graphics conte
 It does not measure rendering performance or validate focus/Alt+Tab behavior.
 """
 from pathlib import Path
+import blitz3d_toolchain as engine
 import argparse, json, os, re, shutil, subprocess
 
 
@@ -16,7 +17,7 @@ def function(source, name):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--blitz', type=Path, required=True)
+    ap.add_argument('--blitz', type=Path, help=argparse.SUPPRESS)
     ap.add_argument('--output', type=Path, required=True)
     args = ap.parse_args()
     full = Path(__file__).resolve().parents[1] / 'src/engine/includes'
@@ -122,10 +123,8 @@ End
     code = body + '\n' + code + '\n' + pacing + '\n'
     source = out / 'timing.bb'
     source.write_bytes(code.replace('\n', '\r\n').encode('ascii'))
-    blitz = args.blitz.resolve()
     exe = out / 'timing.exe'
-    subprocess.run([str(blitz / 'bin/blitzcc.exe'), '-o', str(exe), str(source)],
-                   env=dict(os.environ, blitzpath=str(blitz)), check=True, cwd=out)
+    engine.compile_test(source, exe, cwd=out)
     subprocess.run([str(exe)], cwd=out, timeout=30, check=True,
                    creationflags=subprocess.CREATE_NO_WINDOW)
     result = (out / 'timing.txt').read_text('ascii')

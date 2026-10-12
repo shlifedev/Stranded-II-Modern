@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"d1b3ec3c04907398e72047b66323fda70e457fed73e0995629b1d3622734e95c"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"82dae0f4c8bfd6d8fc0fc1e184c736a9eb74baa00243880c35e1461303579ec2"} -->
 
 # 개발 가이드
 
@@ -10,16 +10,15 @@
 
 ## 개발 환경 준비
 
-Windows 10 이상, Python 3.10 이상, [requirements.txt](../requirements.txt)의 Pillow와 fontTools가 필요합니다. Blitz의 파일 경로 처리를 고려해 `C:\Stranded II`처럼 영문 경로를 사용하세요. 경로에 공백은 있어도 됩니다.
+Windows 10/11 x64와 Direct3D 12 지원 GPU, Python 3.12 이상, [requirements.txt](../requirements.txt)이 필요합니다. 작업 폴더는 `C:\Stranded II`처럼 영문 경로를 사용하세요. 공백은 있어도 됩니다.
 
-두 판 모두 Visual Studio의 MSVC x86/x64 C++ 빌드 도구와 Windows SDK가 필요합니다. `build`는 QOL 활성화 여부와 관계없이 공통 `src/native/qol_input.c`를 32비트 `QolInput.dll`로 컴파일합니다. 별도 C 런타임 설치는 필요하지 않습니다. 두 판의 패키지에 DLL을 포함하며 네이티브 산출물·보고서는 선택한 판의 `build` 디렉터리 아래 `native/`에 저장합니다.
+Visual Studio의 MSVC x64 C++ 빌드 도구, Windows SDK, CMake/Ninja 도구, DIA SDK를 설치합니다. `build`는 저장소의 `src/blitz3d/` 엔진을 LLVM과 함께 빌드해 게임을 x64 네이티브 실행 파일로 연결합니다. 그래픽은 Dawn/D3D12, 오디오는 OpenAL Soft를 사용합니다. Unicode 입력·IME·Windows 서비스는 런타임에 내장하며 `QolInput.dll`은 필요하지 않습니다. 실행에 필요한 DLL과 라이선스는 각 판의 EXE 옆에 복사합니다.
 
 아래 의존성은 저장소에 포함하지 않으므로 직접 준비합니다.
 
 | 의존성 | 다운로드 | 배치 경로 |
 | --- | --- | --- |
 | Stranded II Gold 1.0.0.1 English ZIP | [공식 다운로드](https://www.strandedonline.de/s2_download.php) | `deps/game/` |
-| Blitz3D 1.118 | [Blitz Research 배포](https://blitzresearch.itch.io/blitz3d)에서 `Blitz3D-V1.118.zip` | `deps/Blitz3D-V1.118/` |
 | Noto Sans KR | [고정 버전 글꼴](https://raw.githubusercontent.com/google/fonts/4efc2774c63917927efe769ca845def6bd6debae/ofl/notosanskr/NotoSansKR%5Bwght%5D.ttf) | `deps/fonts/NotoSansKR[wght].ttf` |
 
 압축을 푼 결과는 다음처럼 배치합니다. 게임은 수정되지 않은 영어 원본을 사용합니다.
@@ -30,15 +29,11 @@ deps/
     StrandedII.exe
     core/
     mods/
-  Blitz3D-V1.118/
-    bin/
-      blitzcc.exe
-    ...
   fonts/
     NotoSansKR[wght].ttf
 ```
 
-의존성 버전과 SHA-256은 [config/dependencies.json](../config/dependencies.json), 게임 파일 목록은 [config/game-files.json](../config/game-files.json), 컴파일러 구성 파일은 [config/toolchain-files.json](../config/toolchain-files.json)에 기록돼 있습니다. 준비 단계에서 일치 여부를 검사하므로 지정된 배포본을 사용하세요. 별도 원본 소스 ZIP은 필요하지 않습니다.
+게임·글꼴 버전과 해시는 [config/dependencies.json](../config/dependencies.json), [config/game-files.json](../config/game-files.json)에 있습니다. `setup`은 [config/blitz3d-toolchain.json](../config/blitz3d-toolchain.json)에 고정한 SDK·라이브러리를 `deps/blitz3d/`에 받습니다. Blitz3D 1.118은 비교용 선택 의존성이며 실제 빌드에는 사용하지 않습니다. 엔진 출처와 통합한 변경은 [src/blitz3d/upstream.json](../src/blitz3d/upstream.json)에 기록합니다.
 
 ## 최초 빌드
 
@@ -47,15 +42,15 @@ deps/
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -X utf8 scripts/dev.py setup --game deps/game --blitz deps/Blitz3D-V1.118 --font 'deps/fonts/NotoSansKR[wght].ttf'
+.\.venv\Scripts\python.exe -X utf8 scripts/dev.py setup --game deps/game --font 'deps/fonts/NotoSansKR[wght].ttf'
 .\.venv\Scripts\python.exe -X utf8 scripts/dev.py build
 .\.venv\Scripts\python.exe -X utf8 scripts/dev.py check
 .\Play.cmd
 ```
 
-`setup`은 원본 리소스를 실행 폴더에 복사하고 UTF-8 문구 참조와 글꼴을 준비합니다. 컴파일러도 `build/toolchain/`에 복사하고 이 프로젝트의 외부 함수 선언을 추가합니다. 원본 의존성은 변경하지 않습니다.
+`setup`은 원본 리소스·UTF-8 참조·글꼴·엔진 외부 의존성을 준비합니다. `src/blitz3d/`를 다운로드나 패치로 덮어쓰지 않습니다. 컴파일러·런타임 라이브러리·CMake 생성 헤더는 `build/engine/<target>/`에, 게임 산출물은 각 판의 빌드 폴더에 저장합니다.
 
-다른 위치에 준비한 의존성을 `--game`, `--blitz`, `--font`로 지정해도 됩니다. 첫 `setup`이 경로를 `build/dependencies.local.json`에 기록하므로 이후에는 인자를 생략할 수 있습니다. 해당 파일은 개인 경로를 담으므로 Git에서 제외합니다.
+외부 리소스 경로는 `--game`, `--font`로 지정합니다. `setup`이 Git에서 제외한 `build/dependencies.local.json`에 기록하므로 이후에는 생략할 수 있습니다. 이전 `--blitz` 인자는 허용하지만 컴파일러 선택에는 사용하지 않습니다.
 
 ## 변경 후 실행
 
@@ -63,7 +58,7 @@ python -m venv .venv
 
 | 변경 내용 | 실행 명령 |
 | --- | --- |
-| `src/engine/**/*.bb` 수정 | `.\dev.ps1 build -Python .\.venv\Scripts\python.exe` |
+| `src/engine/**/*.bb` 또는 `src/blitz3d/` 수정 | `.\dev.ps1 build -Python .\.venv\Scripts\python.exe` |
 | `locales/` 번역·언어·폰트 수정 | `.\dev.ps1 localize -Python .\.venv\Scripts\python.exe` |
 | `resources/` 수정 | `.\dev.ps1 setup -Python .\.venv\Scripts\python.exe` |
 | 자동 검사 | `.\dev.ps1 check -Python .\.venv\Scripts\python.exe` |
@@ -87,9 +82,9 @@ Python으로 직접 실행할 수도 있습니다.
 
 모든 Python 개발 명령은 `--platform windows|web|macos`를 받으며 기본값은 `windows`입니다. 웹은 기본판만 빌드합니다. `--platform web --edition extended`는 오류를 반환하며 Extended CI는 계속 비활성 상태입니다.
 
-`src/engine/StrandedIIWeb.bb`는 기존 `StrandedII.bb`와 웹 플랫폼 서비스를 함께 포함합니다. 게임 로직은 공유하고, Windows는 Blitz3D 1.118, 웹은 [고정한 Blitz3D NG WebGPU 포트와 Emscripten](../config/web-toolchain.json)을 사용합니다. WebAssembly·WebGPU·JSPI·브라우저 저장의 원리는 [웹 버전 구현 원리](web-architecture-ko.md)에 정리했습니다. 엔진 수정은 `patches/blitz3d-web/`에 관리합니다. 다른 게임 엔진으로 변환하거나 `.bb` 게임 소스를 생성하지 않습니다.
+`src/engine/StrandedIIWeb.bb`는 공통 게임과 브라우저 서비스를 포함합니다. Windows·웹·macOS·Studio가 모두 `src/blitz3d/`의 수정 가능한 엔진을 빌드하며 웹 타깃은 [Emscripten](../config/web-toolchain.json)을 사용합니다. 엔진 소스를 직접 수정한 뒤 다시 빌드합니다. WASM·WebGPU·JSPI·브라우저 저장은 [웹 버전 구현 원리](web-architecture-ko.md)를 참고하세요.
 
-위 Windows 개발 환경에 Git과 Visual Studio의 CMake/Ninja 도구, DIA SDK가 필요합니다. `setup`은 `deps/blitz3d-web/`, `deps/emsdk/`, `deps/ffmpeg-web/`에 고정한 도구를 다운로드하므로 첫 준비에는 시간과 디스크 공간이 필요합니다. 먼저 Windows 준비를 마친 뒤 실행합니다.
+웹 개발에는 Git도 필요합니다. 준비 과정은 `deps/blitz3d/`, `deps/emsdk/`, `deps/ffmpeg-web/`에 고정 의존성을 받으므로 첫 빌드에는 시간과 디스크 공간이 필요합니다. 먼저 Windows 준비를 마친 뒤 실행합니다.
 
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 scripts/dev.py setup --platform web
@@ -142,9 +137,9 @@ WebGPU의 동일 버퍼 `CopyRect`는 임시 텍스처를 재사용하고, 앞�
 
 ## 실험용 macOS 네이티브 빌드
 
-기본판의 Apple Silicon 실험용 빌드입니다. 게임 코드는 ARM64 네이티브 실행 파일로 컴파일하고, WebGPU 렌더러는 Dawn을 통해 Metal을 사용합니다. 컴파일·렌더링·운영체제 연동의 원리는 [macOS 구현 원리](macos-architecture-ko.md)에 정리했습니다. [고정 의존성](../config/macos-toolchain.json), `patches/blitz3d-macos/`, `src/native/macos/`에서 이 타깃을 관리합니다. 기본 플랫폼은 계속 Windows이며 Extended Mac 빌드는 오류를 반환합니다.
+기본판의 Apple Silicon 실험용 빌드입니다. 게임 코드는 ARM64 네이티브 실행 파일로 컴파일하고, WebGPU 렌더러는 Dawn을 통해 Metal을 사용합니다. 컴파일·렌더링·운영체제 연동의 원리는 [macOS 구현 원리](macos-architecture-ko.md)에 정리했습니다. [타깃 설정](../config/macos-toolchain.json), 공통 `src/blitz3d/` 엔진, `src/native/macos/`에서 이 타깃을 관리합니다. 기본 플랫폼은 계속 Windows이며 Extended Mac 빌드는 오류를 반환합니다.
 
-Apple Silicon Mac에 Xcode Command Line Tools, Git, Python 3.12 이상, CMake, Ninja, FFmpeg/ffprobe, zstd가 필요합니다. 포함하는 Dawn 라이브러리에 맞춰 배포 타깃은 macOS 15.0입니다. CI는 macOS 15에서 빌드와 비그래픽 실행을 검사하며 실제 그래픽 플레이는 별도 검증이 필요합니다. 준비 과정은 `deps/blitz3d-macos/`, `deps/dawn-macos/`에 전용 컴파일러와 의존성을 다운로드하므로 시간과 디스크 공간이 필요합니다. 입력은 해시가 일치하는 공식 게임 리소스와 고정 글꼴이어야 하며 플레이어 데이터가 있는 실행 폴더를 지정하지 마세요.
+Apple Silicon Mac에 Xcode Command Line Tools, Git, Python 3.12 이상, CMake, Ninja, FFmpeg/ffprobe, zstd가 필요합니다. 포함하는 Dawn 라이브러리에 맞춰 배포 타깃은 macOS 15.0입니다. CI는 macOS 15에서 빌드와 비그래픽 실행을 검사하며 실제 그래픽 플레이는 별도 검증이 필요합니다. 준비 과정은 `deps/blitz3d/`에 공통 고정 의존성을 받고 `build/engine/`에 컴파일러·런타임을 빌드하므로 시간과 디스크 공간이 필요합니다. 입력은 해시가 일치하는 공식 게임 리소스와 고정 글꼴이어야 하며 플레이어 데이터가 있는 실행 폴더를 지정하지 마세요.
 
 ```sh
 python3 -m venv .venv
@@ -174,7 +169,7 @@ Studio는 편집·플레이에 동일한 iframe과 Blitz 엔진을 사용합니�
 
 ## 어디를 수정하나요?
 
-**게임 기능은 `src/engine/`에서 구현합니다.** `build/`는 실행 파일·검사 결과가 생기는 곳이며 원본 소스는 아닙니다. 아래 경로와 명령은 기본판 기준입니다. 확장판 경로는 [다음 절](#기본판과-확장판)을 참고하세요.
+**게임 기능은 `src/engine/`, 컴파일러·런타임 변경은 `src/blitz3d/`에서 구현합니다.** `build/`는 실행 파일·검사 결과가 생기는 곳이며 원본 소스는 아닙니다. 아래 경로와 명령은 기본판 기준입니다. 확장판 경로는 [다음 절](#기본판과-확장판)을 참고하세요.
 
 ```text
 src/engine/ 수정 → build 명령 → build/runtime/StrandedII.exe → Play.cmd
@@ -185,14 +180,15 @@ resources/ 수정 → setup 명령 → build/runtime/의 리소스 갱신
 | 경로 | 역할 | Git 관리 |
 | --- | --- | --- |
 | `src/engine/` | 직접 수정하는 Blitz3D 게임 소스. 진입점은 `StrandedII.bb` | 포함 |
+| `src/blitz3d/` | 직접 수정하는 공통 컴파일러·런타임·그래픽/입력/오디오 모듈과 원본 라이선스 | 포함 |
 | `locales/` | 언어별 번역·이름·폰트 설정과 기존 문구 번호 대응 | 포함 |
 | `resources/` | 원본 문구의 번역 키 대응, 수정할 리소스 | 포함 |
 | `scripts/`, `dev.ps1` | 준비·빌드·실행·검증 도구 | 포함 |
-| `config/` | 초기 설정, 의존성 버전·해시, Blitz 외부 함수 선언 | 포함 |
+| `config/` | 초기 설정, 의존성 버전·해시, 선택형 구버전 비교용 선언 | 포함 |
 | `docs/`, `licenses/` | 문서와 저작권 고지 | 포함 |
-| `deps/` | 직접 준비하는 원본 게임·컴파일러·글꼴 | 제외 |
+| `deps/` | 원본 게임·글꼴과 고정한 외부 SDK·라이브러리 | 제외 |
 | `.venv/` | Python 가상환경 | 제외 |
-| `build/toolchain/` | 프로젝트 전용 컴파일러 복사본 | 제외 |
+| `build/engine/` | 타깃별 컴파일러·런타임 빌드와 생성 헤더 | 제외 |
 | `build/check-*/` | 자동 검사가 생성한 임시 코드·실행 파일·보고서 | 제외 |
 | `build/runtime/` | 빌드된 게임, 리소스, 사용자 설정과 저장 파일 | 제외 |
 
@@ -222,11 +218,13 @@ build/runtime/                   기본판 실행·설정·세이브
 build/extended/runtime/          확장판 실행·설정·세이브
 ```
 
-두 `modules.bb`는 공통 UI·입력·건축과 `includes/qol*.bb` 구현을 선택합니다. 판별 프로필의 `Cedition_qol_default`는 기본판 0, 확장판 1입니다. 저장된 `qol_*` 값이 우선하며 누락·잘못된 값에는 해당 판의 기본값을 사용합니다. QOL은 설정 저장에 성공하면 즉시 적용하고, 언어·화면 변경은 계속 재시작이 필요합니다. 검색 입력은 Win32 Unicode EDIT와 IME를 사용하며 선언은 `config/userlibs/qol_*.decls`에 있습니다. 기능이 달라질 때만 필요한 모듈을 분리합니다. Python은 엔진 코드를 생성하지 않습니다. 빌드 보고서는 해당 진입점의 실제 `Include` 그래프를 기록하며 다른 판의 전용 소스를 포함하면 검사에 실패합니다.
+두 `modules.bb`는 공통 UI·입력·건축과 `includes/qol*.bb` 구현을 선택합니다. 판별 프로필의 `Cedition_qol_default`는 기본판 0, 확장판 1입니다. 저장된 `qol_*` 값이 우선하며 누락·잘못된 값에는 해당 판의 기본값을 사용합니다. QOL은 설정 저장에 성공하면 즉시 적용하고, 언어·화면 변경은 계속 재시작이 필요합니다. 검색 입력은 Win32 Unicode EDIT와 IME를 사용하며 연결 함수는 `src/blitz3d/src/modules/bb/platform.windows/`에 내장합니다. 기능이 달라질 때만 필요한 모듈을 분리합니다. Python은 엔진 코드를 생성하지 않습니다. 빌드 보고서는 해당 진입점의 실제 `Include` 그래프를 기록하며 다른 판의 전용 소스를 포함하면 검사에 실패합니다.
 
 조합법 도감은 로드된 `Tcom` 데이터를 읽습니다. 조리·물 사용 등의 안내는 공통 변경분의 `mods/Stranded II/sys/qol_guides.inf`에 별도로 작성하며, `source`에 근거 스크립트와 이벤트를 기록합니다. 안내는 스크립트를 대신 실행하지 않습니다. 원본 이벤트를 수정할 때 안내의 조건·수량·확률 설명도 함께 확인하세요. QOL 설정은 해당 판의 `core/modern.ini`에만 저장합니다.
 
-검색창의 네이티브 연결부는 현재 게임 스레드의 해당 EDIT 컨트롤 메시지만 문자 변환 후 Unicode로 전달합니다. Blitz의 기본 메시지 루프에는 이 문자 변환이 없으므로 단순히 EDIT를 만드는 것만으로는 입력할 수 없습니다. 부모 창의 `WS_CLIPCHILDREN`으로 검색창을 게임 화면 출력에서 제외하고, 크기 변경 때만 위치를 갱신합니다. 매 프레임 `InvalidateRect`로 배경을 지우거나 다시 그리지 마세요. 검색창을 닫으면 메시지 훅과 추가한 창 스타일을 복원합니다.
+검색창 연결부는 게임 스레드의 해당 Unicode EDIT 메시지만 문자 변환 후 전달합니다. Windows의 `HidePointer`는 커서만 숨기고 상대 마우스 고정을 켜지 않아 자식 입력창이 클릭을 받을 수 있습니다. EDIT에 포커스가 있으면 게임 키·문자 처리는 입력창에 맡깁니다. `WS_CLIPCHILDREN`으로 입력창을 보호하며 크기가 달라질 때만 위치를 갱신합니다. 닫을 때는 훅과 추가한 스타일을 복원합니다.
+
+Windows는 플레이 중 시점을 조작할 때만 상대 마우스 입력을 켭니다. 이때 `MoveMouse`는 OS 커서를 옮기지 않고 가상 기준점을 옮기며, 마지막 `MouseXSpeed`·`MouseYSpeed` 호출 뒤에 들어온 미처리 이동량을 보존합니다. 캡처·포커스가 바뀔 때만 이전 이동량을 버립니다. 메뉴·콘솔·검색창에서는 캡처를 해제합니다. Enter와 숫자패드 Enter는 원래 Blitz 문자 코드 13을 전달합니다. 테두리 없는 화면에서 선택한 렌더 해상도를 확대·축소하면 선형 필터로 표시하고 마우스 좌표도 해당 렌더 해상도로 변환합니다.
 
 리소스는 공식 입력 → 현지화 준비 → 공통 변경분 → 선택한 판의 변경분 순서로 준비합니다. 판별 변경분은 실행 폴더 기준 `mods/Stranded II/...` 경로로 배치합니다. 아이템·조합·건축·능력치·맵·스크립트 리밸런싱은 확장판 변경분에 작성합니다. 설정·세이브·실행 파일은 리소스 변경분으로 덮어쓸 수 없습니다. `.s2` 지도 수정은 [리소스 현지화의 바이너리 규칙](#새-문구와-리소스-현지화)을 따릅니다. 판별 번역은 [현지화 가이드](localization-ko.md#기본판확장판-전용-번역)를 참고하세요.
 
@@ -282,7 +280,7 @@ msg "[[loc:quest.island1.arrival]]";
 | --- | --- | --- |
 | `setup` | 의존성 해시, 카탈로그, 공식 지도 13개의 문자열 변환과 그 외 바이트·첨부 자료 보존 | `build/setup-report.json` |
 | `localize` | 등록 언어·카탈로그·TTF/OTF 글리프와 보완 출처, 실패 시 기존 언어팩 보존 | `build/localization-report.json`, `build/runtime/core/locales/fonts-report.json` |
-| `build` | 실제 Blitz3D 컴파일, 실행 파일·소스 해시 | `build/build-report.json` |
+| `build` | 내장 컴파일러·런타임 빌드, 실제 Blitz 컴파일과 실행 파일·소스·DLL 해시 | `build/build-report.json` |
 | `check` | 문구 참조·치환 변수·글꼴, 실제 Blitz 로더와 파서, 설정 보존, 시간 보정·프레임 대기, 저장 교체·잠금 실패·백업·5슬롯·저장 큐·계속하기 선택 | `build/check-*/report.json`과 같은 폴더의 상세 결과 |
 | `.\.venv\Scripts\python.exe -X utf8 scripts/verify_game.py` | 격리된 게임에서 실제 지도·저장·백업·빠른 저장/불러오기·자동 저장 상태 복구 | `build/game-smoke-*/report.json` |
 | `.\.venv\Scripts\python.exe -X utf8 scripts/verify_qol_logic.py --language ko` | 실제 Blitz의 QOL 로직·제작·이동·정렬·설정 검사. 그래픽 엔티티와 스크립트는 대역 사용 | `build/qol-logic-*/report.json` |
@@ -291,7 +289,9 @@ msg "[[loc:quest.island1.arrival]]";
 
 이동·충돌 변경에는 `verify_collisions.py`를 두 에디션에서 실행합니다. Extended는 `--edition extended`를 사용하고 결과를 `build/extended/collision-smoke-*/`에 저장합니다. 이 검사는 실제 지형과 바위 모델에 60·120·144 Hz 및 100ms 시간 간격을 적용하며 GUI 입력을 보내지 않습니다. 실제 렌더링 FPS와 사용자가 보고한 장소는 별도로 확인합니다. `core/modern.ini`의 기존 `diagnostics=1` 옵션을 켜면 이동 요청·결과, 지형 보정량, 접촉점·법선과 이동 취소 여부가 `core/modern.log`에 최대 초당 4회 기록됩니다.
 
-`check`는 렌더링 없이 타이머·파서·저장 파일 처리 등을 검사합니다. 실제 렌더링 FPS, Alt-Tab, 화면의 부드러움과 전체 진행은 게임에서 따로 확인해야 합니다.
+`check`는 원본 Blitz3D 1.118의 고정 결과와 네이티브 ABI를 비교하고 렌더링 없이 타이머·파서·저장 파일 처리 등을 검사합니다. 시야 거리도 실제 설정 저장·재로드 경로를 거쳐 모든 단계에서 동일하게 적용되는지 확인합니다. `python scripts/verify_engine.py --input`은 창이나 OS 입력 없이 실제 SDL 큐를 통해 콘솔 문자 코드·키 누름 유지·확정된 텍스트·마우스 이벤트 전달을 검사합니다. 캡처 상태만 대체한 검사에서 읽기와 중앙 복귀 사이의 1단위 이동 보존, 축별 소비, 방향 반전과 0.02도 회전도 확인합니다.
+
+`python scripts/verify_engine.py --render`는 창 없이 실제 D3D12 장치와 엔진 셰이더로 텍스처에 그려 무광·광택 재질의 색, 텍스처 합성, 안개와 거리 페이드 픽셀을 검사합니다. 광택은 기존 D3D7 재질의 강도·지수를 따르며 텍스처 처리 후 합성합니다. `--graphics`는 창을 사용하는 격리된 테스트에서 D3D12 그리기·픽셀 읽기·그래픽 컨텍스트 수명도 검사합니다. 실제 렌더링 FPS, 상대 마우스 반응, Alt-Tab, 화면의 부드러움과 전체 진행은 게임에서 따로 확인해야 합니다.
 
 두 판의 `check`는 `verify_qol_logic.py`를 실행합니다. 판별 기본값, 누락·잘못된 설정, 옵션 조합 32가지와 공통 엔진 함수를 엔티티·스크립트 대역으로 검사하며 화면, 실제 스크립트, 지도 저장, IME는 검증하지 않습니다. 두 QOL 검증 명령 모두 `--edition classic|extended`를 받으며 생략하면 기본판, 확장판 결과는 `build/extended/` 아래입니다. `verify_qol.py --interactive`는 QOL을 켠 별도 테스트 게임을 개인 세이브 없이 준비하며 자동 실행하지 않습니다. 이 복사본에서 한글 조합·확정·취소, 검색창 포커스와 Alt-Tab, 긴 이름·상세 스크롤, Shift 클릭·R·Shift+R, 옵션별 켜기/끄기, 건축 반복 취소를 확인하세요. `--language en`은 영어, `--desktop`은 전체 창입니다. 시뮬레이션한 건축 간격은 실제 렌더링 FPS 측정과 다릅니다.
 

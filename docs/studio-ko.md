@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"d7eeee7299a494ac2944f8be8c823c704f29421853cd5bac4bab430b03a3b397"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"e61f250f798438d76f2de916cfc59ae3e9846bcd19a6207a2833da0fa0dc70f3"} -->
 
 # Stranded II Studio
 
@@ -25,7 +25,7 @@ npm --prefix studio ci
 npm --prefix studio start
 ```
 
-이미 웹/Studio 준비 설정이 있으면 `engine setup`의 경로 인자를 생략할 수 있습니다. 최초 엔진 준비는 고정된 Blitz 웹 툴체인과 SDK를 내려받습니다. 엔진 산출물은 `build/studio/`, 앱 산출물은 `studio/dist/`에 생성합니다. 실행 파일과 앱은 저장소의 `.venv` Python을 우선 사용하며, 다른 인터프리터는 `S2_STUDIO_PYTHON`으로 지정합니다.
+이미 웹/Studio 준비 설정이 있으면 `engine setup`의 경로 인자를 생략할 수 있습니다. 엔진은 공통 `src/blitz3d/` 소스에서 직접 수정합니다. 준비 과정은 고정한 외부 SDK·라이브러리를 받고, 컴파일러·런타임은 `build/engine/`, Studio 게임 산출물은 `build/studio/`, 앱 산출물은 `studio/dist/`에 생성합니다. 실행 파일과 앱은 저장소의 `.venv` Python을 우선 사용하며, 다른 인터프리터는 `S2_STUDIO_PYTHON`으로 지정합니다.
 
 시작 화면에서 빈 프로젝트 폴더를 선택해 만들거나 기존 프로젝트를 엽니다. 3D 미리보기용 기본 리소스는 **`build/studio/runtime`**으로 지정합니다. 다른 준비된 기본 리소스도 CLI 편집·검증·내보내기에 사용할 수 있지만, 미리보기는 빌드에 포함된 리소스와 같은 기본 경로를 요구합니다.
 

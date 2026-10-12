@@ -1,0 +1,111 @@
+{
+  "libraries": {
+    "zlib": {
+      "repository": "https://github.com/madler/zlib",
+      "commit": "21767c654d31d2dccdde4330529775c6c5fd5389",
+      "url": "https://codeload.github.com/madler/zlib/tar.gz/21767c654d31d2dccdde4330529775c6c5fd5389",
+      "sha256": "ef47b0fbe646d69a2fc5ba012cb278de8e8946a8e9649f83a807cc05559f0eff",
+      "directory": "zlib-21767c654d31d2dccdde4330529775c6c5fd5389"
+    },
+    "stackwalker": {
+      "repository": "https://github.com/JochenKalmbach/StackWalker",
+      "commit": "5b0df7a4db8896f6b6dc45d36e383c52577e3c6b",
+      "url": "https://codeload.github.com/JochenKalmbach/StackWalker/tar.gz/5b0df7a4db8896f6b6dc45d36e383c52577e3c6b",
+      "sha256": "402b0cf0c93b5bc1d1356923fe5b604bacbf671fc54bbaf3c404c7102ee5ecee",
+      "directory": "StackWalker-5b0df7a4db8896f6b6dc45d36e383c52577e3c6b"
+    },
+    "utf8.h": {
+      "repository": "https://github.com/sheredom/utf8.h",
+      "commit": "0f66f4a38aa065e2de1c65d61e1477c0018f51b6",
+      "url": "https://codeload.github.com/sheredom/utf8.h/tar.gz/0f66f4a38aa065e2de1c65d61e1477c0018f51b6",
+      "sha256": "0e6d6755b0fab7eb6f54262365c02a0eeaf9485800b53611f444af87bf93c22a",
+      "directory": "utf8.h-0f66f4a38aa065e2de1c65d61e1477c0018f51b6"
+    },
+    "json-hpp": {
+      "repository": "https://github.com/nlohmann/json",
+      "commit": "e7b3b40b5a95bc74b9a7f662830a27c49ffc01b4",
+      "url": "https://codeload.github.com/nlohmann/json/tar.gz/e7b3b40b5a95bc74b9a7f662830a27c49ffc01b4",
+      "sha256": "a82180bc9905fc38510c51c2ee4ea708760309ed83630f5703659543641bea79",
+      "directory": "json-e7b3b40b5a95bc74b9a7f662830a27c49ffc01b4"
+    },
+    "toml11": {
+      "repository": "https://github.com/ToruNiina/toml11",
+      "commit": "c7627ff6a1eb6f34fbd98369990a9442e2836c25",
+      "url": "https://codeload.github.com/ToruNiina/toml11/tar.gz/c7627ff6a1eb6f34fbd98369990a9442e2836c25",
+      "sha256": "382f4dd1476e489dba94dd30f6f4e1b7f7673b321567fb81062199f1eb53e09f",
+      "directory": "toml11-c7627ff6a1eb6f34fbd98369990a9442e2836c25"
+    },
+    "sdl": {
+      "repository": "https://github.com/libsdl-org/SDL",
+      "commit": "07d0f51fa292895443f563f0cbde4cb3802d87fa",
+      "url": "https://codeload.github.com/libsdl-org/SDL/tar.gz/07d0f51fa292895443f563f0cbde4cb3802d87fa",
+      "sha256": "a2da78889a98444562c2f917f794e406bc0caf68ec49ce996d87217e457f1a31",
+      "directory": "SDL-07d0f51fa292895443f563f0cbde4cb3802d87fa"
+    },
+    "freetype2": {
+      "repository": "https://github.com/freetype/freetype",
+      "commit": "920c5502cc3ddda88f6c7d85ee834ac611bb11cc",
+      "url": "https://codeload.github.com/freetype/freetype/tar.gz/920c5502cc3ddda88f6c7d85ee834ac611bb11cc",
+      "sha256": "da541ec0fc99514a8aea8ccc8ec4f955c19d17556e1888374fc564cb31e1c437",
+      "directory": "freetype-920c5502cc3ddda88f6c7d85ee834ac611bb11cc"
+    },
+    "ogg": {
+      "repository": "https://github.com/xiph/ogg",
+      "commit": "e1774cd77f471443541596e09078e78fdc342e4f",
+      "url": "https://codeload.github.com/xiph/ogg/tar.gz/e1774cd77f471443541596e09078e78fdc342e4f",
+      "sha256": "588af45a3329b89b4506e5205fd1c99e57f088f492b2a247fe9472f42ffe8e5f",
+      "directory": "ogg-e1774cd77f471443541596e09078e78fdc342e4f"
+    },
+    "vorbis": {
+      "repository": "https://github.com/xiph/vorbis",
+      "commit": "0657aee69dec8508a0011f47f3b69d7538e9d262",
+      "url": "https://codeload.github.com/xiph/vorbis/tar.gz/0657aee69dec8508a0011f47f3b69d7538e9d262",
+      "sha256": "6ccc3fa4cfd3072f9a772025cc8fd712098d081c00171b09b6627ffced7faa88",
+      "directory": "vorbis-0657aee69dec8508a0011f47f3b69d7538e9d262"
+    },
+    "minimp3": {
+      "repository": "https://github.com/lieff/minimp3",
+      "commit": "afb604c06bc8beb145fecd42c0ceb5bda8795144",
+      "url": "https://codeload.github.com/lieff/minimp3/tar.gz/afb604c06bc8beb145fecd42c0ceb5bda8795144",
+      "sha256": "21672c32aaac29cf4b7e6f8e0154767080ae87faa79c682498453e5a9bc5e0d3",
+      "directory": "minimp3-afb604c06bc8beb145fecd42c0ceb5bda8795144"
+    }
+  },
+  "llvm": {
+    "version": "19.1.5",
+    "windows": {
+      "url": "https://github.com/blitz3d-ng/build-llvm/releases/download/v19.1.5/llvm-19.1.5-win64-msvc17.0.zip",
+      "sha256": "08e755d7ba3247fe0533c6d9999d3cdee0545c499cfaf1506f7b24f4c6bf9144"
+    },
+    "macos": {
+      "url": "https://github.com/blitz3d-ng/build-llvm/releases/download/v19.1.5/llvm-19.1.5-macos-14.zip",
+      "sha256": "a8b88ed0cc02741c214d21d45ca3c6f71ff5dc79106c39de6281549f0e1481d1"
+    }
+  },
+  "dawn": {
+    "revision": "31e25af254ab572c77054edec4946d2244e184dd",
+    "windows": {
+      "url": "https://github.com/google/dawn/releases/download/v20260423.175430/Dawn-31e25af254ab572c77054edec4946d2244e184dd-windows-latest-Release.tar.gz",
+      "sha256": "fbfd98f7b2faf47987c80dcc4178cb042af09752b1f6f1541600fca8902258ef",
+      "directory": "Dawn-31e25af254ab572c77054edec4946d2244e184dd-windows-latest-Release"
+    },
+    "macos": {
+      "url": "https://github.com/google/dawn/releases/download/v20260423.175430/Dawn-31e25af254ab572c77054edec4946d2244e184dd-macos-latest-Release.tar.gz",
+      "sha256": "8d1db80315ab55ad2c61857d1c7ae4c242a9cc67d0639c709a052fc6af3a7bac",
+      "directory": "Dawn-31e25af254ab572c77054edec4946d2244e184dd-macos-latest-Release"
+    }
+  },
+  "openal": {
+    "version": "1.25.2",
+    "url": "https://openal-soft.org/openal-binaries/openal-soft-1.25.2-bin.zip",
+    "sha256": "67a0c4b800bd860c93c04f38caf8cbe4875f9c84700ac430efc451f70e265434",
+    "directory": "openal-soft-1.25.2-bin"
+  },
+  "dxc": {
+    "version": "1.8.2505.1",
+    "url": "https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.8.2505.1/dxc_2025_07_14.zip",
+    "sha256": "9ad895a6b039e3a8f8c22a1009f866800b840a74b50db9218d13319e215ea8a4",
+    "directory": "dxc-1.8.2505.1",
+    "flat": true
+  }
+}

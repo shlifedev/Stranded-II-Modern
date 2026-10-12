@@ -1,0 +1,32 @@
+name: Direct3D 7
+
+platforms:
+  - windows
+
+modules:
+  - stub
+  - blitz
+  - runtime
+  - hook
+  - event
+  - math
+  - string
+  - stdio
+  - stream
+  - sockets
+  - system.windows
+  - filesystem
+  - filesystem.windows
+  - timer.windows
+  - bank
+  - graphics.d3d7
+  - input
+  - input.directinput8
+  - audio
+  - audio.fmod
+  - blitz3d.d3d7
+  - userlibs
+  - runtime.windows
+
+entry:
+  runtime: bbCreateD3D7Runtime

@@ -1,5 +1,6 @@
 """Isolated Extended Studio WASM build, using the existing pinned web toolchain."""
 from pathlib import Path
+import blitz3d_toolchain as engine_toolchain
 import json
 import os
 import re
@@ -67,8 +68,7 @@ def implementation_hashes():
     paths = [ROOT/'studio/engine/index.html',ROOT/'studio/engine/studio.js',ROOT/'studio/engine/gizmo.js',Path(__file__),
              ROOT/'scripts/web_build.py',ROOT/'scripts/web_toolchain.py',ROOT/'scripts/web_audio.py',
              ROOT/'config/web-toolchain.json',ROOT/'src/native/web/bridge.cpp']
-    paths += list((ROOT/'patches/blitz3d-web').glob('*.patch'))
-    return {p.relative_to(ROOT).as_posix():web_build.digest(p) for p in paths}
+    return {**{p.relative_to(ROOT).as_posix():web_build.digest(p) for p in paths}, **engine_toolchain.sources()}
 
 
 def build(args):
@@ -81,18 +81,18 @@ def build(args):
     native=BUILD/'native';native.mkdir(exist_ok=True)
     for name,source in [('compat',ng/'src/modules/bb/graphics.webgpu/web_compat.cpp'),('bridge',ROOT/'src/native/web/bridge.cpp')]:
         argv=[sys.executable,web_toolchain.paths()[1]/'upstream/emscripten/emcc.py',source,'-c','-O2','-std=c++17','-fwasm-exceptions','-o',native/(name+'.o')]
-        for include in (ng/'src/modules',ng/'src/modules/bb/pixmap',ng/'src',ng/'src/modules/bb/graphics.webgpu'):
+        for include in (engine_toolchain.BUILD/'web/cmake/src/modules',ng/'src/modules',ng/'src/modules/bb/pixmap',ng/'src',ng/'src/modules/bb/graphics.webgpu'):
             argv+=['-I',include]
         web_toolchain.run(argv,env=env)
     info=local_info(ROOT,'extended')
     atomic(RUNTIME/'core/version.json',encode(info))
     atomic(RUNTIME/'core/version.txt',(info['display_version']+'\n').encode())
     # License originals accompany the generated engine/resources.
-    for source,name in ((web_toolchain.paths()[0]/'LICENSE','WebGPU-port-MIT.txt'),(ng/'LICENSE.TXT','Blitz3D-NG.txt'),
-                        (ng/'deps/sdl/tree/LICENSE.txt','SDL2.txt'),
-                        (ng/'deps/freetype2/tree/docs/FTL.TXT','FreeType.txt'),(ng/'deps/ogg/tree/COPYING','Ogg.txt'),
-                        (ng/'deps/vorbis/tree/COPYING','Vorbis.txt'),(ng/'deps/minimp3/tree/LICENSE','minimp3.txt'),
-                        (ng/'deps/zlib/tree/README','zlib.txt'),(web_toolchain.paths()[1]/'upstream/emscripten/LICENSE','Emscripten.txt')):
+    for source,name in ((engine_toolchain.ENGINE/'WEBGPU-LICENSE.txt','WebGPU-port-MIT.txt'),(ng/'LICENSE.TXT','Blitz3D-NG.txt'),
+                        (engine_toolchain.library('sdl') / 'LICENSE.txt','SDL2.txt'),
+                        (engine_toolchain.library('freetype2') / 'docs/FTL.TXT','FreeType.txt'),(engine_toolchain.library('ogg') / 'COPYING','Ogg.txt'),
+                        (engine_toolchain.library('vorbis') / 'COPYING','Vorbis.txt'),(engine_toolchain.library('minimp3') / 'LICENSE','minimp3.txt'),
+                        (engine_toolchain.library('zlib') / 'README','zlib.txt'),(web_toolchain.paths()[1]/'upstream/emscripten/LICENSE','Emscripten.txt')):
         shutil.copy2(source,RUNTIME/'licenses'/name)
     web_toolchain.run([upstream.BLITZCC,'-target','emscripten','-o',SITE/'game',ENTRY],
                       cwd=ROOT/'src/engine',env=web_build.compiler_environment(env))

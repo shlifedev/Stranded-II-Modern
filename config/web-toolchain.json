@@ -1,15 +1,13 @@
 {
-  "repository": "https://github.com/q8j-dev/scpcb-web-port.git",
-  "commit": "d8e0ba5c69197003a897ff4952a9aa764366ce91",
-  "engine_directory": "blitz3d-ng",
   "emsdk_repository": "https://github.com/emscripten-core/emsdk.git",
   "emsdk_commit": "35ff8a6d150541276abbc6bae512ca90bcfbe220",
   "emscripten": "6.0.12",
-  "llvm": "19.1.5",
   "ffmpeg": {
     "version": "9.0.2",
     "url": "https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-9.0.2-essentials_build.zip",
     "sha256": "60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba",
     "directory": "ffmpeg-9.0.2-essentials_build"
-  }
+  },
+  "engine": "src/blitz3d",
+  "dependencies": "config/blitz3d-toolchain.json"
 }

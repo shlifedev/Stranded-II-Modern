@@ -79,17 +79,16 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
-            deps/blitz3d-web
+            deps/blitz3d
             deps/emsdk
             deps/ffmpeg-web
-          key: web-windows-2022-${{ steps.image.outputs.version }}-${{ hashFiles('config/web-toolchain.json', 'patches/blitz3d-web/*.patch', 'scripts/web_toolchain.py', 'scripts/web_audio.py') }}
+          key: web-windows-2022-${{ steps.image.outputs.version }}-${{ hashFiles('config/web-toolchain.json', 'config/blitz3d-toolchain.json', 'scripts/blitz3d_toolchain.py', 'scripts/web_toolchain.py', 'scripts/web_audio.py') }}
 
-      - name: Prepare native reference compiler
+      - name: Prepare native comparison resources
         env:
           GAME_INPUT: ${{ steps.deps.outputs.game }}
-          BLITZ_INPUT: ${{ steps.deps.outputs.blitz }}
           FONT_INPUT: ${{ steps.deps.outputs.font }}
-        run: python -X utf8 scripts/dev.py setup --game "$env:GAME_INPUT" --blitz "$env:BLITZ_INPUT" --font "$env:FONT_INPUT"
+        run: python -X utf8 scripts/dev.py setup --game "$env:GAME_INPUT" --font "$env:FONT_INPUT"
 
       - name: Prepare web resources and toolchain
         env:

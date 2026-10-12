@@ -4,6 +4,7 @@ Entity creation/rendering and script execution are explicit test doubles. This
 does not replace verify_qol.py's full-runtime or Computer Use/IME checks.
 """
 from pathlib import Path
+import blitz3d_toolchain as engine
 import argparse
 import json
 import os
@@ -213,12 +214,8 @@ def main():
         body = re.sub(r'\b' + name + r'\b', replacement, body)
     source = output/'qol-logic.bb'
     source.write_text(body, encoding='utf8')
-    blitz = root/'build/toolchain'
     exe = output/'QolLogic.exe'
-    result = subprocess.run([str(blitz/'bin/blitzcc.exe'), '-o', str(exe), str(source)],
-                            cwd=output, env=dict(os.environ, blitzpath=str(blitz)), capture_output=True)
-    if result.returncode:
-        raise RuntimeError(result.stdout.decode('utf8', errors='replace'))
+    engine.compile_test(source, exe, cwd=output)
     subprocess.run([str(exe)], cwd=output, check=True, timeout=30,
                    creationflags=subprocess.CREATE_NO_WINDOW)
     result = (output/'qol-results.txt').read_text('utf8')

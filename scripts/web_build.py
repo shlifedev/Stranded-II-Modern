@@ -1,5 +1,6 @@
 """Local WebGPU preview; assets are prepared from official inputs, never player data."""
 from pathlib import Path
+import blitz3d_toolchain as engine_toolchain
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import functools
 import hashlib
@@ -169,14 +170,14 @@ def build(args):
     upstream = web_toolchain.upstream()
     ng = Path(upstream.NG)
     runtime_licenses = [
-        (web_toolchain.paths()[0] / 'LICENSE', 'WebGPU-port-MIT.txt'),
+        (engine_toolchain.ENGINE / 'WEBGPU-LICENSE.txt', 'WebGPU-port-MIT.txt'),
         (ng / 'LICENSE.TXT', 'Blitz3D-NG.txt'),
-        (ng / 'deps/sdl/tree/LICENSE.txt', 'SDL2.txt'),
-        (ng / 'deps/freetype2/tree/docs/FTL.TXT', 'FreeType.txt'),
-        (ng / 'deps/ogg/tree/COPYING', 'Ogg.txt'),
-        (ng / 'deps/vorbis/tree/COPYING', 'Vorbis.txt'),
-        (ng / 'deps/minimp3/tree/LICENSE', 'minimp3.txt'),
-        (ng / 'deps/zlib/tree/README', 'zlib.txt'),
+        (engine_toolchain.library('sdl') / 'LICENSE.txt', 'SDL2.txt'),
+        (engine_toolchain.library('freetype2') / 'docs/FTL.TXT', 'FreeType.txt'),
+        (engine_toolchain.library('ogg') / 'COPYING', 'Ogg.txt'),
+        (engine_toolchain.library('vorbis') / 'COPYING', 'Vorbis.txt'),
+        (engine_toolchain.library('minimp3') / 'LICENSE', 'minimp3.txt'),
+        (engine_toolchain.library('zlib') / 'README', 'zlib.txt'),
         (web_toolchain.paths()[1] / 'upstream/emscripten/LICENSE', 'Emscripten.txt'),
     ]
     for source, name in runtime_licenses:
@@ -189,7 +190,7 @@ def build(args):
         obj = native / (name + '.o')
         command = [sys.executable, web_toolchain.paths()[1] / 'upstream/emscripten/emcc.py',
                    source, '-c', '-O2', '-std=c++17', '-fwasm-exceptions', '-o', obj]
-        for inc in [ng / 'src/modules', ng / 'src/modules/bb/pixmap', ng / 'src', ng / 'src/modules/bb/graphics.webgpu']:
+        for inc in [engine_toolchain.BUILD / 'web/cmake/src/modules', ng / 'src/modules', ng / 'src/modules/bb/pixmap', ng / 'src', ng / 'src/modules/bb/graphics.webgpu']:
             command += ['-I', inc]
         web_toolchain.run(command, env=env)
     env = compiler_environment(env)
@@ -210,7 +211,7 @@ def build(args):
 def compiler_environment(env=None):
     upstream = web_toolchain.upstream()
     runtime = Path(upstream.RUNTIME_OUT)
-    return dict(env or web_toolchain.environment(), LLVM_ROOT=str(Path(upstream.NG) / 'llvm'),
+    return dict(env or web_toolchain.environment(), LLVM_ROOT=str(engine_toolchain.llvm()),
                 blitzpath=str(runtime), SCPCB_WEBGPU='1',
                 SCPCB_LIB_DIR=str(runtime / 'bin/wasm32-unknown-emscripten/lib'),
                 SCPCB_COMPAT_OBJ=str(BUILD / 'native/compat.o'),
@@ -254,8 +255,7 @@ def run(args):
 def implementation_hashes():
     paths = [ROOT / name for name in ('scripts/web_build.py', 'scripts/web_toolchain.py',
              'scripts/web_audio.py', 'config/web-toolchain.json', 'src/native/web/bridge.cpp', 'src/web/shell.js', 'src/web/index.html')]
-    paths += sorted((ROOT / 'patches/blitz3d-web').glob('*.patch'))
-    return {path.relative_to(ROOT).as_posix(): digest(path) for path in paths}
+    return {**{path.relative_to(ROOT).as_posix(): digest(path) for path in paths}, **engine_toolchain.sources()}
 
 
 def check(args):

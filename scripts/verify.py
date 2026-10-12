@@ -1,5 +1,6 @@
 """Actual Blitz localization/timing tests plus structural resource/save checks."""
 from pathlib import Path
+import blitz3d_toolchain as engine
 from collections import Counter
 import argparse, json, os, re, shutil, struct, subprocess, sys, tempfile
 from editions import Edition, NAMES
@@ -134,19 +135,19 @@ CloseFile report
 End
 '''
     source=output/'localization.bb';source.write_text(body,encoding='utf8')
-    compiler=BUILD/'toolchain/bin/blitzcc.exe';env=dict(os.environ,blitzpath=str(BUILD/'toolchain'))
-    result=subprocess.run([str(compiler),'-o',str(output/'localization.exe'),str(source)],env=env,cwd=output,capture_output=True)
-    if result.returncode:raise AssertionError(result.stdout.decode(errors='replace'))
+    engine.build_native(graphics=False)
+    engine.compile_test(source,output/'localization.exe',cwd=output,graphics=False)
+    from verify_engine import check_abi
+    check_abi(output/'abi')
     subprocess.run([str(output/'localization.exe')],cwd=output,check=True,timeout=30,creationflags=subprocess.CREATE_NO_WINDOW)
     result=(output/'localization.txt').read_text('utf8');print(result)
     assert 'FAILURES 0' in result and '\nFAIL ' not in '\n'+result,result
     config=(output/'core/modern.ini').read_text('utf8')
     assert all(x in config for x in ('# preserve comment','fps=144','display=windowed','render_width=1280','language=en'))
-    subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_timing.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'timing')],check=True)
-    subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_clock_hooks.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'clock-hooks')],check=True)
-    subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_modern.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'modern')],check=True)
-    subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_version.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'version')],check=True)
-    subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_settings.py'),'--blitz',str(BUILD/'toolchain'),'--output',str(output/'settings')],check=True)
+    subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_timing.py'),'--output',str(output/'timing')],check=True)
+    subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_modern.py'),'--output',str(output/'modern')],check=True)
+    subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_version.py'),'--output',str(output/'version')],check=True)
+    subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_settings.py'),'--output',str(output/'settings')],check=True)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_qol_logic.py'),'--edition',args.edition,'--output',str(output/'qol')],check=True)
     # Check every emitted reference, including binary map string fields.
     refcount=0
@@ -171,7 +172,7 @@ End
         glyphs={struct.unpack_from('<i',data,16+i*28)[0] for i in range(count)}
         assert expected<=glyphs,(code,expected-glyphs)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_fonts.py'),'--runtime',str(runtime),'--output',str(output/'fonts')],check=True)
-    report={'localization_runtime':'pass','config_preservation':'pass','timing':'pass','coarse_timer_hook':'pass','modern_save_and_display':'pass','product_version_loader':'pass','initial_settings_and_preservation':'pass','validated_references':refcount,'unicode_glyphs':len(glyphs),'graphics_and_actual_game_save':'requires game smoke test'}
+    report={'localization_runtime':'pass','config_preservation':'pass','timing':'pass','modern_save_and_display':'pass','product_version_loader':'pass','initial_settings_and_preservation':'pass','validated_references':refcount,'unicode_glyphs':len(glyphs),'graphics_and_actual_game_save':'requires game smoke test'}
     report['qol_logic']='pass; entity/script test doubles, no rendering or IME'
     (output/'report.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf8')
     print('Checks passed:',output)

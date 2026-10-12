@@ -1,5 +1,17 @@
 ;############################################ SETTINGS
 
+; Use the same distances at startup, on Apply and after cancelling options.
+Function settings_apply_viewrange()
+	Select set_viewrange
+		Case 0 set_viewfac#=0.5
+		Case 1 set_viewfac#=1.0
+		Case 2 set_viewfac#=1.5
+		Case 3 set_viewfac#=2.5
+		Case 4 set_viewfac#=4.0
+		Default set_viewfac#=1.5
+	End Select
+End Function
+
 ;### Load Settings
 Function load_settings()
 	;Controls
@@ -86,14 +98,7 @@ Function load_settings()
 	;Setup
 	
 	;Viewrange
-	Select set_viewrange
-		Case 0 set_viewfac#=0.5
-		Case 1 set_viewfac#=1.0
-		Case 2 set_viewfac#=1.5
-		Case 3 set_viewfac#=2.5
-		Case 4 set_viewfac#=4.0
-		Default set_viewfac#=1.5
-	End Select
+	settings_apply_viewrange()
 	
 	;Motion Blur
 	If mb_sprite<>0 Then
@@ -161,14 +166,7 @@ Function save_settings()
 	;Setup
 	
 	;Viewrange
-	Select set_viewrange
-		Case 0 set_viewfac#=0.5
-		Case 1 set_viewfac#=1.
-		Case 2 set_viewfac#=1.5
-		Case 3 set_viewfac#=2.
-		Case 4 set_viewfac#=2.5
-		Default set_viewfac#=1.5
-	End Select
+	settings_apply_viewrange()
 	
 	;Motion Blur
 	If mb_sprite<>0 Then

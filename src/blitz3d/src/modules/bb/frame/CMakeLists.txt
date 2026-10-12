@@ -1,0 +1,5 @@
+IF(BB_WINDOWS)
+  bb_start_module(frame)
+  set(SOURCES frame.h frame.cpp)
+  bb_end_module()
+ENDIF()

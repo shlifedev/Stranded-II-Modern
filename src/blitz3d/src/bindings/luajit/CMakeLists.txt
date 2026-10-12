@@ -1,0 +1,17 @@
+if(TARGET luajit)
+  set(LUAJIT_TREE ${PROJECT_SOURCE_DIR}/deps/luajit/tree)
+
+  macro(blitzlua runtime)
+    add_executable(blitzlua.${runtime} ../main.cpp ../runtime/${runtime}.c)
+    target_link_libraries(blitzlua.${runtime} runtime.${runtime}.static luajit)
+    if(BB_MACOS)
+      target_link_options(blitzlua.${runtime} PRIVATE -pagezero_size 10000 -image_base 100000000)
+    endif()
+    if(BB_COVERAGE)
+      set_property(TARGET blitzlua.${runtime} APPEND_STRING PROPERTY COMPILE_FLAGS " ${BB_COVERAGE}")
+      set_property(TARGET blitzlua.${runtime} APPEND_STRING PROPERTY LINK_FLAGS " ${BB_COVERAGE}")
+    endif()
+  endmacro()
+
+  add_subdirectory(runtime)
+endif()
