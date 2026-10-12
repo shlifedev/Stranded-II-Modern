@@ -11,6 +11,8 @@ An unofficial update of Stranded II for modern Windows systems. Built with Blitz
 
 ## Support
 
+Built with the latest known version of Blitz3D and ported to the latest versions of Windows, macOS, and web browsers.
+
 - [Windows 10 & 11](https://github.com/shlifedev/Stranded-II-Modern/releases)
 - **[WebBrowser](https://shlifedev.github.io/Stranded-II-Modern/):** experimental WebGPU preview; requires desktop Chrome/Edge with WebGPU and JSPI. 
 - [MacOS](https://github.com/shlifedev/Stranded-II-Modern/releases)
