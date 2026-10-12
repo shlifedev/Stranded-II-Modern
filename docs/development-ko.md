@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"8f0b1b6d11c064d42e7744ddfda0560f07a803857182a3ca336c21b39d7df56f"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"22bbc0d6ceccf08c24ea2293e02923961a460afc26b5a5e314669cc716452985"} -->
 
 # 개발 가이드
 
@@ -87,7 +87,7 @@ Python으로 직접 실행할 수도 있습니다.
 
 모든 Python 개발 명령은 `--platform windows|web|macos`를 받으며 기본값은 `windows`입니다. 웹은 기본판만 빌드합니다. `--platform web --edition extended`는 오류를 반환하며 Extended CI는 계속 비활성 상태입니다.
 
-`src/engine/StrandedIIWeb.bb`는 기존 `StrandedII.bb`와 웹 플랫폼 서비스를 함께 포함합니다. 게임 로직은 공유하고, Windows는 Blitz3D 1.118, 웹은 [고정한 Blitz3D NG WebGPU 포트와 Emscripten](../config/web-toolchain.json)을 사용합니다. 엔진 수정은 `patches/blitz3d-web/`에 관리합니다. 다른 게임 엔진으로 변환하거나 `.bb` 게임 소스를 생성하지 않습니다.
+`src/engine/StrandedIIWeb.bb`는 기존 `StrandedII.bb`와 웹 플랫폼 서비스를 함께 포함합니다. 게임 로직은 공유하고, Windows는 Blitz3D 1.118, 웹은 [고정한 Blitz3D NG WebGPU 포트와 Emscripten](../config/web-toolchain.json)을 사용합니다. WebAssembly·WebGPU·JSPI·브라우저 저장의 원리는 [웹 버전 구현 원리](web-architecture-ko.md)에 정리했습니다. 엔진 수정은 `patches/blitz3d-web/`에 관리합니다. 다른 게임 엔진으로 변환하거나 `.bb` 게임 소스를 생성하지 않습니다.
 
 위 Windows 개발 환경에 Git과 Visual Studio의 CMake/Ninja 도구, DIA SDK가 필요합니다. `setup`은 `deps/blitz3d-web/`, `deps/emsdk/`, `deps/ffmpeg-web/`에 고정한 도구를 다운로드하므로 첫 준비에는 시간과 디스크 공간이 필요합니다. 먼저 Windows 준비를 마친 뒤 실행합니다.
 
@@ -142,7 +142,7 @@ WebGPU의 동일 버퍼 `CopyRect`는 임시 텍스처를 재사용하고, 앞�
 
 ## 실험용 macOS 네이티브 빌드
 
-기본판의 Apple Silicon 실험용 빌드입니다. `StrandedIIMac.bb`와 공통 게임을 LLVM으로 ARM64 Mach-O 실행 파일로 컴파일하고, 기존 WebGPU 렌더러를 SDL2와 Dawn의 Metal 백엔드에 연결합니다. Blitz 정수·실수는 32비트를 유지하며 엔진 포인터는 64비트, 게임에 노출하는 리소스 ID는 32비트로 분리합니다. [고정 의존성](../config/macos-toolchain.json), `patches/blitz3d-macos/`, `src/native/macos/`에서 이 타깃을 관리합니다. 기본 플랫폼은 계속 Windows이며 Extended Mac 빌드는 오류를 반환합니다.
+기본판의 Apple Silicon 실험용 빌드입니다. 게임 코드는 ARM64 네이티브 실행 파일로 컴파일하고, WebGPU 렌더러는 Dawn을 통해 Metal을 사용합니다. 컴파일·렌더링·운영체제 연동의 원리는 [macOS 구현 원리](macos-architecture-ko.md)에 정리했습니다. [고정 의존성](../config/macos-toolchain.json), `patches/blitz3d-macos/`, `src/native/macos/`에서 이 타깃을 관리합니다. 기본 플랫폼은 계속 Windows이며 Extended Mac 빌드는 오류를 반환합니다.
 
 Apple Silicon Mac에 Xcode Command Line Tools, Git, Python 3.12 이상, CMake, Ninja, FFmpeg/ffprobe, zstd가 필요합니다. 포함하는 Dawn 라이브러리에 맞춰 배포 타깃은 macOS 15.0입니다. CI는 macOS 15에서 빌드와 비그래픽 실행을 검사하며 실제 그래픽 플레이는 별도 검증이 필요합니다. 준비 과정은 `deps/blitz3d-macos/`, `deps/dawn-macos/`에 전용 컴파일러와 의존성을 다운로드하므로 시간과 디스크 공간이 필요합니다. 입력은 해시가 일치하는 공식 게임 리소스와 고정 글꼴이어야 하며 플레이어 데이터가 있는 실행 폴더를 지정하지 마세요.
 

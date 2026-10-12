@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"7d6bf4930ceb856eeae826c4726a3273b1b5761980d5b2ee69dad49c93ec5170"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"6fce18eac94c97f6ed0f905ec65bc495cc18c68c26dd5b1e96cad9dd39a0f097"} -->
 
 # Development guide
 
@@ -87,7 +87,7 @@ You can also launch directly through Python:
 
 All Python development commands accept `--platform windows|web|macos`, defaulting to `windows`. Web builds support the base game only. `--platform web --edition extended` returns an error; Extended CI remains disabled.
 
-`src/engine/StrandedIIWeb.bb` includes the existing `StrandedII.bb` and browser platform services. Gameplay stays shared: Windows uses Blitz3D 1.118, while the web uses the [pinned Blitz3D NG WebGPU port and Emscripten](../config/web-toolchain.json). Engine changes are maintained in `patches/blitz3d-web/`. No conversion to another game engine or generation of `.bb` game sources is involved.
+`src/engine/StrandedIIWeb.bb` includes the existing `StrandedII.bb` and browser platform services. Gameplay stays shared: Windows uses Blitz3D 1.118, while the web uses the [pinned Blitz3D NG WebGPU port and Emscripten](../config/web-toolchain.json). [How the web version works](web-architecture.md) explains WebAssembly, WebGPU, JSPI, and browser storage. Engine changes are maintained in `patches/blitz3d-web/`. No conversion to another game engine or generation of `.bb` game sources is involved.
 
 In addition to the Windows development environment above, install Git, Visual Studio's CMake/Ninja tools, and the DIA SDK. `setup` downloads pinned tools into `deps/blitz3d-web/`, `deps/emsdk/`, and `deps/ffmpeg-web/`, so initial preparation needs time and disk space. Complete Windows setup first, then run:
 
@@ -142,7 +142,7 @@ Before the first publication, set the repository's **Settings → Pages → Buil
 
 ## Experimental native macOS build
 
-The base game has an experimental Apple Silicon build. It compiles `StrandedIIMac.bb` and the shared game to an ARM64 Mach-O executable with LLVM. The existing WebGPU renderer uses Dawn's Metal backend through SDL2. Blitz integers and floats stay 32-bit; engine pointers are 64-bit and the game uses 32-bit resource IDs. [Pinned dependencies](../config/macos-toolchain.json), `patches/blitz3d-macos/`, and `src/native/macos/` define this target. Windows remains the default platform; Extended Mac builds are rejected.
+The base game has an experimental Apple Silicon build. Game code compiles to a native ARM64 executable, and the WebGPU renderer uses Metal through Dawn. [How the macOS version works](macos-architecture.md) explains compilation, rendering, and operating-system integration. [Pinned dependencies](../config/macos-toolchain.json), `patches/blitz3d-macos/`, and `src/native/macos/` define this target. Windows remains the default platform; Extended Mac builds are rejected.
 
 Build on Apple Silicon with Xcode Command Line Tools, Git, Python 3.12+, CMake, Ninja, FFmpeg/ffprobe, and zstd. The bundled Dawn library sets the deployment target to macOS 15.0. CI checks compilation and non-graphical execution on macOS 15; actual graphical gameplay still requires separate verification. Preparation downloads a private compiler and dependencies under `deps/blitz3d-macos/` and `deps/dawn-macos/`; it can take substantial time and disk space. Supply verified official game resources and the pinned font, never a runtime containing player data.
 
