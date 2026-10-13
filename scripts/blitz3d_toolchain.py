@@ -223,7 +223,7 @@ def build_native(graphics=True):
                     '-DOPENAL_LIBRARY=' + str(openal() / 'libs/Win64/OpenAL32.lib')]
     else:
         cfg = json.loads((ROOT / 'config/macos-toolchain.json').read_text('utf8'))
-        options += ['-DCMAKE_C_FLAGS=-Dfdopen=fdopen', '-DCMAKE_OSX_ARCHITECTURES=arm64',
+        options += ['-DCMAKE_OSX_ARCHITECTURES=arm64',
             '-DCMAKE_OSX_DEPLOYMENT_TARGET=' + cfg['deployment_target'],
             '-DCMAKE_OSX_SYSROOT=' + subprocess.check_output(['xcrun', '--sdk', 'macosx', '--show-sdk-path'], text=True).strip(),
             '-DS2_MACOS_SERVICES=' + str(ROOT / 'src/native/macos/services.mm')]

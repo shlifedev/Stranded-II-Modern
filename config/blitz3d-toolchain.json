@@ -2,10 +2,10 @@
   "libraries": {
     "zlib": {
       "repository": "https://github.com/madler/zlib",
-      "commit": "21767c654d31d2dccdde4330529775c6c5fd5389",
-      "url": "https://codeload.github.com/madler/zlib/tar.gz/21767c654d31d2dccdde4330529775c6c5fd5389",
-      "sha256": "ef47b0fbe646d69a2fc5ba012cb278de8e8946a8e9649f83a807cc05559f0eff",
-      "directory": "zlib-21767c654d31d2dccdde4330529775c6c5fd5389"
+      "commit": "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf",
+      "url": "https://codeload.github.com/madler/zlib/tar.gz/51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf",
+      "sha256": "d9e270d46252734aa49770fbc544125391617956266f220bd63216c834f3a522",
+      "directory": "zlib-51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf"
     },
     "stackwalker": {
       "repository": "https://github.com/JochenKalmbach/StackWalker",
