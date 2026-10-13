@@ -15,7 +15,8 @@ def project_fonts(project):
     from .project import ROOT, encode, safe
     packs = languages(ROOT)
     catalogs = {code: project.translations(code) for code in packs}
-    literals = '\n'.join(project.data['files'].values())
+    from .scripts import resources
+    literals = '\n'.join(resources(project).values())
     for name in project.data['maps']:
         from .maps import EditableMap
         literals += '\n'.join(f.data.decode('utf8') for f in EditableMap(project.map_bytes(name)).source.fields if f.kind != 'attachment')

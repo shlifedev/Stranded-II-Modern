@@ -147,6 +147,9 @@ async function bridge(request){
       }
       return '';
     case 'studio-event':
+      if(args[0]==='debug'){
+        try{send('runtime',{record:JSON.parse(args[1])});}catch{send('log',{message:'실행 진단을 읽지 못했습니다.'});}return 1;
+      }
       if(args[0]==='ready'){command('load',0);return 1;}
       if(args[0]==='playing'){
         firstFrame=false;

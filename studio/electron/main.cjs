@@ -9,7 +9,7 @@ const {root, python} = require('./python.cjs');
 let window, backend, server, sequence = 0, origin;
 let saved = {}, storagePath;
 const pending = new Map();
-const allowed = new Set(['schema','commands','revision','init','inspect','catalog','thumbnail','apply','validate','export','undo','redo','preview']);
+const allowed = new Set(['schema','commands','revision','init','inspect','catalog','thumbnail','scripts','templates','apply','validate','export','undo','redo','preview']);
 
 function startBackend() {
   backend = spawn(python(), ['-X','utf8',path.join(root,'scripts/studio.py'),'serve'], {cwd:root, stdio:['pipe','pipe','pipe']});

@@ -43,6 +43,7 @@ def encode_patch(before, after):
 
 def preview(project, map_name, since=None):
     from .project import MOD, atomic, encode, safe
+    from .scripts import resources as script_resources, source_map, version
     cache = safe(project.root, '.studio/previews')
     previous = None
     if since:
@@ -57,7 +58,7 @@ def preview(project, map_name, since=None):
         previous = json.loads(cached)
         if previous['map'] != map_name:
             raise ValueError('Preview token belongs to a different map')
-    resources = hashlib.sha256(encode({k:project.data[k] for k in ('files','assets','locales')})).hexdigest()
+    resources = hashlib.sha256(encode({'files':script_resources(project), **{k:project.data[k] for k in ('assets','locales')}})).hexdigest()
     raw = project.map_bytes(map_name)
     model = EditableMap(raw)
     available = previous['available'] if previous else [f'{r.kind}/{r.identifier}' for r in project.catalog()]
@@ -73,6 +74,7 @@ def preview(project, map_name, since=None):
         if path.stem not in (token,since):
             path.unlink(missing_ok=True)
     result = {'mode':'delta' if previous else 'full', 'token':token, 'baseToken':since,
+              'scriptsVersion':version(project.script_files), 'resourcesVersion':resources, 'sources':source_map(project,map_name),
               'map':'maps/studio.s2', 'revision':project.data['revision'], 'available':available,
               'resourcesPending':resources != baseline, 'resourcesRequired':required,
               'files':{MOD+'maps/studio.s2':state['data']}}

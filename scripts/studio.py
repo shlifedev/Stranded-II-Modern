@@ -11,10 +11,15 @@ from studio_core.project import Project, ROOT
 
 SCHEMA = {
     'protocol': 'stranded-studio/1',
-    'commands': ['init','inspect','revision','catalog','thumbnail','commands','apply','validate','export','undo','redo','preview','schema','serve','engine'],
+    'commands': ['init','inspect','revision','catalog','thumbnail','commands','scripts','templates','apply','validate','export','undo','redo','preview','schema','serve','engine'],
     'thumbnail': {'kind': 'item|object|unit|building|recipe|info', 'contentId': 'definition ID or recipe identifier (CLI: --id)',
                   'result': 'revision, version (content resources only), status (ready|unavailable), additionalResults; ready: PNG dataUrl, source, width, height; unavailable: reason'},
     'operations': {
+        'script.write': {'path':'scripts/name.s2s','text':'native script','expectedHash':'hash from scripts command; null for new file'},
+        'script.bind': {'path':'scripts/name.s2s','target':{'scope':'map|entity|definition','map':'for map/entity','kind':'for entity/definition','id':'for entity/definition'}},
+        'script.extract': {'path':'scripts/new.s2s','target':'same shape as script.bind; preserve existing text'},
+        'script.unbind': {'target':'same shape as script.bind; keep current script inline'},
+        'template.create': {'template':'item|recipe|building|npc|scenario','name':'display name','slug':'ASCII name for files','source':'definition ID for cloning','npcSource':'unit definition ID for NPC/scenario','map':'map for scenario','ingredients':'recipe/building/scenario: [[item ID, count], ...]','result':'recipe: output item ID; building: output object ID'},
         'content.clone': {'kind': 'item|object|unit|building|recipe|info', 'source': 'existing ID', 'id': 'optional new numeric ID', 'properties': {'name': 'New name'}},
         'content.create': {'kind': 'item|object|unit|building|recipe|info', 'id': 'optional numeric ID', 'properties': {'req': ['24,2','23,1'], 'gen': ['30,1']}},
         'content.set': {'kind': 'content kind', 'id': 'existing ID', 'properties': {'health': '200', 'script': 'on:use {\n msg "Hello";\n}' }},
@@ -60,8 +65,20 @@ def dispatch(request):
         project = Project.create(request['project'], request['base'], request.get('name','Extended project'))
         return project.snapshot()
     project = Project(request['project'])
+    if command == 'templates':
+        from studio_core.templates import templates
+        return {'templates': templates()}
+    if command == 'scripts':
+        from studio_core.scripts import workspace, path_name
+        result = workspace(project, request.get('query',''))
+        if request.get('path'):
+            path = path_name(request['path'])
+            if path not in project.script_files: raise ValueError('Script file missing: '+path)
+            result['file'] = {**next(f for f in result['files'] if f['path']==path),'text':project.script_files[path]}
+        return result
     if command == 'revision':
-        return {'revision': project.data['revision']}
+        from studio_core.scripts import version
+        return {'revision': project.data['revision'], 'scriptsVersion': version(project.script_files)}
     if command == 'inspect':
         return project.snapshot(request.get('map'))
     if command == 'catalog':
@@ -83,7 +100,8 @@ def dispatch(request):
     if command in ('undo','redo'):
         return project.undo(command=='redo', request.get('expectRevision'))
     if command == 'preview':
-        return project.preview(request['map'], ROOT/'build/studio/runtime', request.get('since'))
+        return project.preview(request['map'], ROOT/'build/studio/runtime', request.get('since'),
+                               request.get('expectRevision'), request.get('expectScriptsVersion'))
     raise ValueError(f'Unknown command: {command}')
 
 
@@ -117,9 +135,12 @@ def main():
     init.add_argument('project',type=Path)
     init.add_argument('--base',required=True,type=Path)
     init.add_argument('--name',default='Extended project')
-    for name in ('inspect','revision','catalog','thumbnail','apply','validate','export','undo','redo','preview'):
+    for name in ('inspect','revision','catalog','thumbnail','scripts','templates','apply','validate','export','undo','redo','preview'):
         p = sub.add_parser(name)
         p.add_argument('project',type=Path)
+        if name == 'scripts':
+            p.add_argument('--path')
+            p.add_argument('--query', default='')
         if name == 'preview':
             p.add_argument('--since', help='Last token acknowledged by the viewport; omit for explicit full load')
         if name in ('inspect','preview'):

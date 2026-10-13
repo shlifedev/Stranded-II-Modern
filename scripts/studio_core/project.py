@@ -13,7 +13,7 @@ import os
 import re
 import tempfile
 
-from . import content
+from . import content, scripts
 from .maps import EditableMap, new_map, number, CLASSES
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -102,6 +102,8 @@ class Project:
     def __init__(self, directory):
         self.root = Path(directory).resolve()
         self.path = self.root / 'project.json'
+        if (self.root/'.studio/script-transaction.json').exists():
+            with locked(self.root): scripts.recover(self.root)
         self.load()
 
     @classmethod
@@ -141,6 +143,9 @@ class Project:
         self._texts = None
         self._catalog = None
         self._blobs = {}
+        self.script_files = scripts.scan(self)
+        self._script_originals = deepcopy(self.script_files)
+        self._script_writes = set()
 
     def text_files(self):
         if self._texts is None:
@@ -152,7 +157,7 @@ class Project:
                 except UnicodeDecodeError as exc:
                     raise ValueError('Base resources must be prepared UTF-8, not the official CP1252 originals') from exc
             result.update(self.data['files'])
-            self._texts = result
+            self._texts = scripts.overlay_definitions(self, result)
         return self._texts
 
     def catalog(self):
@@ -191,7 +196,7 @@ class Project:
             raise ValueError(f'Imported map was changed outside Studio: {name}')
         for op in entry['edits']:
             data = EditableMap(data).apply(op)
-        return data
+        return scripts.overlay_map(self, name, data)
 
     def translations(self, language='ko'):
         from locales import catalog
@@ -251,6 +256,15 @@ class Project:
         if not isinstance(operation, dict) or not isinstance(operation.get('op'), str):
             raise ValueError('Each operation must be an object with a string op')
         op = operation.get('op')
+        if op.startswith('script.'):
+            return scripts.perform(self, operation)
+        if op == 'template.create':
+            from .templates import create
+            return create(self, operation)
+        routed = scripts.route_write(self, operation)
+        if routed is not None: return routed
+        if op == 'entity.remove' and scripts.binding(self, {'scope':'entity','map':operation['map'],'kind':operation['kind'],'id':operation['id']}):
+            raise ValueError('Unbind the script before deleting this entity')
         if op in ('content.set','content.clone','content.create'):
             kind = operation['kind']
             if kind not in content.PREFIXES:
@@ -343,10 +357,9 @@ class Project:
         history['head'] = digest(encode(self.data))
         for relative, data in self._blobs.items():
             atomic(safe(self.root, relative), data)
-        # If interrupted between these writes, load ignores unmatched history and
-        # retains the intact previous project. Sources are immutable and reusable.
-        atomic(self.root/'.studio/history.json', encode(history))
-        atomic(self.path, encode(self.data))
+        # Script writes use a recovery journal; manifest-only commits retain the
+        # existing atomic-file/history-head contract. Blob sources are immutable.
+        scripts.commit_files(self, before, history)
 
     def apply(self, operations, expected=None, dry_run=False):
         if not isinstance(operations, list) or not operations or len(operations) > 1000:
@@ -356,8 +369,12 @@ class Project:
             if expected is not None and expected != self.data['revision']:
                 raise ValueError(f'Revision conflict: expected {expected}, current {self.data["revision"]}; reload before editing')
             before, history = deepcopy(self.data), self.history()
+            if self.script_files or 'scripts' in self.data:
+                before['scripts'] = deepcopy(self.script_files)
             try:
                 results = [self.perform(operation) for operation in operations]
+                if self.script_files or 'scripts' in self.data:
+                    self.data['scripts'] = deepcopy(self.script_files)
                 issues = self.validate()
                 if not dry_run:
                     history['undo'] = (history['undo'] + [before])[-100:]
@@ -376,6 +393,15 @@ class Project:
             source, target = ('redo','undo') if redo else ('undo','redo')
             if not history[source]:
                 raise ValueError(f'Nothing to {source}')
+            restored = history[source][-1]
+            oldfiles, newfiles = self.data.get('scripts', {}), restored.get('scripts', {})
+            for path in oldfiles.keys() | newfiles.keys():
+                if oldfiles.get(path) == newfiles.get(path): continue
+                if self.script_files.get(path) != oldfiles.get(path):
+                    raise ValueError('Undo/redo conflicts with external script edit: '+path)
+                self._script_writes.add(path)
+                if path in newfiles: self.script_files[path] = newfiles[path]
+                else: self.script_files.pop(path, None)
             self.data = history[source].pop()
             history[target].append(before)
             self.commit(before, history)
@@ -447,6 +473,7 @@ class Project:
                     error('player-start', 'A playable map needs a player start (info type 1)', name)
             except (ValueError, KeyError) as exc:
                 error('invalid-map', str(exc), name)
+        issues.extend(scripts.workspace(self)['diagnostics'])
         return issues
 
     def thumbnail_version(self):
@@ -461,6 +488,7 @@ class Project:
                            if 'editor' not in p.relative_to(self.base/MOD/'maps').parts)
         return {'name': self.data['name'], 'project': str(self.root), 'base': str(self.base),
                 'revision': self.data['revision'], 'thumbnailVersion': self.thumbnail_version(),
+                'scripts': scripts.workspace(self),
                 'maps': list(self.data['maps']), 'activeMap': map_name,
                 'catalog': self.public_catalog(), 'baseMaps': base_maps,
                 'assets': list(self.data['assets']), 'canUndo': bool(history['undo']), 'canRedo': bool(history['redo']),
@@ -480,7 +508,7 @@ class Project:
         fonts = project_fonts(self)
         destination.mkdir(parents=True, exist_ok=True)
         files = {}
-        for relative, text in self.data['files'].items():
+        for relative, text in scripts.resources(self).items():
             files[relative] = text.encode('utf8')
         for relative, source in self.data['assets'].items():
             files[relative] = safe(self.root, source).read_bytes()
@@ -497,22 +525,31 @@ class Project:
                   'locales': {code+'.tsv':digest(catalog_output(entries).encode('utf8')) for code,entries in self.data['locales'].items()},
                   'fonts': {path:digest(data) for path,data in sorted(fonts.items())}}
         atomic(destination/'manifest.json', encode(report))
+        if scripts.scan(self) != self._script_originals:
+            raise ValueError('Scripts changed during export; retry to a new empty directory')
         return {'directory': str(destination), **report}
 
-    def preview(self, map_name, engine_base=None, since=None):
+    def preview(self, map_name, engine_base=None, since=None, expected_revision=None, expected_scripts=None):
         """Only explicit project resources cross into the isolated WASM filesystem."""
         from .preview import preview
         with locked(self.root):
             self.load()
+            if expected_revision is not None and expected_revision != self.data['revision']:
+                raise ValueError('Project changed before test start; retry')
+            if expected_scripts is not None and expected_scripts != scripts.version(self.script_files):
+                raise ValueError('Scripts changed before test start; retry')
             if engine_base and self.base != Path(engine_base).resolve():
                 raise ValueError('Blitz preview requires the project base to be build/studio/runtime, matching its bundled assets')
             issues = self.validate()
             if any(i['severity'] == 'error' for i in issues):
                 raise ValueError('Preview blocked by validation errors: '+json.dumps(issues, ensure_ascii=False))
-            return preview(self, map_name, since)
+            result = preview(self, map_name, since)
+            if scripts.scan(self) != self._script_originals:
+                raise ValueError('Scripts changed while preparing the test; retry')
+            return result
 
     def preview_resources(self):
-        files = {path: base64.b64encode(text.encode('utf8')).decode('ascii') for path,text in self.data['files'].items()}
+        files = {path: base64.b64encode(text.encode('utf8')).decode('ascii') for path,text in scripts.resources(self).items()}
         files.update({path: base64.b64encode(safe(self.root, source).read_bytes()).decode('ascii')
                       for path,source in self.data['assets'].items()})
         from locales import catalog
