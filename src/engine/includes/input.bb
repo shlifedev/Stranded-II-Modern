@@ -5,6 +5,15 @@ Function getinput(gametimer=1)
 	
 	;Millisecs
 	modern_frame()
+	dev_input()
+	If dev_paused Then gametimer=0:modern_step#=0.:f#=0.
+	; Raw look input during play; menus and Unicode controls keep normal clicks.
+	Local capturemouse=0
+	If in_console=0 And (m_section=Csection_game_sp Or m_section=Csection_game_mp) Then
+		capturemouse=(m_menu=0) Or (m_menu=Cmenu_if_movie And seq_cpoint=4)
+	EndIf
+	If DebugUiOpen() Then capturemouse=0
+	modern_mouse_capture(capturemouse)
 	
 	;Mouse
 	Local downcache
@@ -228,6 +237,7 @@ Function getinput(gametimer=1)
 		If in_statefxf>=9 Then in_statefxf=1
 	EndIf
 	
+	If DebugUiOpen() Then dev_clear_input()
 	qol_frame()
 End Function
 
@@ -295,6 +305,10 @@ Function endinput(tooltip=1,cursor=1,scripthelper=1)
 		If in_cursorf>=0 Then DrawImage gfx_cursor(in_cursorf),in_mx,in_my	
 	EndIf
 		
+	;FPS-only overlay (F2), independent of debug output and its extra work.
+	If KeyHit(60) Then fps_visible=Not fps_visible
+	If fps_visible And set_debug=0 Then bmpf_txt_r(set_scrx-3,0,fps+" FPS",Cbmpf_tiny)
+
 	;Debug Outputs (FPS etc.)
 	debug()
 	

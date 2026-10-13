@@ -1,0 +1,7 @@
+ShowPointer():"bbShowPointer"
+HidePointer():"bbHidePointer"
+RuntimeError( message$ ):"bbRuntimeError"
+MoveMouse( x%,y% ):"bbMoveMouse"
+InitErrorMsgs( number%,hasMacro%=0 ):"bbInitErrorMsgs"
+SetErrorMsg( pos%,message$ ):"bbSetErrorMsg"
+MemoryAccessViolation():"bbMemoryAccessViolation"

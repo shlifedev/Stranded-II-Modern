@@ -257,6 +257,7 @@ Const Ckey_items=13
 Const Ckey_diary=17
 Const Ckey_quicksave=14
 Const Ckey_quickload=15
+Const Ckey_devmenu=21
 
 ;############################################ Materials (Cmat)
 

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"ba6c55f3aa7b890ecf799d718cf9b8dcc7f86beb15924b5f6c5be8a35ec1e8ae"} -->
+<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"b15ad072306547e4e4e97bbcf542278a5c47bab481660245f72f836fcd3225c3"} -->
 
 # Stranded II : Modern
 
@@ -6,24 +6,30 @@
 
 <img width="2560" height="1440" alt="image" src="https://github.com/user-attachments/assets/d7553612-613b-4a5f-8ba7-77e4774af408" />
 
-An unofficial update of Stranded II for modern Windows/Mac/Browser systems. Built with Blitz3D 1.118.
+An unofficial update of Stranded II for modern Windows systems. Built with Blitz3D 1.118.
 
-## Support
+## Getting started
 
-Built with the latest known version of Blitz3D and ported to the latest versions of Windows, macOS, and web browsers.
+Download the version for your operating system, or play directly in your browser.
 
-- [Windows 10 & 11](https://github.com/shlifedev/Stranded-II-Modern/releases)
-- **[WebBrowser](https://shlifedev.github.io/Stranded-II-Modern/):** experimental WebGPU preview; requires desktop Chrome/Edge with WebGPU and JSPI. 
-- [MacOS](https://github.com/shlifedev/Stranded-II-Modern/releases)
- 
- 
+- **[Windows 10 & 11](https://github.com/shlifedev/Stranded-II-Modern/releases/latest):** Download the Windows ZIP from GitHub Releases.
+- **[Web Browser](https://shlifedev.github.io/Stranded-II-Modern/):** Play the experimental WebGPU version without installing it. Requires desktop Chrome/Edge with WebGPU and JSPI.
+- **[macOS (Apple Silicon)](https://github.com/shlifedev/Stranded-II-Modern/releases/latest):** Download the macOS ZIP from GitHub Releases.
 
-## Improvements
+## Technical improvements
 
-- Refresh rate - The original game ran at 50Hz; it now supports 60Hz/120Hz/144Hz+.
-- Display - Borderless mode, resolution selection, and fixes for corrupted graphics after Alt-Tab. Display settings apply after a restart.
-- Saving - Quick save/load fixes, five autosave slots, previous-save backups, and Continue on the main menu.
-- Localization - Players can now easily translate the game themselves. (Support for adding languages.)
+The main technical changes are as follows.
+
+- **Graphics improvements:** Replaced the original Direct3D 7 renderer with a renderer based on WebGPU. (DirectX 12/Metal)
+  Added optional per-pixel lighting, sunlight shadows, water reflections, and atmospheric effects.
+- **Refresh rate improvements:** Simulation updates are calculated from actual elapsed time so that the game maintains its original speed at high FPS. (60·120·144 Hz)
+- **Gameplay improvements:** Added individually configurable QOL features, including a recipe browser, quick storage transfers, automatic closing of empty corpse inventories, automatic sorting, and held construction input. See the [QOL settings guide](docs/qol.md) for usage details.
+- **Other bug fixes:** Fixed corrupted graphics after Alt-Tab and quick save/load errors.
+- **Localization:** Players can now easily translate the game themselves. (Support for adding languages.)
+
+For other technical changes, see the following documents.
+
+[WebGPU renderer](docs/wgpu-migration.md) · [Web architecture](docs/web-architecture.md) · [macOS architecture](docs/macos-architecture.md) · [Studio](docs/studio.md) · [Development guide](docs/development.md) · [Localization guide](docs/localization.md)
 
 ## Find the right guide
 

@@ -3,6 +3,7 @@ from pathlib import Path
 import hashlib
 import json
 import os
+import shutil
 import struct
 import subprocess
 import urllib.request
@@ -18,6 +19,11 @@ def digest(path):
 
 
 def tools():
+    if os.name != 'nt':
+        paths = tuple(shutil.which(name) for name in ('ffmpeg', 'ffprobe'))
+        if not all(paths):
+            raise ValueError('Native web/Studio audio preparation needs ffmpeg and ffprobe on PATH.')
+        return tuple(Path(path) for path in paths)
     cfg = web_toolchain.config()['ffmpeg']
     root = web_toolchain.ROOT / 'deps/ffmpeg-web'
     root.mkdir(parents=True, exist_ok=True)
@@ -44,6 +50,12 @@ def tools():
     return root / 'bin/ffmpeg.exe', root / 'bin/ffprobe.exe'
 
 
+def tool_identity():
+    if os.name == 'nt':
+        return web_toolchain.config()['ffmpeg']
+    return {'native': {path.name: digest(path) for path in tools()}}
+
+
 def supported_wav(path):
     """The runtime requires a PCM fmt chunk immediately after the RIFF header."""
     with path.open('rb') as stream:
@@ -61,7 +73,7 @@ def prepare(files, output):
     output.mkdir(parents=True, exist_ok=True)
     report_path = output / 'report.json'
     previous = json.loads(report_path.read_text('utf8')) if report_path.exists() else {}
-    cfg = web_toolchain.config()['ffmpeg']
+    cfg = tool_identity()
     old_files = previous.get('files', {}) if previous.get('tool') == cfg else {}
     replacements, records = {}, {}
     for source, target in candidates:
@@ -98,7 +110,7 @@ def prepare(files, output):
 
 def verify(files, package, output):
     report = json.loads((output / 'report.json').read_text('utf8'))
-    if report['tool'] != web_toolchain.config()['ffmpeg']:
+    if report['tool'] != tool_identity():
         raise ValueError('Web audio was prepared with a different toolchain.')
     expected = {target.removeprefix('/game/'): source for source, target in files
                 if source.suffix.lower() == '.wav' and not supported_wav(source)}

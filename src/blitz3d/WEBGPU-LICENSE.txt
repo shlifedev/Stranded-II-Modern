@@ -1,0 +1,32 @@
+MIT License
+
+Copyright (c) 2026 the scpcb-web-port contributors
+
+This license applies only to the original code contributed in this repository:
+the web-port glue (`web-shell/` and `build.py`)
+and the WebGPU rendering backend added to blitz3d-ng
+(`blitz3d-ng/src/modules/bb/graphics.webgpu`). It does not apply to vendored
+or checked-out third-party projects, which retain their own licensing:
+
+- `blitz3d-ng/` is vendored from https://github.com/blitz3d-ng/blitz3d-ng
+  and carries its own license (see `blitz3d-ng/LICENSE.TXT`).
+- `upstream-scpcb/` is the SCP: Containment Breach game source, checked out
+  from the community-maintained fork. See its own README/license terms.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to
+deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.

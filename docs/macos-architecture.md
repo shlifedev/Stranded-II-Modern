@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"43e8aa8230cfff20e54a70165a7b877fc3c5e4aeb07da8d4adcec9b04c45c5f1"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"d25ba0815678430de024ab49843430a7b93d8e7fe339b5bec8a47b36cb7b49b6"} -->
 
 # How the macOS version works
 
@@ -21,7 +21,7 @@ flowchart LR
     Binary --> App["Packaged as Stranded II.app"]
 ```
 
-The compiler comes from the [pinned Blitz3D NG WebGPU port](../config/macos-toolchain.json), with project patches applied. LLVM generates ARM64 machine code, and Apple's linker links it with the native runtime. The result is **Mach-O**, the macOS executable format, built **ahead of time (AOT)** before the game runs.
+The compiler lives in the shared [embedded Blitz3D source](../src/blitz3d/). [Pinned external dependencies](../config/blitz3d-toolchain.json) are prepared separately without overwriting local engine edits. LLVM generates ARM64 machine code; Apple’s linker produces a native **Mach-O** executable ahead of time (**AOT**).
 
 Dawn and the game runtime are statically linked into the executable. Game resources and language packs are also bundled, so playing requires no browser, Python, Homebrew, Wine, or Rosetta. Python handles resource preparation, build orchestration, and verification during development.
 
@@ -52,7 +52,7 @@ The runtime factory retains the old name `bbCreateOpenGLRuntime`. The linked `gr
 
 ## 3. What the web and macOS versions share
 
-The web and macOS versions use the same family of WebGPU renderer. macOS tool preparation applies the shared patches in `patches/blitz3d-web/`, followed by the native patches in `patches/blitz3d-macos/`.
+Windows, web, macOS and Studio share `src/blitz3d/`, including the WebGPU renderer. Platform selection chooses native Dawn/D3D12, browser WebGPU or native Dawn/Metal; engine changes are made directly in these sources.
 
 | Item | Web version | macOS app |
 | --- | --- | --- |
@@ -109,4 +109,4 @@ The current target is **Apple Silicon, macOS 15.0 or later, and the base game**.
 
 The table describes the implemented checks. For tests actually performed on a particular distribution, consult its included `verification-summary.json`. CI runs `core`; even the game scenarios in `full` use synthetic time, so they do not verify real-time gameplay speed or the entire campaign.
 
-To follow the implementation, read [tool preparation](../scripts/macos_toolchain.py) → [native engine patch](../patches/blitz3d-macos/0001-native-arm64-metal.patch) → [app building and packaging](../scripts/macos_build.py) → [verification](../scripts/verify_macos.py).
+To follow the implementation, read [tool preparation](../scripts/macos_toolchain.py) → [shared native engine](../src/blitz3d/src/runtime/s2macos/CMakeLists.txt) → [app building and packaging](../scripts/macos_build.py) → [verification](../scripts/verify_macos.py).

@@ -16,8 +16,8 @@ End Function
 
 ;### Menu Set
 Function menu_set(menu,save=1)
-	If menu>=50 And menu<=55 Then
-		If m_menu<50 Or m_menu>55 Then modern_settings_reset():loc_pending$=loc_saved$:qol_settings_reset()
+	If menu>=50 And menu<=56 Then
+		If dev_initialized=0 Then modern_settings_reset():loc_pending$=loc_saved$:qol_settings_reset()
 	EndIf
 	;Save GUI Stuff @ Vars from current Menu
 	If save=1
@@ -43,8 +43,6 @@ Function menu_set(menu,save=1)
 				set_windsway=in_check(2)
 				set_fog=in_check(3)
 				set_hwmultitex=in_check(4)
-				set_mb=in_check(5)
-				set_mb_alpha#=Float(in_slider(8))/100.
 				set_reboot=0
 				
 			;Settings SFX
@@ -119,8 +117,6 @@ Function menu_set(menu,save=1)
 			in_check(2)=set_windsway
 			in_check(3)=set_fog
 			in_check(4)=set_hwmultitex
-			in_check(5)=set_mb
-			in_slider(8)=set_mb_alpha#*100.
 		;Settings SFX
 		Case Cmenu_set_sfx
 			in_slider(0)=set_musicvolume#*100.
@@ -317,7 +313,7 @@ Function menu()
 			EndIf
 			
 		;Options Input
-		Case Cmenu_set_in,Cmenu_set_gfx,Cmenu_set_sfx,Cmenu_set_inscript,55
+		Case Cmenu_set_in,Cmenu_set_gfx,Cmenu_set_sfx,Cmenu_set_inscript,55,56
 			;Buttons
 			If game_scriptkeys>0 Then
 				If gui_button(5,5,sm$(49)+" (1)") Then menu_set(Cmenu_set_in)
@@ -331,19 +327,18 @@ Function menu()
 			EndIf
 			
 			qol_options_nav()
+			remaster_options_nav()
 			If gui_button(5,(set_scry)-100,sm$(3),1,Cicon_x) Then
 				menu_set(Cmenu_main,0)
-				loc_pending$=loc_saved$
-				modern_settings_reset():qol_settings_reset()
-				load_settings()
+				dev_revert_settings()
 				prepare_cache_viewranges()
 				set_reboot=0
 			EndIf
 			If gui_button(5,(set_scry)-50,sm$(4),1,Cicon_ok) Then
 				Local qol_restart=qol_settings_restart()
-				If modern_options_save() Then
+				menu_set(m_menu)
+				If dev_save_settings() Then
 					menu_set(Cmenu_main)
-					save_settings()
 					prepare_cache_viewranges()
 					If qol_restart Then gui_msg("[[loc:modern.restart]]")
 				Else
@@ -354,6 +349,7 @@ Function menu()
 			;Window
 			Select m_menu
 				Case 55:qol_options_draw()
+				Case 56:remaster_options_draw()
 				;Controls
 				Case Cmenu_set_in
 					DrawImage gfx_win,215,0
@@ -392,6 +388,7 @@ Function menu()
 						menu_keysetting(360,sm$(70),Ckey_quickload)
 						menu_keysetting(380,sm$(71),Ckey_quicksave)
 					EndIf
+					menu_keysetting(400,"[[loc:dev.binding]]",Ckey_devmenu)
 					
 					bmpf_txt(236,510,sm$(72)+":")
 					If in_slider(0)<1 Then in_slider(0)=1
@@ -477,15 +474,6 @@ Function menu()
                     loc_cycle(modern_choice(436,449,340,loc_name(loc_pending$)))
                     bmpf_txt(236,503,"[[loc:ui.restart]]",Cbmpf_tiny)
 
-                    ;Motion Blur
-					bmpf_txt(236,383,sm$(107)+":")
-					gui_check(436,383,"",5)
-					bmpf_txt(436+20,383,se$(153))
-					bmpf_txt(436,403,sm$(108))
-					gui_slider(636,403,100,8)
-					
-					
-					
 				;Sounds & MP
 				Case Cmenu_set_sfx
 					;Sounds
@@ -1058,6 +1046,7 @@ Function menu_keysetting(y,name$,id)
 							over=1
 							If in_mhit(1) Then
 								in_getkey=id
+								DebugUiHotkey 0
 								play(sfx_click)
 							EndIf
 						EndIf
@@ -1067,7 +1056,15 @@ Function menu_keysetting(y,name$,id)
 		EndIf
 		;Draw
 		bmpf_txt(236,83+y,name$,over)
-		bmpf_txt(506,83+y,in_keyname$(in_keys(id)),over)
+		If id=Ckey_devmenu And in_keys(id)=0 Then
+			bmpf_txt(506,83+y,"None",over)
+		Else
+			bmpf_txt(506,83+y,in_keyname$(in_keys(id)),over)
+		EndIf
+		If id=Ckey_devmenu And over Then
+			in_ttt$="[[loc:dev.binding_help]]"
+			If in_mhit(2) Then in_keys(id)=0:in_mhit(2)=0
+		EndIf
 	Else
 		;Draw
 		bmpf_txt(236,83+y,name$,1)
@@ -1106,6 +1103,7 @@ Function menu_keysetting(y,name$,id)
 				If in_keys(i)=gotkey Then in_keys(i)=0
 				If game_scriptkey(i)=gotkey Then game_scriptkey(i)=0
 			Next
+			If in_keys(Ckey_devmenu)=gotkey Then in_keys(Ckey_devmenu)=0
 			in_keys(id)=gotkey
 			in_getkey=-1
 			play(sfx_click)
@@ -1127,6 +1125,7 @@ Function menu_keysettingscript(y,name$,id)
 							over=1
 							If in_mhit(1) Then
 								in_getkey=id
+								DebugUiHotkey 0
 								play(sfx_click)
 							EndIf
 						EndIf
@@ -1175,6 +1174,7 @@ Function menu_keysettingscript(y,name$,id)
 				If in_keys(i)=gotkey Then in_keys(i)=0
 				If game_scriptkey(i)=gotkey Then game_scriptkey(i)=0
 			Next
+			If in_keys(Ckey_devmenu)=gotkey Then in_keys(Ckey_devmenu)=0
 			game_scriptkey(id)=gotkey
 			in_getkey=-1
 			play(sfx_click)

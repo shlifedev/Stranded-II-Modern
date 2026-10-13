@@ -1,8 +1,9 @@
 """Development entry point. Only build/ is generated; src/engine is authoritative."""
 from pathlib import Path
+import blitz3d_toolchain as engine
 import argparse, hashlib, json, os, shutil, subprocess, sys
 from locales import prepare, validate
-from versioning import local_info, validate_info, runtime_info
+from versioning import development_marker, local_info, validate_info, runtime_info
 from editions import Edition, NAMES, source_hashes, override_files
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -17,7 +18,7 @@ def write(path,value):
     path.write_text(json.dumps(value,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
 def settings():
     path=SHARED_BUILD/'dependencies.local.json'
-    if not path.exists():raise ValueError('Run setup --game PATH --blitz PATH --font PATH first.')
+    if not path.exists():raise ValueError('Run setup --game PATH --font PATH first.')
     return read(path)
 def checked(path,expected,label):
     if not path.is_file():raise ValueError(f'Missing {label}: {path}')
@@ -27,13 +28,10 @@ def setup(args):
     from language_pack import refresh
     deps=read(ROOT/'config/dependencies.json')
     previous=settings() if (SHARED_BUILD/'dependencies.local.json').exists() else {}
-    inputs={name:str(getattr(args,name).resolve()) if getattr(args,name) else previous.get(name) for name in ('game','blitz','font')}
-    if not all(inputs.values()):raise ValueError('setup requires --game, --blitz and --font on first use')
-    game,blitz,font=(Path(inputs[name]) for name in ('game','blitz','font'))
+    inputs={name:str(getattr(args,name).resolve()) if getattr(args,name) else previous.get(name) for name in ('game','font')}
+    if not all(inputs.values()):raise ValueError('setup requires --game and --font on first use')
+    game,font=(Path(inputs[name]) for name in ('game','font'))
     if any(game.resolve().is_relative_to(Edition(name).runtime(ROOT).resolve()) for name in NAMES):raise ValueError('Input game must be an external official English installation')
-    checked(blitz/'bin/blitzcc.exe',deps['compiler_sha256'],'Blitz3D 1.118 compiler')
-    for relative,digest in read(ROOT/'config/toolchain-files.json').items():
-        checked(blitz/relative,digest,'Blitz3D 1.118 component')
     checked(font,deps['font_sha256'],'Noto Sans KR font')
     files=read(ROOT/'config/game-files.json')
     for relative,digest in files.items():checked(game/relative,digest,'official game resource')
@@ -47,10 +45,6 @@ def setup(args):
         if target.exists() and (target.suffix=='.cfg' or relative.endswith('/settings.inf')):continue
         shutil.copy2(game/relative,target)
     (RUNTIME/'mods/Stranded II/saves').mkdir(exist_ok=True)
-    private=SHARED_BUILD/'toolchain'
-    for dirname in ('bin','lib'):
-        if (blitz/dirname).exists():shutil.copytree(blitz/dirname,private/dirname,dirs_exist_ok=True)
-    shutil.copytree(ROOT/'config/userlibs',private/'userlibs',dirs_exist_ok=True)
     if not (RUNTIME/'core/modern.ini').exists():shutil.copy2(ROOT/PROFILE.defaults,RUNTIME/'core/modern.ini')
     catalogs,report=prepare(ROOT,game,RUNTIME,PROFILE.name)
     for relative,p in override_files(ROOT,PROFILE.name).items():
@@ -61,6 +55,7 @@ def setup(args):
     shutil.copytree(ROOT/'licenses',RUNTIME/'licenses',dirs_exist_ok=True)
     write(SHARED_BUILD/'dependencies.local.json',inputs)
     write(BUILD/'setup-report.json',report)
+    engine.prepare()
     print(json.dumps(report,ensure_ascii=False));print('Prepared:',RUNTIME)
 
 def localize(args):
@@ -78,28 +73,24 @@ def build(args):
     if info['edition']!=PROFILE.name:raise ValueError('Version belongs to another edition')
     if os.environ.get('GITHUB_SHA') and info['commit']!=os.environ['GITHUB_SHA']:
         raise ValueError('Selected version belongs to a different source commit')
-    import native_qol
-    native_dll=native_qol.build(ROOT,PROFILE.name)
-    shutil.copytree(ROOT/'config/userlibs',SHARED_BUILD/'toolchain/userlibs',dirs_exist_ok=True)
-    compiler=SHARED_BUILD/'toolchain/bin/blitzcc.exe'
-    for relative,digest in read(ROOT/'config/toolchain-files.json').items():
-        checked(SHARED_BUILD/'toolchain'/relative,digest,'private Blitz3D component')
-    env=dict(os.environ,blitzpath=str(SHARED_BUILD/'toolchain'))
+    engine.build_compiler()
+    engine.build_native(graphics=True)
     dest=RUNTIME/PROFILE.executable
     candidate=BUILD/'StrandedII.next.exe'
     if candidate.exists():candidate.unlink()
-    result=subprocess.run([str(compiler),'-o',str(candidate),PROFILE.entry],cwd=ROOT/'src/engine',env=env,capture_output=True)
-    print(result.stdout.decode('utf8',errors='replace'));print(result.stderr.decode('utf8',errors='replace'))
-    if result.returncode:raise RuntimeError('Blitz3D compilation failed')
+    engine.compile(ROOT/'src/engine'/PROFILE.entry,candidate,graphics=True,cwd=ROOT/'src/engine')
     if not candidate.exists():raise RuntimeError('Compiler did not produce the executable')
-    native_qol.install(native_dll,RUNTIME)
+    runtime_files=engine.install_windows_runtime(RUNTIME)
     try:os.replace(candidate,dest)
     except PermissionError as exc:
         raise RuntimeError(f'Compiled {candidate}; close the development game and run build again to replace {dest}') from exc
+    development_marker(RUNTIME,info['channel']=='local')
     write(RUNTIME/'core/version.json',info)
     (RUNTIME/'core/version.txt').write_text(info['display_version']+'\n',encoding='ascii',newline='\n')
     report=dict(info,exe_sha256=sha(dest),source_sha256=source_hashes(ROOT,PROFILE.name))
-    report['native_qol']=read(BUILD/'native/report.json')
+    report['engine_sha256']=engine.sources()
+    report['runtime_files']=runtime_files
+    report['platform']='windows-x64-d3d12'
     write(BUILD/'build-report.json',report)
     print('Built:',dest)
 
@@ -119,9 +110,10 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     sub=parser.add_subparsers(dest='command',required=True)
     p=sub.add_parser('setup',help='Validate external dependencies and refresh shared resources/fonts')
-    for name in ('game','blitz','font'):p.add_argument('--'+name,type=Path)
+    for name in ('game','font'):p.add_argument('--'+name,type=Path)
+    p.add_argument('--blitz',type=Path,help='Deprecated; original Blitz3D is only used by reference tests')
     sub.add_parser('localize',help='Refresh language packs and fonts without recompiling or copying game resources')
-    p=sub.add_parser('build',help='Compile directly edited src/engine with private Blitz3D')
+    p=sub.add_parser('build',help='Compile src/engine with the embedded Blitz3D engine')
     p.add_argument('--version-info',type=Path,help='CI-selected version metadata; defaults to config/version.json with -local')
     p=sub.add_parser('run',help='Launch the isolated development game')
     p.add_argument('--port',type=int,default=8765,help='Local web preview port; use the same port to retain browser saves')

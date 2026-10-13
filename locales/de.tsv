@@ -2668,3 +2668,61 @@ qol.guide.grain	Körner aus einer Garbe lösen
 qol.guide.bottle	Flasche füllen
 qol.guide.clam	Muschel öffnen
 qol.guide.bark	Rinde durchsuchen
+modern.unlimited	Unbegrenzt
+render.tab	Grafikverbesserungen
+render.water	Planare Wasserreflexionen
+render.lighting	Beleuchtung pro Pixel
+render.shadows	Sonnenschatten
+render.atmosphere	Atmosphärische Schattierung
+render.antialias	Kantenglättung
+render.help	FXAA ist die kostengünstige Vorgabe. MSAA 4x hält Texturen schärfer bei höherer GPU-Last. Beide filtern keine Schrift. Wasser, Beleuchtung und Atmosphäre sind anfangs an; Sonnenschatten sind aus. Anwenden wirkt sofort.
+dev.title	Entwicklermenü
+dev.status	Status
+dev.cheats	Cheats / Testen
+dev.settings	Einstellungen
+dev.logs	Protokoll
+dev.paused	Pausiert · Im Entwicklermenü fortsetzen
+dev.pause	Simulation pausieren (bleibt beim Schließen aktiv)
+dev.map	Karte
+dev.player	Spieler
+dev.health	Gesundheit
+dev.hunger	Hunger
+dev.thirst	Durst
+dev.exhaustion	Erschöpfung
+dev.invulnerable	Unverwundbarkeit umschalten / Wiederbeleben
+dev.needs	Bedürfnisse zurücksetzen
+dev.states	Alle Spielerzustände entfernen
+dev.build	Baumaterial in der Nähe bereitstellen
+dev.play_only	Im Einzelspielermodus verfügbar.
+dev.teleport	Spieler teleportieren
+dev.read_position	Aktuelle Position übernehmen
+dev.time	Datum / Uhrzeit
+dev.read_time	Aktuelles Datum / Uhrzeit übernehmen
+dev.day	Tag
+dev.hour	Stunde
+dev.minute	Minute
+dev.apply_time	Datum / Uhrzeit setzen (ohne Wachstumsereignisse)
+dev.items	Gegenstände geben
+dev.search	Suchen
+dev.count	Menge
+dev.script	Cheat-Skript
+dev.execute	Skript ausführen
+dev.done	Aktion abgeschlossen.
+dev.failed	Aktion fehlgeschlagen; Spieler oder Baustelle prüfen.
+dev.preview	Änderungen werden sofort übernommen. Schließen speichert sie nicht.
+dev.unsaved	Ungespeicherte Änderungen
+dev.restart	Anzeige, Auflösung, FPS-Limit und Sprache werden nach Speichern und Neustart aktiv.
+dev.save	Einstellungen speichern
+dev.revert	Gespeicherte Einstellungen wiederherstellen
+dev.saved	Einstellungen gespeichert.
+dev.reverted	Gespeicherte Einstellungen wiederhergestellt.
+dev.display	Anzeige / Sprache (Neustart)
+dev.width	Renderbreite
+dev.height	Renderhöhe
+dev.level	Stufe (-1: alle, 0: Info, 2: Fehler, 3: Debug)
+dev.follow	Neue Meldungen verfolgen
+dev.clear	Protokoll leeren
+dev.copy	Gefiltertes Protokoll kopieren
+dev.off	Aus
+dev.binding	Entwicklermenü
+dev.binding_help	Zum Belegen anklicken. Rechtsklick setzt die Belegung auf None.

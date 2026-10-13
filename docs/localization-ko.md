@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"9199e858211a723ca06e719e0cdfe73654401fdc60d3535b81d02fb93761fb44"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"0ee6e4b078c775cb8af84a5ed0913c79a5312f8643d6f4616e969565478449d4"} -->
 
 # 게임 번역하기
 
@@ -71,6 +71,8 @@ quest.example.greeting<TAB>$name님, 환영합니다!
 
 미리보기는 `build/runtime/core/locales/<코드>/preview.png`, 사용한 폰트 정보는 `build/runtime/core/locales/fonts-report.json`에 있습니다. 확장판은 `build/extended/runtime/` 아래에서 확인합니다. 최종 표시는 게임에서 확인하세요.
 
+개발자 메뉴는 영어에 ProggyForever(ProggyClean 계열), 한글에 Pretendard를 사용합니다. `setup` / `localize`가 체크섬이 고정된 Pretendard를 준비하고 각 언어의 `ui.ttf`, 선택한 게임 폰트의 `fallback.ttf`를 함께 생성합니다. 사용자 폰트를 지정하면 기본 Noto도 `fallback-extra.ttf`로 포함합니다. ImGui는 UTF-8 입력과 32비트 유니코드 코드포인트를 처리하며 필요한 글리프를 동적으로 생성합니다. 실제로 표시할 수 있는 문자는 포함된 폰트에 따라 달라집니다. 복잡한 문자 조형과 색상 이모지는 지원을 보장하지 않습니다.
+
 ## 기본판·확장판 전용 번역
 
 `locales/<코드>.tsv`는 기본판과 확장판이 함께 사용합니다. 한 판에서만 바꿀 문구는 다음 파일에 **바꿀 행만** 넣습니다. 폴더가 없으면 만드세요.
@@ -96,8 +98,8 @@ quest.example.greeting<TAB>$name님, 환영합니다!
 
 플레이어에게 배포하려면 `localize`와 확인을 마친 해당 판의 **`core/locales/` 전체**를 묶습니다. 기본판은 `build/runtime/core/locales/`, 확장판은 `build/extended/runtime/core/locales/`입니다.
 
-- `languages.dat`, TSV, 언어별 `glyphs.dat`와 BMP 페이지를 모두 포함합니다. `preview.png`와 개발 PC의 절대 경로가 담긴 `fonts-report.json`은 제외해도 됩니다.
-- 폰트의 이미지 생성·배포 허용 여부를 확인하고 필요한 라이선스 고지를 동봉합니다. 기본 Noto 고지는 [licenses/](../licenses/)에 있습니다.
+- `languages.dat`, TSV, 언어별 `glyphs.dat`, BMP 페이지, `ui.ttf`와 fallback TTF 파일을 모두 포함합니다. `preview.png`와 개발 PC의 절대 경로가 담긴 `fonts-report.json`은 제외해도 됩니다.
+- 폰트의 이미지 생성·배포 허용 여부를 확인하고 필요한 라이선스 고지를 동봉합니다. Pretendard와 Proggy 폰트 고지도 포함하세요. 기본 Noto 고지는 [licenses/](../licenses/)에 있습니다.
 
 받는 사람은 게임을 종료하고 기존 `core/locales/`를 백업한 뒤 교체하고, 게임에서 언어를 선택해 재시작합니다. 같은 판의 언어팩 지원 엔진이 필요하며 구형 EXE에는 설치하지 않습니다. Python이나 원본 폰트를 별도로 설치할 필요는 없습니다.
 

@@ -42,6 +42,16 @@ def main():
     deps=json.loads((root/'build/dependencies.local.json').read_text('utf8'));default=Path(deps['font'])
     assert Font(default).axes,'default exercises variable font path'
     fixture=out/'project';locale=fixture/'locales';locale.mkdir(parents=True)
+    # The isolated project exercises the same pinned UI-font publication as setup.
+    from ui_fonts import prepare as prepare_ui_font
+    ui_font=prepare_ui_font(root)
+    (fixture/'config').mkdir()
+    shutil.copy2(root/'config/blitz3d-toolchain.json',fixture/'config/blitz3d-toolchain.json')
+    (fixture/'deps/fonts/ui').mkdir(parents=True)
+    shutil.copy2(ui_font,fixture/'deps/fonts/ui'/ui_font.name)
+    (fixture/'licenses').mkdir()
+    for name in ('Pretendard-OFL.txt','Proggy-fonts.txt'):
+        shutil.copy2(root/'licenses'/name,fixture/'licenses'/name)
     runtime=out/'runtime';gfx=runtime/'mods/Stranded II/sys/gfx';gfx.mkdir(parents=True)
     for p in ((args.runtime or root/'build/runtime')/'mods/Stranded II/sys/gfx').glob('font_*.bmp'):shutil.copy2(p,gfx/p.name)
     latin=fixture/'Latin.ttf';other=fixture/'Other.otf'
@@ -61,6 +71,9 @@ def main():
     report=refresh(fixture,runtime,default)
     assert report['fallback_keys']['ja']==1
     generated=runtime/'core/locales';fonts=json.loads((generated/'fonts-report.json').read_text('utf8'))
+    assert (generated/'ko/ui.ttf').read_bytes()==ui_font.read_bytes()
+    assert (generated/'ko/fallback.ttf').read_bytes()==latin.read_bytes()
+    assert (generated/'ko/fallback-extra.ttf').read_bytes()==default.read_bytes()
     assert fonts['ko']['fallback_glyphs']['U+D55C']['font']==str(default.resolve())
     assert fonts['ko']['fallback_glyphs'][f'U+{private:04X}']['font']==str(other.resolve())
     assert fonts['ko']['fallback_count']>0

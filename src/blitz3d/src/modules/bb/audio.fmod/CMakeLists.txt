@@ -1,0 +1,13 @@
+IF(BB_WINDOWS)
+  bb_start_module(audio.fmod)
+  set(DEPENDS_ON bb.audio bb.runtime)
+  set(SOURCES audio.fmod.h sound.cpp sound.h driver.cpp driver.h)
+  if(BB_WIN32 OR BB_MINGW32)
+    set(LIBS fmodvc)
+  else()
+    set(LIBS fmod64vc)
+  endif()
+
+  bb_end_module()
+  target_link_libraries(bb.audio.fmod fmod)
+ENDIF()

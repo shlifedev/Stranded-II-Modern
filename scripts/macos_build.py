@@ -1,5 +1,6 @@
 """Experimental native ARM64/Metal build in an isolated development runtime."""
 from pathlib import Path
+import blitz3d_toolchain as engine_toolchain
 import hashlib
 import json
 import os
@@ -11,7 +12,7 @@ import wave
 from editions import source_hashes, override_files
 from locales import prepare, validate, languages
 from language_pack import refresh
-from versioning import git, local_info, validate_info
+from versioning import development_marker, git, local_info, validate_info
 import macos_toolchain
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -142,11 +143,12 @@ def license_sources():
         result.update({p.relative_to(folder).as_posix(): p for p in folder.rglob('*') if p.is_file()})
     source, engine = macos_toolchain.SOURCE, macos_toolchain.ENGINE
     for path, name in [
-        (source / 'LICENSE', 'WebGPU-port-MIT.txt'), (engine / 'LICENSE.TXT', 'Blitz3D-NG.txt'),
-        (engine / 'deps/sdl/tree/LICENSE.txt', 'SDL2.txt'),
-        (engine / 'deps/freetype2/tree/docs/FTL.TXT', 'FreeType.txt'),
-        (engine / 'deps/ogg/tree/COPYING', 'Ogg.txt'), (engine / 'deps/vorbis/tree/COPYING', 'Vorbis.txt'),
-        (engine / 'deps/minimp3/tree/LICENSE', 'minimp3.txt'), (engine / 'deps/zlib/tree/README', 'zlib.txt'),
+        (engine_toolchain.ENGINE / 'WEBGPU-LICENSE.txt', 'WebGPU-port-MIT.txt'), (engine / 'LICENSE.TXT', 'Blitz3D-NG.txt'),
+        (engine_toolchain.library('imgui') / 'LICENSE.txt', 'Dear-ImGui.txt'),
+        (engine_toolchain.library('sdl') / 'LICENSE.txt', 'SDL2.txt'),
+        (engine_toolchain.library('freetype2') / 'docs/FTL.TXT', 'FreeType.txt'),
+        (engine_toolchain.library('ogg') / 'COPYING', 'Ogg.txt'), (engine_toolchain.library('vorbis') / 'COPYING', 'Vorbis.txt'),
+        (engine_toolchain.library('minimp3') / 'LICENSE', 'minimp3.txt'), (engine_toolchain.library('zlib') / 'README', 'zlib.txt'),
     ]:
         result[name] = path
     return result
@@ -168,6 +170,7 @@ def asset_names():
         names.add(f'core/locales/{code}.tsv')
         names.update(p.relative_to(RUNTIME).as_posix() for p in (RUNTIME / 'core/locales' / code).glob('*.bmp'))
         names.add(f'core/locales/{code}/glyphs.dat')
+        names.update(p.relative_to(RUNTIME).as_posix() for p in (RUNTIME / 'core/locales' / code).glob('*.ttf'))
     names.update('licenses/' + name for name in license_sources())
     return sorted(name for name in names if Path(name).suffix.lower() not in
                   ('.exe', '.dll', '.sav', '.bak', '.tmp', '.log') and not any(
@@ -197,6 +200,8 @@ def asset_payload():
 
 def package_app(executable, parent=None):
     payload = asset_payload()
+    if parent is None and (RUNTIME / 'core/development.flag').is_file():
+        payload['core/development.flag'] = (RUNTIME / 'core/development.flag').read_bytes()
     version = validate_info(json.loads(payload['core/version.json']))['version'].split('-')[0]
     hashes = {name: hashlib.sha256(data).hexdigest() for name, data in payload.items()}
     fingerprint = hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest()
@@ -242,10 +247,8 @@ def implementation_hashes():
         'config/game-files.json', 'scripts/macos_toolchain.py', 'scripts/macos_build.py',
         'scripts/locales.py', 'scripts/language_pack.py', 'scripts/web_audio.py',
         'scripts/editions.py', 'scripts/versioning.py')]
-    paths += list((ROOT / 'patches/blitz3d-web').glob('*.patch'))
-    paths += list((ROOT / 'patches/blitz3d-macos').glob('*.patch'))
     paths += [p for p in (ROOT / 'src/native/macos').rglob('*') if p.is_file()]
-    return {p.relative_to(ROOT).as_posix(): digest(p) for p in sorted(paths)}
+    return {**{p.relative_to(ROOT).as_posix(): digest(p) for p in sorted(paths)}, **engine_toolchain.sources()}
 
 
 def build(args):
@@ -261,6 +264,7 @@ def build(args):
     compile_source(compiler, 'StrandedIIMac.bb', candidate, 's2macos')
     destination = RUNTIME / 'StrandedII'
     os.replace(candidate, destination)
+    development_marker(RUNTIME, info['channel'] == 'local')
     write(RUNTIME / 'core/version.json', info)
     (RUNTIME / 'core/version.txt').write_text(info['display_version'] + '\n', encoding='ascii')
     install_licenses()

@@ -1,0 +1,24 @@
+
+#ifndef GXDIR_H
+#define GXDIR_H
+
+#include <string>
+#include <windows.h>
+
+#include <bb/filesystem/filesystem.h>
+
+class WindowsDir : public BBDir{
+public:
+	WindowsDir( HANDLE h,const WIN32_FIND_DATAW &f );
+	~WindowsDir();
+
+private:
+	HANDLE handle;
+	WIN32_FIND_DATAW findData;
+
+	/***** GX INTERFACE *****/
+public:
+	std::string getNextFile();
+};
+
+#endif

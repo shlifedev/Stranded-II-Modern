@@ -1,0 +1,22 @@
+{
+  "upstream": "https://github.com/q8j-dev/scpcb-web-port.git",
+  "commit": "d8e0ba5c69197003a897ff4952a9aa764366ce91",
+  "dependency_upstream": "https://github.com/blitz3d-ng/blitz3d-ng.git",
+  "dependency_commit": "d8d5d1be34dfac328e15d9e9b831d9572cde9d0f",
+  "notice": "Modified Blitz3D NG / WebGPU source maintained for Stranded II. Not the original upstream distribution.",
+  "integrated_patches": {
+    "patches/blitz3d-web/0001-browser-services.patch": "ed5e44eacb4412c82d0c42b723acd7f517b0b34afc0b80891c70aea1490aaa69",
+    "patches/blitz3d-web/0002-compiler-only.patch": "0563582a154031454a8a4d4035e8b89b381cdaedc78e90f31f08648977c31ed7",
+    "patches/blitz3d-web/0003-windows-cross-compiler.patch": "cd29a8ac91251de305893d29943907346635f0dadcc1544b3732b1e8f4a5e9c3",
+    "patches/blitz3d-web/0004-blitz-boolean-semantics.patch": "f913278c5146d52e19b63465549cbb2fd6a5d00853daf458a13ab0fabf446ea8",
+    "patches/blitz3d-web/0005-browser-search-input.patch": "dfbd26da5b0b5d16d74e91ff89c6ffe4c30da156ac3c79f91be9049ca494c7d7",
+    "patches/blitz3d-web/0006-blitz-while-truth.patch": "508f5bce3b31796986be9dc7af4f2566a2f358d8ed3e04c0d351523666e5b15e",
+    "patches/blitz3d-web/0007-image-colour-key.patch": "5125f3b0e6dde4d241224b694565a21ef1fcfb827c78269ce3a717776401f7c9",
+    "patches/blitz3d-web/0008-browser-pointer-lifecycle.patch": "2e7257a1ac59864c0189a80c9ce8e57afce8752045d217c64a7891f520ca39dd",
+    "patches/blitz3d-web/0009-dynamic-texture-orientation.patch": "f70894d5e595dded9d492c6af540ebd9ad45cb1a3835c70e7a7707a66d1285c6",
+    "patches/blitz3d-web/0010-batch-self-blits.patch": "e9bd03f41e1439b7a09701e4398a53edc3a2024716651526d73727f9e854dd32",
+    "patches/blitz3d-web/0011-posix-include-paths.patch": "64f1adbfd914cda5cab7338429f5d68f7e51d5299e9b356c824559f44eb23b16",
+    "patches/blitz3d-macos/0001-native-arm64-metal.patch": "31156f20c2d82c07bf37c2279e5f110f6bd88132060558f5fe2e5a42f0c0de56"
+  },
+  "reconciliation": "The identical parser canonicalpath change in web/0011 and macos/0001 is included once."
+}

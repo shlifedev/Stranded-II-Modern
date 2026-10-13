@@ -8,6 +8,7 @@ const fullscreen = document.getElementById('fullscreen');
 const inputHint = document.getElementById('input-hint');
 const shellURL = new URL(document.currentScript.src, document.baseURI);
 const deployment = shellURL.searchParams.get('v');
+let debugUiOpen = false;
 let started = false, menuActive = true, syncing = false, dirty = false, syncTimer, bootPromise;
 let sequence = Promise.resolve(), lastWrite = Date.now(), revision = 0;
 let searchBounds = [0, 0, 0, 0];
@@ -144,7 +145,7 @@ async function prepareStorage() {
 
 function focused() {
   return started && !document.hidden && document.hasFocus() &&
-    (menuActive || document.pointerLockElement === canvas || document.activeElement === search);
+    (debugUiOpen || menuActive || document.pointerLockElement === canvas || document.activeElement === search);
 }
 
 function refreshInput() {
@@ -155,7 +156,7 @@ function refreshInput() {
   fullscreen.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen';
   fullscreen.setAttribute('aria-pressed', String(Boolean(document.fullscreenElement)));
   fullscreen.title = 'Toggle full screen (Alt+Enter)';
-  inputHint.hidden = !started || locked || document.activeElement === search || document.hidden || !document.hasFocus();
+  inputHint.hidden = debugUiOpen || !started || locked || document.activeElement === search || document.hidden || !document.hasFocus();
   inputHint.textContent = escapeLocked
     ? 'Click to enable controls · Esc: game menu · Hold Esc: release · Alt+Enter: full screen'
     : 'Click to enable controls · Alt+Enter: full screen';
@@ -205,6 +206,7 @@ async function fullscreenChanged() {
 }
 
 async function lockPointer() {
+  if (debugUiOpen) return false;
   activateAudio();
   if (document.pointerLockElement === canvas) return true;
   if (pointerRequest) return pointerRequest;
@@ -342,6 +344,8 @@ var Module = {
   onRuntimeInitialized: bootGame
 };
 
+s2InstallDebugUi(Module, canvas, open => { debugUiOpen = open; returningToGame = false; refreshInput(); });
+
 function bootGame() {
   if (!bootPromise) bootPromise = (async () => {
     await prepareStorage();
@@ -377,7 +381,7 @@ for (const type of ['keydown', 'keyup']) {
 // attack, select a menu item, or leave a held mouse button in the game.
 canvas.addEventListener('mousedown', event => {
   if (started) activateAudio();
-  if (started && document.pointerLockElement !== canvas) {
+  if (!debugUiOpen && started && document.pointerLockElement !== canvas) {
     returningToGame = true;
     event.preventDefault(); event.stopImmediatePropagation();
   }
@@ -389,7 +393,7 @@ window.addEventListener('mouseup', event => {
   }
 }, true);
 canvas.addEventListener('click', event => {
-  if (started && (returningToGame || document.pointerLockElement !== canvas)) {
+  if (!debugUiOpen && started && (returningToGame || document.pointerLockElement !== canvas)) {
     returningToGame = false;
     event.preventDefault(); event.stopImmediatePropagation();
     if (event.button === 0) return lockPointer();

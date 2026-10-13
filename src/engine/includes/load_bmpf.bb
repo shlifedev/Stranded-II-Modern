@@ -10,6 +10,7 @@ Dim bmpf_framesc(65535,bmpf_count)
 
 Include "includes\ko_unicode.bb"
 ko_alias_load()
+dev_strings_ready=1
 
 Global gfx_bar=load_image("sys\gfx\progress.bmp")
 

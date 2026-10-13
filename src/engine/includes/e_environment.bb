@@ -368,6 +368,10 @@ Function e_environment_update()
 		
 		;Setup Virtual Sun
 		PositionEntity env_lenssun,EntityX(cam)-2000,EntityY(cam)+1000,EntityZ(cam)-1500
+		If remaster_enabled(Cremaster_light) Or remaster_enabled(Cremaster_shadows) Then
+			TFormVector 0,0,-3000,env_light,0
+			PositionEntity env_lenssun,EntityX(cam)+TFormedX(),EntityY(cam)+TFormedY(),EntityZ(cam)+TFormedZ()
+		EndIf
 		
 		;Check
 		If EntityInView(env_lenssun,cam) Then
@@ -493,6 +497,8 @@ End Function
 
 ;### Update Water
 Function e_environment_update_water(forced=0)
+	remaster_frame()
+ remaster_shadow_frame()
 	;Scroll Water Textures
 	env_seascr#=(env_seascr#+0.0003*f#) Mod 128
 	PositionTexture gfx_water,env_seascr#,env_seascr#
@@ -509,7 +515,9 @@ Function e_environment_update_water(forced=0)
 	Else
 		DrawBlock gfx_waterimg,0,0
 	EndIf
-	Select set_water
+	Local waterdetail=set_water
+	If remaster_enabled(Cremaster_water) Then waterdetail=0
+	Select waterdetail
 		Case 1
 			For x=0 To size Step 4
 				CopyRect x,0,4,size,x,Sin(isin+Float(Float(x)*2.8125))*3.
@@ -634,45 +642,13 @@ Function e_environment_update_water(forced=0)
 					CameraClsMode env_watercam,1,1
 				   	CameraViewport env_watercam,0,0,size,size
 					
-					;Update 2 Sites
-					;Select set_water_updatestep
-						;Case 0
-							;left
-							SetCubeFace env_watertex,0
-							RotateEntity env_watercam,0,90,0
-							RenderWorld
-							CopyRect 0,0,size,size,0,0,BackBuffer(),TextureBuffer(env_watertex)
-							;front
-							SetCubeFace env_watertex,1
-							RotateEntity env_watercam,0,0,0
-							RenderWorld
-							CopyRect 0,0,size,size,0,0,BackBuffer(),TextureBuffer(env_watertex)
-						;Case 1
-							;right
-							SetCubeFace env_watertex,2
-							RotateEntity env_watercam,0,-90,0
-							RenderWorld
-							CopyRect 0,0,size,size,0,0,BackBuffer(),TextureBuffer(env_watertex)
-							;back
-							SetCubeFace env_watertex,3
-							RotateEntity env_watercam,0,180,0
-							RenderWorld
-							CopyRect 0,0,size,size,0,0,BackBuffer(),TextureBuffer(env_watertex)
-						;Case 2
-							;top
-							SetCubeFace env_watertex,4
-							RotateEntity env_watercam,-90,0,0
-							RenderWorld
-							CopyRect 0,0,size,size,0,0,BackBuffer(),TextureBuffer(env_watertex)
-							;bottom
-							SetCubeFace env_watertex,5
-							RotateEntity env_watercam,90,0,0
-							RenderWorld
-				   			CopyRect 0,0,size,size,0,0,BackBuffer(),TextureBuffer(env_watertex)
-					;End Select
-					set_water_updatestep=set_water_updatestep+1
-					If set_water_updatestep>2 Then set_water_updatestep=0
-				
+					;Choose the optional planar reflection or the original six-view capture.
+					If remaster_enabled(Cremaster_water) Then
+						RenderWorldPlanar cam,env_watertex,0
+					Else
+						RenderWorldCube env_watercam,env_watertex
+					EndIf
+
 					;Assign
 					EntityTexture env_sea,env_watertex
 					
@@ -748,6 +724,14 @@ End Function
 
 ;### Setup Waterstuff
 Function e_environment_setup_water()
+	Local waterflags=1+128+256
+	EntityFX env_sea,262144:EntityFX env_sea2,262144
+	EntityColor env_sea,80,255,240:EntityAlpha env_sea,0.25
+	If remaster_enabled(Cremaster_water) Then
+		waterflags=1+16+32
+		EntityFX env_sea,65536:EntityAlpha env_sea,1
+		If set_water>0 Then EntityFX env_sea2,131072
+	EndIf
 	;Setup Values
 	Select set_water
 		Case 0 set_water_texsize=0
@@ -763,11 +747,11 @@ Function e_environment_setup_water()
 		ShowEntity env_sea
 		;Texture
 		If env_watertex=0 Then
-			env_watertex=CreateTexture(set_water_texsize,set_water_texsize,1+128+256)
+			env_watertex=CreateTexture(set_water_texsize,set_water_texsize,waterflags)
 		Else
 			If TextureHeight(env_watertex)<>set_water_texsize Then
 				FreeTexture env_watertex
-				env_watertex=CreateTexture(set_water_texsize,set_water_texsize,1+128+256)
+				env_watertex=CreateTexture(set_water_texsize,set_water_texsize,waterflags)
 			EndIf
 		EndIf
 		;Cam

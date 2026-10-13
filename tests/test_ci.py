@@ -50,17 +50,23 @@ class CIPackagingTests(unittest.TestCase):
         self.put(self.root / 'licenses/LICENSE.txt', b'original license\r\n')
         self.put(self.root / 'config/modern.ini', b'fps=144\nlanguage=en\n')
         self.put(self.runtime / 'StrandedII.exe', b'MZbuilt executable')
-        self.put(self.runtime / 'QolInput.dll', b'MZnative input bridge')
+        self.put(self.runtime / 'OpenAL32.dll', b'MZnative input bridge')
         self.put(self.root / 'src/native/qol_input.c', b'native source')
-        self.native = dict(edition='classic', dll_sha256=ci.digest(b'MZnative input bridge'),
-                           source_sha256=ci.digest(b'native source'))
+        self.engine_sources = lambda: {'src/native/qol_input.c': ci.digest((self.root / 'src/native/qol_input.c').read_bytes())}
+        self.runtime_files = {'OpenAL32.dll': ci.digest(b'MZnative input bridge')}
+        self.put(self.root / 'dep/OpenAL32.dll', b'MZnative input bridge')
+        for patcher in (patch.object(ci.engine, 'sources', side_effect=self.engine_sources),
+                        patch.object(ci.engine, 'windows_runtime_files', return_value={'OpenAL32.dll': self.root / 'dep/OpenAL32.dll'}),
+                        patch.object(ci.engine, 'license_sources', return_value={})):
+            patcher.start()
+            self.addCleanup(patcher.stop)
         from versioning import make_info
         info = make_info('1.1.0', 'local')
         self.put(self.runtime / 'core/version.json', json.dumps(info).encode())
         self.put(self.runtime / 'core/version.txt', b'1.1.0-local\n')
         self.put(self.root / 'src/engine/StrandedII.bb', b'; fixture\n')
         self.put(self.root / 'build/build-report.json', json.dumps(dict(
-            info, native_qol=self.native, exe_sha256=ci.digest(b'MZbuilt executable'), source_sha256={'src/engine/StrandedII.bb':ci.digest(b'; fixture\n')})).encode())
+            info, engine_sha256=self.engine_sources(), runtime_files=self.runtime_files, exe_sha256=ci.digest(b'MZbuilt executable'), source_sha256={'src/engine/StrandedII.bb':ci.digest(b'; fixture\n')})).encode())
         self.put(self.runtime / 'mods/Stranded II/sys/ko_aliases.dat', b'aliases')
         for code in ('en', 'ko'):
             self.put(self.root / f'locales/{code}.json',
@@ -69,6 +75,8 @@ class CIPackagingTests(unittest.TestCase):
             self.put(self.runtime / f'core/locales/{code}.tsv', b'ui.language\tLanguage\n')
             self.put(self.runtime / f'core/locales/{code}/glyphs.dat',
                      struct.pack('<4sIII', b'FNT2', 1, 20, 19) + bytes(28))
+            self.put(self.runtime / f'core/locales/{code}/ui.ttf',b'UI font')
+            self.put(self.runtime / f'core/locales/{code}/fallback.ttf',b'Unicode fallback font')
             for style in range(7):
                 self.put(self.runtime / f'core/locales/{code}/{style}_0.bmp', b'BMfont')
         from language_pack import registry
@@ -95,9 +103,10 @@ class CIPackagingTests(unittest.TestCase):
         self.assertIn('Settings > Graphics', readme)
         self.assertIn('Settings > QOL', readme)
         build = json.loads(members[f'{profile.archive_root}/build-info.json'])
-        self.assertEqual(build['native_qol']['edition'], edition)
-        self.assertEqual(build['native_qol']['dll_sha256'],
-                         ci.digest(members[f'{profile.archive_root}/QolInput.dll']))
+        self.assertEqual(build['runtime_files']['OpenAL32.dll'],
+                         ci.digest(members[f'{profile.archive_root}/OpenAL32.dll']))
+        self.assertEqual(build['engine_sha256'], self.engine_sources())
+
 
     def bundle(self):
         archive = self.root / 'bundle.zip'
@@ -175,7 +184,7 @@ class CIPackagingTests(unittest.TestCase):
 
     def test_release_uses_defaults_and_excludes_player_data_and_reports(self):
         self.put(self.runtime / 'mods/Stranded II/sys/controls.cfg', b'personal bindings')
-        for name in ('core/modern.ini', 'core/modern.ini.bak', 'core/modern.log',
+        for name in ('core/modern.ini', 'core/modern.ini.bak', 'core/modern.log', 'core/development.flag',
                      'preserved/private.txt', 'mods/Stranded II/saves/player.sav',
                      'mods/Stranded II/maps/custom.s2', 'mods/Stranded II/screen_00001.bmp',
                      'mods/Stranded II/sys/settings.cfg', 'core/locales/fonts-report.json',
@@ -186,6 +195,9 @@ class CIPackagingTests(unittest.TestCase):
         self.assertEqual(members['StrandedII/core/modern.ini'], b'fps=144\nlanguage=en\n')
         self.assertNotIn('StrandedII/mods/Stranded II/sys/settings.cfg', members)
         self.assertEqual(members['StrandedII/mods/Stranded II/sys/controls.cfg'], b'original controls')
+        self.assertNotIn('StrandedII/core/development.flag',members)
+        self.assertEqual(members['StrandedII/core/locales/ko/ui.ttf'],b'UI font')
+        self.assertEqual(members['StrandedII/core/locales/ko/fallback.ttf'],b'Unicode fallback font')
         self.assertEqual(members['StrandedII/licenses/LICENSE.txt'], b'original license\r\n')
         self.assert_player_entrypoint(members, 'classic')
         self.assertTrue(members['StrandedII/README.txt'].startswith(b'Stranded II\n'))
@@ -232,10 +244,10 @@ class CIPackagingTests(unittest.TestCase):
 
     def test_native_input_bridge_must_match_current_source_and_edition(self):
         for target, value, error in (
-                (self.runtime / 'QolInput.dll', None, 'Missing'),
-                (self.runtime / 'QolInput.dll', b'not a DLL', 'not a Windows DLL'),
-                (self.runtime / 'QolInput.dll', b'MZoutdated', 'Native QOL build report is stale'),
-                (self.root / 'src/native/qol_input.c', b'changed source', 'Native QOL build report is stale')):
+                (self.runtime / 'OpenAL32.dll', None, 'Missing'),
+                (self.runtime / 'OpenAL32.dll', b'not a DLL', 'not a Windows DLL'),
+                (self.runtime / 'OpenAL32.dll', b'MZoutdated', 'Native runtime build report is stale'),
+                (self.root / 'src/native/qol_input.c', b'changed source', 'Embedded engine build report is stale')):
             with self.subTest(target=target, value=value):
                 before = target.read_bytes()
                 if value is None:
@@ -247,9 +259,9 @@ class CIPackagingTests(unittest.TestCase):
                 target.write_bytes(before)
         report_path = self.root / 'build/build-report.json'
         report = json.loads(report_path.read_text('utf8'))
-        report['native_qol']['edition'] = 'extended'
+        report['engine_sha256'] = {}
         report_path.write_text(json.dumps(report), encoding='utf8')
-        with self.assertRaisesRegex(ValueError, 'Native QOL build report is stale'):
+        with self.assertRaisesRegex(ValueError, 'Embedded engine build report is stale'):
             ci.release_members(self.runtime, self.game)
 
     def test_extended_package_changes_leave_classic_package_unchanged(self):
@@ -260,7 +272,7 @@ class CIPackagingTests(unittest.TestCase):
         runtime = profile.runtime(self.root)
         shutil.copytree(self.runtime, runtime)
         self.put(runtime / profile.executable, b'MZbuilt executable')
-        self.put(runtime / 'QolInput.dll', b'MZnative input bridge')
+        self.put(runtime / 'OpenAL32.dll', b'MZnative input bridge')
         self.put(self.root / profile.defaults, b'fps=60\nlanguage=ko\n')
         self.put(self.root / 'src/engine' / profile.entry, b'; extended entry\n')
         content = 'mods/Stranded II/sys/items_extended.inf'
@@ -270,12 +282,12 @@ class CIPackagingTests(unittest.TestCase):
         self.put(runtime / 'core/version.json', json.dumps(info).encode())
         self.put(runtime / 'core/version.txt', (info['display_version'] + '\n').encode())
         self.put(profile.build_dir(self.root) / 'build-report.json', json.dumps(dict(
-            info, native_qol=dict(self.native, edition='extended'), exe_sha256=ci.digest(b'MZbuilt executable'),
+            info, engine_sha256=self.engine_sources(), runtime_files=self.runtime_files, exe_sha256=ci.digest(b'MZbuilt executable'),
             source_sha256=source_hashes(self.root, 'extended'))).encode())
         members = ci.release_members(runtime, self.game, 'extended')
         self.assertIn('StrandedII-Extended/StrandedII-Extended.exe', members)
-        self.assertEqual(members['StrandedII-Extended/QolInput.dll'], b'MZnative input bridge')
-        self.assertEqual(baseline['StrandedII/QolInput.dll'], b'MZnative input bridge')
+        self.assertEqual(members['StrandedII-Extended/OpenAL32.dll'], b'MZnative input bridge')
+        self.assertEqual(baseline['StrandedII/OpenAL32.dll'], b'MZnative input bridge')
         self.assertNotIn('StrandedII-Extended/StrandedII.exe', members)
         self.assert_player_entrypoint(members, 'extended')
         self.assertTrue(members['StrandedII-Extended/README.txt'].startswith(b'Stranded II - Extended\n'))

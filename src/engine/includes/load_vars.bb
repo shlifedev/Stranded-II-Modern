@@ -3,6 +3,7 @@
 Global ms,lastms							;Millisecs
 Global gt									;Gametimer
 Global fps,fpsms,fpsf,fo1#,fo2#,f#			;FPS Stuff
+Global fps_visible=0						;Session-only FPS overlay (F2)
 Global tmod#=1.								;Time Modification
 Global gframe								;Frame
 
@@ -98,8 +99,8 @@ Global set_windsway							;Windsway?
 Global set_fog								;Fog?
 Global set_hwmultitex						;Hardware Multitexturing?
 
-Global set_mb								;Motionblur?
-Global set_mb_alpha#						;Motionblur Alpha
+Global set_mb								;Legacy settings field, not used for rendering
+Global set_mb_alpha#						;Legacy settings field, not used for rendering
 Global set_mb_alpha_override#				;Motionblur Override
 
 Global set_musicvolume#						;Music Volume
@@ -226,7 +227,7 @@ Global in_dnd_show							;Drag and Drop Show
 Global in_accelerate#						;Acceleration (Editor)
 
 Global in_getkey=-1							;Get Keycode for Action
-Dim in_keys(20)								;Keycodes for Actions
+Dim in_keys(21)								;Keycodes for Actions and developer menu
 Dim in_keyname$(262)						;Keynames
 Dim in_keyhit(41)							;Key Hit
 Dim in_keydown(41)							;Key Down
@@ -632,7 +633,6 @@ Global grass_dist=15						;Grass Distance
 Global grass_mapsize						;Grass Map Size
 Global grass_f#								;Grass Factor Stuff
 Global grass_x,grass_y						;Grass Position (Update req?)
-Global grass_yaw							;Grass Yaw
 Global grass_wind#							;Grass Wind
 Dim grass_rgb(0,0,0)						;Grass Colors
 Dim grass_h(grass_c,grass_c)				;Grass Handles
@@ -640,8 +640,8 @@ Dim grass_h(grass_c,grass_c)				;Grass Handles
 
 ;############################################ MOTIONBLUR (mb_)
 
-Global mb_sprite							;Motionblur Sprite
-Global mb_tex								;Motionblur Texture
+Global mb_sprite							;Event blur sprite
+Global mb_tex								;Event blur texture
 
 
 ;############################################ GAME (g_)
@@ -743,6 +743,8 @@ Type Tobject
 	Field windsway#							;Windsway
 	Field daytimer							;Daytimer
 	Field alpha#
+	Field view_cull						;1: hidden by view, 2: collision-only alpha
+	Field shadow_restore,shadow_alpha#	;Temporary shadow-pass state
 	Field chan
 End Type
 

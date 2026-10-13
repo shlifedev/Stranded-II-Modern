@@ -5,6 +5,8 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
+  assert.equal(typeof FS.filesystems.IDBFS?.mount, 'function',
+    'the linked runtime must include IDBFS before storage transactions are simulated');
   function target(properties = {}) {
     const handlers = new Map();
     return Object.assign({
@@ -36,8 +38,10 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
     return elements.get(id);
   };
   const messages = [];
+  // Load the real shared overlay bridge before the shell.
+
   const context = vm.createContext({
-    document: target({getElementById: element, createElement: () => ({}), hasFocus: () => true,
+    document: target({body:{append(){}},getElementById: element, createElement: () => element("textarea"), hasFocus: () => true,
       exitPointerLock() { this.pointerLockElement = null; },
       baseURI: 'https://unit-test/Stranded-II-Modern/',
       currentScript: {src: 'https://unit-test/Stranded-II-Modern/shell.js?v=fixture'}}),
@@ -49,6 +53,7 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
       '/game/core/modern.ini', '/game/mods/Stranded II/sys/settings.cfg'
     ], languages: [{code: 'en', name: 'English'}, {code: 'ko', name: '한국어'}, {code: 'pt-BR', name: 'Português'}]})})
   });
+  vm.runInContext(fs.readFileSync(require('node:path').join(require('node:path').dirname(shellPath),'debugui.js'),'utf8'),context);
   FS.mkdirTree('/game/core'); FS.mkdirTree('/game/mods/Stranded II/sys');
   FS.writeFile('/game/core/modern.ini', 'language=en\nfps=144\n');
   let failNext = false, inFlight = 0, maximum = 0;
@@ -236,7 +241,9 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
   const beforeBootCaptures = captures;
   const boot = context.Module.onRuntimeInitialized();
   assert.equal(context.Module.onRuntimeInitialized(), boot, 'runtime initialization must start only once');
-  await mainStarted;
+  await Promise.race([mainStarted, boot.then(() => {
+    throw new Error('Engine did not start: ' + warning.textContent);
+  })]);
   assert.equal(mainCalls, 1);
   assert.equal(captures, beforeBootCaptures, 'autostart does not request pointer lock');
   assert.equal(element('cover').hidden, true, 'the original loading/menu replaces the HTML loader');

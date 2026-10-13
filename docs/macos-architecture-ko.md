@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"4ae293eef045412a0c0ad9b6b1f12effb5e9bf52f4f09cd859573ee0473f32c7"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"c2bbe0903e6c006576473e169bc7d63d5f28d1cf94dd2c449670ae287723bce5"} -->
 
 # macOS 구현 원리
 
@@ -21,7 +21,7 @@ flowchart LR
     Binary --> App["Stranded II.app에 패키징"]
 ```
 
-컴파일러는 [고정한 Blitz3D NG WebGPU 포트](../config/macos-toolchain.json)에 프로젝트 패치를 적용한 것입니다. LLVM으로 ARM64 기계어를 만들고 Apple의 링커로 네이티브 런타임과 연결합니다. 결과물은 macOS 실행 파일 형식인 **Mach-O**이며, 실행 전에 컴파일을 끝내는 **AOT 방식**입니다.
+컴파일러는 공통 [내장 Blitz3D 소스](../src/blitz3d/)에서 관리합니다. [버전을 고정한 외부 의존성](../config/blitz3d-toolchain.json)은 별도로 준비하므로 엔진 수정 내용을 덮어쓰지 않습니다. LLVM이 ARM64 기계어를 생성하고 Apple 링커가 실행 전에 네이티브 **Mach-O** 실행 파일을 만드는 **AOT 방식**입니다.
 
 Dawn과 게임 런타임은 실행 파일에 정적으로 연결합니다. 게임 리소스·언어팩도 앱에 포함하므로 플레이에 브라우저, Python, Homebrew, Wine 또는 Rosetta가 필요하지 않습니다. Python은 개발 과정에서 리소스 준비·빌드 실행·검증을 담당합니다.
 
@@ -52,7 +52,7 @@ flowchart LR
 
 ## 3. 웹 버전과 공유하는 부분, 달라지는 부분
 
-웹과 macOS는 같은 계열의 WebGPU 렌더러를 사용합니다. macOS 도구 준비 과정은 `patches/blitz3d-web/`의 공통 패치를 적용한 뒤 `patches/blitz3d-macos/`의 네이티브 패치를 적용합니다.
+Windows·웹·macOS·Studio는 WebGPU 렌더러를 포함한 `src/blitz3d/`를 공유합니다. 플랫폼 선택에 따라 네이티브 Dawn/D3D12, 브라우저 WebGPU, 네이티브 Dawn/Metal을 사용하며 엔진 변경은 이 소스에 직접 작성합니다.
 
 | 항목 | 웹 버전 | macOS 앱 |
 | --- | --- | --- |
@@ -109,4 +109,4 @@ macOS 런타임은 **정수·실수를 32비트로 유지하고, 내부 포인�
 
 표는 구현된 검사 범위를 설명합니다. 특정 배포본의 실제 수행 결과는 함께 제공하는 `verification-summary.json`을 확인하세요. CI는 `core`를 실행하며, `full`의 게임 시나리오도 가상으로 진행시킨 시간을 사용하므로 실제 플레이 속도나 전체 캠페인을 검증하지는 않습니다.
 
-구현을 따라가려면 [도구 준비](../scripts/macos_toolchain.py) → [네이티브 엔진 패치](../patches/blitz3d-macos/0001-native-arm64-metal.patch) → [앱 빌드·패키징](../scripts/macos_build.py) → [검증](../scripts/verify_macos.py) 순서로 읽으면 됩니다.
+구현을 따라가려면 [도구 준비](../scripts/macos_toolchain.py) → [공통 네이티브 엔진](../src/blitz3d/src/runtime/s2macos/CMakeLists.txt) → [앱 빌드·패키징](../scripts/macos_build.py) → [검증](../scripts/verify_macos.py) 순서로 읽으면 됩니다.

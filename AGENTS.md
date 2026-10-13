@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"32a8b011ba47768887529d1799bcba1de94a069187374ab8cba8e0ddae4e6107"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"3cd93faf13e4e00003aef7b89bd242ac600a4ce0cfa1b90839f3288cd32735ee"} -->
 
 # Stranded II development instructions
 
@@ -15,7 +15,8 @@ The architecture has Stranded II and Extended editions using a shared engine, ed
 
 - Edit `src/engine/**/*.bb` directly. These files are tracked sources, not generated output. Do not run the old `src/ko-full` generators against the current engine.
 - Follow `scripts/dev.py setup|localize|build|run|check` and the directory structure in `docs/development.md`. Python handles preparation, fonts, and verification only; it does not regenerate engine code.
-- Development dependencies are in `deps/game`, `deps/Blitz3D-V1.118`, and `deps/fonts`. `games/`, `dist/`, `archive/`, `tools/`, `src/ko-full/`, and `src/upstream/` are local cleanup targets requested by the user and are not needed for active builds. Specify external dependencies through setup arguments.
+- Edit the shared Blitz compiler/runtime directly in `src/blitz3d/`; do not restore upstream sources or overlay patches. External SDK/library pins are in `config/blitz3d-toolchain.json`; generated files belong in `build/engine/`.
+- Development dependencies are in `deps/game`, `deps/blitz3d`, and `deps/fonts`. `deps/Blitz3D-V1.118` is an optional original reference, not the production compiler. `games/`, `dist/`, `archive/`, `tools/`, `src/ko-full/`, and `src/upstream/` are local cleanup targets requested by the user and are not needed for active builds. Specify external dependencies through setup arguments.
 - Local cleanup of `tools/` was deferred because the existing Blitz3D editor was running. The user was asked to save and close it. Confirm that it has closed, then recheck the cleanup scope and Git tracking before cleanup. Do not interrupt the current game.
 - Do not overwrite the user's game or saves, or forcibly terminate a running user game. Verify changes in `build/runtime` or a separate copy. Preserve current saves and existing user data in `build/runtime/preserved`; do not delete them as generated output during cleanup.
 - `language=<registered code>` takes effect on restart. Language packs pair `locales/<code>.tsv` with `.json` metadata; `localize` refreshes catalogs and fonts without rebuilding the EXE. Do not force the game to close through the language Apply button. Preserve FPS and display settings.
@@ -29,6 +30,26 @@ The architecture has Stranded II and Extended editions using a shared engine, ed
 - Use sub-agents only when the user explicitly requests them.
 - The user requested removal of untracked local material unnecessary for development or running the game. Preserve dependencies and user data, and check paths and Git tracking before deletion. Do not commit, push, or rewrite history without a separate request.
 - Preserve original and third-party licenses. Verification procedures are in `docs/development.md`. Do not accumulate one-off execution or cleanup records in public guides. Local cleanup records are in `build/cleanup-report.json`.
+
+## Custom engine architecture and compatibility
+
+- `src/engine/` contains Blitz game logic; `src/blitz3d/` contains the custom LLVM-based Blitz compiler and shared runtime. The runtime's `graphics.webgpu` owns devices, textures, 2D/UI, and presentation; `blitz3d.webgpu` owns 3D scenes, meshes, materials, and draws.
+- The renderer uses the C++ `webgpu.h` / `wgpu*` API and WGSL shaders, without the Rust `wgpu` crate. Windows uses Dawn → D3D12; macOS uses Dawn → Metal; web/Studio uses Emscripten `emdawnwebgpu` → browser WebGPU.
+- Historical names such as `runtime.opengl.static` and `bbCreateOpenGLRuntime` remain. Identify the actual rendering path from the linked modules and backend selection.
+- Native targets retain 32-bit Blitz integers/floats with 64-bit internal pointers. Game-facing resource handles are 32-bit IDs. Never cast pointers directly to Blitz integers; preserve `s2Handle`, `s2Pointer`, and handle-map invalidation on release.
+- Native handle wrappers are generated from `commands.decls` and `legacy32.py`. Edit the declarations/generator rather than generated build files. Preserve original numeric, binary, and save semantics.
+- Preserve D3D7 fixed-function lighting, specular, texture composition, fog, alpha-test, and color-key semantics. Keep transparent draw order and merge only adjacent compatible draws.
+- Review C++ vertex/uniform/instance layouts together with WGSL sizes, offsets, strides, and padding. Dynamic-offset alignment must follow device limits.
+- Ending a pass, submitting a queue, and GPU completion are distinct. Encoded draws do not automatically preserve buffer contents; retain mesh buffer versions and submission ordering so later writes cannot overwrite earlier draw data. Same-buffer `CopyRect` uses snapshots to preserve read-after-write ordering.
+- Terrain height edits invalidate normal caches for the changed point and wraparound neighbors; terrain clearing invalidates the whole cache. Reuse mesh culling caches only within one scene preparation and reset them during preparation for the next `RenderWorld`.
+- `RenderWorldCube camera,texture[,tween]` shares preparation across six views only when `tween=1` and the camera has no children. Preserve per-view culling, fade, and transparency sorting. Cube-texture per-face storage/sampling is currently incomplete; the last copied 2D image is used.
+- Performance changes must preserve water-reflection cadence, grass density, view distance, and user graphics settings. API names or fixed capability values alone do not prove complete feature support.
+
+Select references and checks for the layer being changed.
+
+- Renderer: [WebGPU migration](docs/wgpu-migration.md). On Windows, `python scripts/verify_engine.py --render` checks actual offscreen D3D12 rendering; `python scripts/verify_engine.py --graphics` checks windows and context lifetimes.
+- Compiler/native ABI: use the numeric/pointer explanation in [macOS architecture](docs/macos-architecture.md) and the original Blitz3D 1.118 reference-output comparison in `python scripts/verify_engine.py`. `--input` checks the SDL input queue without a window and does not replace actual IME/Alt-Tab verification.
+- Platforms/editions: follow [Development](docs/development.md) and [Web architecture](docs/web-architecture.md). Build/check both Windows editions for shared engine changes; verify affected Metal/browser paths separately in their own environments. Windows success alone does not establish verification on other platforms.
 
 ## Creating and updating documentation
 

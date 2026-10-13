@@ -35,6 +35,11 @@ Function modern_dpi_aware()
  Return True
 End Function
 
+Function modern_mouse_capture(enabled)
+ ; Capture remains managed by the native macOS runtime.
+ Return True
+End Function
+
 Function modern_win_foreground()
  Return Int(mac_service("focus"))
 End Function

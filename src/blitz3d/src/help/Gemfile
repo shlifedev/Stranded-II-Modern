@@ -1,0 +1,18 @@
+source 'https://rubygems.org'
+
+ruby File.read(File.expand_path('./.ruby-version', __dir__)).strip
+
+gem 'github-markup', require: 'github/markup'
+gem 'commonmarker', platforms: [:ruby, :x64_mingw] # doesn't build under MinGW for some reason...
+gem 'activesupport', require: 'active_support/all'
+gem 'colored'
+gem 'nokogiri'
+gem 'filewatcher'
+gem 'os'
+gem 'rouge'
+gem 'toml'
+
+gem 'htmlcompressor'
+gem 'terser'
+gem 'sass-embedded'
+gem 'mini_racer'

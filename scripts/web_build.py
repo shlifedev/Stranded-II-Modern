@@ -1,5 +1,6 @@
 """Local WebGPU preview; assets are prepared from official inputs, never player data."""
 from pathlib import Path
+import blitz3d_toolchain as engine_toolchain
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import functools
 import hashlib
@@ -11,7 +12,7 @@ import sys
 from editions import source_hashes, override_files
 from locales import prepare, validate, languages
 from language_pack import refresh
-from versioning import local_info, validate_info
+from versioning import development_marker, local_info, validate_info
 import web_toolchain
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,7 +22,7 @@ SITE = BUILD / 'site'
 ENTRY = 'StrandedIIWeb.bb'
 PORT = 8765
 SITE_FILES = ('game.js', 'game.wasm', 'assets.js', 'assets.data',
-              'shell.js', 'index.html', 'defaults.json', 'version.json')
+              'shell.js', 'debugui.js', 'index.html', 'defaults.json', 'version.json')
 
 
 def read(path):
@@ -109,11 +110,13 @@ def asset_files():
     names = set(read(ROOT / 'config/game-files.json'))
     names.update(override_files(ROOT, 'classic'))
     names.update(('core/modern.ini', 'core/version.json', 'core/version.txt', 'core/locales/languages.dat'))
+    if (RUNTIME / 'core/development.flag').is_file():names.add('core/development.flag')
     for code in languages(ROOT):
         names.add(f'core/locales/{code}.tsv')
         directory = RUNTIME / 'core/locales' / code
         names.update(path.relative_to(RUNTIME).as_posix() for path in directory.glob('*.bmp'))
         names.add(f'core/locales/{code}/glyphs.dat')
+        names.update(p.relative_to(RUNTIME).as_posix() for p in directory.glob('*.ttf'))
     names.update(path.relative_to(RUNTIME).as_posix() for path in (RUNTIME / 'licenses').rglob('*') if path.is_file())
     result = []
     for name in sorted(names):
@@ -146,7 +149,9 @@ def pack_assets(env):
         destination = package / target.removeprefix('/game/')
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(audio.get(target, path), destination)
-    command += [str(package) + '@/game']
+    # Emscripten uses @ as its source/destination separator. Escape actual @ in
+    # checkout paths, otherwise e.g. /work/@src would select the parent folder.
+    command += [str(package).replace('@', '@@') + '@/game']
     web_toolchain.run(command, env=env)
     writable = [target for path, target in allowed
                 if path.suffix.lower() == '.cfg' or path.name in ('modern.ini', 'settings.inf')]
@@ -161,20 +166,22 @@ def build(args):
     info = validate_info(read(args.version_info)) if args.version_info else local_info(ROOT, 'classic')
     if info['edition'] != 'classic':
         raise ValueError('Web version belongs to another edition.')
+    development_marker(RUNTIME, info['channel'] == 'local')
     write(RUNTIME / 'core/version.json', info)
     (RUNTIME / 'core/version.txt').write_text(info['display_version'] + '\n', encoding='ascii')
     env = web_toolchain.build()
     upstream = web_toolchain.upstream()
     ng = Path(upstream.NG)
     runtime_licenses = [
-        (web_toolchain.paths()[0] / 'LICENSE', 'WebGPU-port-MIT.txt'),
+        (engine_toolchain.ENGINE / 'WEBGPU-LICENSE.txt', 'WebGPU-port-MIT.txt'),
         (ng / 'LICENSE.TXT', 'Blitz3D-NG.txt'),
-        (ng / 'deps/sdl/tree/LICENSE.txt', 'SDL2.txt'),
-        (ng / 'deps/freetype2/tree/docs/FTL.TXT', 'FreeType.txt'),
-        (ng / 'deps/ogg/tree/COPYING', 'Ogg.txt'),
-        (ng / 'deps/vorbis/tree/COPYING', 'Vorbis.txt'),
-        (ng / 'deps/minimp3/tree/LICENSE', 'minimp3.txt'),
-        (ng / 'deps/zlib/tree/README', 'zlib.txt'),
+        (engine_toolchain.library('imgui') / 'LICENSE.txt', 'Dear-ImGui.txt'),
+        (engine_toolchain.library('sdl') / 'LICENSE.txt', 'SDL2.txt'),
+        (engine_toolchain.library('freetype2') / 'docs/FTL.TXT', 'FreeType.txt'),
+        (engine_toolchain.library('ogg') / 'COPYING', 'Ogg.txt'),
+        (engine_toolchain.library('vorbis') / 'COPYING', 'Vorbis.txt'),
+        (engine_toolchain.library('minimp3') / 'LICENSE', 'minimp3.txt'),
+        (engine_toolchain.library('zlib') / 'README', 'zlib.txt'),
         (web_toolchain.paths()[1] / 'upstream/emscripten/LICENSE', 'Emscripten.txt'),
     ]
     for source, name in runtime_licenses:
@@ -187,7 +194,7 @@ def build(args):
         obj = native / (name + '.o')
         command = [sys.executable, web_toolchain.paths()[1] / 'upstream/emscripten/emcc.py',
                    source, '-c', '-O2', '-std=c++17', '-fwasm-exceptions', '-o', obj]
-        for inc in [ng / 'src/modules', ng / 'src/modules/bb/pixmap', ng / 'src', ng / 'src/modules/bb/graphics.webgpu']:
+        for inc in [engine_toolchain.BUILD / 'web/cmake/src/modules', ng / 'src/modules', ng / 'src/modules/bb/pixmap', ng / 'src', ng / 'src/modules/bb/graphics.webgpu']:
             command += ['-I', inc]
         web_toolchain.run(command, env=env)
     env = compiler_environment(env)
@@ -195,7 +202,7 @@ def build(args):
                       cwd=ROOT / 'src/engine', env=env)
     pack_assets(env)
     (SITE / 'game.html').unlink() # The custom index owns storage and startup.
-    for name in ('index.html', 'shell.js'):
+    for name in ('index.html', 'shell.js', 'debugui.js'):
         shutil.copy2(ROOT / 'src/web' / name, SITE / name)
     write(SITE / 'version.json', info)
     write(BUILD / 'build-report.json', dict(info, platform='web', toolchain=web_toolchain.config(),
@@ -208,7 +215,7 @@ def build(args):
 def compiler_environment(env=None):
     upstream = web_toolchain.upstream()
     runtime = Path(upstream.RUNTIME_OUT)
-    return dict(env or web_toolchain.environment(), LLVM_ROOT=str(Path(upstream.NG) / 'llvm'),
+    return dict(env or web_toolchain.environment(), LLVM_ROOT=str(engine_toolchain.llvm()),
                 blitzpath=str(runtime), SCPCB_WEBGPU='1',
                 SCPCB_LIB_DIR=str(runtime / 'bin/wasm32-unknown-emscripten/lib'),
                 SCPCB_COMPAT_OBJ=str(BUILD / 'native/compat.o'),
@@ -251,9 +258,8 @@ def run(args):
 
 def implementation_hashes():
     paths = [ROOT / name for name in ('scripts/web_build.py', 'scripts/web_toolchain.py',
-             'scripts/web_audio.py', 'config/web-toolchain.json', 'src/native/web/bridge.cpp', 'src/web/shell.js', 'src/web/index.html')]
-    paths += sorted((ROOT / 'patches/blitz3d-web').glob('*.patch'))
-    return {path.relative_to(ROOT).as_posix(): digest(path) for path in paths}
+             'scripts/web_audio.py', 'config/web-toolchain.json', 'src/native/web/bridge.cpp', 'src/web/shell.js', 'src/web/debugui.js', 'src/web/index.html')]
+    return {**{path.relative_to(ROOT).as_posix(): digest(path) for path in paths}, **engine_toolchain.sources()}
 
 
 def check(args):

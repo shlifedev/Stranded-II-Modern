@@ -51,7 +51,6 @@ Function grass_map()
 	;Perform spread
 	grass_x=-2147483648
 	grass_y=-2147483648
-	grass_yaw=-2147483648
 	grass_spread()
 End Function
 
@@ -85,6 +84,9 @@ Function grass_heightmap()
 			EndIf
 		Next
 	Next
+	; Reapply eligibility even if the camera remains in the same grid cell.
+	grass_x=-2147483648
+	grass_y=-2147483648
 End Function
 
 
@@ -100,9 +102,9 @@ Function grass_spread()
 		Local camx=EntityX(cam)
 		Local camz=EntityZ(cam)
 		Local terhalf=(ter_size/2)*Cworld_size
-		;Update necessary? (position changed)
-		;1 - Gras Position Update (caused by cam movement)
-		;2 - Gras Visibility Update (caused by cam rotation)
+		; Only placement/terrain eligibility is persistent. The renderer culls
+		; each view every frame; a timed main-camera HideEntity cache pops on turns
+		; and also removes grass from other cameras and water reflections.
 		Local update=0
 		;X Change?
 		If grass_x<>((Int(camx)/grass_dist)+half)*grass_dist Then
@@ -110,9 +112,6 @@ Function grass_spread()
 		;Y Change?
 		ElseIf grass_y<>((Int(camz)/grass_dist)+half)*grass_dist Then
 			update=1
-		;Yaw Change?
-		ElseIf Abs(EntityYaw(cam)-grass_yaw)>0 Then
-			update=2
 		EndIf
 		;Instant Update
 		If update=1 Then
@@ -135,12 +134,7 @@ Function grass_spread()
 						If grass_rgb(gcx,gcy,3)=1 Then
 							;Assign Color
 							EntityColor grass_h(x,y),grass_rgb(gcx,gcy,0),grass_rgb(gcx,gcy,1),grass_rgb(gcx,gcy,2)
-							;In View?
-							If EntityInView(grass_h(x,y),cam) Then
-								ShowEntity(grass_h(x,y))
-							Else
-								HideEntity(grass_h(x,y))
-							EndIf
+							ShowEntity(grass_h(x,y))
 						Else
 							HideEntity(grass_h(x,y))
 						EndIf
@@ -149,39 +143,6 @@ Function grass_spread()
 					EndIf
 				Next
 			Next
-		;Timed Update
-		ElseIf update=2 Then
-			If in_t100go Then
-				grass_x=((Int(camx)/grass_dist)+half)*grass_dist
-				grass_y=((Int(camz)/grass_dist)+half)*grass_dist
-				For x=0 To grass_c
-					For y=0 To grass_c
-						;Position
-						gx#=((Int(camx)/grass_dist)+half+x)*grass_dist
-						gz#=((Int(camz)/grass_dist)+half+y)*grass_dist
-						If Int(gx#) Mod 2=0 Then gx#=gx#+grass_dist/2
-						If Int(gz#) Mod 2=0 Then gz#=gz#+grass_dist/2
-						gcx=((gx+terhalf)/grass_f#)
-						gcy=((gz+terhalf)/grass_f#)
-						;In Map?
-						If gcx>=0 And gcx<=grass_mapsize And gcy>=0 And gcy<=grass_mapsize Then
-							;Show?
-							If grass_rgb(gcx,gcy,3)=1 Then
-								;In View?
-								If EntityInView(grass_h(x,y),cam) Then
-									ShowEntity(grass_h(x,y))
-								Else
-									HideEntity(grass_h(x,y))
-								EndIf
-							Else
-								HideEntity(grass_h(x,y))
-							EndIf
-						Else
-							HideEntity(grass_h(x,y))
-						EndIf
-					Next
-				Next
-			EndIf
 		EndIf
 	EndIf
 End Function
@@ -202,6 +163,7 @@ End Function
 ;### Grass Colors
 ;Set Complete Grass to one Color
 Function grass_colors(r,g,b)
+	grass_x=-2147483648
 	For x=0 To grass_mapsize-1
 		For y=0 To grass_mapsize-1
 			grass_rgb(x,y,0)=r

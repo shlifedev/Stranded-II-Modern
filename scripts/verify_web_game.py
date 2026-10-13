@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 
 import web_toolchain
+import blitz3d_toolchain as engine
 from web_build import ROOT, BUILD, SITE, compiler_environment, digest, asset_files
 from web_audio import supported_wav
 from verify_timing import function
@@ -54,10 +55,9 @@ def main():
             shutil.copy2(prepared, runtime / relative)
     ini = 'fps=144\ndisplay=windowed\nresolution=custom\nrender_width=800\nrender_height=600\nlanguage=ko\ndiagnostics=0\n'
     (runtime / 'core/modern.ini').write_text(ini, encoding='utf8')
-    native = ROOT / 'build/toolchain'
+    engine.build_native(True)
     exe = runtime / 'Compatibility.exe'
-    web_toolchain.run([native / 'bin/blitzcc.exe', '-o', exe, source / 'StrandedII.bb'],
-        cwd=source, env=dict(os.environ, blitzpath=str(native)))
+    engine.compile_test(source / 'StrandedII.bb', exe, cwd=source)
     checks = SITE / 'checks'
     checks.mkdir(exist_ok=True)
     web_toolchain.run([web_toolchain.upstream().BLITZCC, '-target', 'emscripten', '-o', checks / 'compatibility',

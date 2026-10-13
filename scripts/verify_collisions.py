@@ -4,6 +4,7 @@ Uses real terrain, rock models and collision/physics functions. No GUI input
 is sent; synthetic time steps do not measure rendered FPS or visual smoothness.
 """
 from pathlib import Path
+import blitz3d_toolchain as engine
 import argparse
 import json
 import os
@@ -40,11 +41,9 @@ def main():
     init = source / 'includes/engine_init.bb'
     init.write_text(init.read_text('utf8').replace('\nunrealsoftware()\n', '\n'), encoding='utf8')
     shutil.copyfile(root / 'tests/collision_scenarios.bb', source / 'includes/engine_loop.bb')
-    blitz = root / 'build/toolchain'
     exe = runtime / 'CollisionSmoke.exe'
     print('Isolated runtime:', runtime, flush=True)
-    subprocess.run([str(blitz / 'bin/blitzcc.exe'), '-o', str(exe), str(source / profile.entry)],
-                   cwd=source, env=dict(os.environ, blitzpath=str(blitz)), check=True)
+    engine.compile_test(source / profile.entry, exe, cwd=source)
     startup = subprocess.STARTUPINFO()
     startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     startup.wShowWindow = 0

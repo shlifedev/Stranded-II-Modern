@@ -1,0 +1,5 @@
+bb_start_runtime(s2macos "Stranded II Metal" bbCreateOpenGLRuntime)
+foreach(module stub blitz hook event math string stdio stream system filesystem.posix timer bank input debugui audio audio.openal graphics.webgpu blitz3d.webgpu runtime.sdl)
+  bb_addmodule(${module})
+endforeach()
+bb_end_runtime()

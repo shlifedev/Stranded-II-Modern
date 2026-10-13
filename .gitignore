@@ -22,3 +22,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 *.log
+
+# Studio dependencies and compiled UI (authoring sources remain tracked).
+/studio/node_modules/
+/studio/dist/

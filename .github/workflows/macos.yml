@@ -99,10 +99,8 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
-            deps/blitz3d-macos
-            deps/dawn-macos
-            deps/dawn-macos.tar.gz
-          key: macos-15-arm64-${{ steps.image.outputs.version }}-${{ steps.image.outputs.sdk }}-${{ hashFiles('config/macos-toolchain.json', 'patches/blitz3d-web/*.patch', 'patches/blitz3d-macos/*.patch', 'scripts/macos_toolchain.py') }}
+            deps/blitz3d
+          key: macos-15-arm64-${{ steps.image.outputs.version }}-${{ steps.image.outputs.sdk }}-${{ hashFiles('config/macos-toolchain.json', 'config/blitz3d-toolchain.json', 'scripts/blitz3d_toolchain.py', 'scripts/macos_toolchain.py') }}
 
       - name: Prepare native resources and toolchain
         env:

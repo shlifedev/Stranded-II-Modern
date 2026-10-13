@@ -83,6 +83,7 @@ Function parse(noskip=0)
 	Next
 	
 	;Check all lines in Parse Cache
+	If p_trace_enabled Then parse_trace("event")
 	p_pl=0
 	While p_pl<(p_lines)
 	

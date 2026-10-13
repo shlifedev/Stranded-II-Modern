@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/qol.md","language":"ko","syncedHash":"e6c18210b9db4e403a807d93eb172b9481602379814d045326241398907144f4"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/qol.md","language":"ko","syncedHash":"4b787e90f290b0fcc52bc2714356b47323a8977dffbc8eb3c73aa550f11a94cd"} -->
 
 # QOL 설정
 
@@ -17,3 +17,7 @@ Stranded II와 Extended 모두 **설정 → QOL**에서 아래 기능을 각각 
 | 건축 연속 입력 | 망치로 건축할 때 우클릭을 누르고 있으면 같은 대상에 재료를 계속 공급합니다. 버튼 해제, 건축 완료, 대상·장비 변경, 메뉴·포커스 전환, 거리 이탈 시 멈춥니다. |
 
 제작 조건, 무게 제한, 건축 재료 비용과 망치 사용 간격은 기존 규칙을 따릅니다. 정렬은 표시 순서만 바꾸며 아이템을 자동으로 이동·삭제하지 않습니다. 기본 게임과 Extended는 설정·세이브를 별도로 사용합니다.
+
+## FPS 표시
+
+두 판 모두 **F2**로 디버그 모드를 켜지 않고 오른쪽 위 FPS 숫자만 켜고 끌 수 있습니다. 실행할 때는 표시가 꺼져 있으며 QOL 설정과 별개로 동작합니다. 전체 디버그 모드의 기존 FPS 표시는 유지합니다.

@@ -6,7 +6,9 @@ Function game()
 	g_unpaused=(m_menu=0) Or (m_menu>=Cmenu_if_movie)
 	
 	;Input
+	If dev_paused Then g_unpaused=0
 	getinput(g_unpaused)
+	If dev_paused Then dev_render_paused():Return
 	If m_menu=0 Then
 		MoveMouse set_scrx/2,set_scry/2				;Ingame Mouse Reset
 	ElseIf m_menu=Cmenu_if_movie Then
@@ -39,6 +41,7 @@ Function game()
 
 	;The camera follows the resolved position, before next-frame movement.
 	game_setcam()
+	grass_spread()
 
 	;Update Objects / Units / Infos / Timer / Parse Scripts
 	cull()
@@ -48,6 +51,7 @@ Function game()
 	e_environment_update()									;Environemnt
 	
 	;Player Weapon
+	remaster_frame()
 	game_renderweapon()
 	
 	;Render
@@ -62,7 +66,6 @@ Function game()
 	;Environment Stuff (Post Render)
 	mb_update()												;Motion Blur
 	e_environment_water2dfx()								;Water 2D FX (Dive)
-	grass_spread()											;Grass
 	focus_update()											;Focus (Process etc)
 	update_state()											;States
 	sfx_update()											;SFX

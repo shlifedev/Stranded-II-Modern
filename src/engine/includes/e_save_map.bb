@@ -456,7 +456,7 @@ Function save_map_image(mode$)
 	EndIf
 	;Render Image
 	If m_section=Csection_editor Then
-		If mb_sprite<>0 Then HideEntity mb_sprite
+		mb_reset()
 		For Tinfo.Tinfo=Each Tinfo
 			HideEntity Tinfo\h
 		Next

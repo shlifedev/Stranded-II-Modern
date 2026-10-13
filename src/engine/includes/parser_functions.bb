@@ -1,5 +1,33 @@
 ;############################################ Parse Cache
 
+; Optional bounded authoring trace. Ordinary game targets leave it disabled.
+Global p_trace_enabled=0,p_trace_count=0
+Type TparseTrace
+ Field category$,event$,info$,message$,code$,source$
+ Field class,id,row,column
+End Type
+
+Function parse_trace(category$,message$="")
+ If p_trace_enabled=0 Then Return
+ If p_trace_count>=128 Then
+  Local oldest.TparseTrace=First TparseTrace
+  If oldest<>Null Then Delete oldest:p_trace_count=p_trace_count-1
+ EndIf
+ Local trace.TparseTrace=New TparseTrace
+ trace\category$=category$:trace\event$=p_env_event$:trace\info$=Left(p_env_info$,256)
+ trace\class=p_env_class:trace\id=p_env_id:trace\message$=message$
+ If category$="error" Then
+  trace\row=p_pl+1:trace\column=p_p:trace\code$=Left(p_l$,2048)
+  Local trace_line
+  For trace_line=0 To p_lines-1
+   If trace_line>0 Then trace\source$=trace\source$+Chr(31)
+   trace\source$=trace\source$+Dpc$(trace_line)
+   If Len(trace\source$)>32768 Then trace\source$="":Exit
+  Next
+ EndIf
+ p_trace_count=p_trace_count+1
+End Function
+
 
 ;### Clear Parse Cache
 Function clear_parsecache()
@@ -1299,6 +1327,7 @@ Function parse_error(id$,param$="")
 	p_erd$(8)="Row: "+(p_pl+1)
 	p_erd$(9)="Col: "+p_p
 	p_erd$(10)="Script: "+p_l$
+	If p_trace_enabled Then parse_trace("error",p_erd$(0))
 	
 	;Output
 	If set_debug=1 Then

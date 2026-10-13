@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"43c3c459ea95d102263ebba565ffad9e4ae47a50aa3eb7d206902fea8f7c57f8"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"16471c5d181f6a174174eaf601e3895448f0e9a5bf0b63da6a8c743dc220cbff"} -->
 
 # How the web version works
 
@@ -21,7 +21,7 @@ flowchart LR
     Linker --> Output["game.wasm + game.js"]
 ```
 
-Project patches are applied to the [pinned Blitz3D NG WebGPU port](../config/web-toolchain.json), and LLVM/Emscripten build the game and engine runtime as **WebAssembly (WASM)**. The browser runs this code on the local CPU. JavaScript handles loading and integration with browser facilities; gameplay logic is not rewritten in JavaScript.
+The editable [embedded Blitz3D engine](../src/blitz3d/) is shared by Windows, web, macOS and Studio. [Pinned external SDKs/libraries](../config/blitz3d-toolchain.json) and Emscripten build it with the game as **WebAssembly (WASM)**. Edit the engine sources directly; setup never overlays patches. The browser executes gameplay on the local CPU; JavaScript handles loading and browser integration.
 
 The distribution files have these roles:
 

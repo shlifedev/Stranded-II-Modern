@@ -5,6 +5,7 @@ Personal saves are excluded and modern.ini is replaced with fixture settings.
 The source runtime and its user data are never written by these checks.
 """
 from pathlib import Path
+import blitz3d_toolchain as engine
 import argparse
 import json
 import os
@@ -57,6 +58,37 @@ Function qcheck(ok,label$)
  If ok=0 Then qfailures=qfailures+1:WriteLine qr,"FAIL "+label$
 End Function
 For qi=0 To 4:qcheck(qol_enabled(qi)=Cedition_qol_default,"edition default for missing key "+qi):Next
+qcheck(remaster_enabled(Cremaster_aa)=1,"missing FXAA key defaults ON in both editions")
+remaster_option("render_antialias","0"):remaster_settings_reset()
+qcheck(modern_options_save(),"save explicit FXAA OFF")
+remaster_init()
+Global aaStream=ReadFile(set_rootdir$+"core\modern.ini"),aaLine$,aaEq
+While Not Eof(aaStream)
+ aaLine$=ReadLine(aaStream):aaEq=Instr(aaLine$,"=")
+ If aaEq>0 Then remaster_option(Lower(Trim(Left(aaLine$,aaEq-1))),Trim(Mid(aaLine$,aaEq+1)))
+Wend
+CloseFile aaStream
+qcheck(remaster_enabled(Cremaster_aa)=0,"saved FXAA OFF survives reload")
+remaster_option("render_antialias","4"):remaster_settings_reset()
+qcheck(modern_options_save(),"save MSAA 4x selection")
+remaster_init()
+aaStream=ReadFile(set_rootdir$+"core\modern.ini")
+While Not Eof(aaStream)
+ aaLine$=ReadLine(aaStream):aaEq=Instr(aaLine$,"=")
+ If aaEq>0 Then remaster_option(Lower(Trim(Left(aaLine$,aaEq-1))),Trim(Mid(aaLine$,aaEq+1)))
+Wend
+CloseFile aaStream
+qcheck(remaster_enabled(Cremaster_aa)=4,"saved MSAA 4x survives reload")
+remaster_option("render_antialias","invalid")
+qcheck(remaster_enabled(Cremaster_aa)=1,"invalid FXAA value defaults ON")
+remaster_settings_reset():remaster_pending(Cremaster_aa)=0:remaster_settings_reset()
+qcheck(remaster_pending(Cremaster_aa)=1,"cancel restores FXAA selection")
+remaster_pending(Cremaster_aa)=0
+CreateDir set_rootdir$+"core\modern.ini.tmp"
+qcheck(modern_options_save()=0,"unwritable temporary settings reject FXAA apply")
+qcheck(remaster_enabled(Cremaster_aa)=1,"failed apply preserves active FXAA")
+DeleteDir set_rootdir$+"core\modern.ini.tmp"
+remaster_settings_reset()
 CopyFile set_rootdir$+"core\modern.ini",set_rootdir$+"core\qol-before.ini"
 Global qconfig=OpenFile(set_rootdir$+"core\modern.ini")
 SeekFile qconfig,FileSize(set_rootdir$+"core\modern.ini")
@@ -269,15 +301,11 @@ def main():
         if args.language == 'en':
             text = text.replace('qol_query$="밀가루"', 'qol_query$="Flour"')
     loop.write_text(text, encoding='utf8')
-    blitz = root/'build/toolchain'
     exe = runtime/'QolSmoke.exe'
-    result = subprocess.run([str(blitz/'bin/blitzcc.exe'), '-o', str(exe), str(source/profile.entry)],
-                            cwd=source, env=dict(os.environ, blitzpath=str(blitz)), capture_output=True)
-    if result.returncode:
-        raise RuntimeError(result.stdout.decode('utf8', errors='replace'))
+    engine.compile_test(source / profile.entry, exe, cwd=source)
     print('Isolated runtime:', runtime, flush=True)
     if args.interactive:
-        print('Prepared for Computer Use:', exe)
+        print('Prepared for manual testing:', exe)
         return
     startup = subprocess.STARTUPINFO()
     startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW

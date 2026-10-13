@@ -1,0 +1,10 @@
+{
+  "op": "template.create",
+  "template": "scenario",
+  "slug": "tonic_delivery",
+  "name": "섬의 부탁",
+  "map": "tonic_delivery",
+  "source": 1,
+  "npcSource": 40,
+  "ingredients": [[1, 1], [2, 1]]
+}

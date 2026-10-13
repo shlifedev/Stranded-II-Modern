@@ -1,5 +1,6 @@
 """Pinned CI dependencies and standalone release packaging; never downloads upstream."""
 from pathlib import Path, PurePosixPath
+import blitz3d_toolchain as engine
 import argparse
 import hashlib
 import json
@@ -198,15 +199,19 @@ def release_members(runtime, game, edition='classic'):
     if not exe.startswith(b'MZ'):
         raise ValueError(f'{profile.executable} is not a Windows executable')
     members[profile.executable] = exe
-    bridge = file_bytes(runtime, 'QolInput.dll')
-    if not bridge.startswith(b'MZ'):
-        raise ValueError('QolInput.dll is not a Windows DLL')
-    members['QolInput.dll'] = bridge
     report = read_json(profile.build_dir(ROOT) / 'build-report.json')
-    native = report.get('native_qol', {})
-    if (native.get('edition') != edition or native.get('dll_sha256') != digest(bridge) or
-            native.get('source_sha256') != digest(file_bytes(ROOT, 'src/native/qol_input.c'))):
-        raise ValueError('Native QOL build report is stale; rebuild the current sources first')
+    if report.get('engine_sha256') != engine.sources():
+        raise ValueError('Embedded engine build report is stale; rebuild the current sources first')
+    expected_files = engine.windows_runtime_files()
+    if set(report.get('runtime_files', {})) != set(expected_files):
+        raise ValueError('Native runtime file manifest is stale')
+    for name, source in expected_files.items():
+        data = file_bytes(runtime, name)
+        if not data.startswith(b'MZ'):
+            raise ValueError(f'{name} is not a Windows DLL')
+        if digest(data) != report['runtime_files'][name] or digest(data) != engine.digest(source):
+            raise ValueError('Native runtime build report is stale; rebuild first')
+        members[name] = data
     sources = source_hashes(ROOT, edition)
     if (validate_info(report) != info or report['exe_sha256'] != digest(exe) or
             report['source_sha256'] != sources):
@@ -235,18 +240,28 @@ def release_members(runtime, game, edition='classic'):
                 not 0 < width <= 64 or height != 19):
             raise ValueError(f'Invalid font metadata: {code}')
         members[relative] = glyphs
+        relative = f'core/locales/{code}/ui.ttf'
+        members[relative] = file_bytes(runtime, relative)
+        for name in ('fallback.ttf','fallback-extra.ttf'):
+            fallback = f'core/locales/{code}/{name}'
+            if (runtime / fallback).is_file():members[fallback] = file_bytes(runtime, fallback)
         for style in range(7):
             for page in range((count + 1023) // 1024):
                 relative = f'core/locales/{code}/{style}_{page}.bmp'
                 members[relative] = file_bytes(runtime, relative)
     members['core/modern.ini'] = file_bytes(ROOT, profile.defaults)
     members.update(license_members())
+    for name, path in engine.license_sources().items():
+        data = file_bytes(runtime, 'licenses/' + name)
+        if data != path.read_bytes():
+            raise ValueError(f'Runtime license is stale: {name}')
+        members['licenses/' + name] = data
     members['README.txt'] = (
         f'{profile.title}\n\n'
         f'Extract the entire ZIP, then double-click {profile.executable} in the game folder.\n'
         f'ZIP 전체를 풀고 게임 폴더의 {profile.executable}를 더블클릭하세요.\n\n'
-        'Windows 10 or later. No separate installation is required.\n'
-        'Windows 10 이상. 별도 설치는 필요하지 않습니다.\n\n'
+        'Windows 10/11 x64 with a Direct3D 12 GPU. No separate installation is required.\n'
+        'Windows 10/11 x64와 Direct3D 12 지원 GPU가 필요합니다. 별도 설치는 필요하지 않습니다.\n\n'
         'Display, FPS and language: Settings > Graphics; apply, close and reopen the game.\n'
         '화면·FPS·언어: 설정 > 그래픽에서 적용한 뒤 게임을 종료하고 다시 실행하세요.\n'
         'Optional QOL: Settings > QOL; apply to activate individual options immediately.\n'
@@ -262,7 +277,9 @@ def release_members(runtime, game, edition='classic'):
         'exe_sha256': digest(exe),
         'languages': list(packs),
         'source_sha256': sources,
-        'native_qol': {key: native[key] for key in ('edition', 'source_sha256', 'dll_sha256')},
+        'platform': 'windows-x64-d3d12',
+        'engine_sha256': report['engine_sha256'],
+        'runtime_files': report['runtime_files'],
     }, ensure_ascii=False, indent=2) + '\n').encode('utf8')
     return {f'{profile.archive_root}/{name}': data for name, data in members.items()}
 

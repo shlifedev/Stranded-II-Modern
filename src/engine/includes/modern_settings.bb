@@ -32,6 +32,7 @@ Function modern_capture_settings()
 End Function
 
 Function modern_settings_reset()
+ remaster_settings_reset()
  modern_pending_fps=modern_saved_fps:modern_pending_borderless=modern_saved_borderless
  modern_pending_width=modern_saved_width:modern_pending_height=modern_saved_height:modern_pending_native=modern_saved_native
 End Function
@@ -80,7 +81,7 @@ Function modern_options_save()
    If eq>0 Then key$=Lower(Trim(Left(line$,eq-1)))
    Select key$
     Case "fps","display","resolution","render_width","render_height","language"
-    Default:If Not qol_setting_owned(key$) Then content$=content$+line$+Chr(13)+Chr(10)
+    Default:If qol_setting_owned(key$)=0 And remaster_setting_owned(key$)=0 Then content$=content$+line$+Chr(13)+Chr(10)
    End Select
   Wend
   CloseFile stream
@@ -94,12 +95,14 @@ Function modern_options_save()
  WriteLine stream,"render_height="+modern_pending_height
  WriteLine stream,"language="+loc_pending$
  qol_settings_write(stream)
+ remaster_settings_write(stream)
  CloseFile stream
  If modern_commit_file(path$,path$+".tmp")=0 Then Return False
  modern_saved_fps=modern_pending_fps:modern_saved_borderless=modern_pending_borderless
  modern_saved_width=modern_pending_width:modern_saved_height=modern_pending_height:modern_saved_native=modern_pending_native
  loc_saved$=loc_pending$
  qol_settings_apply()
+ remaster_settings_apply()
  Return True
 End Function
 
@@ -133,18 +136,22 @@ Function modern_options_draw()
  If modern_pending_borderless Then label$="[[loc:modern.borderless]]"
  If modern_choice(436,77,340,label$) Then modern_pending_borderless=1-modern_pending_borderless
  bmpf_txt(236,103,"[[loc:modern.fps]]")
- direction=modern_choice(436,99,340,modern_pending_fps+" FPS")
+ label$=modern_pending_fps+" FPS"
+ If modern_pending_fps=0 Then label$="[[loc:modern.unlimited]]"
+ direction=modern_choice(436,99,340,label$)
  If direction Then
   Select modern_pending_fps
    Case 60:index=0
    Case 120:index=1
-   Default:index=2
+   Case 144:index=2
+   Default:index=3
   End Select
-  index=(index+direction+3) Mod 3
+  index=(index+direction+4) Mod 4
   Select index
    Case 0:modern_pending_fps=60
    Case 1:modern_pending_fps=120
    Case 2:modern_pending_fps=144
+   Case 3:modern_pending_fps=0
   End Select
  EndIf
 End Function

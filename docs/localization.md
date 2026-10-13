@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"b771e1d9dbba64d1a0015308d0e8be1284432ae510716bcc8ea03aec51feb1f2"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"3290dcac93dd5a4f3a7474a12248375e1578098953d6b45447bbc79f958a92d5"} -->
 
 # Translating the game
 
@@ -71,6 +71,8 @@ The default font is Noto Sans KR. To use another font, put its `.ttf` or `.otf` 
 
 Previews are in `build/runtime/core/locales/<code>/preview.png`; font usage is recorded in `build/runtime/core/locales/fonts-report.json`. For Extended, look under `build/extended/runtime/`. Check the final appearance in the game.
 
+The developer menu uses ProggyForever (the ProggyClean family) for English and Pretendard for Korean. `setup` / `localize` prepares checksum-pinned Pretendard and generates each language's `ui.ttf` plus the selected game font as `fallback.ttf`. Custom fonts also include the default Noto as `fallback-extra.ttf`. ImGui processes UTF-8 input and 32-bit Unicode codepoints, generating glyphs dynamically. Display coverage depends on the bundled fonts; complex shaping and color emoji are not guaranteed.
+
 ## Edition-specific translations
 
 Both editions use `locales/<code>.tsv`. To change text in just one edition, put **only the changed rows** in the following file. Create the folders if needed.
@@ -96,8 +98,8 @@ For a translation contribution, share the edited TSV and, for a new language, it
 
 To distribute a pack to players, run `localize`, verify it, and bundle the edition's **entire `core/locales/` folder**: `build/runtime/core/locales/` for Stranded II, or `build/extended/runtime/core/locales/` for Extended.
 
-- Include `languages.dat`, TSV files, and each language's `glyphs.dat` and BMP pages. You may omit `preview.png` and `fonts-report.json`, which contains absolute paths from the development PC.
-- Check that the font permits image generation and distribution, and include required license notices. The default Noto notices are in [licenses/](../licenses/).
+- Include `languages.dat`, TSV files, and each language's `glyphs.dat`, BMP pages, `ui.ttf` and fallback TTF files. You may omit `preview.png` and `fonts-report.json`, which contains absolute paths from the development PC.
+- Check that the font permits image generation and distribution, and include required license notices. Include the Pretendard and Proggy font notices too. The default Noto notices are in [licenses/](../licenses/).
 
 Recipients should close the game, back up and replace their existing `core/locales/`, then select the language in the game and restart. They need an engine for the same edition that supports language packs; do not install them with an older EXE. No separate Python or original font installation is needed.
 

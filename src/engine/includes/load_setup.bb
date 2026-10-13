@@ -54,6 +54,7 @@ Else
 EndIf
 
 modern_window()
+AntiAlias remaster_enabled(Cremaster_aa)
 
 ;Title + Pointer
 If set_moddir$="Stranded II" Then

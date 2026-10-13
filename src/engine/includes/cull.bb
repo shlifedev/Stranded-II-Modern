@@ -12,6 +12,7 @@ Function cull()
 	ct=MilliSecs()
 	For TCobject.Tobject=Each Tobject
 		c=c+1
+		TCobject\view_cull=0
 		If TCobject\ch=0 Then
 			;Distance
 			dist=EntityDistance(TCobject\h,cam)
@@ -42,9 +43,11 @@ Function cull()
 				ElseIf dist<500 Then
 					ShowEntity TCobject\h
 					EntityAlpha TCobject\h,0
+					TCobject\view_cull=2
 				;Hide when not in View and not short Distance
 				Else
 					HideEntity TCobject\h
+					TCobject\view_cull=1
 				EndIf
 			EndIf
 		Else
@@ -79,10 +82,12 @@ Function cull()
 				ElseIf dist<500 Then
 					HideEntity TCobject\h
 					ShowEntity TCobject\ch
+					TCobject\view_cull=1
 				;Hide when not in View and not short Distance
 				Else
 					HideEntity TCobject\h
 					If Dobject_col(TCobject\typ)<>3 Then HideEntity TCobject\ch
+					TCobject\view_cull=1
 				EndIf
 			EndIf
 		EndIf

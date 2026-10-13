@@ -1,0 +1,15 @@
+if((BB_EMSCRIPTEN OR S2_NATIVE_GAME) AND TARGET SDL2)
+  bin2h(SOURCE_FILE default3d.wgsl HEADER_FILE default3d.wgsl.h VARIABLE_NAME DEFAULT3D_WGSL)
+
+  bb_start_module(blitz3d.webgpu)
+  set(DEPENDS_ON bb.blitz3d bb.graphics.webgpu)
+  set(SOURCES blitz3d.webgpu.cpp blitz3d.webgpu.h ${CMAKE_CURRENT_BINARY_DIR}/default3d.wgsl.h)
+  set(LIBS SDL2)
+  bb_end_module()
+
+  if(BB_EMSCRIPTEN)
+  target_compile_options(bb.blitz3d.webgpu PRIVATE "--use-port=emdawnwebgpu")
+  else()
+    target_link_libraries(bb.blitz3d.webgpu dawn::webgpu_dawn)
+  endif()
+endif()
