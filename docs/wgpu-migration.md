@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"7d80f2c664d465ed1eb8fd6a9271a632f0ed4875479bb9e1203c93a14dc392ec"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"633a4bb1c0388a2eadd8a9e0069308d99b3338e48e035444124024bfe54c225e"} -->
 
 # Stranded II's wgpu/WebGPU cross-platform renderer migration
 
@@ -493,6 +493,10 @@ The game's Korean bitmap font resources separately depend on image/key compatibi
 ## 15. Read/write hazards in `CopyRect`, water distortion and motion blur
 
 [Water effects](../src/engine/includes/e_environment.bb) shift horizontal/vertical strips within the same screen buffer using `CopyRect`. [Motion blur](../src/engine/includes/motionblur.bb) copies the framebuffer into a texture. These operations cannot be implemented by simultaneously sampling and writing the same render attachment in a WebGPU pass.
+
+Game blur applies only to the script `blur` command and player state/death effects. It retains the original `BackBuffer → TextureBuffer → fixed camera sprite` path: `RenderWorld` composites the previous capture, then copies the result for the next frame before water distortion/HUD. The strongest script/state request wins, with the existing cap of `0.97`. Map scripts and each effect's strength are preserved.
+
+Without a request, the sprite is hidden and frame copies are skipped. Initialization, map clearing, focus loss, settings refresh and editor previews also hide it so the next effect starts from a fresh capture. Continuous motion blur and its settings UI are removed; the last two saved values are retained only for compatibility. AA selection and the original effects' accumulation method are preserved.
 
 `WebGPUCanvas::blitSelf()` copies the original into a temporary texture, then samples that snapshot while drawing a destination quad. Ending the old pass and recording the copy/new pass in the same encoder avoids per-strip submissions where pass transitions suffice.
 

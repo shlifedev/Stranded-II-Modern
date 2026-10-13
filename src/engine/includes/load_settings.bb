@@ -64,7 +64,7 @@ Function load_settings()
 		set_hwmultitex=1
 		set_musicvolume#=0.5
 		set_fxvolume#=0.5
-		; Preserve the existing motion blur defaults.
+		; Preserve legacy motion blur fields for settings-file compatibility only.
 		set_mb=1
 		set_mb_alpha#=0.35
 	Else
@@ -88,6 +88,7 @@ Function load_settings()
 		set_serverport=ReadLine(stream)
 		set_fog=ReadLine(stream)
 		set_hwmultitex=ReadLine(stream)
+		; Legacy fields are retained but never enable ordinary motion blur.
 		set_mb=ReadLine(stream)
 		set_mb_alpha#=ReadLine(stream)
 		CloseFile(stream)
@@ -100,11 +101,8 @@ Function load_settings()
 	;Viewrange
 	settings_apply_viewrange()
 	
-	;Motion Blur
-	If mb_sprite<>0 Then
-		EntityAlpha mb_sprite,set_mb_alpha#
-		If set_mb_alpha#>Cpeakblur# Then EntityAlpha mb_sprite,Cpeakblur#
-	EndIf
+	;Discard event blur history after settings refresh.
+	mb_reset()
 	
 End Function
 
@@ -157,6 +155,7 @@ Function save_settings()
 	WriteLine(stream,set_serverport)
 	WriteLine(stream,set_fog)
 	WriteLine(stream,set_hwmultitex)
+	;Keep the original file layout and legacy values.
 	WriteLine(stream,set_mb)
 	WriteLine(stream,set_mb_alpha#)
 	CloseFile(stream)
@@ -168,11 +167,8 @@ Function save_settings()
 	;Viewrange
 	settings_apply_viewrange()
 	
-	;Motion Blur
-	If mb_sprite<>0 Then
-		EntityAlpha mb_sprite,set_mb_alpha#
-		If set_mb_alpha#>Cpeakblur# Then EntityAlpha mb_sprite,Cpeakblur#
-	EndIf
+	;Discard event blur history after settings refresh.
+	mb_reset()
 	
 	;Water
 	e_environment_setup_water()

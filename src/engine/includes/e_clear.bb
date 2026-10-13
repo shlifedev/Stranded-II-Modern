@@ -468,13 +468,7 @@ Function e_clear()
 	ed_setscript$=""
 	
 	;Clear Blur Buffer
-	If set_mb Then
-		If mb_tex<>0 Then
-			SetBuffer TextureBuffer(mb_tex)
-			Cls
-			SetBuffer BackBuffer()
-		EndIf
-	EndIf
+	mb_reset()
 	
 	;Clear Copy
 	For Tcopy.Tcopy=Each Tcopy

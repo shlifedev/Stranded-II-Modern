@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"50348aeae0ac47cd146a69dd258de61b4eaf89d6a45c27918b0b4c36074f54be"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"87d09b6d2eaf9aa2e7cecb413d07a6340e60c4ef5fbcd1474933c0faf201cd05"} -->
 
 # Stranded II의 wgpu/WebGPU 크로스플랫폼 렌더러 마이그레이션
 
@@ -495,6 +495,10 @@ texture material의 mask/alpha 처리와 2D image의 key 처리는 서로 다른
 ## 15. `CopyRect`·물 왜곡·motion blur의 read/write hazard
 
 [물 효과](../src/engine/includes/e_environment.bb)는 같은 화면 buffer 안에서 여러 가로·세로 strip을 `CopyRect`로 이동합니다. [motion blur](../src/engine/includes/motionblur.bb)는 framebuffer를 texture에 복사합니다. WebGPU에서는 렌더 attachment에 쓰면서 같은 texture를 동시에 sample하는 방식으로 처리할 수 없습니다.
+
+게임의 블러는 스크립트 `blur`와 플레이어 상태·사망 연출에만 적용합니다. 원래 `BackBuffer → TextureBuffer → 고정 카메라 스프라이트` 경로를 유지하며 `RenderWorld`에서 이전 캡처를 합성하고, 그 결과를 물 왜곡·HUD 전에 다음 프레임용으로 복사합니다. 스크립트·상태 요청 중 가장 강한 값을 사용하며 기존 상한은 `0.97`입니다. 맵 스크립트와 효과별 강도는 그대로 유지합니다.
+
+요청이 없으면 스프라이트를 숨기고 프레임 복사를 생략합니다. 초기화·맵 정리·포커스 이탈·설정 갱신·에디터 미리보기 때도 숨기므로 다음 효과는 새 캡처로 시작합니다. 상시 모션블러와 설정 UI는 없으며, 저장 파일의 마지막 두 값은 호환용으로만 보존합니다. AA 선택과 원래 연출의 누적 방식은 유지합니다.
 
 `WebGPUCanvas::blitSelf()`는 원본을 임시 texture로 복사하고 그 snapshot을 sample하여 대상에 quad를 그립니다. 이전 pass를 끝내고 copy와 다음 pass를 같은 encoder에 기록하므로 pass 전환만으로 처리 가능한 구간에서 매 strip마다 queue submit하지 않습니다.
 

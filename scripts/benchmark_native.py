@@ -156,7 +156,7 @@ def scenarios(suite):
         'water_3': {'water': 3}, 'water_4': {'water': 4}, 'water_5': {'water': 5},
         'grass_0': {'grass': 0}, 'grass_2': {'grass': 2},
         'view_2': {'view': 2}, 'terrain_0': {'terrain': 0},
-        'wind_0': {'wind': 0}, 'blur_1': {'blur': 1},
+        'wind_0': {'wind': 0},
         'objects_0': {'count': 0}, 'objects_256': {'count': 256},
         'objects_1536': {'count': 1536},
         'water3_grass0': {'water': 3, 'grass': 0},

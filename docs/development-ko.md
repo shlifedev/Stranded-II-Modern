@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"c8d898d0e50fbf2e53f880ef30f50ac0925c959a48ed9735beabac0aa20a3927"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"6de4169a998be9dbedcc53222af69f849bd62c879a38945ce97267017765ef65"} -->
 
 # 개발 가이드
 
@@ -103,7 +103,7 @@ Windows에서 선택한 에디션의 실행 환경을 준비한 뒤 격리된 �
 .\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --run --cases baseline,island --width 1920 --height 1080 --render water,lighting,shadows,atmosphere --label remaster
 ```
 
-기본값은 2048×1152, 조건별 3회 반복, 준비 3초·측정 8초이며 매회 프로세스를 새로 시작합니다. 물·풀·시야 거리·지형·바람·모션 블러·오브젝트 밀도·하늘 방향을 비교합니다. `--suite smoke`는 대조 조건 5개, `--cases baseline,water_3,grass_0`는 개별 조건을 선택합니다. 기존 결과를 남기고 다시 측정하려면 새 `--label`을 지정합니다. `--edition extended`는 해당 에디션의 리소스·설정만 사용하며 기존 폴더를 재사용할 때도 지정해야 합니다.
+기본값은 2048×1152, 조건별 3회 반복, 준비 3초·측정 8초이며 매회 프로세스를 새로 시작합니다. 물·풀·시야 거리·지형·바람·오브젝트 밀도·하늘 방향을 비교합니다. `--suite smoke`는 대조 조건 5개, `--cases baseline,water_3,grass_0`는 개별 조건을 선택합니다. 기존 결과를 남기고 다시 측정하려면 새 `--label`을 지정합니다. `--edition extended`는 해당 에디션의 리소스·설정만 사용하며 기존 폴더를 재사용할 때도 지정해야 합니다.
 
 각 측정값은 `build/benchmark-<name>/results.json`, 조건별 중앙값·범위·완료한 반복 횟수는 `summary.json`에 저장합니다. 소스 해시·실행 계획·로그·프레임별 CSV·캡처·생성 지도도 함께 남깁니다. 측정 전후 GPU 픽셀 읽기로 제출한 작업의 완료를 기다립니다. FPS에는 마지막 완료 대기가 포함됩니다. 구간별 시간과 p95/p99 프레임 간격은 호스트에서 잰 경과 시간이며 GPU 타임스탬프가 아닙니다. 반사 시간은 물 시간에 포함됩니다. `sync_control`은 매 프레임 비용이 큰 픽셀 읽기를 추가하는 완료 확인용 조건입니다.
 
@@ -260,6 +260,8 @@ build/extended/runtime/          확장판 실행·설정·세이브
 Windows는 플레이 중 시점을 조작할 때만 상대 마우스 입력을 켭니다. 이때 `MoveMouse`는 OS 커서를 옮기지 않고 가상 기준점을 옮기며, 마지막 `MouseXSpeed`·`MouseYSpeed` 호출 뒤에 들어온 미처리 이동량을 보존합니다. 캡처·포커스가 바뀔 때만 이전 이동량을 버립니다. 메뉴·콘솔·검색창에서는 캡처를 해제합니다. Enter와 숫자패드 Enter는 원래 Blitz 문자 코드 13을 전달합니다. 테두리 없는 화면에서 선택한 렌더 해상도를 확대·축소하면 선형 필터로 표시하고 마우스 좌표도 해당 렌더 해상도로 변환합니다.
 
 메뉴 커서는 활성 게임 창에서 Windows의 현재 커서 위치를 직접 읽어 렌더 좌표로 변환합니다. 외부 배속 도구가 `GetTickCount`와 Windows 메시지 시간의 기준을 어긋나게 만들어 SDL 이동 이벤트가 누락돼도 좌표를 갱신합니다. 상대 입력·검색창 포커스·비활성·최소화 상태에서는 이 조회를 적용하지 않습니다. 게임 시간은 기존 QPC 경로를 유지합니다.
+
+두 에디션에서 상시 모션블러와 그래픽 설정의 켜기/끄기·강도 항목을 제거했습니다. 시나리오 시작·어지럼·취함·사망 등 스크립트와 상태가 요청하는 연출은 원래 스프라이트 누적 방식으로 유지합니다. 기존 `settings.cfg`의 마지막 두 모션블러 값은 호환을 위해 읽고 보존하지만 렌더링에는 사용하지 않습니다. 자세한 내용은 [렌더러 설명](wgpu-migration-ko.md#15-copyrect물-왜곡motion-blur의-readwrite-hazard)을 참고하세요.
 
 리소스는 공식 입력 → 현지화 준비 → 공통 변경분 → 선택한 판의 변경분 순서로 준비합니다. 판별 변경분은 실행 폴더 기준 `mods/Stranded II/...` 경로로 배치합니다. 아이템·조합·건축·능력치·맵·스크립트 리밸런싱은 확장판 변경분에 작성합니다. 설정·세이브·실행 파일은 리소스 변경분으로 덮어쓸 수 없습니다. `.s2` 지도 수정은 [리소스 현지화의 바이너리 규칙](#새-문구와-리소스-현지화)을 따릅니다. 판별 번역은 [현지화 가이드](localization-ko.md#기본판확장판-전용-번역)를 참고하세요.
 

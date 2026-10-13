@@ -26,7 +26,7 @@ def main():
                          'set_grass', 'set_2dfx', 'set_lightfx', 'set_windsway',
                          'set_fog', 'set_hwmultitex', 'set_mb', 'set_mb_alpha',
                          'set_musicvolume', 'set_fxvolume', 'set_name', 'set_serverport'))
-    body += '\nGlobal modern_hwnd,mb_sprite\nConst Cpeakblur#=0.35\n'
+    body += '\nGlobal modern_hwnd\n'
     body += 'Global game_scriptkeys,set_moddir$\n'
     body += 'Dim in_keys(20)\nDim game_scriptkey(20)\n'
     settings_source = (includes / 'load_settings.bb').read_text('utf8')
@@ -35,7 +35,7 @@ def main():
     body += function(settings_source, 'settings_apply_viewrange') + '\n'
     # Only graphics refreshes are substituted; both real settings file paths run.
     body += '\nFunction mp_checkname$(value$,mode)\nReturn value$\nEnd Function\n'
-    for name in ('e_environment_setup_water', 'grass_map', 'grass_heightmap', 'grass_spread'):
+    for name in ('mb_reset', 'e_environment_setup_water', 'grass_map', 'grass_heightmap', 'grass_spread'):
         body += f'Function {name}()\nEnd Function\n'
     body += '''
 If CommandLine$()="roundtrip" Then

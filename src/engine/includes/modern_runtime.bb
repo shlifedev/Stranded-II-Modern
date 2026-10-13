@@ -159,7 +159,7 @@ Function modern_focus()
  modern_clock()
  Local paused=modern_walltime()
  ShowPointer()
- If mb_sprite<>0 Then HideEntity mb_sprite
+ mb_reset()
  Repeat
   modern_sleep(10)
   Delay 0 ; Pump Blitz window messages without a timeGetTime-based wait.

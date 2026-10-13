@@ -99,8 +99,8 @@ Global set_windsway							;Windsway?
 Global set_fog								;Fog?
 Global set_hwmultitex						;Hardware Multitexturing?
 
-Global set_mb								;Motionblur?
-Global set_mb_alpha#						;Motionblur Alpha
+Global set_mb								;Legacy settings field, not used for rendering
+Global set_mb_alpha#						;Legacy settings field, not used for rendering
 Global set_mb_alpha_override#				;Motionblur Override
 
 Global set_musicvolume#						;Music Volume
@@ -640,8 +640,8 @@ Dim grass_h(grass_c,grass_c)				;Grass Handles
 
 ;############################################ MOTIONBLUR (mb_)
 
-Global mb_sprite							;Motionblur Sprite
-Global mb_tex								;Motionblur Texture
+Global mb_sprite							;Event blur sprite
+Global mb_tex								;Event blur texture
 
 
 ;############################################ GAME (g_)

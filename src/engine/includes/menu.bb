@@ -43,8 +43,6 @@ Function menu_set(menu,save=1)
 				set_windsway=in_check(2)
 				set_fog=in_check(3)
 				set_hwmultitex=in_check(4)
-				set_mb=in_check(5)
-				set_mb_alpha#=Float(in_slider(8))/100.
 				set_reboot=0
 				
 			;Settings SFX
@@ -119,8 +117,6 @@ Function menu_set(menu,save=1)
 			in_check(2)=set_windsway
 			in_check(3)=set_fog
 			in_check(4)=set_hwmultitex
-			in_check(5)=set_mb
-			in_slider(8)=set_mb_alpha#*100.
 		;Settings SFX
 		Case Cmenu_set_sfx
 			in_slider(0)=set_musicvolume#*100.
@@ -479,15 +475,6 @@ Function menu()
                     loc_cycle(modern_choice(436,449,340,loc_name(loc_pending$)))
                     bmpf_txt(236,503,"[[loc:ui.restart]]",Cbmpf_tiny)
 
-                    ;Motion Blur
-					bmpf_txt(236,383,sm$(107)+":")
-					gui_check(436,383,"",5)
-					bmpf_txt(436+20,383,se$(153))
-					bmpf_txt(436,403,sm$(108))
-					gui_slider(636,403,100,8)
-					
-					
-					
 				;Sounds & MP
 				Case Cmenu_set_sfx
 					;Sounds

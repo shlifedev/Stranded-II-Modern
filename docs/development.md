@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"a4ebcf8c1438d31e143cdb0fcc552400fa53b006860ad2f3563b3311e7eb92b8"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"d92f4cb370115cd7f088c04dda1e95e51bfb80fd6eefaae770cca4452a164345"} -->
 
 # Development guide
 
@@ -103,7 +103,7 @@ On Windows, prepare the selected edition's runtime, then run the isolated benchm
 .\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --run --cases baseline,island --width 1920 --height 1080 --render water,lighting,shadows,atmosphere --label remaster
 ```
 
-The default is 2048×1152, three repeats per case, a 3-second warmup and 8-second measurement. Each trial starts a fresh process. It compares water, grass, view range, terrain, wind, motion blur, object density and sky views. `--suite smoke` selects five controls; `--cases baseline,water_3,grass_0` selects individual cases. Use a new `--label` to retain earlier results. `--edition extended` uses only that edition's resources and settings; include it when reusing its folder.
+The default is 2048×1152, three repeats per case, a 3-second warmup and 8-second measurement. Each trial starts a fresh process. It compares water, grass, view range, terrain, wind, object density and sky views. `--suite smoke` selects five controls; `--cases baseline,water_3,grass_0` selects individual cases. Use a new `--label` to retain earlier results. `--edition extended` uses only that edition's resources and settings; include it when reusing its folder.
 
 Trials are in `build/benchmark-<name>/results.json`; `summary.json` contains each condition's median and range, with completed repeat counts. Source hashes, plans, logs, per-frame CSVs, screenshots and generated maps are stored alongside them. GPU readbacks drain work before and after each measurement. FPS includes the final drain; phase timings and p95/p99 frame intervals are host elapsed times, not GPU timestamps. Reflection time is included in water time. The `sync_control` case adds a costly readback every frame and is only a completion control.
 
@@ -260,6 +260,8 @@ The native search bridge translates and dispatches messages only for its Unicode
 Windows enables relative mouse input only during gameplay camera control. `MoveMouse` then shifts the virtual origin without warping the OS cursor, preserving unread motion received after the last `MouseXSpeed` or `MouseYSpeed` call. Old motion is discarded only on capture or focus transitions. Menus, the console and search release capture. Return and keypad Enter produce the original Blitz character code 13. If borderless mode scales the selected render resolution, presentation uses linear filtering and mouse positions are mapped back to that render resolution.
 
 Menu cursors read the current Windows cursor position in the active game window and convert it to render coordinates. Coordinates still update when external speed tools put `GetTickCount` and Windows message timestamps on different timelines, causing SDL to discard motion events. The query is skipped during relative input, search focus, focus loss or minimization. Game time retains the existing QPC path.
+
+Both editions remove continuous motion blur and its graphics toggle/strength controls. Script and state effects, including scenario starts, dizziness, intoxication and death, retain the original sprite accumulation method. The last two motion-blur values in existing `settings.cfg` files are read and preserved for compatibility but do not affect rendering. See [renderer details](wgpu-migration.md#15-readwrite-hazards-in-copyrect-water-distortion-and-motion-blur).
 
 Resources are prepared in this order: official input, localization preparation, shared overrides, then the selected edition's overrides. Place edition overrides at runtime-relative `mods/Stranded II/...` paths. Write item, recipe, building, stat, map, and script rebalancing in Extended overrides. Overrides cannot replace settings, saves, or executables. Follow the [resource localization binary rules](#localizing-new-text-and-resources) for `.s2` edits. See the [localization guide](localization.md#edition-specific-translations) for edition translations.
 

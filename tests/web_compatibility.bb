@@ -104,7 +104,7 @@ If animated<>0 Then FreeImage animated
 FreeImage compat_image:FreeImage compat_copy
 
 ; A copied frame must keep its top/bottom orientation when reused in 3D.
-; This is the same BackBuffer -> TextureBuffer -> sprite path as motion blur.
+; This is the same BackBuffer -> TextureBuffer -> sprite path as event blur.
 HideEntity cam
 Local frameCamera=CreateCamera(),frameSprite=CreateSprite(frameCamera)
 Local frameTexture=CreateTexture(64,64,1+16+32+256)
