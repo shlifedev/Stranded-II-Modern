@@ -2,6 +2,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
+import re
 import shutil
 import subprocess
 import sys
@@ -24,11 +25,29 @@ class WebProfile(TestCase):
                 self.assertEqual(function(original, name), function(changed, name))
             self.assertIn('modern_sleep(1)', changed)
             self.assertIn('Flip False', changed)
-            self.assertEqual(changed.count('profile("start:flip")'), 1)
+            self.assertEqual(changed.count('profile("start:flip")'), 2)
+            self.assertEqual(changed.count('profile("stop:flip")'), 2)
+            self.assertEqual(changed.count('profile("start:wait")'), 1)
+            self.assertEqual(changed.count('profile("stop:wait")'), 1)
+            uncapped = function(changed, 'modern_present').split(' EndIf', 1)[0]
+            self.assertIn('profile("stop:flip")', uncapped)
+            self.assertNotIn(':wait', uncapped)
+            self.assertEqual(re.sub(r'^ +profile\("(?:start|stop):(?:wait|flip)"\)\n',
+                '', changed, flags=re.MULTILINE), original)
             loop = (source / 'includes/engine_loop.bb').read_text('utf8')
             self.assertIn('modern_present()', loop)
             self.assertNotIn('compat_clock', loop)
             self.assertEqual((ROOT / 'src/engine/includes/modern_runtime.bb').read_text('utf8'), original)
+            environment = Path('includes/e_environment.bb')
+            original_water = (ROOT / 'src/engine' / environment).read_text('utf8')
+            marked_water = (source / environment).read_text('utf8')
+            for call in ('RenderWorldCube env_watercam,env_watertex',
+                         'RenderWorldPlanar cam,env_watertex,0'):
+                self.assertEqual(marked_water.count(
+                    f'profile("start:reflection"):{call}:profile("stop:reflection")'), 1)
+            # Keep both branches, their arguments and reflection cadence intact.
+            self.assertEqual(marked_water.replace('profile("start:reflection"):', '')
+                .replace(':profile("stop:reflection")', ''), original_water)
 
     def test_changed_or_ambiguous_source_fails_instead_of_silent_mismeasurement(self):
         for text in ('absent', 'anchor anchor'):

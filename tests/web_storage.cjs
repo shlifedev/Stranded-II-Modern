@@ -5,6 +5,8 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
+  assert.equal(typeof FS.filesystems.IDBFS?.mount, 'function',
+    'the linked runtime must include IDBFS before storage transactions are simulated');
   function target(properties = {}) {
     const handlers = new Map();
     return Object.assign({
@@ -236,7 +238,9 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
   const beforeBootCaptures = captures;
   const boot = context.Module.onRuntimeInitialized();
   assert.equal(context.Module.onRuntimeInitialized(), boot, 'runtime initialization must start only once');
-  await mainStarted;
+  await Promise.race([mainStarted, boot.then(() => {
+    throw new Error('Engine did not start: ' + warning.textContent);
+  })]);
   assert.equal(mainCalls, 1);
   assert.equal(captures, beforeBootCaptures, 'autostart does not request pointer lock');
   assert.equal(element('cover').hidden, true, 'the original loading/menu replaces the HTML loader');

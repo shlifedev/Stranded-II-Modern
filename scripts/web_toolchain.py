@@ -32,7 +32,10 @@ def checkout(url, commit, destination, sparse=None):
 
 
 def paths():
-    return engine.ENGINE, ROOT / 'deps/emsdk'
+    # Emscripten's Python and Node loaders must use the same SDK path. Node
+    # resolves junctions/symlinks; leaving Python on the alias can prevent JS
+    # libraries such as IDBFS from being recognized and included in the build.
+    return engine.ENGINE, (ROOT / 'deps/emsdk').resolve()
 
 
 def upstream():

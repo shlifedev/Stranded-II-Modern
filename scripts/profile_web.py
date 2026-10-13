@@ -43,17 +43,27 @@ def instrument(source):
     environment = source / 'includes/e_environment.bb'
     text = environment.read_text('utf8')
     water = function(text, 'e_environment_update_water')
-    if water.count('\tRenderWorld\n') != 6:
-        raise ValueError('Expected six water reflection views.')
-    marked = water.replace('\tRenderWorld\n',
-        '\tprofile("start:reflection"):RenderWorld:profile("stop:reflection")\n')
+    marked = water
+    # Cube capture now renders all six views inside one runtime call. Measure
+    # the active capture as a whole, including the optional planar path.
+    for call in ('RenderWorldCube env_watercam,env_watertex',
+                 'RenderWorldPlanar cam,env_watertex,0'):
+        marked = replace_once(marked, '\t' + call + '\n',
+            f'\tprofile("start:reflection"):{call}:profile("stop:reflection")\n')
     environment.write_text(text.replace(water, marked), encoding='utf8')
     timing = source / 'includes/modern_runtime.bb'
     text = timing.read_text('utf8')
-    text = replace_once(text, ' While modern_next-now>0', ' profile("start:wait")\n While modern_next-now>0')
-    text = replace_once(text, ' Flip False',
-        ' profile("stop:wait"):profile("start:flip")\n Flip False\n profile("stop:flip")')
-    timing.write_text(text, encoding='utf8')
+    present = function(text, 'modern_present')
+    marked = replace_once(present, '\n While modern_next-now>0',
+        '\n profile("start:wait")\n While modern_next-now>0')
+    marked = replace_once(marked, '\n Flip False\n',
+        '\n profile("stop:wait")\n Flip False\n')
+    # Both capped and uncapped presentation complete a frame; only the capped
+    # branch enters the wait phase. Match whole lines to keep them distinct.
+    for indent in (' ', '  '):
+        marked = replace_once(marked, f'\n{indent}Flip False\n',
+            f'\n{indent}profile("start:flip")\n{indent}Flip False\n{indent}profile("stop:flip")\n')
+    timing.write_text(text.replace(present, marked), encoding='utf8')
     # Retain the real input/timing/timer path, but suppress manual controls in
     # the benchmark so clicking the page cannot change the scenario.
     inputs = source / 'includes/input.bb'

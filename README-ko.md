@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"README.md","language":"ko","syncedHash":"ebfc92232e0294455661bc22e5bb022d0c93e84ee78aebd885966de77ed3c1ca"} -->
+<!-- dev-docs-ai-translation: {"document":"README.md","language":"ko","syncedHash":"d1ff9f7732c95e224bd374eac41ff8f0976d84a6ffecdf44240af82cd369dc6e"} -->
 
 # Stranded II : Modern
 
@@ -10,17 +10,26 @@ Stranded II를 최신 Windows 환경에서 즐기기 위한 비공식 개선판�
 
 ## 시작하기
 
-- **[웹에서 플레이](https://shlifedev.github.io/Stranded-II-Modern/):** 실험용 WebGPU 버전이며, WebGPU와 JSPI를 지원하는 데스크톱 Chrome/Edge가 필요합니다. 게임 언어는 설정에서 선택합니다. 브라우저 저장은 Windows 버전과 별개입니다.
-- **게임 실행:** 배포 ZIP 전체를 풀고 게임 폴더의 `StrandedII.exe`를 더블클릭합니다. Windows 10 이상이 필요하며 별도 설치는 없습니다.
-- **소스에서 빌드:** [개발 가이드](docs/development-ko.md)의 환경 준비와 최초 빌드를 따르세요. 소스 저장소에는 EXE와 원본 게임 리소스가 포함돼 있지 않습니다.
-- **번역 참여:** [현지화 가이드](docs/localization-ko.md)에 따라 `locales/<코드>.tsv`를 수정합니다.
+운영체제에 맞는 버전을 다운로드하거나, 웹 브라우저에서 바로 플레이하세요.
 
-## 개선된 점
+- **[Windows 10 & 11](https://github.com/shlifedev/Stranded-II-Modern/releases/latest):** GitHub Releases에서 Windows용 ZIP을 다운로드하세요.
+- **[Web Browser](https://shlifedev.github.io/Stranded-II-Modern/):** 설치 없이 플레이하는 실험용 WebGPU 버전입니다. WebGPU와 JSPI를 지원하는 데스크톱 Chrome/Edge가 필요합니다.
+- **[macOS (Apple Silicon)](https://github.com/shlifedev/Stranded-II-Modern/releases/latest):** GitHub Releases에서 macOS용 ZIP을 다운로드하세요.
 
-- 주사율 - 오리지널은 50Hz 로 게임이 구동되었지만 이제는 60Hz/120Hz/144Hz+ 를 지원합니다.
-- 디스플레이 - 전체 창 모드, 해상도 선택, Alt-Tab 후 그래픽 깨짐 수정. 화면 설정은 재시작 후 적용됩니다.
-- 저장 - 빠른 저장·불러오기 수정, 자동 저장 5개 슬롯, 이전 저장본 백업, 메인 메뉴의 계속하기.
-- 현지화 - 이제 손쉽게 유저가 직접 게임을 번역할 수 있습니다. (언어 추가 지원)
+## 기술적 개선사항
+
+주요 기술적 변경사항은 다음과 같습니다.
+
+- **그래픽 개선:** 기존 Direct3D 7 렌더러를 WebGPU 기반으로 전환했습니다. (DirectX 12/Metal)
+  픽셀 단위 조명, 태양광 그림자, 수면 반사와 대기 효과를 선택형 옵션으로 추가했습니다.
+- **주사율 개선:** 시뮬레이션의 갱신량을 실제 경과 시간에 맞춰 계산해, 높은 FPS에서도 원래 게임 속도를 유지하도록 했습니다. (60·120·144 Hz)
+- **플레이 개선:** 조합법 도감, 보관함 빠른 이동, 빈 시체 자동 닫기, 자동 정렬, 건축 연속 입력 등 개별적으로 켜고 끌 수 있는 QOL 기능을 추가했습니다. 자세한 사용법은 [QOL 설정 문서](docs/qol-ko.md)를 참조해 주세요.
+- **기타 버그 수정:** Alt-Tab 후 그래픽 깨짐과 빠른 저장·불러오기 오류를 수정했습니다.
+- **현지화**: 이제 손쉽게 유저가 직접 게임을 번역할 수 있습니다. (언어 추가 지원)
+ 
+그 외 기술적 변경사항은 다음 문서들을 참고하세요. 
+
+[WebGPU 렌더러](docs/wgpu-migration-ko.md) · [웹 버전 구현 원리](docs/web-architecture-ko.md) · [macOS 구현 원리](docs/macos-architecture-ko.md) · [Studio](docs/studio-ko.md) · [개발 가이드](docs/development-ko.md) · [현지화 가이드](docs/localization-ko.md)
 
 ## 필요한 안내 찾기
 
