@@ -1,6 +1,7 @@
 
 #include "std.h"
 #include "terrainrep.h"
+#include <algorithm>
 #include <queue>
 
 extern float stats3d[10];
@@ -152,6 +153,7 @@ TerrainRep::~TerrainRep(){
 void TerrainRep::clear(){
 	memset( cells,0,cell_size*cell_size*sizeof(Cell) );
 	memset( errors,0,end_tri_id*sizeof(Error) );
+	std::fill( normal_valid.begin(),normal_valid.end(),0 );
 	errs_valid=true;
 }
 
@@ -176,7 +178,18 @@ void TerrainRep::setShading( bool t ){
 }
 
 void TerrainRep::setHeight( int x,int z,float h,bool realtime ){
-	cells[((z&cell_mask)<<cell_shift)|(x&cell_mask)].height=h*255.0f;
+	const int index=((z&cell_mask)<<cell_shift)|(x&cell_mask);
+	const unsigned char height=h*255.0f;
+	if( cells[index].height!=height && !normal_valid.empty() ){
+		// A height contributes to its own normal and the four adjacent ones.
+		// Heights wrap at the terrain edges, so invalidation must wrap too.
+		normal_valid[index]=0;
+		normal_valid[((z&cell_mask)<<cell_shift)|((x-1)&cell_mask)]=0;
+		normal_valid[((z&cell_mask)<<cell_shift)|((x+1)&cell_mask)]=0;
+		normal_valid[(((z-1)&cell_mask)<<cell_shift)|(x&cell_mask)]=0;
+		normal_valid[(((z+1)&cell_mask)<<cell_shift)|(x&cell_mask)]=0;
+	}
+	cells[index].height=height;
 	if( !errs_valid ) return;
 	if( realtime ){
 		Vert v0(0,0),v1(cell_size,0),v2(cell_size,cell_size),v3(0,cell_size);
@@ -188,17 +201,27 @@ void TerrainRep::setHeight( int x,int z,float h,bool realtime ){
 }
 
 Vector TerrainRep::getNormal( int x,int z )const{
+	// Shading uses the original height field, independent of camera LOD and
+	// morphed vertex heights. Allocate only when shading is first rendered.
+	if( normal_valid.empty() ){
+		normals.resize( cell_size*cell_size );
+		normal_valid.resize( cell_size*cell_size,0 );
+	}
+	const int index=((z&cell_mask)<<cell_shift)|(x&cell_mask);
+	if( normal_valid[index] ) return normals[index];
 	Vector
 		vt( x,getHeight(x,z),z ),
 		v0( x,getHeight(x,z-1),z-1 ),
 		v1( x+1,getHeight(x+1,z),z ),
 		v2( x,getHeight(x,z+1),z+1 ),
 		v3( x-1,getHeight(x-1,z),z );
-	return (
+	normals[index]=(
 		Plane( vt,v1,v0 ).n+
 		Plane( vt,v2,v1 ).n+
 		Plane( vt,v3,v2 ).n+
 		Plane( vt,v0,v3 ).n ).normalized();
+	normal_valid[index]=1;
+	return normals[index];
 }
 
 void TerrainRep::insert( Tri *t ){

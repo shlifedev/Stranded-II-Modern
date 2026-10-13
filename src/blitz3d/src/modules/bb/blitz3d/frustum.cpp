@@ -1,6 +1,7 @@
 
 #include "std.h"
 #include "frustum.h"
+#include <algorithm>
 
 Frustum::Frustum(){
 }
@@ -81,6 +82,42 @@ bool Frustum::cull( const Box &b,const Transform &t )const{
 		float d=p.distance(t.v);
 		// Roundoff at a touching plane may retain a tiny extra sliver, but
 		// must not make a visible object pop out of the frame or reflection.
+		float tolerance=1e-5f*(fabsf(n.x*v.x)+fabsf(n.y*v.y)+fabsf(n.z*v.z)+fabsf(d)+1);
+		if( n.dot(v)+d < -tolerance ) return false;
+	}
+	return true;
+}
+
+Frustum::Bounds::Bounds( const Box &b,const Transform &t ){
+	const Vector center=t*((b.a+b.b)*0.5f),half=(b.b-b.a)*0.5f;
+	const Vector i(fabsf(t.m.i.x),fabsf(t.m.i.y),fabsf(t.m.i.z));
+	const Vector j(fabsf(t.m.j.x),fabsf(t.m.j.y),fabsf(t.m.j.z));
+	const Vector k(fabsf(t.m.k.x),fabsf(t.m.k.y),fabsf(t.m.k.z));
+	const Vector extent=i*half.x+j*half.y+k*half.z;
+	world=Box( center-extent,center+extent );
+	// Upper bound on the legacy plane test's tolerance, even with large
+	// local coordinates, negative scales, shear or cancelling translations.
+	roundoff=i*std::max(fabsf(b.a.x),fabsf(b.b.x))+
+		j*std::max(fabsf(b.a.y),fabsf(b.b.y))+
+		k*std::max(fabsf(b.a.z),fabsf(b.b.z))+
+		Vector(fabsf(t.v.x),fabsf(t.v.y),fabsf(t.v.z));
+}
+
+bool Frustum::cull( const Box &b,const Transform &t,const Bounds &bounds )const{
+	for( int k=0;k<6;++k ){
+		const Plane &p=planes[k];
+		const Box &w=bounds.world;
+		const Vector &r=bounds.roundoff;
+		const float guard=1e-5f*(fabsf(p.n.x)*r.x+fabsf(p.n.y)*r.y+fabsf(p.n.z)*r.z+fabsf(p.d)+1);
+		const Vector farthest(p.n.x>=0?w.b.x:w.a.x,p.n.y>=0?w.b.y:w.a.y,p.n.z>=0?w.b.z:w.a.z);
+		if( p.distance(farthest)<-guard ) return false;
+		const Vector nearest(p.n.x>=0?w.a.x:w.b.x,p.n.y>=0?w.a.y:w.b.y,p.n.z>=0?w.a.z:w.b.z);
+		if( p.distance(nearest)>guard ) continue;
+		// Only a box crossing this plane needs the original oriented test.
+		// Keep its arithmetic and tolerance for identical boundary decisions.
+		Vector n(p.n.dot(t.m.i),p.n.dot(t.m.j),p.n.dot(t.m.k));
+		Vector v(n.x>=0?b.b.x:b.a.x,n.y>=0?b.b.y:b.a.y,n.z>=0?b.b.z:b.a.z);
+		float d=p.distance(t.v);
 		float tolerance=1e-5f*(fabsf(n.x*v.x)+fabsf(n.y*v.y)+fabsf(n.z*v.z)+fabsf(d)+1);
 		if( n.dot(v)+d < -tolerance ) return false;
 	}

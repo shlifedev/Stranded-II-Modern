@@ -21,6 +21,7 @@ public:
 	virtual bool collide( const Line &line,float radius,Collision *curr_coll,const Transform &t );
 
 	virtual void setRenderBrush( const Brush &b );
+	virtual bool beginRender( float tween );
 	virtual bool render( const RenderContext &rc );
 	virtual void renderQueue( int type );
 	virtual bool deferrable()const{ return surf_bones.empty(); }
@@ -50,6 +51,8 @@ private:
 	std::vector<Brush> brushes;
 
 	std::vector<Surface::Bone> surf_bones;
+	Frustum::Bounds cull_bounds;
+	bool cull_tested=false,cull_bounds_valid=false;
 
 	MeshModel &operator=(const MeshModel &);
 };

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"e61f250f798438d76f2de916cfc59ae3e9846bcd19a6207a2833da0fa0dc70f3"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"258d13a51bd7c1eea3b93c6dd19d0a526aae03869c26f983e50b80e76af92605"} -->
 
 # Stranded II Studio
 
@@ -39,11 +39,15 @@ npm --prefix studio start
 | 이동 | 굵은 X/Z 축으로 방향 이동, 가운데 사각형으로 지형 위 이동. 오브젝트가 없는 선택은 Y 축도 표시합니다. 마지막 선택 개체가 스냅 기준이며, Esc 또는 포인터 캡처 상실로 취소합니다. |
 | 속성 | 좌표·방향·체력·수량을 수정하고 **적용**. 오브젝트의 높이는 게임처럼 지형에서 정해집니다. |
 | 지형 | 높이기·낮추기·평탄화·부드럽게 중 선택하고 지형 클릭. 반경·강도 조절, 높이기/낮추기에 강도 사용. |
-| 콘텐츠 | 아이템·오브젝트·유닛·맵 정보·건축·레시피 검색, 정의 복제, 속성·재료 편집, 모델·이미지·오디오 가져오기. |
+| 콘텐츠 | 실제 아이콘으로 아이템·오브젝트·유닛·맵 정보·건축·레시피 검색. 선택하면 오른쪽 속성 창에서 확대합니다. 정의 복제, 속성·재료 편집, 모델·이미지·오디오 가져오기도 지원합니다. |
 | 스크립트 | 정의·개체 이벤트·맵 전체 스크립트 편집. 게임 명령 자동완성을 제공하며 **스크립트 적용**으로 저장합니다. |
 | 리소스 | 정의·모델·번역·폰트 수정은 저장 후 **리소스 적용 필요**로 표시합니다. **리소스 적용**을 누르면 변경을 한 번에 반영하고 카메라·선택·도구를 복원합니다. 적용 전에는 마지막으로 적용한 모습으로 표시합니다. |
 | 테스트 | 편집기에 올라온 Blitz 엔진으로 최신 저장 맵을 플레이합니다. 화면 클릭으로 마우스 캡처, Esc로 해제, **정지**로 편집 맵과 카메라를 복원합니다. 플레이 중 변화는 프로젝트에 기록하지 않습니다. |
 | 진단 | 정의 ID, 참조, 에셋 경로, 조합 구성, 시작 위치 등을 검사합니다. 게임 스크립트 실행 결과까지 정적으로 보장하지 않습니다. |
+
+콘텐츠 목록은 64px, 선택한 아이콘은 최대 160px로 비율을 유지해 표시합니다. 원본 대부분은 40×40이며 확대해도 세부 묘사가 추가되지는 않습니다. 건축은 완성 결과, 레시피는 첫 번째 결과 아이템을 보여주고 다른 결과 개수는 `+N`으로 표시합니다. 맵 정보는 게임의 아이콘 프레임을 사용합니다. 이미지가 없거나 읽을 수 없으면 기본 기호와 이유를 표시합니다.
+
+아이콘은 맵·3D 엔진 없이도 볼 수 있습니다. 프로젝트에서 가져온 이미지를 우선하며, **정의 적용**·에셋 가져오기·실행 취소 후 저장된 내용으로 갱신합니다. 미적용 초안은 제외하고 3D 장면의 **리소스 적용**과 별개로 동작합니다.
 
 **테스트**는 현재 엔진과 로드된 리소스를 그대로 사용합니다. 시작 직전 최신 저장 맵을 확인해 같은 엔진 안에서 플레이용 월드를 구성하며 `on:preload`·`on:start`·`on:load`를 기존 순서로 실행합니다. 엔진·리소스를 다시 초기화하지 않지만 맵 로딩과 시작 스크립트 실행 시간은 필요합니다. 정의·모델·번역·폰트가 변경됐다면 **리소스 적용** 후 테스트하세요. 적용하지 않은 초안은 테스트에 포함하지 않습니다.
 
@@ -59,12 +63,17 @@ Ctrl/Cmd+Z는 실행 취소, Ctrl/Cmd+Shift+Z는 다시 실행, Ctrl/Cmd+D는 �
 
 CLI는 GUI 없이 실행되며 표준 출력에 JSON을 반환합니다. 오류와 검증 실패는 종료 코드 1입니다. `serve`는 요청 ID를 돌려주는 JSON Lines 프로토콜이며 GUI도 이를 사용합니다.
 
+`thumbnail PROJECT --kind KIND --id ID`는 프로젝트를 변경하지 않고 PNG `dataUrl`·원본 `width`/`height`·리소스 경로·버전을 반환합니다. 이미지가 없는 경우 `status: "unavailable"`과 `reason`을 반환하며, 알 수 없는 정의 ID는 명령 오류입니다. 레시피 ID는 `catalog`에 표시된 문자열을 그대로 사용합니다.
+
+JSON 요청에서는 콘텐츠 식별자를 `contentId`로 전달합니다. `id`는 통신 요청 식별자입니다.
+
 ```sh
 python scripts/studio.py schema
 python scripts/studio.py init build/studio-example --base build/studio/runtime --name "My island"
 python scripts/studio.py apply build/studio-example --file studio/examples/first-island.json --expect-revision 0
 python scripts/studio.py inspect build/studio-example --map island
 python scripts/studio.py catalog build/studio-example --kind item --query 나무
+python scripts/studio.py thumbnail build/studio-example --kind item --id 1
 python scripts/studio.py validate build/studio-example
 python scripts/studio.py undo build/studio-example --expect-revision 1
 python scripts/studio.py redo build/studio-example --expect-revision 2
@@ -92,10 +101,12 @@ python scripts/studio.py export build/studio-example --out build/studio-example-
 ## 검증
 
 ```sh
-python -m unittest discover -s tests -p "test_studio.py"
+python -m unittest discover -s tests -p "test_studio*.py"
 python scripts/studio.py engine check
 npm --prefix studio run check
 npm --prefix studio test
 ```
+
+아이콘 검사는 투명색·프레임·결과물 이미지 선택, 에셋 우선순위, 변경·실행 취소 후 갱신, 경로 제한, 읽기 전용 동작, 요청 캐시·취소와 IPC 응답을 확인합니다.
 
 테스트는 데이터 보존·트랜잭션·차분/ACK·리소스 대기·이동 수학·취소/충돌·IPC와 동일 엔진 재사용·최신 저장 맵 반영·오래된 요청 무시·시작 취소·맵과 카메라 복원을 확인하며 GUI를 실행하지 않습니다. `engine check`는 실제 Blitz 빌드 산출물, Extended 카탈로그, 허용 목록에 포함된 리소스와 오디오 변환을 검사합니다. 공통 맵 로더를 변경했다면 두 판을 빌드·검사하고 `python scripts/verify_game.py`와 `python scripts/verify_game.py --edition extended`로 기존 저장·불러오기도 확인합니다. 화면 전환·선택·드래그·마우스 캡처·Alt-Tab·배율·소리·한국어 표시는 앱에서 별도로 확인해야 합니다. 진단 탭의 시작 요청부터 첫 게임 프레임까지 시간은 FPS 측정이 아닙니다.

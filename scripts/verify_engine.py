@@ -56,7 +56,7 @@ def check_render(output):
                env=engine.environment())
     engine.install_windows_runtime(directory)
     execute(directory / 's2_render_check.exe', output, 'render')
-    return 'D3D12 materials, ordered transparency, instancing, fade, depth, frustum and six-view capture checks passed (no window)'
+    return 'D3D12 materials, ordered transparency, instancing, mesh versions, fade, depth, frustum, six-view capture and terrain normal checks passed (no window)'
 
 
 def main():

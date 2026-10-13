@@ -10,9 +10,12 @@ static void checkedDrawIndexed(WGPURenderPassEncoder pass,uint32_t count,uint32_
 #define wgpuRenderPassEncoderDrawIndexed checkedDrawIndexed
 #include "../src/modules/bb/blitz3d.webgpu/blitz3d.webgpu.cpp"
 #undef wgpuRenderPassEncoderDrawIndexed
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <bb/blitz3d/world.h>
+#include <bb/blitz3d/terrainrep.h>
+#include <bb/blitz3d/meshmodel.h>
 
 static int failures=0;
 static void expect(bool ok,const char *name){
@@ -26,7 +29,7 @@ static void checkFrustum(){
         return lo+(hi-lo)*(float)(seed>>8)*(1.0f/16777216.0f);
     };
     Frustum camera(1,1500,2,1.5f);
-    bool boxes=true,transforms=true,legacy=true;
+    bool boxes=true,transforms=true,legacy=true,prepared=true;
     for(int i=0;i<12000;++i){
         Transform eye(yawMatrix(random(-3,3))*pitchMatrix(random(-1,1)),
                       Vector(random(-3000,3000),random(-500,500),random(-3000,3000)));
@@ -51,6 +54,7 @@ static void checkFrustum(){
             margin=std::min(margin,furthest);
         }
         bool visible=world.cull(box,model);
+        prepared&=visible==world.cull(box,model,Frustum::Bounds(box,model));
         if(std::fabs(margin)>0.1f){
             transforms&=visible==world.cull(corners,8);
             Frustum oldLocal(world,-model);
@@ -60,9 +64,21 @@ static void checkFrustum(){
     expect(boxes,"box culling matches all eight corners");
     expect(transforms,"transformed culling matches world corners, including reflected/sheared scales");
     expect(legacy,"transformed culling preserves legacy frustum visibility");
+    expect(prepared,"prepared bounds exactly match oriented tests, including reflected/sheared scales");
     expect(camera.cull(Box(Vector(0,0,1)),Transform()),"touching near plane remains visible");
     expect(camera.cull(Box(Vector(0,0,1500)),Transform()),"touching far plane remains visible");
     expect(!camera.cull(Box(Vector(0,0,1501)),Transform()),"beyond far plane is culled");
+    // Test roundoff fallback at near/far/side planes, including flat bounds
+    // and large cancelling local coordinates and translations.
+    bool boundaries=true;
+    for(float offset:{0.0f,10000.0f,-10000.0f}) for(float delta:{-0.001f,0.0f,0.001f}){
+        for(Vector position:{Vector(0,0,1+delta),Vector(0,0,1500+delta),Vector(10+delta,0,10)}){
+            Box box(Vector(offset,0,0),Vector(offset,0.1f,0.1f));
+            Transform model(Matrix(),position-Vector(offset,0,0));
+            boundaries&=camera.cull(box,model)==camera.cull(box,model,Frustum::Bounds(box,model));
+        }
+    }
+    expect(boundaries,"prepared bounds retain legacy decisions on touching and nearly touching planes");
 }
 static void error(WGPUDevice const *,WGPUErrorType,WGPUStringView message,void *,void *){
     std::fprintf(stderr,"GPU error: %.*s\n",(int)message.length,message.data);
@@ -600,6 +616,30 @@ public:
         return false;
     }
 };
+class CheckedMeshModel : public MeshModel{
+public:
+    bool matching=true;
+    unsigned views=0;
+    Box customBounds;
+    CheckedMeshModel(){
+        Surface *s=createSurface(Brush());
+        for(Vector p:{Vector(-1,-1,0),Vector(1,-1,0),Vector(1,1,0),Vector(-1,1,0)}){
+            Surface::Vertex v;v.coords=p;v.normal=Vector(0,0,-1);s->addVertex(v);
+        }
+        s->addTriangle(Surface::Triangle{{0,2,1}});s->addTriangle(Surface::Triangle{{0,3,2}});
+        setFX(BBScene::FX_FULLBRIGHT|BBScene::FX_DOUBLESIDED);
+    }
+    CheckedMeshModel(const CheckedMeshModel &other):MeshModel(other){}
+    void setTestBounds(const Box &b){ customBounds=b;setCullBox(b); }
+    bool render(const RenderContext &rc) override{
+        const Box &b=customBounds.empty()?getBox():customBounds;
+        bool visible=!b.empty() && rc.getWorldFrustum().cull(b,getRenderTform());
+        bool transparent=MeshModel::render(rc);
+        matching&=visible==(queueSize(QUEUE_OPAQUE)+queueSize(QUEUE_TRANSPARENT)>0);
+        ++views;
+        return transparent;
+    }
+};
 static void checkCubeCapture(WebGPUContextResources &res){
     WebGPUCanvas target(&res,32,32,BBCanvas::CANVAS_TEX_VIDMEM);
     WebGPUCanvas untouched(&res,32,32,BBCanvas::CANVAS_TEX_VIDMEM);
@@ -614,6 +654,11 @@ static void checkCubeCapture(WebGPUContextResources &res){
         other.setViewport(0,0,32,32);other.setCanvas(&untouched);
         other.setClsColor(Vector(1,1,0));
         Object group;
+        CheckedMeshModel boundsMesh,boundsCopy(boundsMesh),customBoundsMesh;
+        boundsMesh.setParent(&group);boundsMesh.setLocalPosition(Vector(19.9f,0,20));
+        boundsCopy.setLocalPosition(Vector(-19.9f,2,20));
+        customBoundsMesh.setLocalPosition(Vector(0,19.9f,20));
+        customBoundsMesh.setTestBounds(Box(Vector(-2,-2,-0.1f),Vector(2,2,0.1f)));
         std::vector<CaptureModel*> models;
         const Vector colors[6]={Vector(1,0,0),Vector(0,1,0),Vector(0,0,1),
                                 Vector(1,1,0),Vector(1,0,1),Vector(0,1,1)};
@@ -650,24 +695,144 @@ static void checkCubeCapture(WebGPUContextResources &res){
             expect(hidden.preparations==0,"capture preserves hidden objects");
             expect(previous==untouched.getPixel(16,16),"capture renders only the selected camera");
             expect(gx_canvas==&target,"capture restores the active drawing canvas");
+            expect(boundsMesh.matching && boundsCopy.matching && customBoundsMesh.matching &&
+                   boundsMesh.views>0 && boundsCopy.views>0 && customBoundsMesh.views>0,
+                   "shared mesh bounds preserve per-view visibility and independent copy transforms");
         };
         compare("six capture views match legacy pixels, including transparent fade/order",1,1);
         expectPixel("capture right-face orientation",reference.faces[0][16*32+16],255,0,0);
         expectPixel("capture bottom-face orientation",reference.faces[5][16*32+16],0,255,255);
         // Every call must rebuild the scene; no snapshot survives a mutation.
         models[0]->setColor(Vector(0.2f,0.4f,0.8f));group.setLocalPosition(Vector(1,0,0));
+        boundsMesh.setLocalScale(Vector(-2,0.5f,1));
+        boundsCopy.setLocalRotation(rotationQuat(0,0.7f,0));
+        boundsMesh.getSurfaces()[0]->setCoords(0,Vector(-4,-1,0));
+        customBoundsMesh.setTestBounds(Box(Vector(3,-1,-0.1f),Vector(5,1,0.1f)));
         models[2]->setVisible(false);nearModel.setLocalPosition(Vector(0,0,12));
         compare("next capture observes transform, visibility and material changes",1,1);
         // Rotating the capture camera moves its children on every face.
         CaptureModel child(mesh);child.setParent(&camera);child.setLocalPosition(Vector(0,0,6));
+        boundsCopy.setParent(&camera);boundsCopy.setLocalPosition(Vector(5.9f,0,6));
         child.setColor(Vector(0.6f,0.3f,0.1f));child.setAlpha(0.5f);
         compare("camera-attached geometry retains six preparations and correct pixels",1,6);
         child.setParent(nullptr);child.setVisible(false);
+        boundsCopy.setParent(nullptr);
         world.capture();nearModel.setLocalPosition(Vector(0,0,13));
+        boundsCopy.setLocalPosition(Vector(-10,0,12));group.setLocalScale(Vector(2,1,0.5f));
         compare("interpolated captures preserve legacy preparation semantics",0.5f,6);
+        customBoundsMesh.setTestBounds(Box());
+        compare("clearing custom bounds restores edited mesh bounds",1,1);
         for(auto model:models) delete model;
     }
     scene.freeMesh(mesh);bbScene=nullptr;gx_canvas=nullptr;
+}
+// Exercise the real terrain tessellator and renderer without adding a testing
+// interface to TerrainRep. The reference recomputes the pre-cache formula.
+class NormalTerrain : public Model{
+public:
+    TerrainRep terrain{4};
+    bool shaded=true;
+    NormalTerrain(){
+        terrain.setShading(true);terrain.setDetail(2000,false);
+        setLocalScale(Vector(1,12,1));setColor(Vector(0.4f,0.7f,0.2f));
+        setFX(BBScene::FX_DOUBLESIDED);
+    }
+    bool render(const RenderContext &rc) override{ terrain.render(this,rc);return false; }
+    Vector referenceNormal(int x,int z)const{
+        if(!shaded) return Vector(0,1,0);
+        const Vector center(x,terrain.getHeight(x,z),z),
+            north(x,terrain.getHeight(x,z-1),z-1),
+            east(x+1,terrain.getHeight(x+1,z),z),
+            south(x,terrain.getHeight(x,z+1),z+1),
+            west(x-1,terrain.getHeight(x-1,z),z);
+        return (Plane(center,east,north).n+Plane(center,south,east).n+
+                Plane(center,west,south).n+Plane(center,north,west).n).normalized();
+    }
+};
+class TerrainNormalScene : public WebGPUScene{
+public:
+    using WebGPUScene::WebGPUScene;
+    NormalTerrain *terrain=nullptr;
+    bool reference=false,matching=true;
+    std::set<std::pair<int,int>> checked;
+    void render(BBMesh *mesh,int fv,int vc,int ft,int tc) override{
+        auto gpu=static_cast<WebGPUMesh*>(mesh);
+        for(int i=fv;i<fv+vc;++i){
+            auto v=gpu->verts[i];
+            int x=(int)v.coords[0],z=(int)v.coords[2];
+            Vector n=terrain->referenceNormal(x,z);
+            matching&=!std::memcmp(v.normal,&n.x,sizeof(v.normal));
+            checked.insert({x,z});
+            if(reference){
+                std::memcpy(v.normal,&n.x,sizeof(v.normal));
+                gpu->writeVertex(i,v);
+            }
+        }
+        WebGPUScene::render(mesh,fv,vc,ft,tc);
+    }
+};
+static void checkTerrainNormals(WebGPUContextResources &res){
+    struct ReadbackCanvas : WebGPUCanvas{
+        using WebGPUCanvas::WebGPUCanvas;
+        using WebGPUCanvas::readPixels;
+    } target(&res,64,64,BBCanvas::CANVAS_TEX_VIDMEM);
+    TerrainNormalScene scene(&res);bbScene=&scene;gx_canvas=&target;
+    {
+        World world;Camera camera;Light light(Light::LIGHT_DISTANT);
+        const float ambient[3]={0.1f,0.1f,0.1f};scene.setAmbient(ambient);
+        light.setColor(Vector(0.7f,0.7f,0.7f));
+        light.setLocalRotation(rotationQuat(0.8f,0.4f,0));
+        camera.setViewport(0,0,64,64);camera.setCanvas(&target);
+        camera.setProjMode(Camera::PROJ_ORTHO);camera.setZoom(1.0f/10);
+        camera.setRange(1,100);camera.setLocalPosition(Vector(8,35,8));
+        camera.setLocalRotation(rotationQuat(1.57079632679f,0,0));
+        NormalTerrain first,second;second.setVisible(false);scene.terrain=&first;
+        for(auto model:{&first,&second})
+            for(int z=0;z<16;++z) for(int x=0;x<16;++x)
+                model->terrain.setHeight(x,z,(((x+z)&1?200:30)+
+                    (x*37+z*61+x*z*13+(model==&second?7:0))%17)/255.0f,false);
+        auto compare=[&](const char *name){
+            std::vector<unsigned char> actual,reference;
+            scene.matching=true;scene.checked.clear();scene.reference=false;
+            world.render(1);target.readPixels(actual);
+            scene.reference=true;world.render(1);target.readPixels(reference);
+            expect(scene.matching && !scene.checked.empty() && actual==reference,name);
+            scene.reference=false;
+            return actual;
+        };
+        auto initial=compare("cold terrain normals and lit pixels match legacy calculation");
+        expect(scene.checked.size()==17*17,"normal comparison covers every grid point and wrapped edges");
+        expect(compare("warm terrain cache preserves normals and pixels")==initial,"warm terrain pixels are unchanged");
+        expect(std::any_of(initial.begin(),initial.end(),[](unsigned char c){return c!=0 && c!=255;}),
+               "terrain pixel comparison contains lit geometry");
+        first.terrain.setHeight(8,8,0.1f,false);
+        first.terrain.setHeight(7,8,0.9f,false); // Already-invalid LOD errors must not skip normal invalidation.
+        auto edited=compare("batched height edits refresh all affected normals");
+        expect(edited!=initial,"height edit changes rendered terrain");
+        first.terrain.setHeight(8,7,0.3f,true);
+        compare("realtime height edit refreshes cached normals");
+        for(const auto &point:{std::pair<int,int>{0,5},{16,6},{5,0},{6,16},{16,16}}){
+            first.terrain.setHeight(point.first,point.second,0.95f,false);
+            compare("height edit at wrapped edge refreshes both sides");
+        }
+        first.shaded=false;first.terrain.setShading(false);
+        first.terrain.setHeight(9,9,0.9f,false);
+        compare("unshaded terrain retains upward normals");
+        first.shaded=true;first.terrain.setShading(true);
+        compare("re-enabling shading observes edits made while unshaded");
+        for(float yaw:{0.4f,1.2f,2.4f}){
+            camera.setLocalRotation(rotationQuat(1.3f,yaw,0));
+            first.terrain.setDetail(100,true);
+            compare("camera and morphed LOD changes preserve legacy normals and pixels");
+        }
+        first.setVisible(false);second.setVisible(true);scene.terrain=&second;
+        compare("separate terrains use independent normal caches");
+        first.setVisible(true);second.setVisible(false);scene.terrain=&first;
+        compare("returning to first terrain retains its own normals");
+        first.terrain.clear();
+        compare("clearing terrain invalidates cached normals");
+    }
+    bbScene=nullptr;gx_canvas=nullptr;
 }
 int main(){
     checkFrustum();
@@ -680,6 +845,7 @@ int main(){
     checkTransparentInstances(res);
     checkWorldTransparency(res);
     checkCubeCapture(res);
+    checkTerrainNormals(res);
     res.destroy();
     std::printf("%d rendering failures (offscreen, no window)\n",failures);
     return failures?1:0;

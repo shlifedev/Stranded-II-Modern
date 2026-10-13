@@ -1,5 +1,9 @@
 export type Kind = 'object'|'unit'|'item'|'info'|'building'|'recipe';
 export type RecordInfo = {kind:Kind;id:number|string;name:string;path:string;properties:Record<string,string[]>};
+export type Thumbnail = {revision:number;additionalResults:number} & (
+  {status:'ready';dataUrl:string;source:string;width:number;height:number} |
+  {status:'unavailable';reason:string}
+);
 export type Entity = {kind:Kind;id:number;type:number;x:number;z:number;y?:number;yaw:number;pitch?:number;health?:number;health_max?:number;count?:number;vars?:string;script:string};
 export type Diagnostic = {severity:string;code:string;message:string;location:string};
 export type Snapshot = {name:string;project:string;base:string;revision:number;maps:string[];activeMap:string|null;catalog:RecordInfo[];baseMaps:string[];assets:string[];canUndo:boolean;canRedo:boolean;

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"f26afebfec50f4a0a59bd1b2a1cbbfffc042994560ad0a7ba37ccdfaaf5735ed"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"a795c43babb5c81acb838adf2fd8c31a01d30f0b8d1ce686afeef4ac23ae5835"} -->
 
 # Stranded II Studio
 
@@ -39,11 +39,15 @@ Create a project in an empty folder or open an existing project on the start scr
 | Move | Drag the thick X/Z axes for directional movement or the center square to move along terrain. Y is available when the selection contains no objects. The last selected entity anchors snapping; Esc or lost pointer capture cancels the drag. |
 | Inspector | Edit coordinates, rotation, health and quantity, then **Apply**. Objects derive their height from terrain, as in the game. |
 | Terrain | Choose raise, lower, flatten or smooth, then click terrain. Adjust radius and strength; strength applies to raise/lower. |
-| Content | Search items, objects, units, map information, buildings and recipes; clone definitions, edit properties/materials, and import models, images or audio. |
+| Content | Browse items, objects, units, map information, buildings and recipes by their actual icons. Select one to enlarge it in the inspector. Clone definitions, edit properties/materials, and import models, images or audio. |
 | Scripts | Edit definition, entity-event or global-map scripts. Game-command completion is available; **Apply script** saves changes. |
 | Resources | Saved definition, model, translation and font changes display **Resources pending**. **Apply resources** applies them together and restores camera, selection and tool. Until then, the scene uses the last applied appearance. |
 | Test | Play the latest saved map in the Blitz engine already running in the editor. Click the viewport to capture the mouse, Esc to release, and **Stop** to restore the editor map and camera. Play-session changes do not enter the project. |
 | Diagnostics | Check definition IDs, references, asset paths, recipe structure and player starts. Static validation does not guarantee script execution results. |
+
+Content icons fit a 64px tile and expand to at most 160px in the inspector, preserving their aspect ratio. Most originals are 40×40; enlargement does not add detail. Buildings show their completed result, and recipes show the first output item with `+N` for additional outputs. Map information uses the game's icon frames. Missing or unreadable images display a fallback symbol and a reason.
+
+Icons work without a map or the 3D engine. Imported project images take precedence, and saved changes refresh after **Apply definition**, asset import or undo. Unapplied drafts are excluded; icon updates are independent of the scene's **Apply resources** action.
 
 **Test** reuses the current engine and its loaded resources. It checks the latest saved map immediately before rebuilding the playable world in that engine, running `on:preload`, `on:start` and `on:load` in their existing order. The engine and resources are not reinitialized, but map loading and startup scripts still take time. After changing definitions, models, translations or fonts, use **Apply resources** before testing. Unapplied drafts are excluded from play.
 
@@ -59,12 +63,17 @@ Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z redoes, Ctrl/Cmd+D duplicates entities and D
 
 The CLI works without a GUI and returns JSON on stdout. Errors and failed validation exit with code 1. `serve` implements JSON Lines with echoed request IDs; the GUI uses the same protocol.
 
+`thumbnail PROJECT --kind KIND --id ID` returns a PNG `dataUrl`, original `width`/`height`, resource path and revision without modifying the project. Unavailable images return `status: "unavailable"` and `reason`; unknown definition IDs are command errors. For recipes, use the identifier string returned by `catalog` unchanged.
+
+JSON requests pass the content identifier as `contentId`. The `id` field identifies the protocol request.
+
 ```sh
 python scripts/studio.py schema
 python scripts/studio.py init build/studio-example --base build/studio/runtime --name "My island"
 python scripts/studio.py apply build/studio-example --file studio/examples/first-island.json --expect-revision 0
 python scripts/studio.py inspect build/studio-example --map island
 python scripts/studio.py catalog build/studio-example --kind item --query 나무
+python scripts/studio.py thumbnail build/studio-example --kind item --id 1
 python scripts/studio.py validate build/studio-example
 python scripts/studio.py undo build/studio-example --expect-revision 1
 python scripts/studio.py redo build/studio-example --expect-revision 2
@@ -92,10 +101,12 @@ Edits preserve unrelated map data and attachments. Unlock password-protected map
 ## Verification
 
 ```sh
-python -m unittest discover -s tests -p "test_studio.py"
+python -m unittest discover -s tests -p "test_studio*.py"
 python scripts/studio.py engine check
 npm --prefix studio run check
 npm --prefix studio test
 ```
+
+Icon checks cover color keys, frames and output-image selection, asset precedence, refresh after edits/undo, path restrictions, read-only behavior, request caching/cancellation and IPC responses.
 
 Tests cover data preservation, transactions, deltas/ACKs, pending resources, movement math, cancellation/conflicts, IPC, engine reuse, the latest saved map, stale requests, canceled starts, and map/camera restoration without launching a GUI. `engine check` verifies actual Blitz build artifacts, Extended catalogs, allowlisted resources and audio conversion. After changing the shared map loader, build/check both editions and run `python scripts/verify_game.py` and `python scripts/verify_game.py --edition extended` to check existing save/load behavior. View switching, selection, dragging, mouse capture, Alt-Tab, scaling, sound and Korean rendering still require separate checks in the app. The diagnostic log's time from start request to first game frame is not an FPS measurement.

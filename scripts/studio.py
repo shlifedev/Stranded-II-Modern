@@ -11,7 +11,9 @@ from studio_core.project import Project, ROOT
 
 SCHEMA = {
     'protocol': 'stranded-studio/1',
-    'commands': ['init','inspect','revision','catalog','commands','apply','validate','export','undo','redo','preview','schema','serve','engine'],
+    'commands': ['init','inspect','revision','catalog','thumbnail','commands','apply','validate','export','undo','redo','preview','schema','serve','engine'],
+    'thumbnail': {'kind': 'item|object|unit|building|recipe|info', 'contentId': 'definition ID or recipe identifier (CLI: --id)',
+                  'result': 'revision, status (ready|unavailable), additionalResults; ready: PNG dataUrl, source, width, height; unavailable: reason'},
     'operations': {
         'content.clone': {'kind': 'item|object|unit|building|recipe|info', 'source': 'existing ID', 'id': 'optional new numeric ID', 'properties': {'name': 'New name'}},
         'content.create': {'kind': 'item|object|unit|building|recipe|info', 'id': 'optional numeric ID', 'properties': {'req': ['24,2','23,1'], 'gen': ['30,1']}},
@@ -66,6 +68,9 @@ def dispatch(request):
         query = request.get('query', '').casefold()
         values = [r for r in project.public_catalog(request.get('language','ko')) if not request.get('kind') or r['kind'] == request['kind']]
         return {'revision': project.data['revision'], 'records': [r for r in values if not query or query in (str(r['id'])+' '+r['name']).casefold()]}
+    if command == 'thumbnail':
+        from studio_core.thumbnails import thumbnail
+        return thumbnail(project, request['kind'], request['contentId'])
     if command == 'apply':
         operations = request['operations']
         return project.apply(operations if isinstance(operations,list) else [operations],
@@ -112,7 +117,7 @@ def main():
     init.add_argument('project',type=Path)
     init.add_argument('--base',required=True,type=Path)
     init.add_argument('--name',default='Extended project')
-    for name in ('inspect','revision','catalog','apply','validate','export','undo','redo','preview'):
+    for name in ('inspect','revision','catalog','thumbnail','apply','validate','export','undo','redo','preview'):
         p = sub.add_parser(name)
         p.add_argument('project',type=Path)
         if name == 'preview':
@@ -123,6 +128,9 @@ def main():
             p.add_argument('--kind',choices=('item','object','unit','building','recipe','info'))
             p.add_argument('--query',default='')
             p.add_argument('--language',default='ko')
+        if name == 'thumbnail':
+            p.add_argument('--kind',required=True,choices=('item','object','unit','building','recipe','info'))
+            p.add_argument('--id',dest='contentId',required=True)
         if name == 'apply':
             p.add_argument('--file',default='-',help='JSON operation(s); - reads stdin')
             p.add_argument('--dry-run',action='store_true')

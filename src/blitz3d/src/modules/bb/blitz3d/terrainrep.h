@@ -3,6 +3,7 @@
 #define TERRAINREP_H
 
 #include <queue>
+#include <vector>
 
 #include "model.h"
 
@@ -39,6 +40,8 @@ private:
 	int end_tri_id,detail,mesh_verts,mesh_tris;
 	bool morph,shading;
 	mutable bool errs_valid;
+	mutable std::vector<Vector> normals;
+	mutable std::vector<unsigned char> normal_valid;
 
 	void insert( Tri *t );
 	void split( Tri *t );

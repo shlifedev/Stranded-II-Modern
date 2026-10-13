@@ -1,10 +1,10 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"ff43fdb24cfb23bb870793fcb85e969063ba1edfd745afeeada5e63baa4d1243"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"3956fc7bc26f1ff403bb5f69ce90314c5482db98d5526a9dc902d92c9db067ba"} -->
 
 # Development guide
 
 [English](development.md) · [한국어](development-ko.md)
 
-[Back to README](../README.md) · [Localization guide](localization.md)
+[Back to README](../README.md) · [Localization guide](localization.md) · [WebGPU renderer migration](wgpu-migration.md)
 
 For a first build, follow **environment setup → first build**. Once set up, use [running after changes](#running-after-changes) to choose the command for your edit. To contribute translations only, start with the [localization guide](localization.md).
 
@@ -17,6 +17,10 @@ Install Visual Studio’s MSVC x64 C++ build tools, Windows SDK, CMake/Ninja too
 Native runtimes use the speed-optimized `Release` configuration (`/O2` on MSVC), retaining strict floating-point behavior. WebGPU combines mesh edits until drawing and batches camera/presentation commands while preserving buffer-update and draw order. Copies sharing a mesh and material use instanced draws with individual colours and fade values. Transparent copies are merged only when consecutive, preserving depth order. Mesh visibility reuses the camera's frustum planes, and transparent sorting computes each model's distance once per camera; reflection frequency, grass density and graphics settings are unchanged.
 
 Dynamic mesh updates preserve GPU buffers used by earlier draws and upload new data into another version, reducing intermediate submissions. Versions are reused after submission, with extra buffer capacity capped at 32 MiB overall and 16 versions per mesh. Reaching either limit or using the wireframe index cache retains the existing submission path.
+
+Terrain shading lazily caches normals per height-field grid point and reuses them across frames and reflection views. Height edits invalidate the changed point and its four neighbours, including wrapped edges; clearing a terrain invalidates its cache. The original normal calculation, LOD and morphing remain unchanged. A 64×64 terrain uses 52 KiB for this cache after its first shaded render.
+
+Mesh visibility keeps the original test for the first view. Further views in the same scene preparation reuse world-space bounds, with the original oriented test retained at intersecting planes. Every scene preparation invalidates those bounds, including tweened captures and camera children. `verify_engine.py --render` compares visibility and capture pixels after transform, mesh and custom-bound changes; it also compares terrain normals and lit pixels after height edits.
 
 Water reflections use `RenderWorldCube camera,texture[,tween]` to capture all six directions consecutively. With the default tween of `1` and no camera children, object lists and transforms are prepared once; otherwise, preparation runs for each direction. Each view retains visibility, distance fade and transparency sorting, and preparation is never reused between calls. Set the camera viewport to `(0,0,texture width,texture height)` before calling.
 

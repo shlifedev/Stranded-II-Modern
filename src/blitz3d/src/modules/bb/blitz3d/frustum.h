@@ -6,6 +6,13 @@
 
 class Frustum{
 public:
+	// Camera-independent bounds, reusable while the box/transform stay fixed.
+	struct Bounds{
+		Box world;
+		Vector roundoff;
+		Bounds(){}
+		Bounds( const Box &box,const Transform &transform );
+	};
 	enum{
 		VERT_TLNEAR=0,VERT_TRNEAR,VERT_BRNEAR,VERT_BLNEAR,
 		VERT_TLFAR,VERT_TRFAR,VERT_BRFAR,VERT_BLFAR,VERT_EYE
@@ -20,6 +27,7 @@ public:
 
 	bool cull( const Box &box )const;
 	bool cull( const Box &box,const Transform &transform )const;
+	bool cull( const Box &box,const Transform &transform,const Bounds &bounds )const;
 	bool cull( const Vector vecs[],int cnt )const;
 
 	const Plane &getPlane( int n )const{ return planes[n]; }

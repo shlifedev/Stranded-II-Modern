@@ -33,6 +33,17 @@ test('desktop shell serves isolated assets, persists drafts and uses the JSON co
   assert.equal((await fetch(browser.url+'/project.json')).status,404);
   const schema=await handlers['studio:request'](event,{command:'schema'});
   assert.equal(schema.ok,true);assert.equal(schema.result.protocol,'stranded-studio/1');
+  const base=path.join(temp,'base'),project=path.join(temp,'project');
+  fs.mkdirSync(path.join(base,'mods/Stranded II/sys'),{recursive:true});
+  fs.mkdirSync(path.join(base,'mods/Stranded II/gfx'),{recursive:true});
+  fs.writeFileSync(path.join(base,'mods/Stranded II/sys/items.inf'),'id=1\nname=Icon\nicon=gfx/icon.bmp\n');
+  const bitmap=Buffer.alloc(58);bitmap.write('BM');bitmap.writeUInt32LE(58,2);bitmap.writeUInt32LE(54,10);
+  bitmap.writeUInt32LE(40,14);bitmap.writeInt32LE(1,18);bitmap.writeInt32LE(1,22);bitmap.writeUInt16LE(1,26);bitmap.writeUInt16LE(24,28);bitmap[56]=255;
+  fs.writeFileSync(path.join(base,'mods/Stranded II/gfx/icon.bmp'),bitmap);
+  assert.equal((await handlers['studio:request'](event,{command:'init',project,base})).ok,true);
+  const thumbnail=await handlers['studio:request'](event,{command:'thumbnail',project,kind:'item',contentId:1});
+  assert.equal(thumbnail.ok,true,JSON.stringify(thumbnail));assert.equal(thumbnail.result.status,'ready');
+  assert.match(thumbnail.result.dataUrl,/^data:image\/png;base64,/);assert.equal(thumbnail.result.revision,0);
   assert.throws(()=>handlers['studio:request']({...event,senderFrame:{url:'https://outside.test'}},{command:'schema'}),/Unknown/);
   events['studio:storage'](event,'set','studio.draft','unsaved script');
   assert.equal(event.returnValue.ok,true);
