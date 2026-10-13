@@ -2673,4 +2673,5 @@ render.water	평면 수면 반사
 render.lighting	픽셀 단위 조명
 render.shadows	태양 그림자
 render.atmosphere	대기 음영
-render.help	선택형 효과이며 기본값은 모두 끔입니다. 물 반사는 선택한 반사 해상도를 유지합니다. 태양 그림자는 GPU 부하를 늘립니다. 적용하면 즉시 반영됩니다.
+render.antialias	계단현상 완화
+render.help	FXAA는 기본값이며 저비용으로 윤곽을 부드럽게 합니다. MSAA 4x는 더 선명하지만 GPU 부하가 큽니다. 둘 다 글자에는 적용하지 않습니다. 다른 효과는 기본 끔이며 적용하면 즉시 반영됩니다.

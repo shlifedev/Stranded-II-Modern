@@ -10,7 +10,7 @@ def settings_fixture(includes):
         body += function(text, name) + '\n'
     # GPU resource refresh is covered by the render fixtures, not this console test.
     body += '''Function remaster_settings_apply()
- For i=0 To 3:remaster_enabled(i)=remaster_pending(i):Next
+ For i=0 To Cremaster_count-1:remaster_enabled(i)=remaster_pending(i):Next
 End Function
 remaster_init()
 '''

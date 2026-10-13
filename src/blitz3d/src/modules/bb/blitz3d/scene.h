@@ -73,6 +73,9 @@ protected:
   virtual void setHWMultiTex( bool enable )=0;
   virtual void setDither( bool enable )=0;
   virtual void setAntialias( bool enable )=0;
+  virtual void applyAntialias( BBCanvas *canvas ){}
+  virtual void setAntialiasSamples( int samples ){}
+  virtual void setAntialiasTarget( BBCanvas *canvas ){}
   virtual void setTextureLodBias( float bias ){}
   // Optional modern effects. Legacy backends keep their original behaviour.
   virtual void setRenderEffects( bool lighting,bool atmosphere,float seconds ){}

@@ -320,12 +320,21 @@ private:
 	struct DepthTarget{
 		WGPUTexture tex=0;
 		WGPUTextureView view=0;
+		WGPUTexture color=0;
+		WGPUTextureView color_view=0;
+		WGPUTextureFormat color_format=WGPUTextureFormat_Undefined;
+		int samples=1;
+		bool seeded=false;
 		int width=0,height=0;
 		bool initialized=false;
 	};
-	std::map<WebGPUCanvas*,DepthTarget> depth_targets;
+	std::map<std::pair<WebGPUCanvas*,int>,DepthTarget> depth_targets;
 
 	WebGPUCanvas *target=0;
+	BBCanvas *antialias_target=0;
+	int targetSamples( WebGPUCanvas *canvas )const{
+		return canvas && res->antialias && res->antialias_samples==4 && canvas==antialias_target && shadow_index<0?4:1;
+	}
 	WGPURenderPassEncoder pass=0;
 	WebGPUCanvas *pass_canvas=0;
 
@@ -389,11 +398,14 @@ private:
 			pending_clear_color=false;
 			pending_clear_z=false;
 		}
-		std::map<WebGPUCanvas*,DepthTarget>::iterator it=depth_targets.find( canvas );
-		if( it!=depth_targets.end() ){
+		if( antialias_target==canvas ) antialias_target=nullptr;
+		for( auto it=depth_targets.begin();it!=depth_targets.end(); ){
+			if( it->first.first!=canvas ){ ++it;continue; }
+			if( it->second.color_view ) wgpuTextureViewRelease( it->second.color_view );
+			if( it->second.color ) wgpuTextureRelease( it->second.color );
 			if( it->second.view ) wgpuTextureViewRelease( it->second.view );
 			if( it->second.tex ) wgpuTextureRelease( it->second.tex );
-			depth_targets.erase( it );
+			it=depth_targets.erase( it );
 		}
 	}
 
@@ -448,7 +460,9 @@ public:
 		}
 		samplers.clear();
 
-		for( std::map<WebGPUCanvas*,DepthTarget>::iterator it=depth_targets.begin();it!=depth_targets.end();++it ){
+		for( std::map<std::pair<WebGPUCanvas*,int>,DepthTarget>::iterator it=depth_targets.begin();it!=depth_targets.end();++it ){
+			if( it->second.color_view ) wgpuTextureViewRelease( it->second.color_view );
+			if( it->second.color ) wgpuTextureRelease( it->second.color );
 			if( it->second.view ) wgpuTextureViewRelease( it->second.view );
 			if( it->second.tex ) wgpuTextureRelease( it->second.tex );
 		}
@@ -737,6 +751,7 @@ public:
 
 	WGPURenderPipeline getScenePipeline( int blend_mode,int zmode,bool flipped_tris,bool doublesided,bool wireframe,WGPUTextureFormat format ){
 		const bool shadow_pass=shadow_index>=0;
+		const int samples=targetSamples(target);
 		const bool pixel_lighting=frame.effects[0]>0.5f;
 		const bool atmosphere=frame.effects[1]>0.5f;
 		const bool sun_shadows=frame.shadow_params[2]>0.5f;
@@ -746,7 +761,7 @@ public:
 			|((doublesided?1u:0u)<<6)
 			|((wireframe?1u:0u)<<7)
 			|((uint32_t)format<<8)|((shadow_pass?1u:0u)<<24)
-			|((pixel_lighting?1u:0u)<<25)|((atmosphere?1u:0u)<<26)|((sun_shadows?1u:0u)<<27);
+			|((pixel_lighting?1u:0u)<<25)|((atmosphere?1u:0u)<<26)|((sun_shadows?1u:0u)<<27)|((samples==4?1u:0u)<<28);
 		std::map<uint32_t,WGPURenderPipeline>::iterator it=scene_pipelines.find( key );
 		if( it!=scene_pipelines.end() ) return it->second;
 
@@ -867,7 +882,7 @@ public:
 			ds.format=WGPUTextureFormat_Depth32Float;ds.depthWriteEnabled=WGPUOptionalBool_True;
 			ds.depthCompare=WGPUCompareFunction_LessEqual;ds.depthBias=2;ds.depthBiasSlopeScale=2;
 		}
-		desc.multisample.count=1;
+		desc.multisample.count=samples;
 		desc.multisample.mask=0xffffffff;
 		desc.fragment=&frag;
 
@@ -877,7 +892,8 @@ public:
 	}
 
 	WGPURenderPipeline getClearPipeline( bool clear_argb,bool clear_z,WGPUTextureFormat format ){
-		uint32_t key=(clear_argb?1u:0u)|((clear_z?1u:0u)<<1)|((uint32_t)format<<8);
+		const int samples=targetSamples(target);
+		uint32_t key=(clear_argb?1u:0u)|((clear_z?1u:0u)<<1)|((uint32_t)format<<8)|((samples==4?1u:0u)<<28);
 		std::map<uint32_t,WGPURenderPipeline>::iterator it=clear_pipelines.find( key );
 		if( it!=clear_pipelines.end() ) return it->second;
 
@@ -906,7 +922,7 @@ public:
 		desc.primitive.frontFace=WGPUFrontFace_CCW;
 		desc.primitive.cullMode=WGPUCullMode_None;
 		desc.depthStencil=&ds;
-		desc.multisample.count=1;
+		desc.multisample.count=samples;
 		desc.multisample.mask=0xffffffff;
 		desc.fragment=&frag;
 
@@ -976,13 +992,16 @@ public:
 
 	DepthTarget *ensureDepth( WebGPUCanvas *canvas ){
 		int w=canvas->getWidth(),h=canvas->getHeight();
+		const int samples=targetSamples(canvas);
 		if( w<=0||h<=0 ) return 0;
 
-		DepthTarget &dt=depth_targets[canvas];
-		if( dt.tex&&dt.width==w&&dt.height==h ) return &dt;
+		DepthTarget &dt=depth_targets[std::make_pair(canvas,samples)];
+		if( dt.tex&&dt.width==w&&dt.height==h&&dt.samples==samples&&dt.color_format==canvas->format() ) return &dt;
 
 		if( dt.view ){ wgpuTextureViewRelease( dt.view );dt.view=0; }
 		if( dt.tex ){ wgpuTextureRelease( dt.tex );dt.tex=0; }
+		if( dt.color_view ){ wgpuTextureViewRelease(dt.color_view);dt.color_view=0; }
+		if( dt.color ){ wgpuTextureRelease(dt.color);dt.color=0; }
 
 		WGPUTextureDescriptor d={};
 		d.label=bbStrView( "bb.3d.depth" );
@@ -991,12 +1010,19 @@ public:
 		d.size={ (uint32_t)w,(uint32_t)h,1 };
 		d.format=WGPUTextureFormat_Depth24Plus;
 		d.mipLevelCount=1;
-		d.sampleCount=1;
+		d.sampleCount=samples;
 		dt.tex=wgpuDeviceCreateTexture( res->device,&d );
 		if( !dt.tex ) return 0;
 		dt.view=wgpuTextureCreateView( dt.tex,0 );
 		dt.width=w;
 		dt.height=h;
+		dt.samples=samples;dt.color_format=canvas->format();dt.seeded=false;
+		if( samples>1 ){
+			d.label=bbStrView("bb.3d.msaa");d.format=canvas->format();
+			dt.color=wgpuDeviceCreateTexture(res->device,&d);
+			if( !dt.color ) return 0;
+			dt.color_view=wgpuTextureCreateView(dt.color,0);
+		}
 		dt.initialized=false;
 		return &dt;
 	}
@@ -1042,12 +1068,17 @@ public:
 
 		DepthTarget *dt=ensureDepth( target );
 		if( !dt||!dt->view ) return 0;
+		if( dt->samples>1 && !dt->seeded ){
+			if( !pending_clear_color && !res->seedMultisample(target,dt->color_view,dt->samples) ) return 0;
+			dt->seeded=true;
+		}
 
 		res->endPass();
 		WGPUCommandEncoder enc=res->ensureEncoder();
 
 		WGPURenderPassColorAttachment att={};
-		att.view=view;
+		att.view=dt->samples>1?dt->color_view:view;
+		att.resolveTarget=dt->samples>1?view:nullptr;
 		att.depthSlice=WGPU_DEPTH_SLICE_UNDEFINED;
 		att.loadOp=pending_clear_color?WGPULoadOp_Clear:WGPULoadOp_Load;
 		att.storeOp=WGPUStoreOp_Store;
@@ -1084,6 +1115,16 @@ public:
 	void setHWMultiTex( bool enable ){}
 	void setDither( bool enable ){}
 	void setAntialias( bool enable ){ res->antialias=enable; }
+	void setAntialiasSamples( int samples ){ res->antialias_samples=samples==4?4:1; }
+	void setAntialiasTarget( BBCanvas *canvas ){
+		antialias_target=canvas;
+		for( auto &entry:depth_targets ) entry.second.seeded=false;
+	}
+	void applyAntialias( BBCanvas *canvas ){
+		if( res->antialias && res->antialias_samples==1 && canvas ){
+			if( WebGPUCanvas *screen=dynamic_cast<WebGPUCanvas*>(canvas) ) screen->applyAntialias();
+		}
+	}
 
 	void setTextureLodBias( float bias ){
 		frame.lod_bias=bias;
@@ -1460,6 +1501,8 @@ public:
 		BBWebGPUClearState cs={};
 		cs.color[0]=rgb[0];cs.color[1]=rgb[1];cs.color[2]=rgb[2];cs.color[3]=alpha;
 		cs.z=z;
+		// Seeding may submit full 2D arenas. Do it before staging 3D uniforms.
+		if( targetSamples(target)>1 && !ensurePass() ) return;
 		uint32_t offset=pushUniforms( &cs,sizeof(cs) );
 
 		WGPURenderPassEncoder p=ensurePass();
@@ -1491,6 +1534,7 @@ public:
 			index_count=tri_cnt*6;
 		}
 		if( instance_used+sizeof(BBWebGPUInstance)>instance_capacity ) flushAll();
+		if( targetSamples(target)>1 && !ensurePass() ) return;
 
 		for( int attempt=0;attempt<4;++attempt ){
 			if( frame_dirty ){

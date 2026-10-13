@@ -2673,4 +2673,5 @@ render.water	Planar water reflections
 render.lighting	Per-pixel lighting
 render.shadows	Sun shadows
 render.atmosphere	Atmospheric shading
-render.help	Optional effects; all start off. Water retains the selected reflection resolution. Sun shadows add GPU cost. Apply takes effect immediately.
+render.antialias	Edge smoothing
+render.help	FXAA is the low-cost default. MSAA 4x keeps textures sharper at higher GPU cost. Neither filters text. Other effects start off. Apply takes effect immediately.

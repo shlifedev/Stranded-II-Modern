@@ -365,7 +365,7 @@ void World::capture(){
 
 void World::render( float tween ){
 	prepareRender( tween );
-	renderPrepared();
+	renderPrepared( true );
 }
 
 void World::renderCubeMap( Camera *camera,BBCanvas *texture,float tween ){
@@ -505,13 +505,16 @@ void World::prepareRender( float tween ){
 	for( ;ord_que.size();ord_que.pop() ) ord_mods.push_back( ord_que.top() );
 }
 
-void World::renderPrepared(){
+void World::renderPrepared( bool antialias ){
+	bbScene->setAntialiasTarget( antialias?gx_canvas:nullptr );
 	if( !bbScene->begin( _lights ) ){
+		bbScene->setAntialiasTarget( nullptr );
 		while( !cam_que.empty() ) cam_que.pop();
 		return;
 	}
 
 	BBCanvas *org_canvas=gx_canvas;
+	bool rendered_main=false;
 	for( ;cam_que.size();cam_que.pop() ){
 
 		Camera *cam=cam_que.top();
@@ -526,6 +529,7 @@ void World::renderPrepared(){
 		}
 
 		if( !bbScene->setCamera( cam,gx_canvas ) ) continue;
+		if( gx_canvas==org_canvas ) rendered_main=true;
 
 		std::vector<Mirror*>::const_iterator mir_it;
 		for( mir_it=_mirrors.begin();mir_it!=_mirrors.end();++mir_it ){
@@ -542,6 +546,9 @@ void World::renderPrepared(){
 	}
 
 	bbScene->end();
+	// Captures call renderPrepared() without this final, pre-UI screen pass.
+	if( antialias && rendered_main ) bbScene->applyAntialias( org_canvas );
+	bbScene->setAntialiasTarget( nullptr );
 
 	std::vector<Listener*>::const_iterator lis_it;
 	for( lis_it=_listeners.begin();lis_it!=_listeners.end();++lis_it ){

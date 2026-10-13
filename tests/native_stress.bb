@@ -183,6 +183,7 @@ Function bench_trial(name$,warmup,duration,screenshot)
  WriteLine stream,"time="+map_hour+","+map_minute
  WriteLine stream,"palette="+env_col(0)+","+env_col(1)+","+env_col(2)
  WriteLine stream,"renderer="+remaster_enabled(0)+","+remaster_enabled(1)+","+remaster_enabled(2)+","+remaster_enabled(3)
+ WriteLine stream,"antialias="+remaster_enabled(Cremaster_aa)
  CloseFile stream
  WriteStdout "BENCHMARK "+name$+": "+frame_index+" frames / "+finish+" ms; focus_lost="+bench_focus_lost+Chr(10)
 End Function

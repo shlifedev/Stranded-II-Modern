@@ -50,7 +50,7 @@ private:
 
 	void collide( Object *src );
 	void prepareRender( float tween );
-	void renderPrepared();
+	void renderPrepared( bool antialias=false );
 	void render( Camera *c,Mirror *m );
 	void render( Model *m,const RenderContext &rc,bool defer=false );
 	void flushOpaque();

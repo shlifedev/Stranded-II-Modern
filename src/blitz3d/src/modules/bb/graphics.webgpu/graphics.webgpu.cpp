@@ -2,6 +2,7 @@
 #include "graphics.webgpu.h"
 #include "canvas.webgpu.h"
 
+#include <algorithm>
 #include <cstring>
 #ifdef BB_EMSCRIPTEN
 #include <emscripten/heap.h>
@@ -712,8 +713,8 @@ void WebGPUContextResources::flush(){
 }
 
 
-WGPURenderPipeline WebGPUContextResources::getPipeline( WGPUPrimitiveTopology topology,bool blend,WGPUTextureFormat format ){
-	uint32_t key=(uint32_t)topology|((blend?1u:0u)<<8)|((uint32_t)format<<16);
+WGPURenderPipeline WebGPUContextResources::getPipeline( WGPUPrimitiveTopology topology,bool blend,WGPUTextureFormat format,int samples ){
+	uint32_t key=(uint32_t)topology|((blend?1u:0u)<<8)|((uint32_t)format<<16)|((samples==4?1u:0u)<<31);
 	std::map<uint32_t,WGPURenderPipeline>::iterator it=pipelines.find( key );
 	if( it!=pipelines.end() ) return it->second;
 
@@ -761,13 +762,44 @@ WGPURenderPipeline WebGPUContextResources::getPipeline( WGPUPrimitiveTopology to
 	desc.primitive.stripIndexFormat=WGPUIndexFormat_Undefined;
 	desc.primitive.frontFace=WGPUFrontFace_CCW;
 	desc.primitive.cullMode=WGPUCullMode_None;
-	desc.multisample.count=1;
+	desc.multisample.count=samples;
 	desc.multisample.mask=0xffffffff;
 	desc.fragment=&frag;
 
 	WGPURenderPipeline pipeline=wgpuDeviceCreateRenderPipeline( device,&desc );
 	pipelines[key]=pipeline;
 	return pipeline;
+}
+
+bool WebGPUContextResources::seedMultisample( WebGPUCanvas *source,WGPUTextureView target,int samples ){
+	endPass();
+	WGPUTextureView src=source->sampleView();
+	if( !src || !target ) return false;
+	if( ((vertex_used+15)&~(size_t)15)+6*sizeof(BBWebGPUVertex)>vertex_capacity ||
+	    ((uniform_used+255)&~(size_t)255)+256>uniform_capacity ) flush();
+	BBWebGPURenderState state={};
+	state.xywh[2]=state.res[0]=(float)source->getWidth();
+	state.xywh[3]=state.res[1]=(float)source->getHeight();
+	state.texscale[0]=state.texscale[1]=state.scale[0]=state.scale[1]=1.f;
+	state.color[0]=state.color[1]=state.color[2]=1.f;state.texenabled=1;
+	uint32_t uoffset=pushUniforms(state);
+	static const BBWebGPUVertex verts[6]={
+		{0.f,0.f,0.f,0.f},{0.f,1.f,0.f,1.f},{1.f,0.f,1.f,0.f},
+		{1.f,0.f,1.f,0.f},{0.f,1.f,0.f,1.f},{1.f,1.f,1.f,1.f}
+	};
+	uint32_t voffset=pushVertices(verts,6);
+	WGPURenderPassColorAttachment att={};
+	att.view=target;att.depthSlice=WGPU_DEPTH_SLICE_UNDEFINED;
+	att.loadOp=WGPULoadOp_Clear;att.storeOp=WGPUStoreOp_Store;
+	WGPURenderPassDescriptor desc={};
+	desc.label=bbStrView("bb.msaa.seed");desc.colorAttachmentCount=1;desc.colorAttachments=&att;
+	WGPURenderPassEncoder p=wgpuCommandEncoderBeginRenderPass(ensureEncoder(),&desc);
+	wgpuRenderPassEncoderSetPipeline(p,getPipeline(WGPUPrimitiveTopology_TriangleList,false,source->format(),samples));
+	wgpuRenderPassEncoderSetBindGroup(p,0,getBindGroup(src,sampler_nearest),1,&uoffset);
+	wgpuRenderPassEncoderSetVertexBuffer(p,0,vertex_buffer,voffset,sizeof(verts));
+	wgpuRenderPassEncoderDraw(p,6,1,0,0);
+	wgpuRenderPassEncoderEnd(p);wgpuRenderPassEncoderRelease(p);
+	return true;
 }
 
 WGPUBindGroup WebGPUContextResources::getBindGroup( WGPUTextureView view,WGPUSampler sampler ){
@@ -1033,9 +1065,9 @@ void WebGPUGraphics::present(){
 #ifdef BB_WINDOWS
     // Native bitmap text is already quantized to the intended RGB values.
     // Preserve it during presentation instead of adding grain to the UI.
-    state.texenabled=res.antialias?3:1;
+    state.texenabled=1;
 #else
-    state.texenabled=res.antialias?3:2;
+    state.texenabled=2;
 #endif
 	state.scale[0]=1.0f;state.scale[1]=1.0f;
 	uint32_t uoffset=res.pushUniforms( state );
@@ -1066,7 +1098,7 @@ void WebGPUGraphics::present(){
 
 	WGPURenderPassEncoder p=wgpuCommandEncoderBeginRenderPass( res.encoder,&desc );
 	wgpuRenderPassEncoderSetPipeline( p,res.getPipeline( WGPUPrimitiveTopology_TriangleList,false,res.surface_format ) );
-    bool filtered=res.antialias;
+    bool filtered=false;
 #ifdef BB_WINDOWS
     filtered=filtered || res.surface_width!=fb->getWidth() || res.surface_height!=fb->getHeight();
 #endif
@@ -1141,6 +1173,29 @@ void WebGPUGraphics::mouseToLogical(int &x,int &y)const{
     if(w>0) x=(int)((int64_t)x*window_width/w);
     if(h>0) y=(int)((int64_t)y*window_height/h);
 }
+
+#ifdef BB_WINDOWS
+bool WebGPUGraphics::absoluteMousePosition(int &x,int &y)const{
+    SDL_SysWMinfo info={};SDL_VERSION(&info.version);
+    if(!wnd || !SDL_GetWindowWMInfo(wnd,&info)) return false;
+    HWND hwnd=info.info.win.window;
+    if(GetForegroundWindow()!=hwnd || IsIconic(hwnd)) return false;
+    POINT point;
+    if(!GetCursorPos(&point) || !ScreenToClient(hwnd,&point)) return false;
+    int w=0,h=0;SDL_GetWindowSize(wnd,&w,&h);
+    if(w<=0 || h<=0) return false;
+    // Match SDL's ordinary client bounds, allowing outside coordinates while
+    // a mouse-button drag has captured the window.
+    if(!(SDL_GetWindowFlags(wnd)&SDL_WINDOW_MOUSE_CAPTURE)){
+        point.x=std::max<LONG>(0,std::min<LONG>(point.x,w-1));
+        point.y=std::max<LONG>(0,std::min<LONG>(point.y,h-1));
+    }
+    int logicalX=point.x,logicalY=point.y;
+    mouseToLogical(logicalX,logicalY);
+    x=logicalX;y=logicalY;
+    return true;
+}
+#endif
 
 BBCanvas *WebGPUGraphics::createCanvas( int width,int height,int flags ){
 	WebGPUCanvas *canvas=d_new WebGPUCanvas( &res,width,height,flags );

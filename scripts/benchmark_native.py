@@ -228,9 +228,11 @@ def run(folder, args):
     target = folder / 'runtime'
     config = target / 'core/modern.ini'
     render_flags = {key: int(key in args.render.split(',')) for key in ('water','lighting','shadows','atmosphere')}
+    antialias = {'off':0,'on':1,'msaa4x':4}[args.antialias]
     config.write_text(f'fps=144\ndisplay=borderless\nresolution=custom\nrender_width={args.width}\n'
                       f'render_height={args.height}\nlanguage=ko\ndiagnostics=0\n'
-                      + ''.join(f'render_{key}={value}\n' for key, value in render_flags.items()), encoding='utf8')
+                      + ''.join(f'render_{key}={value}\n' for key, value in render_flags.items())
+                      + f'render_antialias={antialias}\n', encoding='utf8')
     cases = scenarios(args.suite)
     if args.cases:
         selected = args.cases.split(',')
@@ -253,7 +255,8 @@ def run(folder, args):
                       int(repeat==0 and case in ('baseline','island','sky','coast','underwater','night'))]
             plan.append(','.join(map(str, values)))
             rows.append(dict(name=name, case=case, **options, width=args.width, height=args.height,
-                             warmup_seconds=args.warmup, measure_seconds=args.seconds, render=render_flags))
+                             warmup_seconds=args.warmup, measure_seconds=args.seconds, render=render_flags,
+                             antialias=antialias))
     write_json(folder / f'{prefix}plan-{args.width}x{args.height}.json', rows)
     shutil.copy2(folder / 'metadata.json', folder / f'{prefix}metadata-{args.width}x{args.height}.json')
     log = folder / f'{prefix}run-{args.width}x{args.height}.log'
@@ -284,6 +287,8 @@ def run(folder, args):
         expected_render = ','.join(str(value) for value in render_flags.values())
         if ('renderer' in meta or any(render_flags.values())) and meta.get('renderer') != expected_render:
             raise RuntimeError(f"Effective renderer enhancements differ from the plan: {row['name']}")
+        if meta.get('antialias') != str(antialias):
+            raise RuntimeError(f"Effective FXAA setting differs from the plan: {row['name']}")
     maps = target / 'mods/Stranded II/maps'
     write_json(folder / f'{prefix}scenes-{args.width}x{args.height}.json',
                {path.relative_to(target).as_posix(): engine.digest(path)
@@ -303,6 +308,7 @@ def main():
     parser.add_argument('--width', type=int, default=2048)
     parser.add_argument('--height', type=int, default=1152)
     parser.add_argument('--render', default='', help='Comma-separated enhancements: water,lighting,shadows,atmosphere')
+    parser.add_argument('--antialias', choices=('off','on','msaa4x'), default='on', help='Scene AA: off, FXAA (on), or MSAA 4x; independent of --render')
     parser.add_argument('--repeats', type=int, default=3)
     parser.add_argument('--warmup', type=int, default=3)
     parser.add_argument('--seconds', type=int, default=8)

@@ -68,6 +68,9 @@ fn fxaa( uv : vec2<f32> ) -> vec4<f32> {
   let lm = luma( m.rgb );
   let lmin = min( lm, min( min( lnw, lne ), min( lsw, lse ) ) );
   let lmax = max( lm, max( max( lnw, lne ), max( lsw, lse ) ) );
+  if( lmax - lmin < max( 1.0 / 16.0, lmax * ( 1.0 / 8.0 ) ) ){
+    return m;
+  }
   var dir = vec2<f32>( -( ( lnw + lne ) - ( lsw + lse ) ), ( lnw + lsw ) - ( lne + lse ) );
   let reduce = max( ( lnw + lne + lsw + lse ) * 0.03125, 1.0 / 128.0 );
   let rcp = 1.0 / ( min( abs( dir.x ), abs( dir.y ) ) + reduce );
@@ -87,7 +90,7 @@ fn fxaa( uv : vec2<f32> ) -> vec4<f32> {
 fn fs_main( v : BBPerVertex ) -> @location(0) vec4<f32> {
   if( RS.texenabled>=1 ){
     var c : vec4<f32>;
-    if( RS.texenabled==3 ){
+    if( RS.texenabled==3 || RS.texenabled==5 ){
       c = fxaa( v.texcoord ) * vec4<f32>( v.color,1.0 );
     }else if( RS.texenabled==4 ){
       c = vec4<f32>( v.color, textureSample( u_tex,u_sampler,v.texcoord ).r );

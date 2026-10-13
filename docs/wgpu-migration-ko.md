@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"abd784a8ebf7b4eabe30cd8569aa8f68935e139aa63cd688953fd8aec1b790d1"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"50348aeae0ac47cd146a69dd258de61b4eaf89d6a45c27918b0b4c36074f54be"} -->
 
 # Stranded II의 wgpu/WebGPU 크로스플랫폼 렌더러 마이그레이션
 
@@ -95,7 +95,11 @@ WebGPU 구현체와 플랫폼 surface
 
 ### 2.2 선택형 그래픽 개선
 
-두 에디션은 [remaster.bb](../src/engine/includes/remaster.bb)의 개별 옵션을 공유하며 기본값은 모두 끔입니다.
+두 에디션은 [remaster.bb](../src/engine/includes/remaster.bb)의 개별 옵션을 공유합니다. 장면 FXAA는 기본 켜짐이며 계단현상 완화에는 끔과 MSAA 4x도 제공합니다. 다른 개선 효과는 기본 끔입니다.
+
+- 계단현상 완화: `render_antialias=1`은 일반 `RenderWorld` 후 비트맵 글자·HUD를 그리기 전에 FXAA를 한 번 적용합니다. `AntiAlias(0|1)`은 기존 끔/FXAA 동작을 유지하며 `AntiAlias(4)`는 MSAA 4x를 선택합니다. 선택형 `BBScene::applyAntialias(BBCanvas*)` 훅에서 FXAA 패스를 실행합니다. 평면·큐브 반사와 그림자 캡처는 제외합니다. `CopyRect`와 공유하는 재사용 GPU 스냅샷을 읽고 알파를 보존하며 디더링이나 GPU 완료 대기는 추가하지 않습니다. 밝기 범위가 `max(1/16, 최대 밝기 × 1/8)`보다 작은 저대비 픽셀은 원래 색을 반환합니다. 이동 중 가는 풀잎의 반짝임은 남을 수 있습니다.
+
+MSAA는 주 화면에 색상·깊이 4샘플 attachment와 샘플 수별 그리기·지우기 파이프라인을 사용하며 UI 전에 단일 샘플 화면으로 합칩니다. 반사 캡처 때마다 재생성하지 않도록 1샘플·4샘플 버퍼를 별도 캐시합니다. 부분 지우기나 색상을 지우지 않는 경우 첫 패스 전에 기존 화면을 다중 샘플 색상 버퍼에 복사합니다. MSAA에는 FXAA를 겹쳐 적용하지 않습니다. GPU·메모리 비용은 늘지만 alpha-to-coverage를 추가하거나 알파 테스트 의미를 바꾸지 않습니다. 고정한 Dawn 구현은 샘플 수 1과 4만 허용하므로 2x·8x는 제공하지 않습니다.
 
 - 물: `RenderWorldPlanar`가 원본 카메라를 수평면에 반사해 수중 기하를 잘라냅니다. 카메라와 자식을 이동하지 않고 원본 종횡비를 유지합니다. 물 셰이더는 투영 좌표 샘플링과 절차적 파도 왜곡을 사용합니다. Fresnel 불투명도는 평균 수평면 기준으로 계산해, 비스듬한 시야에서 파도마다 반사가 밝고 어두운 띠로 변하지 않게 합니다. 반사 품질·갱신 주기는 기존 물 설정을 따르며 반사가 없는 품질에서는 파도 음영만 사용합니다.
 - 조명: 픽셀 단위 diffuse/specular와 시간에 따라 움직이는 방향성 태양광을 선택할 수 있습니다. 대기 음영은 기존 게임 색상을 사용해 반구형 주변광과 픽셀 단위 선형 안개를 추가합니다.
@@ -367,7 +371,7 @@ blend·depth·topology·front face·culling·target format은 pipeline에 들어
 
 alpha channel의 blend factor는 RGB와 별도로 설정합니다. `BLEND_ALPHA`의 alpha는 `src.a + dst.a*(1-src.a)`입니다. depth texture는 canvas별 `Depth24Plus`를 생성·재사용합니다. `Depth24Plus`는 특정 플랫폼의 고정 24-bit 저장 형식을 애플리케이션에 보장하는 이름으로 해석하지 않습니다.
 
-3D sample count는 **1**입니다. `setAntialias()`는 공통 presentation의 FXAA 선택에 연결되므로 현재 anti-alias 설정을 MSAA라고 설명하면 부정확합니다. wireframe은 native polygon mode를 요구하지 않고 triangle마다 3개 edge를 line-list index buffer로 생성합니다.
+3D sample count는 끔/FXAA와 캡처에서 **1**, MSAA 모드의 주 화면에서 **4**입니다. `setAntialias()`로 계단현상 완화를 켜며 `setAntialiasSamples(4)`로 MSAA를 선택합니다. 일반 월드 렌더링 경로는 `setAntialiasTarget()`으로 주 화면을 전달합니다. FXAA는 별도 후처리이며 MSAA로 설명하면 안 됩니다. wireframe은 native polygon mode를 요구하지 않고 triangle마다 3개 edge를 line-list index buffer로 생성합니다.
 
 ## 11. command encoder와 GPU queue의 순서를 구분합니다
 
@@ -546,7 +550,7 @@ uncaptured error와 device loss callback은 원인을 로그에 남깁니다. su
 
 게임은 offscreen framebuffer에 3D 장면과 2D UI를 그린 뒤 `WebGPUGraphics::present()`에서 surface에 전체 화면 quad를 그립니다. 게임의 선택 해상도와 실제 Windows borderless 창 크기가 다르면 surface를 창 크기로 configure하고 linear sampling으로 확대합니다. 게임 내부의 좌표·렌더 해상도와 출력 surface 크기를 분리한 구조입니다.
 
-presentation에서는 선택에 따라 FXAA와 dithering을 적용합니다. Windows의 기본 bitmap UI 출력은 불필요한 dithering을 더하지 않는 경로를 사용합니다. 네이티브는 submit 후 `wgpuSurfacePresent()`를 호출하고 surface texture/view를 해제합니다. 웹은 브라우저 canvas presentation 경로를 사용하며 명시적인 네이티브 `wgpuSurfacePresent()` 호출을 하지 않습니다.
+presentation은 완성된 장면과 UI에 FXAA를 다시 적용하지 않습니다. Windows bitmap UI에는 dithering을 추가하지 않으며 다른 플랫폼은 기존 presentation dithering을 유지합니다. 네이티브는 submit 후 `wgpuSurfacePresent()`를 호출하고 surface texture/view를 해제합니다. 웹은 브라우저 canvas presentation 경로를 사용하며 명시적인 네이티브 `wgpuSurfacePresent()` 호출을 하지 않습니다.
 
 `Flip`의 native present mode는 vsync 요청이면 `Fifo`, 아니면 capabilities에서 지원하는 `Immediate`·`Mailbox` 등의 선택 결과를 사용합니다. 지원되는 unsynced mode가 없으면 `Fifo`가 남습니다. 웹 `Flip`은 필요할 때 `requestAnimationFrame`을 기다리거나 `emscripten_sleep(0)`으로 yield합니다. 브라우저와 OS의 실제 presentation scheduling까지 게임이 독점하는 구조는 아닙니다.
 

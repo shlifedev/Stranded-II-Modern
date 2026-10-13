@@ -2,6 +2,7 @@
 #include <bb/input/input.h>
 #include <bb/runtime/runtime.h>
 #include <bb/blitz3d/blitz3d.h>
+#include <bb/event/event.h>
 #include <SDL.h>
 #include <cstdio>
 #include <cstring>
@@ -19,6 +20,35 @@ public:
     int toAscii(int code)const override{ return original->toAscii(code); }
     bool usesRelativeMouse()const override{ return true; }
 };
+
+// Substitute only the cursor query and capture state. No window, OS input or
+// clock hook is installed; the production queue, polling and commands run.
+class AbsoluteInputDriver : public RelativeInputDriver{
+public:
+    bool available=false,relative=false;
+    int x=0,y=0;
+    mutable int queries=0;
+    explicit AbsoluteInputDriver(BBInputDriver *original):RelativeInputDriver(original){}
+    bool usesRelativeMouse()const override{ return relative; }
+    bool absoluteMousePosition(int &outX,int &outY)const override{
+        ++queries;
+        if(!available) return false;
+        outX=x;outY=y;
+        return true;
+    }
+};
+
+static Uint32 messageTime,warpTime;
+static int skewedWarpFilter(void *,SDL_Event *event){
+    // Model SDL's Windows pre-queue cutoff with real message time and an
+    // accelerated warp timestamp retained after returning to 1x.
+    return event->type!=SDL_MOUSEMOTION || SDL_TICKS_PASSED(messageTime,warpTime+1);
+}
+static int physicalMoves=0;
+static void countPhysicalMoves(void *data,void *){
+    auto event=static_cast<BBEvent*>(data);
+    if(event->id==BBEVENT_MOUSEMOVE && event->data==0) ++physicalMoves;
+}
 
 static int failures=0;
 static void expect(const char *name,int actual,int expected){
@@ -48,6 +78,80 @@ static void motion(int x,int y){
     event.motion.x=x;event.motion.y=y;
     expect("queue motion",SDL_PushEvent(&event),1);
 }
+
+static void absoluteCursorChecks(BBInputDriver *original){
+    AbsoluteInputDriver absolute(original);
+    gx_input=&absolute;
+    bbOnEvent.add(countPhysicalMoves,nullptr);
+    SDL_SetEventFilter(skewedWarpFilter,nullptr);
+    for(int speed: {2,3,5,10}) for(int duration: {1000,10000}){
+        absolute.available=false;
+        bbMoveMouse(400,300);
+        messageTime=100000;warpTime=messageTime+(speed-1)*duration;
+        SDL_Event dropped={};dropped.type=SDL_MOUSEMOTION;
+        dropped.motion.x=423;dropped.motion.y=325;
+        expect("future warp cutoff drops SDL motion",SDL_PushEvent(&dropped),0);
+        // Negative control: without the query, the original cursor is stuck.
+        expect("event-only cursor remains stuck horizontally",bbMouseX(),400);
+        expect("event-only cursor remains stuck vertically",bbMouseY(),300);
+        absolute.available=true;absolute.x=423;absolute.y=325;
+        int before=physicalMoves;
+        expect("cursor immediately follows query after 1x return",bbMouseX(),423);
+        expect("vertical cursor immediately follows query",bbMouseY(),325);
+        expect("unchanged position emits only one move",physicalMoves-before,1);
+        expect("absolute horizontal speed remains physical",bbMouseXSpeed(),23);
+        expect("absolute vertical speed remains physical",bbMouseYSpeed(),25);
+        expect("queried horizontal speed consumed once",bbMouseXSpeed(),0);
+        expect("queried vertical speed consumed once",bbMouseYSpeed(),0);
+        // Time is still behind the cutoff, but further movement cannot stall.
+        messageTime+=10;
+        expect("next SDL motion is still rejected",SDL_PushEvent(&dropped),0);
+        absolute.x=419;absolute.y=328;
+        expect("reverse horizontal movement is immediate",bbMouseXSpeed(),-4);
+        expect("further vertical movement is immediate",bbMouseYSpeed(),3);
+    }
+    SDL_SetEventFilter(nullptr,nullptr);
+
+    SDL_Event event={};event.type=SDL_MOUSEBUTTONDOWN;event.button.button=SDL_BUTTON_LEFT;
+    expect("queue drag press",SDL_PushEvent(&event),1);
+    absolute.x=450;absolute.y=340;
+    expect("drag press survives cursor query",bbMouseDown(1),1);
+    expect("drag horizontal position follows query",bbMouseX(),450);
+    expect("drag vertical position follows query",bbMouseY(),340);
+    expect("drag hit delivered once",bbMouseHit(1),1);
+    expect("drag hit not duplicated",bbMouseHit(1),0);
+    event.type=SDL_MOUSEBUTTONUP;
+    expect("queue drag release",SDL_PushEvent(&event),1);
+    expect("drag release survives cursor query",bbMouseDown(1),0);
+    event={};event.type=SDL_MOUSEWHEEL;event.wheel.y=2;
+    expect("queue wheel",SDL_PushEvent(&event),1);
+    expect("wheel survives cursor query",bbMouseZSpeed(),2);
+    expect("wheel consumed once",bbMouseZSpeed(),0);
+
+    absolute.available=false;
+    expect("failed query preserves horizontal position",bbMouseX(),450);
+    expect("failed query preserves vertical position",bbMouseY(),340);
+    motion(455,345);
+    expect("unavailable query retains SDL fallback",bbMouseX(),455);
+    expect("SDL vertical fallback retained",bbMouseY(),345);
+    absolute.available=true;absolute.x=460;absolute.y=350;
+    expect("query resumes after focus/read recovery",bbMouseX(),460);
+    expect("vertical query resumes after recovery",bbMouseY(),350);
+
+    absolute.relative=true;
+    bbMoveMouse(400,300);bbResetMouseSpeed();
+    int queries=absolute.queries;
+    motion(401,299);
+    expect("raw horizontal motion not overwritten",bbMouseXSpeed(),1);
+    expect("raw vertical motion not overwritten",bbMouseYSpeed(),-1);
+    expect("relative mode never queries absolute position",absolute.queries,queries);
+    absolute.relative=false;absolute.x=480;absolute.y=360;
+    expect("menu cursor resumes after raw capture",bbMouseX(),480);
+    expect("menu vertical position resumes",bbMouseY(),360);
+    bbOnEvent.remove(countPhysicalMoves,nullptr);
+    gx_input=original;
+}
+
 int main(){
     SDL_SetMainReady();
     bbStartup("runtime-input-check","");
@@ -149,6 +253,8 @@ int main(){
     expect("absolute-mode warp retains legacy horizontal reset",bbMouseXSpeed(),0);
     expect("absolute-mode warp retains legacy vertical reset",bbMouseYSpeed(),0);
 
+    absoluteCursorChecks(original);
+
     // The actual rotation commands must retain the game's smallest sensitivity
     // increment (0.02 degrees) through repeated Euler/quaternion conversions.
     Entity *camera=bbCreatePivot(nullptr);
@@ -162,6 +268,6 @@ int main(){
     bbFreeEntity(camera);
     bbruntime_destroy();
     if(failures) return 1;
-    std::puts("PASS: native SDL keyboard, console text, slow mouse counts and sub-degree rotation (no window)");
+    std::puts("PASS: native SDL keyboard, console text, slow mouse counts, absolute cursor recovery under simulated clock skew and sub-degree rotation (no window)");
     return 0;
 }

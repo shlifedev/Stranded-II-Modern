@@ -1079,6 +1079,88 @@ static void checkWaterCoverage(WebGPUContextResources &res){
     scene.freeMesh(mesh);gx_canvas=nullptr;
 }
 
+static void checkAntialias(WebGPUContextResources &res){
+    struct ReadbackCanvas : WebGPUCanvas{
+        using WebGPUCanvas::WebGPUCanvas;
+        using WebGPUCanvas::readPixels;
+    };
+    struct CheckedScene : WebGPUScene{
+        unsigned aaCalls=0;
+        CheckedScene(WebGPUContextResources *res):WebGPUScene(res){}
+        void applyAntialias(BBCanvas *canvas) override{
+            ++aaCalls;WebGPUScene::applyAntialias(canvas);
+        }
+    };
+    ReadbackCanvas target(&res,64,64,BBCanvas::CANVAS_TEX_VIDMEM);
+    CheckedScene scene(&res);
+    std::vector<unsigned char> input(64*64*4),actual;
+    for(int y=0;y<64;++y) for(int x=0;x<64;++x){
+        int i=(y*64+x)*4;
+        input[i]=input[i+1]=input[i+2]=x>16+y/2?255:0;
+        input[i+3]=73;
+    }
+    target.uploadRGBA(input.data(),64,64);
+    scene.setAntialias(false);scene.applyAntialias(&target);target.readPixels(actual);
+    expect(actual==input,"FXAA OFF preserves original pixels exactly");
+    scene.setAntialias(true);scene.applyAntialias(&target);target.readPixels(actual);
+    unsigned softened=0;bool alpha=true;
+    for(size_t i=0;i<input.size();i+=4){
+        if(actual[i]>0 && actual[i]<255) ++softened;
+        alpha&=actual[i+3]==input[i+3];
+    }
+    expect(softened>30,"FXAA smooths a stair-stepped diagonal with intermediate edge pixels");
+    expect(alpha,"FXAA preserves source alpha");
+    expectPixel("FXAA preserves flat black",target.getPixel(1,1),0,0,0);
+    expectPixel("FXAA preserves flat white",target.getPixel(62,62),255,255,255);
+    // A one-pixel bitmap/HUD stroke is drawn after AA, then copied. The
+    // reused snapshot must not return pixels from before the HUD draw.
+    target.setColor(0xffabcdef);target.rect(2,2,1,15,true);
+    target.blit(40,1,&target,2,2,1,15,true);
+    expectPixel("post-FXAA one-pixel HUD remains sharp",target.getPixel(2,5),171,205,239);
+    expectPixel("CopyRect after FXAA refreshes its snapshot",target.getPixel(40,5),171,205,239);
+    for(size_t i=0;i<input.size();i+=4){
+        input[i]=input[i+1]=input[i+2]=input[i]?129:128;
+    }
+    target.uploadRGBA(input.data(),64,64);scene.applyAntialias(&target);target.readPixels(actual);
+    expect(actual==input,"low-contrast early exit preserves pixels without dithering");
+    target.resize(32,48,1);
+    input.assign(32*48*4,73);
+    target.uploadRGBA(input.data(),32,48);scene.applyAntialias(&target);target.readPixels(actual);
+    expect(actual==input,"FXAA recreates snapshots after resolution changes");
+    scene.setAntialias(true);bbScene=&scene;gx_canvas=&target;
+    {
+        World world;Camera camera,second;
+        WebGPUCanvas other(&res,32,48,BBCanvas::CANVAS_TEX_VIDMEM);
+        WebGPUCanvas reflection(&res,32,48,BBCanvas::CANVAS_TEXTURE|BBCanvas::CANVAS_TEX_RGB);
+        camera.setViewport(0,0,32,48);camera.setCanvas(&target);
+        second.setViewport(0,0,32,48);second.setCanvas(&other);
+        scene.aaCalls=0;world.render(1);
+        expect(scene.aaCalls==1,"RenderWorld applies FXAA once after all cameras");
+        world.renderCubeMap(&camera,&reflection,1);
+        world.renderPlanar(&camera,&reflection,0,1);
+        world.renderShadows(&camera,nullptr,0,1);
+        expect(scene.aaCalls==1,"reflection and shadow captures bypass screen FXAA");
+        scene.setAntialiasSamples(4);
+        camera.setProjMode(Camera::PROJ_ORTHO);
+        camera.setClsColor(Vector(0,0,0));
+        CheckedMeshModel diagonal;
+        diagonal.setColor(Vector(1,1,1));
+        diagonal.setLocalPosition(Vector(0,0,5));
+        diagonal.setLocalRotation(rotationQuat(0,0,0.37f));
+        world.render(1);target.readPixels(actual);
+        unsigned covered=0;
+        for(size_t i=0;i<actual.size();i+=4) if(actual[i]>0 && actual[i]<255) ++covered;
+        expect(covered>5,"MSAA 4x resolves geometric edge coverage without FXAA");
+        expectPixel("MSAA keeps opaque interior white",target.getPixel(16,24),255,255,255);
+        scene.setAntialiasSamples(1);scene.setAntialias(false);
+        world.render(1);target.readPixels(actual);
+        covered=0;
+        for(size_t i=0;i<actual.size();i+=4) if(actual[i]>0 && actual[i]<255) ++covered;
+        expect(covered==0,"switching MSAA OFF restores single-sample geometry");
+    }
+    res.antialias=false;res.antialias_samples=1;bbScene=nullptr;gx_canvas=nullptr;
+}
+
 int main(){
     std::setvbuf(stdout,nullptr,_IONBF,0);
     checkFrustum();
@@ -1097,6 +1179,7 @@ int main(){
     checkRotatingVisibility(res);
     checkOffscreenShadows(res);
     checkWaterCoverage(res);
+    checkAntialias(res);
     res.destroy();
     std::printf("%d rendering failures (offscreen, no window)\n",failures);
     return failures?1:0;

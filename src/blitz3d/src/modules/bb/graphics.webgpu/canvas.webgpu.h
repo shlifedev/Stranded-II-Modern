@@ -97,6 +97,7 @@ public:
 	void getClsColorf( float col[4] )const;
 
 	void ensureTexture();
+	void applyAntialias();
 
 	void set();
 	void unset();

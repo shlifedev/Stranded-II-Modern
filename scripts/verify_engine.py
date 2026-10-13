@@ -45,7 +45,7 @@ def check_input(output):
                env=engine.environment())
     engine.install_windows_runtime(directory)
     execute(directory / 's2_input_check.exe', output, 'input')
-    return 'SDL keyboard, console text, slow mouse counts and sub-degree rotation passed (no window)'
+    return 'SDL keyboard, console text, slow mouse counts, absolute cursor recovery with simulated clock skew and cursor queries, and sub-degree rotation passed (no window or OS input)'
 
 
 def check_render(output):
@@ -56,7 +56,7 @@ def check_render(output):
                env=engine.environment())
     engine.install_windows_runtime(directory)
     execute(directory / 's2_render_check.exe', output, 'render', timeout=180)
-    return 'D3D12 materials, transparency, instancing, mesh versions, terrain normals, planar/cube capture, stable water coverage, per-pixel lighting and alpha-tested cascaded shadows passed (no window)'
+    return 'D3D12 materials, transparency, instancing, mesh versions, terrain normals, planar/cube capture, stable water coverage, per-pixel lighting, alpha-tested cascaded shadows and scene FXAA with sharp HUD passed (no window)'
 
 
 def main():

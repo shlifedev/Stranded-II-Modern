@@ -68,6 +68,7 @@ struct WebGPUContextResources{
 	WGPUQueue queue=0;
 	WGPUSurface surface=0;
 	bool antialias=false;
+	int antialias_samples=1;
 	WGPUTextureFormat surface_format=WGPUTextureFormat_BGRA8Unorm;
 	WGPUPresentMode present_mode=WGPUPresentMode_Fifo;
 	WGPUPresentMode unsynced_mode=WGPUPresentMode_Fifo;
@@ -141,7 +142,8 @@ struct WebGPUContextResources{
 	void endPass();
 	void flush();
 
-	WGPURenderPipeline getPipeline( WGPUPrimitiveTopology topology,bool blend,WGPUTextureFormat format );
+	WGPURenderPipeline getPipeline( WGPUPrimitiveTopology topology,bool blend,WGPUTextureFormat format,int samples=1 );
+	bool seedMultisample( WebGPUCanvas *source,WGPUTextureView target,int samples );
 	WGPUBindGroup getBindGroup( WGPUTextureView view,WGPUSampler sampler );
 	uint32_t pushVertices( const BBWebGPUVertex *verts,int count );
 	uint32_t pushUniforms( const BBWebGPURenderState &state );
@@ -210,6 +212,9 @@ public:
 
 	void moveMouse( int x,int y );
     void mouseToLogical(int &x,int &y)const;
+#ifdef BB_WINDOWS
+    bool absoluteMousePosition(int &x,int &y)const;
+#endif
 
 	BBCanvas *createCanvas( int width,int height,int flags );
 	BBCanvas *loadCanvas( const std::string &file,int flags );

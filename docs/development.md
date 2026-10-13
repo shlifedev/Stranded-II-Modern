@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"39889c9be4ba0abd6426ae632ac7f22ef9fd0a862a29e9e0d90a47acc4d93c5e"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"a4ebcf8c1438d31e143cdb0fcc552400fa53b006860ad2f3563b3311e7eb92b8"} -->
 
 # Development guide
 
@@ -92,7 +92,7 @@ You can also launch directly through Python:
 
 ## Native rendering benchmark
 
-Both Windows editions expose Settings → Graphics enhancements. The independent `render_water`, `render_lighting`, `render_shadows` and `render_atmosphere` flags in each runtime's `core/modern.ini` default to `0`; applying changes updates the current scene. Water uses the existing reflection resolution and cadence. Shadows increase rendering cost. The FPS selector also offers Unlimited (`fps=0`, or `-fps 0`); 60/120/144 remain available, and display/FPS changes still require restart.
+Both Windows editions expose Settings → Graphics enhancements. `render_antialias` selects off (`0`), low-cost FXAA (`1`, default), or sharper MSAA 4x (`4`). Saved selections are preserved; missing or invalid values use `1`. FXAA runs once after ordinary `RenderWorld`; MSAA renders the main canvas with four colour/depth samples and resolves before bitmap text and HUD. Both skip reflection/shadow captures; MSAA does not also apply FXAA and costs more GPU time and memory. The independent `render_water`, `render_lighting`, `render_shadows` and `render_atmosphere` flags default to `0`. Applying changes updates the current scene only after settings save successfully. Water uses the existing reflection resolution and cadence; shadows increase rendering cost. The FPS selector offers Unlimited (`fps=0`, or `-fps 0`) and 60/120/144; display/FPS changes still require restart.
 
 On Windows, prepare the selected edition's runtime, then run the isolated benchmark. It generates and reloads seeded `.s2` stress maps with 0/256/768/1536 trees and rocks, and also tests the first adventure island. It uses the real game loop, native renderer and clock. Camera position and input are fixed; no GUI operation is needed. Existing games, saves and settings are preserved.
 
@@ -109,7 +109,7 @@ Trials are in `build/benchmark-<name>/results.json`; `summary.json` contains eac
 
 Only the test copy continues rendering without focus; minimize it and the trial is rejected. Background results measure completed rendering throughput, not foreground presentation or display scanout FPS. Compare options under the same conditions and inspect captures; this does not verify input response, camera movement or full gameplay.
 
-`--render` enables only the listed enhancements in the disposable runtime. Omit it for the original rendering path. The plan records those flags; compare matching scene, resolution and graphics settings when evaluating a 144 FPS target.
+`--render` enables only the listed water/lighting/shadow/atmosphere enhancements in the disposable runtime. Anti-aliasing is independent and defaults to FXAA (`--antialias on`); choose `--antialias off` or `--antialias msaa4x` for comparisons. The plan and measured metadata record both choices. Compare matching scene, resolution and graphics settings when evaluating a 144 FPS target.
 
 ## Experimental WebGPU build
 
@@ -259,6 +259,8 @@ The native search bridge translates and dispatches messages only for its Unicode
 
 Windows enables relative mouse input only during gameplay camera control. `MoveMouse` then shifts the virtual origin without warping the OS cursor, preserving unread motion received after the last `MouseXSpeed` or `MouseYSpeed` call. Old motion is discarded only on capture or focus transitions. Menus, the console and search release capture. Return and keypad Enter produce the original Blitz character code 13. If borderless mode scales the selected render resolution, presentation uses linear filtering and mouse positions are mapped back to that render resolution.
 
+Menu cursors read the current Windows cursor position in the active game window and convert it to render coordinates. Coordinates still update when external speed tools put `GetTickCount` and Windows message timestamps on different timelines, causing SDL to discard motion events. The query is skipped during relative input, search focus, focus loss or minimization. Game time retains the existing QPC path.
+
 Resources are prepared in this order: official input, localization preparation, shared overrides, then the selected edition's overrides. Place edition overrides at runtime-relative `mods/Stranded II/...` paths. Write item, recipe, building, stat, map, and script rebalancing in Extended overrides. Overrides cannot replace settings, saves, or executables. Follow the [resource localization binary rules](#localizing-new-text-and-resources) for `.s2` edits. See the [localization guide](localization.md#edition-specific-translations) for edition translations.
 
 All development commands accept `--edition classic|extended` and default to Stranded II. Dependencies and the compiler are shared; runtime folders, reports, and verification artifacts are separate. Stranded II data is neither moved nor automatically copied to Extended.
@@ -322,7 +324,7 @@ For game-code changes, run `build` and `check`, then verify the changed feature 
 
 For movement and collision changes, run `verify_collisions.py` for both editions. Extended uses `--edition extended` and writes results to `build/extended/collision-smoke-*/`. The check uses real terrain and rock models with 60/120/144 Hz and 100ms time steps and sends no GUI input. Actual rendering FPS and the user's reported location require separate verification. The existing `diagnostics=1` option in `core/modern.ini` logs requested/resolved movement, terrain correction, contact points/normals and rejected moves to `core/modern.log` at most four times per second.
 
-`check` compares the native ABI with the frozen original Blitz3D 1.118 output and tests timers, parsers, save-file handling and related behavior without rendering. It also exercises actual settings saves and reloads to check that every view-distance level applies consistently. `python scripts/verify_engine.py --input` checks console character codes, held keys, committed text and mouse event delivery through the real SDL queue without a window or OS input. With only capture state substituted, it also checks single counts arriving between reads and recentering, independent axis consumption, direction reversal and 0.02-degree rotation.
+`check` compares the native ABI with the frozen original Blitz3D 1.118 output and tests timers, parsers, save-file handling and related behavior without rendering. It also exercises actual settings saves and reloads to check that every view-distance level applies consistently. `python scripts/verify_engine.py --input` checks console character codes, held keys, committed text and mouse event delivery through the real SDL queue without a window or OS input. With capture state substituted, it also checks single counts arriving between reads and recentering, independent axis consumption, direction reversal and 0.02-degree rotation. A substituted cursor query and simulated timestamp offsets after 1 or 10 seconds at 2×/3×/5×/10× check immediate coordinate recovery despite discarded motion, deduplication, drags, clicks, wheels and query failures. Actual Cheat Engine use, Win32 cursor queries and focus transitions require separate verification.
 
 `python scripts/verify_engine.py --render` draws into textures using a real D3D12 device and the engine shaders without a window, checking matte/specular colours, textures, fog, distance fade, instanced transparency, alpha-test silhouettes and depth order across cameras. It also compares optimized frustum tests against transformed bounding-box corners and the legacy calculation. Six-view capture checks compare pixels with individual legacy renders and cover preparation counts, scene changes between calls, camera children and tween values. Specular lighting follows the original D3D7 material strength and exponent and is added after texturing. `--graphics` additionally checks D3D12 drawing, pixel readback and graphics-context lifetime in an isolated fixture with a window. Actual rendering FPS, raw mouse response, Alt-Tab, visual smoothness, and full progression require separate in-game checks.
 
@@ -341,7 +343,7 @@ Choose relevant checks for the change and verify them in the game:
 - Frame rate/display: movement and time progression at 60/120/144 FPS, repeated Alt-Tab, recovery after an extended time in the background, and relevant multiple-monitor/DPI environments.
 - Display settings: 800×600 and Fit monitor, cancel/apply/restart, and actual rendering size on monitors larger than 2048 pixels.
 - Save features: quick save/load keys, five-slot rotation after at least six autosaves, main-menu Continue, and recovery by copying `.bak` to a separate name.
-- External speed changes: return to normal speed from Cheat Engine 3×, 5×, and 10×, comparing smoothness and frame records with `diagnostics=1`.
+- External speed changes: use Cheat Engine 2×/3×/5×/10× for 1 and 10 seconds, return to 1× and check immediate menu/inventory cursor movement, camera control, dragging, Alt-Tab and frame records with `diagnostics=1`.
 
 When sharing results, include the build, display settings, actions checked, and remaining checks. Automated checks passing does not establish full-playthrough coverage or display recovery on every PC.
 

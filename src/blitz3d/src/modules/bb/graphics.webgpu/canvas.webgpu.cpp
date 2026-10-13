@@ -751,6 +751,61 @@ void WebGPUCanvas::releaseBlitSnapshot(){
 	}
 }
 
+void WebGPUCanvas::applyAntialias(){
+	if( !res->device || width<=0 || height<=0 ) return;
+	// Read a snapshot, never the colour attachment being written. Reuse the
+	// CopyRect allocation but invalidate its source-region cache after this draw.
+	res->endPass();
+	WGPUTextureView dst=targetView();
+	if( !dst ) return;
+	consumeClearPending();
+	if( ((res->vertex_used+15)&~(size_t)15)+6*sizeof(BBWebGPUVertex)>res->vertex_capacity ||
+	    ((res->uniform_used+255)&~(size_t)255)+256>res->uniform_capacity ) res->flush();
+	if( !blit_view || blit_width!=width || blit_height!=height || blit_format!=format() ){
+		releaseBlitSnapshot();
+		WGPUTextureDescriptor desc={};
+		desc.label=bbStrView( "bb.screen.snapshot" );
+		desc.usage=WGPUTextureUsage_TextureBinding|WGPUTextureUsage_CopyDst;
+		desc.dimension=WGPUTextureDimension_2D;
+		desc.size={ (uint32_t)width,(uint32_t)height,1 };
+		desc.format=format();desc.mipLevelCount=1;desc.sampleCount=1;
+		blit_texture=wgpuDeviceCreateTexture( res->device,&desc );
+		blit_view=wgpuTextureCreateView( blit_texture,0 );
+		blit_width=width;blit_height=height;blit_format=format();
+	}
+	blit_snapshot_valid=false;
+	res->ensureEncoder();
+	WGPUTexelCopyTextureInfo from={},to={};
+	from.texture=is_surface?res->surface_texture:texture;from.aspect=WGPUTextureAspect_All;
+	to.texture=blit_texture;to.aspect=WGPUTextureAspect_All;
+	WGPUExtent3D extent={ (uint32_t)width,(uint32_t)height,1 };
+	wgpuCommandEncoderCopyTextureToTexture( res->encoder,&from,&to,&extent );
+	BBWebGPURenderState state={};
+	state.xywh[2]=state.res[0]=(float)width;
+	state.xywh[3]=state.res[1]=(float)height;
+	state.texscale[0]=state.texscale[1]=state.scale[0]=state.scale[1]=1.f;
+	state.color[0]=state.color[1]=state.color[2]=1.f;
+	state.texenabled=5; // FXAA only; no UI dithering, colour key or blending.
+	uint32_t uoffset=res->pushUniforms(state);
+	static const BBWebGPUVertex verts[6]={
+		{0.f,0.f,0.f,0.f},{0.f,1.f,0.f,1.f},{1.f,0.f,1.f,0.f},
+		{1.f,0.f,1.f,0.f},{0.f,1.f,0.f,1.f},{1.f,1.f,1.f,1.f}
+	};
+	uint32_t voffset=res->pushVertices(verts,6);
+	WGPURenderPassColorAttachment att={};
+	att.view=dst;att.depthSlice=WGPU_DEPTH_SLICE_UNDEFINED;
+	att.loadOp=WGPULoadOp_Load;att.storeOp=WGPUStoreOp_Store;
+	WGPURenderPassDescriptor desc={};
+	desc.label=bbStrView("bb.fxaa");desc.colorAttachmentCount=1;desc.colorAttachments=&att;
+	WGPURenderPassEncoder pass=wgpuCommandEncoderBeginRenderPass(res->encoder,&desc);
+	wgpuRenderPassEncoderSetPipeline(pass,res->getPipeline(WGPUPrimitiveTopology_TriangleList,false,format()));
+	wgpuRenderPassEncoderSetBindGroup(pass,0,res->getBindGroup(blit_view,res->sampler_linear),1,&uoffset);
+	wgpuRenderPassEncoderSetVertexBuffer(pass,0,res->vertex_buffer,voffset,sizeof(verts));
+	wgpuRenderPassEncoderDraw(pass,6,1,0,0);
+	wgpuRenderPassEncoderEnd(pass);wgpuRenderPassEncoderRelease(pass);
+	pixmap_stale=true;gpu_written=true;hit_valid=false;
+}
+
 bool WebGPUCanvas::blitSelf( int x,int y,int src_x,int src_y,int src_w,int src_h,bool solid ){
 	// Keep scaled/clamped sampling on the original path. Integer CopyRect
 	// strips can share a snapshot whenever their sources are still unchanged.

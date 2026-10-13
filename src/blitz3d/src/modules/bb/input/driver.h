@@ -18,6 +18,7 @@ public:
   virtual int numJoysticks()const=0;
   virtual int toAscii( int key )const=0;
   virtual bool usesRelativeMouse()const{ return false; }
+  virtual bool absoluteMousePosition(int &x,int &y)const{ return false; }
 };
 
 

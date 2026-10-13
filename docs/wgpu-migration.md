@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"2e8a6fbcc1ff8d49fe4b26f41510ada43c43cc9ee4f048330ce1195b9c8b57e0"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"7d80f2c664d465ed1eb8fd6a9271a632f0ed4875479bb9e1203c93a14dc392ec"} -->
 
 # Stranded II's wgpu/WebGPU cross-platform renderer migration
 
@@ -95,7 +95,11 @@ WebGPU implementation and platform surface
 
 ### 2.2 Optional graphics enhancements
 
-Both editions share independent, default-off options in [remaster.bb](../src/engine/includes/remaster.bb):
+Both editions share independent options in [remaster.bb](../src/engine/includes/remaster.bb). Scene FXAA defaults on; anti-aliasing also offers off and MSAA 4x. The other enhancements default off:
+
+- Anti-aliasing: `render_antialias=1` enables FXAA once after ordinary `RenderWorld`, before bitmap text and HUD. `AntiAlias(0|1)` retains off/FXAA semantics; `AntiAlias(4)` selects MSAA 4x. An optional `BBScene::applyAntialias(BBCanvas*)` hook performs the FXAA pass. Planar/cube reflections and shadow captures bypass it. The pass reads a reusable GPU snapshot shared with `CopyRect`, preserves alpha and adds no dithering or GPU completion wait. Low-contrast pixels return their original colour when the luminance range is below `max(1/16, maximum luminance × 1/8)`. Moving thin foliage can still shimmer.
+
+MSAA uses matching four-sample colour/depth attachments and sample-count-specific draw/clear pipelines for the main canvas, then resolves to the single-sample canvas before UI drawing. Single- and four-sample targets are cached separately so reflection captures do not recreate them every frame. Partial/no-colour clears seed the multisample colour attachment from the existing canvas before the first pass. MSAA skips FXAA, increases GPU/memory cost, and does not add alpha-to-coverage or alter alpha-test semantics. The pinned Dawn implementation accepts only sample counts 1 and 4, so 2x/8x are not exposed.
 
 - Water: `RenderWorldPlanar` reflects the source camera across a horizontal plane, clips submerged geometry, and retains its aspect ratio without moving the camera or its children. The water shader uses projective sampling and procedural wave distortion. Fresnel opacity uses the mean horizontal surface, preventing wave slopes from alternating reflections into bright and dark bands at grazing angles. Reflection quality and update cadence still follow the existing water setting; qualities without reflections use only the wave shading.
 - Lighting: optional per-pixel diffuse/specular lighting and a time-dependent directional sun. Atmospheric shading adds hemispheric ambient light and per-pixel linear fog using the game's existing colours.
@@ -365,7 +369,7 @@ Blend, depth, topology, front face, culling and target format belong to the pipe
 
 Alpha-channel factors are configured separately from RGB. `BLEND_ALPHA` produces `src.a + dst.a*(1-src.a)` for alpha. Each canvas creates/reuses a `Depth24Plus` depth texture; `Depth24Plus` does not promise one fixed 24-bit physical storage format on every platform.
 
-The 3D sample count is **1**. `setAntialias()` selects FXAA in shared presentation, so describing the current anti-alias option as MSAA would be incorrect. Wireframe generates a line-list index buffer with three edges per triangle instead of requiring a native polygon mode.
+The 3D sample count is **1** for off/FXAA and captures, or **4** for the main canvas in MSAA mode. `setAntialias()` enables anti-aliasing; `setAntialiasSamples(4)` selects MSAA, and the ordinary world-render path supplies its main canvas through `setAntialiasTarget()`. FXAA remains a separate postprocess and must not be described as MSAA. Wireframe generates a line-list index buffer with three edges per triangle instead of requiring a native polygon mode.
 
 ## 11. Command encoding and GPU queue order
 
@@ -544,7 +548,7 @@ Uncaptured-error and device-loss callbacks log causes. Failure to acquire a surf
 
 The game draws 3D scenes and 2D UI into an offscreen framebuffer. `WebGPUGraphics::present()` then draws a fullscreen quad onto the surface. If the game's selected resolution differs from the actual Windows borderless-window size, the surface is configured for the window and linear sampling performs the scaling. Internal game coordinates/render resolution and output surface dimensions are separate.
 
-Presentation selects FXAA and dithering as appropriate. The default Windows bitmap-UI path avoids unnecessary additional dithering. Native targets call `wgpuSurfacePresent()` after submission and release the surface texture/view. Web targets use browser canvas presentation and do not explicitly call native `wgpuSurfacePresent()`.
+Presentation does not reapply FXAA to the finished scene and UI. Windows bitmap UI receives no additional dithering; other platforms retain their presentation dithering. Native targets call `wgpuSurfacePresent()` after submission and release the surface texture/view. Web targets use browser canvas presentation and do not explicitly call native `wgpuSurfacePresent()`.
 
 Native `Flip` uses `Fifo` for vsync requests; otherwise it uses the supported `Immediate`, `Mailbox` or other selected unsynced result from capabilities. Without a supported unsynced mode it remains `Fifo`. Web `Flip` waits for `requestAnimationFrame` when needed or yields through `emscripten_sleep(0)`. The game does not exclusively control browser/OS presentation scheduling.
 

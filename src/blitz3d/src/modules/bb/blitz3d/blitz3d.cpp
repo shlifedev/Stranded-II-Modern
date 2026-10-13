@@ -243,6 +243,7 @@ BBLIB void BBCALL bbDither( bb_int_t enable ){
 BBLIB void BBCALL bbAntiAlias( bb_int_t enable ){
 	debug3d();
 	bbScene->setAntialias( !!enable );
+	bbScene->setAntialiasSamples( enable==4?4:1 );
 }
 
 BBLIB void BBCALL bbWireFrame( bb_int_t enable ){

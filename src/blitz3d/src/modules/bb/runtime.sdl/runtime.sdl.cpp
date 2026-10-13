@@ -16,6 +16,10 @@
 
 static int em_virt_x=0,em_virt_y=0;
 
+#ifdef BB_WINDOWS
+extern bool s2WindowsSearchFocused();
+#endif
+
 class SDLInputDriver : public BBInputDriver{
 public:
 	~SDLInputDriver(){}
@@ -31,6 +35,16 @@ public:
     bool usesRelativeMouse()const override{
 #ifdef BB_WINDOWS
         return SDL_GetRelativeMouseMode()==SDL_TRUE;
+#else
+        return false;
+#endif
+    }
+
+    bool absoluteMousePosition(int &x,int &y)const override{
+#ifdef BB_WINDOWS
+        if(s2WindowsSearchFocused()) return false;
+        auto graphics=bbContextDriver?dynamic_cast<WebGPUGraphics*>(bbContextDriver->getGraphics()):nullptr;
+        return graphics && graphics->absoluteMousePosition(x,y);
 #else
         return false;
 #endif
@@ -67,8 +81,6 @@ public:
 #ifdef BB_MACOS
 extern bool s2MacSearchFocused();
 #elif defined(BB_WINDOWS)
-extern bool s2WindowsSearchFocused();
-
 bool s2WindowsMouseCapture(bool enabled){
     auto graphics=bbContextDriver?dynamic_cast<WebGPUGraphics*>(bbContextDriver->getGraphics()):nullptr;
     if(!graphics) return false;
@@ -261,6 +273,21 @@ bool SDLRuntime::idle(){
 			}
 		}
 	}
+
+#ifdef BB_WINDOWS
+    // SDL's warp cutoff compares GetTickCount with Windows message timestamps.
+    // External speed hooks can leave it in the future even after returning to
+    // 1x, dropping new WM_MOUSEMOVE events. Absolute position needs no clock.
+    // Raw camera movement continues to consume only SDL's relative counts.
+    if(gx_input && !gx_input->usesRelativeMouse()){
+        int x,y;
+        if(gx_input->absoluteMousePosition(x,y) && (x!=em_virt_x || y!=em_virt_y)){
+            em_virt_x=x;em_virt_y=y;
+            BBEvent ev(BBEVENT_MOUSEMOVE,0,x,y);
+            bbOnEvent.run(&ev);
+        }
+    }
+#endif
 
 	return true;
 }
