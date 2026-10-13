@@ -8,6 +8,10 @@ Function remaster_init()
  remaster_keys(2)="render_shadows":remaster_labels(2)="[[loc:render.shadows]]"
  remaster_keys(3)="render_atmosphere":remaster_labels(3)="[[loc:render.atmosphere]]"
  remaster_keys(Cremaster_aa)="render_antialias":remaster_labels(Cremaster_aa)="[[loc:render.antialias]]"
+ remaster_enabled(Cremaster_water)=1
+ remaster_enabled(Cremaster_light)=1
+ remaster_enabled(Cremaster_shadows)=0
+ remaster_enabled(Cremaster_air)=1
  remaster_enabled(Cremaster_aa)=1
 End Function
 

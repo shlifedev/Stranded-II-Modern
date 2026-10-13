@@ -222,7 +222,7 @@ End
     for line in ('# keep comment', 'diagnostics=1', 'custom_flag=yes', 'fps=120',
                  'display=windowed', 'resolution=desktop', 'language=en'):
         assert line in saved, line
-    for key in ('render_water=1', 'render_shadows=1', 'render_lighting=0', 'render_atmosphere=0'):
+    for key in ('render_water=1', 'render_shadows=1', 'render_lighting=1', 'render_atmosphere=1'):
         assert saved.splitlines().count(key) == 1, key
     assert (out / 'core/modern.ini.bak').read_text('utf8') == config
     assert len(list((out/'saves').glob('AUTOSAVE*.sav'))) == 5

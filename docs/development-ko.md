@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"6de4169a998be9dbedcc53222af69f849bd62c879a38945ce97267017765ef65"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"67a1cd48160c4b6fe6149ee3f56f256c44968abc74052fd3da588b4f2af1d779"} -->
 
 # 개발 가이드
 
@@ -92,7 +92,7 @@ Python으로 직접 실행할 수도 있습니다.
 
 ## 네이티브 렌더링 벤치마크
 
-Windows 두 에디션의 설정 → 그래픽 개선에서 효과를 개별 선택합니다. `render_antialias`는 끔(`0`), 저비용 FXAA(`1`, 기본값), 더 선명한 MSAA 4x(`4`)를 선택합니다. 저장된 선택을 보존하며 누락·잘못된 값에는 `1`을 사용합니다. FXAA는 일반 `RenderWorld` 후 한 번 적용합니다. MSAA는 주 화면의 색상·깊이를 네 샘플로 렌더링하고 비트맵 글자·HUD를 그리기 전에 합칩니다. 둘 다 반사·그림자 캡처를 제외합니다. MSAA에는 FXAA를 겹쳐 적용하지 않으며 GPU 시간·메모리 비용이 더 큽니다. `render_water`, `render_lighting`, `render_shadows`, `render_atmosphere`의 기본값은 `0`입니다. 설정 저장에 성공한 뒤 적용하면 현재 장면에 반영합니다. 물은 기존 반사 해상도·갱신 주기를 유지하며 그림자는 렌더링 비용을 늘립니다. FPS는 제한 없음(`fps=0` 또는 `-fps 0`)과 60/120/144를 제공하며 화면·FPS 변경은 재시작이 필요합니다.
+Windows 두 에디션의 설정 → 그래픽 개선에서 효과를 개별 선택합니다. `render_antialias`는 끔(`0`), 저비용 FXAA(`1`, 기본값), 더 선명한 MSAA 4x(`4`)를 선택합니다. 저장된 선택을 보존하며 누락·잘못된 값에는 `1`을 사용합니다. FXAA는 일반 `RenderWorld` 후 한 번 적용합니다. MSAA는 주 화면의 색상·깊이를 네 샘플로 렌더링하고 비트맵 글자·HUD를 그리기 전에 합칩니다. 둘 다 반사·그림자 캡처를 제외합니다. MSAA에는 FXAA를 겹쳐 적용하지 않으며 GPU 시간·메모리 비용이 더 큽니다. 물·조명·대기는 기본 ON(`render_water=1`, `render_lighting=1`, `render_atmosphere=1`), 태양 그림자는 기본 OFF(`render_shadows=0`)입니다. 키가 누락돼도 이 기본값을 사용하며 기존에 저장한 선택이 우선합니다. 설정 저장에 성공한 뒤 적용하면 현재 장면에 반영합니다. 물은 기존 반사 해상도·갱신 주기를 유지하며 그림자는 렌더링 비용을 늘립니다. FPS는 제한 없음(`fps=0` 또는 `-fps 0`)과 60/120/144를 제공하며 화면·FPS 변경은 재시작이 필요합니다.
 
 Windows에서 선택한 에디션의 실행 환경을 준비한 뒤 격리된 벤치마크를 실행합니다. 고정 시드로 나무·바위 0/256/768/1536개를 배치한 `.s2` 스트레스 지도를 생성·재로드하고 첫 모험 섬도 검사합니다. 실제 게임 루프·네이티브 렌더러·시계를 사용하며 카메라와 입력은 고정합니다. GUI 조작이 필요 없으며 기존 게임·세이브·설정을 보존합니다.
 

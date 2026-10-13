@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"d92f4cb370115cd7f088c04dda1e95e51bfb80fd6eefaae770cca4452a164345"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"6315f6ea122733b17fb1acddef19c85b3efba049aed0c288d32a8aae35c68c30"} -->
 
 # Development guide
 
@@ -92,7 +92,7 @@ You can also launch directly through Python:
 
 ## Native rendering benchmark
 
-Both Windows editions expose Settings → Graphics enhancements. `render_antialias` selects off (`0`), low-cost FXAA (`1`, default), or sharper MSAA 4x (`4`). Saved selections are preserved; missing or invalid values use `1`. FXAA runs once after ordinary `RenderWorld`; MSAA renders the main canvas with four colour/depth samples and resolves before bitmap text and HUD. Both skip reflection/shadow captures; MSAA does not also apply FXAA and costs more GPU time and memory. The independent `render_water`, `render_lighting`, `render_shadows` and `render_atmosphere` flags default to `0`. Applying changes updates the current scene only after settings save successfully. Water uses the existing reflection resolution and cadence; shadows increase rendering cost. The FPS selector offers Unlimited (`fps=0`, or `-fps 0`) and 60/120/144; display/FPS changes still require restart.
+Both Windows editions expose Settings → Graphics enhancements. `render_antialias` selects off (`0`), low-cost FXAA (`1`, default), or sharper MSAA 4x (`4`). Saved selections are preserved; missing or invalid values use `1`. FXAA runs once after ordinary `RenderWorld`; MSAA renders the main canvas with four colour/depth samples and resolves before bitmap text and HUD. Both skip reflection/shadow captures; MSAA does not also apply FXAA and costs more GPU time and memory. Water, lighting and atmosphere default to ON (`render_water=1`, `render_lighting=1`, `render_atmosphere=1`); sun shadows default to OFF (`render_shadows=0`). These defaults also apply when keys are missing; existing saved selections take precedence. Applying changes updates the current scene only after settings save successfully. Water uses the existing reflection resolution and cadence; shadows increase rendering cost. The FPS selector offers Unlimited (`fps=0`, or `-fps 0`) and 60/120/144; display/FPS changes still require restart.
 
 On Windows, prepare the selected edition's runtime, then run the isolated benchmark. It generates and reloads seeded `.s2` stress maps with 0/256/768/1536 trees and rocks, and also tests the first adventure island. It uses the real game loop, native renderer and clock. Camera position and input are fixed; no GUI operation is needed. Existing games, saves and settings are preserved.
 
