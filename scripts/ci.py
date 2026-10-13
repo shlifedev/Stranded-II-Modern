@@ -57,7 +57,9 @@ def dependency_members(game, blitz, font):
             members[f'{prefix}/{relative}'] = checked_bytes(base, relative, expected)
     expected = read_json(ROOT / 'config/dependencies.json')['font_sha256']
     members['fonts/NotoSansKR.ttf'] = checked_bytes(font.parent, font.name, expected)
-    members.update(license_members())
+    # Archive inputs stay fixed when the release gains new third-party notices.
+    for relative, expected in read_json(ROOT / 'config/dependency-license-files.json').items():
+        members[relative] = checked_bytes(ROOT, relative, expected)
     return members
 
 

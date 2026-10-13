@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"6e08adba915809e178cce0e29b9350b631ba06b7479e3b646584a9296cbdb650"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"4d1b4c09d21430f3ae1d8debcec8fa9b83eba56632df65f6ae61e5dc707be69b"} -->
 
 # 개발 가이드
 
@@ -414,7 +414,7 @@ Windows CI는 Windows Server 2022와 Python 3.13에서 `setup → build → chec
 .\.venv\Scripts\python.exe -X utf8 scripts/ci.py bundle
 ```
 
-`build/ci-upload/StrandedII-ci-deps-v1.zip`과 `.zip.sha256`이 생성됩니다. 게임·컴파일러 파일 목록과 글꼴의 기존 해시를 모두 검증한 뒤 필요한 파일과 원본 라이선스만 묶습니다. 개인 세이브·설정과 Blitz 편집기의 예제·미디어는 포함하지 않습니다. 의존성 ZIP 전체의 SHA-256, Release 태그와 파일명은 [config/ci-dependencies.json](../config/ci-dependencies.json)에 고정돼 있습니다.
+`build/ci-upload/StrandedII-ci-deps-v1.zip`과 `.zip.sha256`이 생성됩니다. 게임·컴파일러 파일 목록과 글꼴의 기존 해시를 모두 검증한 뒤 필요한 파일과 원본 라이선스만 묶습니다. 번들용 라이선스 목록과 해시는 [config/dependency-license-files.json](../config/dependency-license-files.json)에 고정하며, 배포용 라이선스를 추가해도 기존 의존성 ZIP 검증에는 영향을 주지 않습니다. 최종 게임 배포에는 현재 `licenses/`의 모든 파일을 포함합니다. 개인 세이브·설정과 Blitz 편집기의 예제·미디어는 포함하지 않습니다. 의존성 ZIP 전체의 SHA-256, Release 태그와 파일명은 [config/ci-dependencies.json](../config/ci-dependencies.json)에 고정돼 있습니다.
 
 원격 저장소를 만들고 사용할 커밋을 직접 푸시한 뒤 아래 명령으로 업로드합니다. `OWNER/REPO`와 `COMMIT_SHA`를 실제 저장소와 업로드한 커밋 SHA로 바꿉니다. GitHub CLI 로그인이 필요합니다. 의존성 Release는 게임의 최신 Release로 표시하지 않습니다.
 
@@ -428,7 +428,7 @@ gh release create ci-deps-v1 `
   --latest=false
 ```
 
-이후 Actions의 `Windows build and release`를 수동 실행하면 ZIP을 받을 수 있습니다. 의존성을 갱신할 때는 ZIP을 다시 만들고 출력된 SHA-256과 새 Release 태그·파일명을 설정에 함께 반영합니다. 해시가 다른 ZIP은 캐시에 있어도 압축을 풀지 않습니다. 기존 동기화된 문서나 소스 변경만으로 의존성 ZIP을 다시 만들 필요는 없습니다. 단, 번들에 포함된 라이선스를 수정하면 의존성 ZIP과 설정 해시도 함께 갱신합니다.
+이후 Actions의 `Windows build and release`를 수동 실행하면 ZIP을 받을 수 있습니다. 의존성을 갱신할 때는 ZIP을 다시 만들고 출력된 SHA-256과 새 Release 태그·파일명을 설정에 함께 반영합니다. 해시가 다른 ZIP은 캐시에 있어도 압축을 풀지 않습니다. 기존 동기화된 문서나 소스 변경만으로 의존성 ZIP을 다시 만들 필요는 없습니다. 단, 번들용 라이선스의 목록이나 내용을 변경하면 `config/dependency-license-files.json`을 갱신하고 의존성 ZIP을 다시 만든 뒤 전체 해시도 함께 갱신합니다.
 
 ### 배포 ZIP 구성
 

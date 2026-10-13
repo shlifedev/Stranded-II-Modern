@@ -48,6 +48,8 @@ class CIPackagingTests(unittest.TestCase):
         self.put(self.root / 'config/dependencies.json', json.dumps({
             'font_sha256': ci.digest(b'font'), 'game_version': '1.0.0.1'}).encode())
         self.put(self.root / 'licenses/LICENSE.txt', b'original license\r\n')
+        self.put(self.root / 'config/dependency-license-files.json', json.dumps({
+            'licenses/LICENSE.txt': ci.digest(b'original license\r\n')}).encode())
         self.put(self.root / 'config/modern.ini', b'fps=144\nlanguage=en\n')
         self.put(self.runtime / 'StrandedII.exe', b'MZbuilt executable')
         self.put(self.runtime / 'OpenAL32.dll', b'MZnative input bridge')
@@ -154,6 +156,43 @@ class CIPackagingTests(unittest.TestCase):
             ci.dependencies(SimpleNamespace(archive=archive, destination=destination,
                                             github_output=None))
         self.assertFalse(destination.exists())
+
+    def test_new_release_licenses_preserve_pinned_bundle_and_ship_in_release(self):
+        archive = self.bundle()
+        original = ci.dependency_members(self.game, self.blitz, self.font)
+        notices = {'Pretendard-OFL.txt': b'new UI font license\r\n',
+                   'Proggy-fonts.txt': b'new bundled font license\n'}
+        for name, data in notices.items():
+            self.put(self.root / 'licenses' / name, data)
+        self.assertEqual(ci.dependency_members(self.game, self.blitz, self.font), original)
+        with contextlib.redirect_stdout(io.StringIO()):
+            ci.dependencies(SimpleNamespace(archive=archive, destination=self.root / 'prepared',
+                                            github_output=None))
+        members = ci.release_members(self.runtime, self.game)
+        for name, data in notices.items():
+            self.assertEqual(members['StrandedII/licenses/' + name], data)
+
+    def test_pinned_license_cannot_be_changed_or_removed(self):
+        license_path = self.root / 'licenses/LICENSE.txt'
+        license_path.write_bytes(b'changed license')
+        with self.assertRaisesRegex(ValueError, 'SHA-256'):
+            ci.dependency_members(self.game, self.blitz, self.font)
+        license_path.unlink()
+        with self.assertRaisesRegex(ValueError, 'Missing file'):
+            ci.dependency_members(self.game, self.blitz, self.font)
+
+    def test_unlisted_bundle_files_are_rejected_even_with_matching_archive_hash(self):
+        for i, name in enumerate(('game/unlisted.dat', 'licenses/unlisted.txt')):
+            with self.subTest(name=name):
+                members = ci.dependency_members(self.game, self.blitz, self.font)
+                members[name] = b'unexpected file'
+                archive = self.root / f'bundle-{i}.zip'
+                checksum = ci.write_archive(archive, members)
+                self.put(self.root / 'config/ci-dependencies.json', json.dumps({
+                    'release': 'ci-deps-v1', 'asset': archive.name, 'sha256': checksum}).encode())
+                with self.assertRaisesRegex(ValueError, 'unexpected or changed files'):
+                    ci.dependencies(SimpleNamespace(archive=archive, destination=self.root / f'prepared-{i}',
+                                                    github_output=None))
 
     def test_archive_traversal_windows_aliases_and_links_are_rejected(self):
         for name in ('../escaped', 'game/../../escaped', r'game\..\escaped',

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"0e0bdeaa24b4ecc7770a39c5ef9a37a6ccc67403f44aa1354fef07aa45008f23"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"d0d0e18f4163100eb7e970bd45909db493de2db32f87545fd8ed6b9f5e3d9d1f"} -->
 
 # Development guide
 
@@ -414,7 +414,7 @@ Prepare local dependencies as described above, then run from the repository root
 .\.venv\Scripts\python.exe -X utf8 scripts/ci.py bundle
 ```
 
-This creates `build/ci-upload/StrandedII-ci-deps-v1.zip` and `.zip.sha256`. It validates every existing game/compiler manifest hash and the font hash before bundling only required files and original licenses. Personal saves/settings and the Blitz editor's examples/media are excluded. The dependency ZIP's complete SHA-256, Release tag, and filename are pinned in [config/ci-dependencies.json](../config/ci-dependencies.json).
+This creates `build/ci-upload/StrandedII-ci-deps-v1.zip` and `.zip.sha256`. It validates every existing game/compiler manifest hash and the font hash before bundling only required files and original licenses. Bundle license names and hashes are pinned in [config/dependency-license-files.json](../config/dependency-license-files.json), so adding release licenses does not affect validation of the existing dependency ZIP. The final game release includes every file currently in `licenses/`. Personal saves/settings and the Blitz editor's examples/media are excluded. The dependency ZIP's complete SHA-256, Release tag, and filename are pinned in [config/ci-dependencies.json](../config/ci-dependencies.json).
 
 Create the remote repository and push your chosen commit yourself, then upload with the command below. Replace `OWNER/REPO` and `COMMIT_SHA` with the actual repository and pushed commit SHA. GitHub CLI authentication is required. The dependency Release is not marked as the latest game Release.
 
@@ -428,7 +428,7 @@ gh release create ci-deps-v1 `
   --latest=false
 ```
 
-Then manually run `Windows build and release` in Actions to download the game ZIP. To update dependencies, rebuild the bundle and update the configuration with its printed SHA-256 and a new Release tag/filename. A mismatched ZIP is rejected before extraction, even on a cache hit. Ordinary changes to synchronized documents or game sources do not require rebuilding the dependency ZIP. Changes to licenses included in the bundle require rebuilding it and updating its configured hash.
+Then manually run `Windows build and release` in Actions to download the game ZIP. To update dependencies, rebuild the bundle and update the configuration with its printed SHA-256 and a new Release tag/filename. A mismatched ZIP is rejected before extraction, even on a cache hit. Ordinary changes to synchronized documents or game sources do not require rebuilding the dependency ZIP. If bundled license names or contents change, update `config/dependency-license-files.json`, rebuild the dependency ZIP and update its complete pinned hash.
 
 ### Release ZIP contents
 
