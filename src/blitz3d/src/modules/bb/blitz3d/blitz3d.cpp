@@ -283,6 +283,18 @@ BBLIB void BBCALL bbRenderWorld( bb_float_t tween ){
 	tri_count=bbScene->getTrianglesDrawn()-tri_count;
 }
 
+BBLIB void BBCALL bbRenderWorldCube( Camera *camera,Texture *texture,bb_float_t tween ){
+	debug3d();
+	debugCamera( camera );
+	debugTexture( texture );
+	BBCanvas *canvas=texture->getCanvas( 0 );
+	if( !canvas || !(canvas->getFlags() & BBCanvas::CANVAS_TEX_CUBE) )
+		RTEX( "RenderWorldCube requires a cube texture" );
+	tri_count=bbScene->getTrianglesDrawn();
+	world->renderCubeMap( camera,canvas,tween );
+	tri_count=bbScene->getTrianglesDrawn()-tri_count;
+}
+
 BBLIB bb_int_t BBCALL bbTrisRendered(){
 	return tri_count;
 }

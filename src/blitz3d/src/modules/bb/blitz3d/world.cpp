@@ -364,6 +364,34 @@ void World::capture(){
 }
 
 void World::render( float tween ){
+	prepareRender( tween );
+	renderPrepared();
+}
+
+void World::renderCubeMap( Camera *camera,BBCanvas *texture,float tween ){
+	// This call owns all six views: no script can mutate the scene between
+	// them. Keep the prepared scene local to this capture, never across frames.
+	static const float angles[6][2]={ {0,90},{0,0},{0,-90},{0,180},{-90,0},{90,0} };
+	const float radians=0.01745329251994329577f;
+	// Camera children move with each face. Repeated tween preparation also
+	// has legacy semantics (notably Sprite), so retain it outside tween=1.
+	const bool reprepare=camera->children()!=0 || tween!=1;
+	BBCanvas *source=camera->getCanvas() ? camera->getCanvas() : gx_canvas;
+	for( int face=0;face<6;++face ){
+		texture->setCubeFace( face );
+		camera->setLocalRotation( rotationQuat( angles[face][0]*radians,angles[face][1]*radians,0 ) );
+		if( face==0 || reprepare ) prepareRender( tween );
+		camera->beginRender( tween );
+		// A cubemap capture uses only its selected camera, even if other
+		// cameras are visible. Per-view culling, fading and sorting still run.
+		while( !cam_que.empty() ) cam_que.pop();
+		cam_que.push( camera );
+		renderPrepared();
+		texture->blit( 0,0,source,0,0,texture->getWidth(),texture->getHeight(),true );
+	}
+}
+
+void World::prepareRender( float tween ){
 	ord_mods.clear();
 	unord_mods.clear();
 
@@ -391,8 +419,13 @@ void World::render( float tween ){
 	}
 
 	for( ;ord_que.size();ord_que.pop() ) ord_mods.push_back( ord_que.top() );
+}
 
-	if( !bbScene->begin( _lights ) ) return;
+void World::renderPrepared(){
+	if( !bbScene->begin( _lights ) ){
+		while( !cam_que.empty() ) cam_que.pop();
+		return;
+	}
 
 	BBCanvas *org_canvas=gx_canvas;
 	for( ;cam_que.size();cam_que.pop() ){

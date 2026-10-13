@@ -32,6 +32,7 @@ public:
 	void update( float elapsed );
 	void capture();
 	void render( float tween );
+	void renderCubeMap( Camera *camera,BBCanvas *texture,float tween );
 
 	bool checkLOS( Object *src,Object *dest );
 	bool hitTest( const Line &line,float radius,Object *obj,const Transform &tf,int method,Collision *curr_coll  );
@@ -46,6 +47,8 @@ private:
 	std::vector<Object*> _objsByType[1000];
 
 	void collide( Object *src );
+	void prepareRender( float tween );
+	void renderPrepared();
 	void render( Camera *c,Mirror *m );
 	void render( Model *m,const RenderContext &rc,bool defer=false );
 	void flushOpaque();

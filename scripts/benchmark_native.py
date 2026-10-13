@@ -45,10 +45,15 @@ def instrument(source):
     path = source / 'includes/e_environment.bb'
     text = path.read_text('utf8')
     water = function(text, 'e_environment_update_water')
-    if water.count('\tRenderWorld\n') != 6:
-        raise ValueError('Expected six water reflection views.')
-    marked = water.replace('\tRenderWorld\n', '\tbench_begin(6):RenderWorld:bench_end(6)'
-                           ':bench_reflections=bench_reflections+1\n')
+    cube = 'RenderWorldCube env_watercam,env_watertex'
+    if water.count(cube) == 1:
+        marked = water.replace(cube, 'bench_begin(6):'+cube+':bench_end(6)'
+                               ':bench_reflections=bench_reflections+6')
+    elif water.count('\tRenderWorld\n') == 6:
+        marked = water.replace('\tRenderWorld\n', '\tbench_begin(6):RenderWorld:bench_end(6)'
+                               ':bench_reflections=bench_reflections+1\n')
+    else:
+        raise ValueError('Expected a six-face water capture or six legacy reflection views.')
     path.write_text(text.replace(water, marked), encoding='utf8')
     path = source / 'includes/modern_runtime.bb'
     text = path.read_text('utf8')

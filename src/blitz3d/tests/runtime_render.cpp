@@ -500,6 +500,107 @@ static void checkWorldTransparency(WebGPUContextResources &res){
     }
     scene.freeMesh(mesh);bbScene=nullptr;gx_canvas=nullptr;
 }
+class CaptureCanvas : public WebGPUCanvas{
+public:
+    std::vector<std::vector<unsigned>> faces;
+    CaptureCanvas(WebGPUContextResources *res):WebGPUCanvas(res,32,32,
+        BBCanvas::CANVAS_TEXTURE|BBCanvas::CANVAS_TEX_RGB|BBCanvas::CANVAS_TEX_CUBE){}
+    void blit(int x,int y,BBCanvas *src,int sx,int sy,int w,int h,bool solid) override{
+        WebGPUCanvas::blit(x,y,src,sx,sy,w,h,solid);
+        // Read each completed face before the next copy. This tests all six
+        // views independently of the backend's cubemap storage/sampling.
+        std::vector<unsigned char> rgba;
+        readPixels(rgba);
+        std::vector<unsigned> pixels;
+        for(size_t i=0;i<rgba.size();i+=4)
+            pixels.push_back((unsigned(rgba[i+3])<<24)|(unsigned(rgba[i])<<16)|
+                             (unsigned(rgba[i+1])<<8)|unsigned(rgba[i+2]));
+        faces.push_back(pixels);
+    }
+};
+class CaptureModel : public Model{
+    BBMesh *mesh;
+public:
+    unsigned preparations=0;
+    CaptureModel(BBMesh *mesh):mesh(mesh){
+        setFX(BBScene::FX_FULLBRIGHT|BBScene::FX_DOUBLESIDED);
+    }
+    bool beginRender(float tween) override{ ++preparations;return Model::beginRender(tween); }
+    bool render(const RenderContext &rc) override{
+        if(rc.getWorldFrustum().cull(Box(Vector(-1,-1,-0.1f),Vector(1,1,0.1f)),getRenderTform()))
+            enqueue(mesh,0,4,0,2);
+        return false;
+    }
+};
+static void checkCubeCapture(WebGPUContextResources &res){
+    WebGPUCanvas target(&res,32,32,BBCanvas::CANVAS_TEX_VIDMEM);
+    WebGPUCanvas untouched(&res,32,32,BBCanvas::CANVAS_TEX_VIDMEM);
+    CaptureCanvas reference(&res),batched(&res);
+    WebGPUScene scene(&res);BBMesh *mesh=scene.createMesh(4,2,0);
+    const float normal[3]={0,0,-1};fillQuad(mesh,0,normal);
+    bbScene=&scene;gx_canvas=&target;
+    {
+        World world;
+        Camera camera,other;
+        camera.setViewport(0,0,32,32);camera.setCanvas(&target);camera.setRange(1,100);
+        other.setViewport(0,0,32,32);other.setCanvas(&untouched);
+        other.setClsColor(Vector(1,1,0));
+        Object group;
+        std::vector<CaptureModel*> models;
+        const Vector colors[6]={Vector(1,0,0),Vector(0,1,0),Vector(0,0,1),
+                                Vector(1,1,0),Vector(1,0,1),Vector(0,1,1)};
+        const float angles[6][2]={{0,90},{0,0},{0,-90},{0,180},{-90,0},{90,0}};
+        const float radians=0.01745329251994329577f;
+        for(int face=0;face<6;++face){
+            Quat rot=rotationQuat(angles[face][0]*radians,angles[face][1]*radians,0);
+            auto model=new CaptureModel(mesh);models.push_back(model);
+            model->setLocalRotation(rot);model->setLocalPosition(Matrix(rot)*Vector(0,0,20));
+            model->setLocalScale(Vector(8,8,1));model->setColor(colors[face]);
+        }
+        models[0]->setParent(&group);
+        CaptureModel nearModel(mesh),farModel(mesh),hidden(mesh);
+        nearModel.setLocalPosition(Vector(0,0,10));nearModel.setColor(Vector(1,0,0));
+        nearModel.setAlpha(0.5f);nearModel.setAutoFade(8,14);
+        farModel.setLocalPosition(Vector(0,0,15));farModel.setColor(Vector(0,0,1));farModel.setAlpha(0.25f);
+        hidden.setVisible(false);
+        auto compare=[&](const char *name,float tween,unsigned expectedPreparations){
+            reference.faces.clear();batched.faces.clear();other.setVisible(false);
+            for(int face=0;face<6;++face){
+                reference.setCubeFace(face);
+                camera.setLocalRotation(rotationQuat(angles[face][0]*radians,angles[face][1]*radians,0));
+                world.render(tween);
+                reference.blit(0,0,&target,0,0,32,32,true);
+            }
+            for(auto model:models) model->preparations=0;
+            nearModel.preparations=farModel.preparations=hidden.preparations=0;
+            unsigned previous=untouched.getPixel(16,16);
+            other.setVisible(true);
+            world.renderCubeMap(&camera,&batched,tween);
+            expect(reference.faces.size()==6 && reference.faces==batched.faces,name);
+            expect(nearModel.preparations==expectedPreparations && farModel.preparations==expectedPreparations,
+                   "capture prepares scene only as often as required");
+            expect(hidden.preparations==0,"capture preserves hidden objects");
+            expect(previous==untouched.getPixel(16,16),"capture renders only the selected camera");
+            expect(gx_canvas==&target,"capture restores the active drawing canvas");
+        };
+        compare("six capture views match legacy pixels, including transparent fade/order",1,1);
+        expectPixel("capture right-face orientation",reference.faces[0][16*32+16],255,0,0);
+        expectPixel("capture bottom-face orientation",reference.faces[5][16*32+16],0,255,255);
+        // Every call must rebuild the scene; no snapshot survives a mutation.
+        models[0]->setColor(Vector(0.2f,0.4f,0.8f));group.setLocalPosition(Vector(1,0,0));
+        models[2]->setVisible(false);nearModel.setLocalPosition(Vector(0,0,12));
+        compare("next capture observes transform, visibility and material changes",1,1);
+        // Rotating the capture camera moves its children on every face.
+        CaptureModel child(mesh);child.setParent(&camera);child.setLocalPosition(Vector(0,0,6));
+        child.setColor(Vector(0.6f,0.3f,0.1f));child.setAlpha(0.5f);
+        compare("camera-attached geometry retains six preparations and correct pixels",1,6);
+        child.setParent(nullptr);child.setVisible(false);
+        world.capture();nearModel.setLocalPosition(Vector(0,0,13));
+        compare("interpolated captures preserve legacy preparation semantics",0.5f,6);
+        for(auto model:models) delete model;
+    }
+    scene.freeMesh(mesh);bbScene=nullptr;gx_canvas=nullptr;
+}
 int main(){
     checkFrustum();
     WebGPUContextResources res;
@@ -509,6 +610,7 @@ int main(){
     checkInstancing(res);
     checkTransparentInstances(res);
     checkWorldTransparency(res);
+    checkCubeCapture(res);
     res.destroy();
     std::printf("%d rendering failures (offscreen, no window)\n",failures);
     return failures?1:0;

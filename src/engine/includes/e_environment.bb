@@ -634,45 +634,9 @@ Function e_environment_update_water(forced=0)
 					CameraClsMode env_watercam,1,1
 				   	CameraViewport env_watercam,0,0,size,size
 					
-					;Update 2 Sites
-					;Select set_water_updatestep
-						;Case 0
-							;left
-							SetCubeFace env_watertex,0
-							RotateEntity env_watercam,0,90,0
-							RenderWorld
-							CopyRect 0,0,size,size,0,0,BackBuffer(),TextureBuffer(env_watertex)
-							;front
-							SetCubeFace env_watertex,1
-							RotateEntity env_watercam,0,0,0
-							RenderWorld
-							CopyRect 0,0,size,size,0,0,BackBuffer(),TextureBuffer(env_watertex)
-						;Case 1
-							;right
-							SetCubeFace env_watertex,2
-							RotateEntity env_watercam,0,-90,0
-							RenderWorld
-							CopyRect 0,0,size,size,0,0,BackBuffer(),TextureBuffer(env_watertex)
-							;back
-							SetCubeFace env_watertex,3
-							RotateEntity env_watercam,0,180,0
-							RenderWorld
-							CopyRect 0,0,size,size,0,0,BackBuffer(),TextureBuffer(env_watertex)
-						;Case 2
-							;top
-							SetCubeFace env_watertex,4
-							RotateEntity env_watercam,-90,0,0
-							RenderWorld
-							CopyRect 0,0,size,size,0,0,BackBuffer(),TextureBuffer(env_watertex)
-							;bottom
-							SetCubeFace env_watertex,5
-							RotateEntity env_watercam,90,0,0
-							RenderWorld
-				   			CopyRect 0,0,size,size,0,0,BackBuffer(),TextureBuffer(env_watertex)
-					;End Select
-					set_water_updatestep=set_water_updatestep+1
-					If set_water_updatestep>2 Then set_water_updatestep=0
-				
+					;Prepare the shared scene once, retaining all six reflection views.
+					RenderWorldCube env_watercam,env_watertex
+
 					;Assign
 					EntityTexture env_sea,env_watertex
 					
