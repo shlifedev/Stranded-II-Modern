@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"527a5abeb7dfe620d1fca831ccc2f77d6f602aa96ef5fb90b4f377ec3add8248"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"51af98c116f276aadc77ae62acddf8a00b313531f9e57cf2a76127defdf12841"} -->
 
 # Stranded II Studio
 
@@ -40,10 +40,10 @@ Create a project in an empty folder or open an existing project on the start scr
 | Inspector | Edit coordinates, rotation, health and quantity, then **Apply**. Objects derive their height from terrain, as in the game. |
 | Terrain | Choose raise, lower, flatten or smooth, then click terrain. Adjust radius and strength; strength applies to raise/lower. |
 | Content | Browse items, objects, units, map information, buildings and recipes by their actual icons. Select one to enlarge it in the inspector. Clone definitions, edit properties/materials, and import models, images or audio. |
-| Scripts | Edit definition, entity-event or global-map scripts. Game-command completion is available; **Apply script** saves changes. |
+| Scripts | Edit definition, entity-event or global-map scripts, or bind `.s2s` files. Multiple file tabs, text search, event lists, command completion and hover help are available. |
 | Resources | Saved definition, model, translation and font changes display **Resources pending**. **Apply resources** applies them together and restores camera, selection and tool. Until then, the scene uses the last applied appearance. |
-| Test | Play the latest saved map in the Blitz engine already running in the editor. Click the viewport to capture the mouse, Esc to release, and **Stop** to restore the editor map and camera. Play-session changes do not enter the project. |
-| Diagnostics | Check definition IDs, references, asset paths, recipe structure and player starts. Static validation does not guarantee script execution results. |
+| Test | Validate the latest saved files and automatically apply changed resources. Click the viewport to capture the mouse, Esc to release, and **Stop** to restore the editor map and camera. Play-session changes do not enter the project. |
+| Diagnostics | Check content references, script brackets, strings and file references. View runtime events/errors and read-only global/selected-entity variables. |
 
 Content icons fit a 64px tile and expand to at most 160px in the inspector, preserving their aspect ratio. Most originals are 40×40; enlargement does not add detail. Buildings show their completed result, and recipes show the first output item with `+N` for additional outputs. Map information uses the game's icon frames. Missing or unreadable images display a fallback symbol and a reason.
 
@@ -51,7 +51,7 @@ Icons work without a map or the 3D engine. Imported project images take preceden
 
 The placement preview displays the currently applied item, object or unit model in green at 40% opacity. Buildings use their completed result model; map information uses a position marker. Preview and click placement share the same snapping, terrain height and alignment rules. The temporary model is never saved in the map and hides outside terrain or while looking with the right mouse button.
 
-**Test** reuses the current engine and its loaded resources. It checks the latest saved map immediately before rebuilding the playable world in that engine, running `on:preload`, `on:start` and `on:load` in their existing order. The engine and resources are not reinitialized, but map loading and startup scripts still take time. After changing definitions, models, translations or fonts, use **Apply resources** before testing. Unapplied drafts are excluded from play.
+**Test** freezes the saved files and project revision at startup. If files change again during preparation, startup is rejected; retry the test. Unchanged resources reuse the current engine; changed definitions, script files, models, translations or fonts automatically reconnect it with the new resources. `on:preload`, `on:start` and `on:load` retain their existing order. Unsaved drafts are excluded, and code saved during play takes effect on the next test.
 
 Use **Cancel start** during the transition. **Stop** reloads the saved map and preserves the editor camera, selection, tool and drafts. There is no separate player engine or background preparation.
 
@@ -60,6 +60,27 @@ Placement, properties, deletion, terrain, undo, redo and CLI edits update the sc
 Applied commands are saved immediately. Unapplied property and script drafts are stored separately by the app and survive selection changes and restarts. Applying an old draft is rejected if another operation or CLI edit changed the revision. Copy anything needed, use **Discard draft** to reload current values, then edit again.
 
 Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z redoes, Ctrl/Cmd+D duplicates entities and Delete removes them. The script editor prioritizes its own text undo. Entity duplication copies placement properties and event scripts, but not attached states or stored items. Deletion rejects entities with attached states, stored items or scripts. Applying an empty script detaches it.
+
+## Script files and templates
+
+Existing projects open unchanged. Select a target and use **Extract to file** to save its current script in `scripts/<name>.s2s` and bind it. **Bind to selection** reuses a file; **Selection → Unbind** keeps the current text inside the target and leaves the file in place. The file is the single source shared by Studio, external editors and the CLI.
+
+Save UTF-8 without BOM and use ASCII letters, numbers, `_`, `-` and `.` in paths. Limits are 1 MiB per file and 1,000 files/16 MiB per project. External changes are detected while editing; conflicting drafts are never overwritten. Use **Save to another file** or **Discard draft** to resolve them. **Save file** or Ctrl/Cmd+S in the editor saves; `●` marks an unsaved draft. Click search matches, events, references or diagnostics to open their files.
+
+Export embeds bound text in native definitions/maps and includes the files under `sys/scripts/studio/`. For example, reference `scripts/story/reward.s2s` with `extendscript 0,0,"sys/scripts/studio/story/reward.s2s";`. Static checks do not guarantee execution semantics. Runtime errors link to the original line only when saved source and parser contents match unambiguously; dynamic or duplicated code shows entity/event/parser-row context. The log retains 300 events; variables show up to 256 entries and the first 1,024 characters of each value. Select the watched entity before starting a test.
+
+Use **Templates** in Content to create a healing item, recipe, building, NPC or tonic-delivery scenario. **Preview changes**, then **Create** allocates IDs, references, files and English/Korean translations in one transaction. The scenario follows nearby ingredient collection → tonic crafting → NPC delivery → reward → completion. Apply the [CLI example](../studio/examples/tonic-scenario.json) to a new project.
+
+```sh
+python scripts/studio.py scripts PROJECT
+python scripts/studio.py scripts PROJECT --path scripts/tonic_delivery/npc.s2s
+python scripts/studio.py scripts PROJECT --query reward
+python scripts/studio.py templates PROJECT
+python scripts/studio.py apply PROJECT --file studio/examples/tonic-scenario.json --dry-run
+python scripts/studio.py apply PROJECT --file studio/examples/tonic-scenario.json --expect-revision 0
+```
+
+CLI `script.write` requires `path`, `text` and `expectedHash`. Read the hash from `scripts --path`; use `null` for a new file. The `target` for `script.bind`/`script.extract`/`script.unbind` uses `scope: map|entity|definition` and the corresponding `map`, `kind` and `id`. Existing `map.script`, `entity.script` and `content.set` operations on bound targets also require `expectedHash`. The `scriptsVersion` in `revision` detects external file edits. JSON `preview` rechecks `expectRevision` and `expectScriptsVersion` during preparation. File writes, bindings and templates participate in undo/redo, which rejects conflicts with external edits.
 
 ## Agents and CLI
 
@@ -92,7 +113,7 @@ Definition IDs and map instance IDs are separate. Cloning a definition allocates
 
 ## Projects and exports
 
-`project.json` stores definition changes and map-edit commands. `sources/` stores original maps and assets named by their hashes. Both are project sources. `.studio/` holds the last 100 undo entries, locks, font caches and recent preview-token caches. Base resources are read-only. The `base` in `project.json` is usually relative; adjust it to the prepared resources when moving to another computer.
+`project.json` stores definition changes, map-edit commands, file bindings and undo baseline snapshots. `sources/` stores original maps and assets named by their hashes. The `.s2s` files in `scripts/` are the authoritative script sources; preserve all three paths together. `.studio/` holds the last 100 undo entries, locks, font caches and recent preview-token caches. Interrupted file transactions recover on the next open without overwriting new external edits. Base resources are read-only. The `base` in `project.json` is usually relative; adjust it to the prepared resources when moving to another computer.
 
 Export requires an empty folder. `overrides/` contains native `.inf`, `.s2` and assets; `locales/` contains project translations; `manifest.json` records revision and file hashes. Merge reviewed content into `resources/editions/extended/overrides/` and translations into `locales/editions/extended/<code>.tsv`, then prepare/build Extended. Merge changes into existing files rather than replacing them wholesale. Ordinary builds, CI and releases are not started automatically.
 
@@ -107,7 +128,10 @@ python -m unittest discover -s tests -p "test_studio*.py"
 python scripts/studio.py engine check
 npm --prefix studio run check
 npm --prefix studio test
+python scripts/verify_studio_scripts.py
 ```
+
+Script checks cover external edits, stale hashes, transaction recovery, bindings, undo, source positions and templates. On Windows, `verify_studio_scripts.py` requires prepared Studio and Extended runtimes. It exports the example into a separate copy and uses the real engine to check ingredient collection, crafting, NPC delivery, rewards, healing items, error traces and variable JSON. It uses neither user saves nor GUI input.
 
 Icon checks cover color keys, frames and output-image selection, asset precedence, refresh after resource edits and cache retention during map edits, path restrictions, read-only behavior, request caching/cancellation and IPC responses. Placement checks cover display scaling, latest-pointer delivery, model/snap capture, preview cancellation and rejection of unapplied definitions. Actual translucent model display still requires a separate check in the app.
 

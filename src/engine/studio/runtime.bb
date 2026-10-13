@@ -41,6 +41,7 @@ End Function
 
 Include "studio\scene.bb"
 Include "studio\placement.bb"
+Include "studio\debug.bb"
 
 Function studio_load(play=0,keepcamera=0)
  studio_placement_clear()
@@ -49,6 +50,7 @@ Function studio_load(play=0,keepcamera=0)
  Local pitch#=EntityPitch(cam),yaw#=EntityYaw(cam)
  studio_handle=0
  studio_playing=play
+ studio_debug_reset(play)
  studio_firstframe=0
  If play Then
   HidePointer()
@@ -247,6 +249,7 @@ While Not m_performquit
  Else
   studio_render()
  EndIf
+ studio_debug_flush()
  gframe=gframe+1
  modern_present()
  qol_present()

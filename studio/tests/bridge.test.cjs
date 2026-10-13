@@ -23,6 +23,16 @@ function viewport(){
   return {context,document,canvas,overlay,messages,writes,send,canvasListeners,overlayListeners,listeners,bridge:context.Module.s2Bridge};
 }
 
+test('runtime records preserve Unicode, source separators and read-only variables',async()=>{
+  const h=viewport();
+  const record={kind:'error',message:'한글 "error"',script:'on:start {\x1fbad;\x1f}',row:2};
+  await h.bridge('studio-event\x1fdebug\x1f'+JSON.stringify(record));
+  assert.equal(JSON.stringify(h.messages.at(-1).record),JSON.stringify(record));
+  await h.bridge('studio-event\x1fdebug\x1f'+JSON.stringify({kind:'variables',values:[['global','test','1']]}));
+  assert.equal(h.messages.at(-1).record.values[0][1],'test');
+  assert.equal(h.writes.length,0);
+});
+
 test('play reuses the loaded engine, fetches the latest saved map and starts only once',async()=>{
   const h=viewport();ready(h);const engine=h.context.Module;
   h.send({type:'play',id:1});h.send({type:'play',id:1});
