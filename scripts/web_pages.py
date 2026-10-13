@@ -29,6 +29,7 @@ def package():
     old = '<script src="shell.js"></script>'
     if html.count(old) != 1:
         raise ValueError('Expected exactly one relative shell.js entrypoint.')
+    html = html.replace('<script src="debugui.js"></script>', f'<script src="debugui.js?v={key}"></script>')
     html = html.replace(old, f'<script src="shell.js?v={key}"></script>')
 
     destination = build / 'pages'

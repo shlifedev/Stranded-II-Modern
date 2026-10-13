@@ -3,7 +3,7 @@ if((BB_EMSCRIPTEN OR S2_NATIVE_GAME) AND TARGET SDL2)
   bin2h(SOURCE_FILE default.wgsl HEADER_FILE default.wgsl.h VARIABLE_NAME DEFAULT_WGSL)
 
   bb_start_module(graphics.webgpu)
-  set(DEPENDS_ON bb.graphics)
+  set(DEPENDS_ON bb.graphics bb.debugui)
   set(SOURCES graphics.webgpu.cpp graphics.webgpu.h canvas.webgpu.cpp canvas.webgpu.h ${CMAKE_CURRENT_BINARY_DIR}/default.wgsl.h)
   set(LIBS SDL2)
   if(BB_MACOS)

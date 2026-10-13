@@ -2199,18 +2199,7 @@ Function interface()
 					;Invulnerable
 					y=y+20
 					If gui_ibutton(236,y,Cicon_ok,"Invulnerability / Revive") Then
-						If get_state(Cstate_invulnerability,Cclass_unit,1)=0 Then
-							set_state(Cstate_invulnerability,Cclass_unit,1)
-						Else
-							free_state(Cstate_invulnerability,Cclass_unit,1)
-						EndIf
-						If con_unit(1) Then
-							g_player_dead=0
-							TCunit\health_max#=Dunit_health#(TCunit\typ)
-							TCunit\health#=Dunit_health#(TCunit\typ)
-							EntityType TCunit\h,Dunit_col(TCunit\typ)
-							EntityPickMode TCunit\mh,2,1
-						EndIf
+						cheat_invulnerable()
 						m_menu=0
 						if_msg("< invulnerability / revive cheat >",Cbmpf_yellow)
 					EndIf
@@ -2219,12 +2208,7 @@ Function interface()
 					;Reset Values
 					y=y+37
 					If gui_ibutton(236,y,Cicon_ok,"[[loc:engine.2bf8fb35dc4e]]") Then
-						If con_unit(1) Then
-							TCunit\hunger#=0
-							TCunit\thirst#=0
-							TCunit\exhaustion#=0
-							unit_values()
-						EndIf
+						cheat_needs()
 						m_menu=0
 						if_msg("[[loc:engine.b80db5a99452]]",Cbmpf_yellow)
 					EndIf
@@ -2233,13 +2217,7 @@ Function interface()
 					;Remove States
 					y=y+37
 					If gui_ibutton(236,y,Cicon_ok,"[[loc:engine.fdd75d9192bd]]") Then
-						For Tstate.Tstate=Each Tstate
-							If Tstate\parent_class=Cclass_unit Then
-								If Tstate\parent_id=1 Then
-									free_state(Tstate\typ,Cclass_unit,1)
-								EndIf
-							EndIf
-						Next
+						cheat_states()
 						m_menu=0
 						if_msg("[[loc:engine.34287c32b548]]",Cbmpf_yellow)
 					EndIf
@@ -2257,46 +2235,7 @@ Function interface()
 					;Buildplace Items
 					y=y+37
 					If gui_ibutton(236,y,Cicon_ok,"[[loc:engine.1cd3737e5b2f]]") Then
-						;Find Buildplace
-						For Tobject.Tobject=Each Tobject
-							If Tobject\typ=set_buildplaceid Or Tobject\typ=set_buildplacewaterid Then
-								If EntityDistance(cam,Tobject\h)<75 Then
-									If get_state(Cstate_buildplace,Cclass_object,Tobject\id)<>0 Then
-										;Delete stored Items
-										For Titem.Titem=Each Titem
-											If Titem\parent_class=Cclass_object Then
-												If Titem\parent_id=Tobject\id Then
-													free_item(Titem\id)
-												EndIf
-											EndIf
-										Next
-										;Fill
-										buiid=0
-										;Get Building Type ID
-										For Tbui.Tbui=Each Tbui
-											If Tbui\mode=2 Then
-												If Tbui\typ=TCstate\value Then
-													buiid=Tbui\id
-													Exit
-												EndIf
-											EndIf
-										Next
-										;Create Items
-										For Tbui.Tbui=Each Tbui
-											If Tbui\mode=0
-												If Tbui\id=buiid Then
-													itemid=set_item(-1,Tbui\typ,0,0,0,Tbui\count)
-													store_item(itemid,Cclass_object,Tobject\id)
-												EndIf
-											EndIf
-										Next
-										m_menu=0
-										if_msg("[[loc:engine.d9101cb28e60]]",Cbmpf_yellow)
-										Exit
-									EndIf
-								EndIf
-							EndIf
-						Next
+						If cheat_build() Then m_menu=0:if_msg("[[loc:engine.d9101cb28e60]]",Cbmpf_yellow)
 					EndIf
 					bmpf_txt(273,y,"[[loc:engine.1cd3737e5b2f]]")
 					bmpf_txt(273,y+16,"[[loc:engine.2235e70a1d90]]",Cbmpf_tiny)
@@ -2328,18 +2267,10 @@ Function interface()
 								If click>0 Then
 									;left click -> +1
 									If click=1 Then
-										id=set_item(-1,i,EntityX(cam),EntityY(cam),EntityZ(cam),1)
-										If id>0 Then
-											merge_item(id)
-											store_item(id,Cclass_unit,g_player)
-										EndIf
+										cheat_item(i,1)
 									;right click -> +10
 									ElseIf click=2 Then
-										id=set_item(-1,i,EntityX(cam),EntityY(cam),EntityZ(cam),10)
-										If id>0 Then
-											merge_item(id)
-											store_item(id,Cclass_unit,g_player)
-										EndIf
+										cheat_item(i,10)
 									EndIf
 								EndIf
 								x=x+45
@@ -2380,7 +2311,7 @@ Function interface()
 					;Okay
 					If gui_ibutton(742,542,Cicon_ok, sm$(5)) Then
 						cheatscript$=gui_tb_savestring$("")
-						parse_task(0,0,"cheat","Cheat Script Execution",cheatscript$)
+						cheat_script(cheatscript$)
 						m_menu=0
 					EndIf
 					;Cancel

@@ -25,6 +25,7 @@ Function qol_search_set(text$)
 End Function
 
 Function qol_search_open()
+ If DebugUiOpen() Then Return
  If qol_search_hwnd Or modern_hwnd=0 Then Return
  Local classbank=CreateBank(10)
  PokeShort classbank,0,69:PokeShort classbank,2,68:PokeShort classbank,4,73:PokeShort classbank,6,84

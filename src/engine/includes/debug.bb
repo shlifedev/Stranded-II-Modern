@@ -136,6 +136,7 @@ End Function
 
 ;### Debug Log
 Function dlog(txt$)
+	DebugUiLog "game",3,txt$
 	Local stream
 	If FileType(set_rootdir$+"debug.txt")<>1 Then
 		stream=WriteFile(set_rootdir$+"debug.txt")

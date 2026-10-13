@@ -3,6 +3,7 @@
 #include <bb/runtime/runtime.h>
 #include <bb/blitz3d/blitz3d.h>
 #include <bb/event/event.h>
+#include <bb/debugui/debugui.h>
 #include <SDL.h>
 #include <cstdio>
 #include <cstring>
@@ -164,7 +165,9 @@ int main(){
     character(SDL_SCANCODE_ESCAPE,27);
     character(SDL_SCANCODE_HOME,1);
     character(SDL_SCANCODE_END,2);
+    // A distribution starts with no developer-menu binding.
     character(SDL_SCANCODE_INSERT,3);
+    bbDebugUiOpen(0);bbRuntimeIdle();
     character(SDL_SCANCODE_DELETE,4);
     character(SDL_SCANCODE_PAGEUP,5);
     character(SDL_SCANCODE_PAGEDOWN,6);
@@ -254,6 +257,34 @@ int main(){
     expect("absolute-mode warp retains legacy vertical reset",bbMouseYSpeed(),0);
 
     absoluteCursorChecks(original);
+    bbDebugUiHotkey(0);
+    key(SDL_KEYDOWN,SDL_SCANCODE_INSERT);bbRuntimeIdle();
+    expect("None disables developer shortcut",bbDebugUiOpen(-1),0);bbFlushKeys();
+    bbDebugUiHotkey(63); // F5
+    key(SDL_KEYDOWN,SDL_SCANCODE_F5);bbRuntimeIdle();
+    expect("configured F5 opens developer menu",bbDebugUiOpen(-1),1);
+    key(SDL_KEYDOWN,SDL_SCANCODE_F5);bbRuntimeIdle();
+    expect("configured F5 closes developer menu",bbDebugUiOpen(-1),0);
+    bbDebugUiHotkey(210);
+    // The overlay exclusively owns input, and transitions release held keys.
+    key(SDL_KEYDOWN,SDL_SCANCODE_W);expect("held before overlay",bbKeyDown(17),1);
+    key(SDL_KEYDOWN,SDL_SCANCODE_INSERT);bbRuntimeIdle();
+    expect("Insert opens overlay",bbDebugUiOpen(-1),1);
+    expect("opening releases game key",bbKeyDown(17),0);
+    key(SDL_KEYDOWN,SDL_SCANCODE_A);key(SDL_KEYUP,SDL_SCANCODE_A);
+    SDL_Event text={};text.type=SDL_TEXTINPUT;std::strcpy(text.text.text,"test");SDL_PushEvent(&text);
+    SDL_Event click={};click.type=SDL_MOUSEBUTTONDOWN;click.button.button=SDL_BUTTON_LEFT;SDL_PushEvent(&click);
+    expect("overlay consumes text",bbGetKey(true),0);
+    expect("overlay consumes key hits",bbKeyHit(30),0);
+    expect("overlay consumes mouse",bbMouseHit(1),0);
+    key(SDL_KEYDOWN,SDL_SCANCODE_INSERT,1);bbRuntimeIdle();
+    expect("Insert repeat does not toggle",bbDebugUiOpen(-1),1);
+    key(SDL_KEYDOWN,SDL_SCANCODE_INSERT);bbRuntimeIdle();
+    expect("Insert closes overlay",bbDebugUiOpen(-1),0);
+    expect("closing leaves mouse released",bbMouseDown(1),0);
+    key(SDL_KEYUP,SDL_SCANCODE_W);key(SDL_KEYDOWN,SDL_SCANCODE_W);
+    expect("fresh press resumes input",bbKeyDown(17),1);bbFlushKeys();
+
 
     // The actual rotation commands must retain the game's smallest sensitivity
     // increment (0.02 degrees) through repeated Euler/quaternion conversions.

@@ -474,6 +474,18 @@ if(S2_NATIVE_GAME AND BB_WINDOWS)
   get_filename_component(S2_OPENAL_LIBDIR "${OPENAL_LIBRARY}" DIRECTORY)
   target_link_directories(s2_input_check PRIVATE "${S2_OPENAL_LIBDIR}" "${S2_DAWN_ROOT}/lib")
 
+  # ImGui font rasterization and widget input, without a window or OS input.
+  add_executable(s2_debugui_check EXCLUDE_FROM_ALL tests/debugui_widgets.cpp)
+  target_include_directories(s2_debugui_check PRIVATE src/modules "${S2_DEP_IMGUI}")
+  target_link_libraries(s2_debugui_check PRIVATE runtime.s2windows.static)
+  target_link_directories(s2_debugui_check PRIVATE "${S2_OPENAL_LIBDIR}" "${S2_DAWN_ROOT}/lib")
+
+  add_executable(s2_debugui_render_check EXCLUDE_FROM_ALL tests/debugui_render.cpp)
+  target_include_directories(s2_debugui_render_check PRIVATE src/modules "${S2_DEP_IMGUI}")
+  target_compile_definitions(s2_debugui_render_check PRIVATE SDL_MAIN_HANDLED)
+  target_link_libraries(s2_debugui_render_check PRIVATE runtime.s2windows.static dawn::webgpu_dawn)
+  target_link_directories(s2_debugui_render_check PRIVATE "${S2_OPENAL_LIBDIR}" "${S2_DAWN_ROOT}/lib")
+
   # Render to textures with the production scene/shader, without an SDL window.
   add_executable(s2_render_check EXCLUDE_FROM_ALL tests/runtime_render.cpp)
   target_include_directories(s2_render_check PRIVATE src/modules

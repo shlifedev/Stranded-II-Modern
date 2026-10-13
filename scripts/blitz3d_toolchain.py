@@ -258,7 +258,7 @@ def license_sources():
     result = {'Blitz3D-NG.txt': ENGINE / 'LICENSE.TXT',
               'WebGPU-port-MIT.txt': ENGINE / 'WEBGPU-LICENSE.txt'}
     for name, relative, output_name in (
-        ('sdl', 'LICENSE.txt', 'SDL2.txt'), ('freetype2', 'docs/FTL.TXT', 'FreeType.txt'),
+        ('imgui', 'LICENSE.txt', 'Dear-ImGui.txt'), ('sdl', 'LICENSE.txt', 'SDL2.txt'), ('freetype2', 'docs/FTL.TXT', 'FreeType.txt'),
         ('ogg', 'COPYING', 'Ogg.txt'), ('vorbis', 'COPYING', 'Vorbis.txt'),
         ('minimp3', 'LICENSE', 'minimp3.txt'), ('zlib', 'README', 'zlib.txt')):
         result[output_name] = library(name) / relative

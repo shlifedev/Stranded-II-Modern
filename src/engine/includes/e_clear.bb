@@ -1,6 +1,7 @@
 ;############################################ Engine Clear
 
 Function e_clear()
+	dev_world_reset()
 	col_player_reset()
 	
 	;Frame

@@ -38,8 +38,10 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
     return elements.get(id);
   };
   const messages = [];
+  // Load the real shared overlay bridge before the shell.
+
   const context = vm.createContext({
-    document: target({getElementById: element, createElement: () => ({}), hasFocus: () => true,
+    document: target({body:{append(){}},getElementById: element, createElement: () => element("textarea"), hasFocus: () => true,
       exitPointerLock() { this.pointerLockElement = null; },
       baseURI: 'https://unit-test/Stranded-II-Modern/',
       currentScript: {src: 'https://unit-test/Stranded-II-Modern/shell.js?v=fixture'}}),
@@ -51,6 +53,7 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
       '/game/core/modern.ini', '/game/mods/Stranded II/sys/settings.cfg'
     ], languages: [{code: 'en', name: 'English'}, {code: 'ko', name: '한국어'}, {code: 'pt-BR', name: 'Português'}]})})
   });
+  vm.runInContext(fs.readFileSync(require('node:path').join(require('node:path').dirname(shellPath),'debugui.js'),'utf8'),context);
   FS.mkdirTree('/game/core'); FS.mkdirTree('/game/mods/Stranded II/sys');
   FS.writeFile('/game/core/modern.ini', 'language=en\nfps=144\n');
   let failNext = false, inFlight = 0, maximum = 0;

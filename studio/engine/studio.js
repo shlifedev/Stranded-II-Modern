@@ -2,6 +2,7 @@
 'use strict';
 const canvas=document.getElementById('canvas'),statusText=document.getElementById('status'),search=document.getElementById('search');
 const overlay=document.getElementById('gizmo');
+let debugUiOpen=false;
 const SEP=String.fromCharCode(31),queue=[],pendingPicks=new Map(),keys=new Set();
 let initial,loaded=false,starting=false,playing=false,tool='select',selection=null,dragging=false,rotating=false;
 let pitch=25,yaw=0,pickSerial=0,lastX=0,lastY=0,snapshotPending=null;
@@ -94,7 +95,7 @@ async function bridge(request){
     case 'height':return 800;
     case 'canvas-width':return canvas.width;
     case 'canvas-height':return canvas.height;
-    case 'focus':return transition||firstFrame||(!document.hidden&&(!playing||document.pointerLockElement===canvas||document.activeElement===search))?1:0;
+    case 'focus':return transition||firstFrame||(!document.hidden&&(debugUiOpen||!playing||document.pointerLockElement===canvas||document.activeElement===search))?1:0;
     case 'sync':return 1; // Deliberately ephemeral; project persistence belongs to the shared core.
     case 'copy':try{const dst=normalize(args[1]);if(Number(args[2])&&FS.analyzePath(dst).exists)return 0;FS.writeFile(dst,FS.readFile(normalize(args[0])));return 1;}catch{return 0;}
     case 'move':try{FS.rename(normalize(args[0]),normalize(args[1]));return 1;}catch{return 0;}
@@ -140,7 +141,7 @@ async function bridge(request){
       }
       maybeSync();
       if(queue.length)return queue.shift();
-      if(!playing&&!transition&&loaded&&!drag&&(rotating||keys.size)){
+      if(!debugUiOpen&&!playing&&!transition&&loaded&&!drag&&(rotating||keys.size)){
         const speed=keys.has('ShiftLeft')?15:5;
         return ['camera',pitch,yaw,((keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0))*speed,
           ((keys.has('KeyE')?1:0)-(keys.has('KeyQ')?1:0))*speed,((keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0))*speed].join(SEP);
@@ -246,7 +247,7 @@ function receive(message){
       drag=null;send('drag-state',{active:false});wantSync=true;maybeSync();drawGizmo();
     }
   }else if(message.type==='play'){
-    if(playing||transition)return;
+    if(debugUiOpen||playing||transition)return;
     playId=message.id;
     if(!loaded||drag||syncFailed){playState('idle',{message:'장면 연결과 편집을 완료한 후 다시 테스트하세요.'});return;}
     playRequest={at:performance.now(),requested:false,snapshot:null,committed:false};
@@ -271,7 +272,7 @@ function maybeSync(){
 }
 function drawGizmo(){
   if(!overlay)return;
-  if(!loaded||playing||transition||tool!=='move'||!selection||!projection||projection[2]<=0){overlay.innerHTML='';return;}
+  if(debugUiOpen||!loaded||playing||transition||tool!=='move'||!selection||!projection||projection[2]<=0){overlay.innerHTML='';return;}
   const rect=canvas.getBoundingClientRect(),sx=rect.width/canvas.width,sy=rect.height/canvas.height;
   const origin=projection.slice(0,3),x=rect.left+origin[0]*sx,y=rect.top+origin[1]*sy;
   const axes=['x','y','z'],colors=['#ff6871','#72df8d','#67aeff'];
@@ -285,6 +286,7 @@ function drawGizmo(){
   overlay.innerHTML=html+`<rect data-axis="ground" class="center" x="${x-9}" y="${y-9}" width="18" height="18" rx="3"/>`;
 }
 function beginDrag(event){
+  if(debugUiOpen)return;
   const axis=event.target.dataset?.axis;
   if(!axis||event.button!==0||drag||playing||transition||inFlight||requested||snapshotPending||syncFailed||resourceBlocked||!projection||!selected.length)return;
   event.preventDefault();canvas.focus();keys.clear();rotating=false;
@@ -335,6 +337,7 @@ overlay?.addEventListener('pointerup',event=>{if(event.button===0)moveDrag(event
 overlay?.addEventListener('pointercancel',()=>{if(!drag?.finishing)cancelDrag();});
 overlay?.addEventListener('lostpointercapture',()=>{if(!drag?.finishing)cancelDrag();});
 canvas.addEventListener('pointerdown',event=>{
+  if(debugUiOpen)return;
   canvas.focus();void audioState(false).catch(fail);
   if(playing){canvas.requestPointerLock()?.catch(fail);return;}
   if(drag||transition)return;
@@ -344,12 +347,12 @@ canvas.addEventListener('pointerdown',event=>{
 });
 canvas.addEventListener('pointermove',event=>{
   pointer={clientX:event.clientX,clientY:event.clientY};
-  if(playing||transition)return;
+  if(debugUiOpen||playing||transition)return;
   if(rotating){yaw+=(event.clientX-lastX)*.25;pitch=Math.max(-85,Math.min(85,pitch+(event.clientY-lastY)*.25));lastX=event.clientX;lastY=event.clientY;}
 });
 canvas.addEventListener('pointerup',event=>{
   pointer={clientX:event.clientX,clientY:event.clientY};
-  if(playing||transition)return;
+  if(debugUiOpen||playing||transition)return;
   if(event.button===2)rotating=false;
   if(event.button===0&&dragging){
     dragging=false;
@@ -359,9 +362,9 @@ canvas.addEventListener('pointerup',event=>{
 });
 canvas.addEventListener('pointerleave',()=>{pointer=null;});
 canvas.addEventListener('pointercancel',()=>{pointer=null;rotating=dragging=false;});
-canvas.addEventListener('wheel',event=>{if(!playing&&!transition&&!drag){event.preventDefault();command('camera',pitch,yaw,0,0,-Math.sign(event.deltaY)*25);}},{passive:false});
+canvas.addEventListener('wheel',event=>{if(!debugUiOpen&&!playing&&!transition&&!drag){event.preventDefault();command('camera',pitch,yaw,0,0,-Math.sign(event.deltaY)*25);}},{passive:false});
 window.addEventListener('keydown',event=>{
-  if(playing||transition)return;
+  if(debugUiOpen||playing||transition)return;
   if(event.code==='Escape'&&drag&&!drag.finishing){event.preventDefault();cancelDrag();return;}
   if(event.code==='Escape'&&tool==='place'){event.preventDefault();tool='select';placement=null;dragging=false;send('cancel-placement');return;}
   if(drag)return;
@@ -387,4 +390,5 @@ function fitCanvas(){
 window.addEventListener('resize',()=>{fitCanvas();drawGizmo();});
 window.addEventListener('error',event=>fail(event.error||event.message));
 window.addEventListener('unhandledrejection',event=>fail(event.reason));
+s2InstallDebugUi(Module,canvas,open=>{debugUiOpen=open;keys.clear();rotating=dragging=false;pointer=null;transient=null;if(!drag?.finishing)cancelDrag();drawGizmo();});
 send('ready-for-project');

@@ -56,6 +56,9 @@ End Function
 
 ;### Console Add Message
 Function con_add(txt$="",special=-1)
+	Local logged$=txt$
+	If dev_strings_ready Then logged$=ko_localize(txt$)
+	DebugUiLog "console",2*(special=Cbmpf_red),logged$
 	Tcon.Tcon=New Tcon
 	If special=-1 Then
 		Tcon\txt$=txt$

@@ -240,6 +240,11 @@ def release_members(runtime, game, edition='classic'):
                 not 0 < width <= 64 or height != 19):
             raise ValueError(f'Invalid font metadata: {code}')
         members[relative] = glyphs
+        relative = f'core/locales/{code}/ui.ttf'
+        members[relative] = file_bytes(runtime, relative)
+        for name in ('fallback.ttf','fallback-extra.ttf'):
+            fallback = f'core/locales/{code}/{name}'
+            if (runtime / fallback).is_file():members[fallback] = file_bytes(runtime, fallback)
         for style in range(7):
             for page in range((count + 1023) // 1024):
                 relative = f'core/locales/{code}/{style}_{page}.bmp'

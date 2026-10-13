@@ -8,3 +8,5 @@ Include "includes\qol_inventory.bb"
 Include "includes\qol_search.bb"
 Include "includes\qol_recipes.bb"
 qol_init()
+
+Include "includes\devmenu.bb"

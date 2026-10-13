@@ -7,6 +7,7 @@
 #include <bb/hook/hook.h>
 #ifdef BB_WEBGPU
 #include <bb/graphics.webgpu/graphics.webgpu.h>
+#include <bb/debugui/debugui.h>
 #ifdef BB_EMSCRIPTEN
 #include <emscripten.h>
 #endif
@@ -42,7 +43,7 @@ public:
 
     bool absoluteMousePosition(int &x,int &y)const override{
 #ifdef BB_WINDOWS
-        if(s2WindowsSearchFocused()) return false;
+        if(s2WindowsSearchFocused() || s2DebugUiVisible()) return false;
         auto graphics=bbContextDriver?dynamic_cast<WebGPUGraphics*>(bbContextDriver->getGraphics()):nullptr;
         return graphics && graphics->absoluteMousePosition(x,y);
 #else
@@ -84,7 +85,7 @@ extern bool s2MacSearchFocused();
 bool s2WindowsMouseCapture(bool enabled){
     auto graphics=bbContextDriver?dynamic_cast<WebGPUGraphics*>(bbContextDriver->getGraphics()):nullptr;
     if(!graphics) return false;
-    if(s2WindowsSearchFocused() || SDL_GetKeyboardFocus()!=graphics->wnd) enabled=false;
+    if(s2WindowsSearchFocused() || s2DebugUiVisible() || SDL_GetKeyboardFocus()!=graphics->wnd) enabled=false;
     SDL_bool mode=enabled?SDL_TRUE:SDL_FALSE;
     if(SDL_GetRelativeMouseMode()==mode) return true;
     if(SDL_SetRelativeMouseMode(mode)!=0) return false;
@@ -142,8 +143,21 @@ bool SDLRuntime::idle(){
 	extern void s2NativePumpAudio();
 	s2NativePumpAudio();
 #endif
+#ifdef BB_WEBGPU
+    static int uiGeneration=0;
+    auto resetUiTransition=[&](){
+      int current=bbDebugUiGeneration();
+      if(uiGeneration!=current){extern BBDevice bbMouse;bbKeyboard.reset();bbMouse.reset();bbResetMouseSpeed();uiGeneration=current;}
+    };
+    resetUiTransition();
+#endif
 	SDL_Event event;
 	while( SDL_PollEvent(&event) ){
+#ifdef BB_WEBGPU
+        bool uiConsumed=s2DebugUiEvent(event);
+        resetUiTransition();
+        if(uiConsumed) continue;
+#endif
 		if( event.type == SDL_QUIT ){
 			RTEX( 0 );
 		}else if( event.type==SDL_MOUSEMOTION ){
@@ -279,7 +293,7 @@ bool SDLRuntime::idle(){
     // External speed hooks can leave it in the future even after returning to
     // 1x, dropping new WM_MOUSEMOVE events. Absolute position needs no clock.
     // Raw camera movement continues to consume only SDL's relative counts.
-    if(gx_input && !gx_input->usesRelativeMouse()){
+    if(gx_input && !s2DebugUiVisible() && !gx_input->usesRelativeMouse()){
         int x,y;
         if(gx_input->absoluteMousePosition(x,y) && (x!=em_virt_x || y!=em_virt_y)){
             em_virt_x=x;em_virt_y=y;
@@ -297,7 +311,10 @@ void *SDLRuntime::window(){
 }
 
 void SDLRuntime::moveMouse( int x,int y ){
-	BBGraphics *graphics=bbContextDriver?bbContextDriver->getGraphics():0;
+	#ifdef BB_WEBGPU
+    if(s2DebugUiVisible()) return;
+#endif
+    BBGraphics *graphics=bbContextDriver?bbContextDriver->getGraphics():0;
 	if( !graphics ) return;
 	em_virt_x=x;em_virt_y=y;
 #ifdef BB_WINDOWS
@@ -313,6 +330,9 @@ void SDLRuntime::moveMouse( int x,int y ){
 }
 
 void SDLRuntime::setPointerVisible( bool vis ){
+#ifdef BB_WEBGPU
+    if(s2DebugUiVisible()) vis=true;
+#endif
 #if defined(BB_WINDOWS)
     // Cursor visibility is independent of gameplay capture. Showing the cursor
     // on focus loss must always release capture; HidePointer must not enable it.

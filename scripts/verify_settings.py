@@ -27,9 +27,10 @@ def main():
                          'set_fog', 'set_hwmultitex', 'set_mb', 'set_mb_alpha',
                          'set_musicvolume', 'set_fxvolume', 'set_name', 'set_serverport'))
     body += '\nGlobal modern_hwnd\n'
-    body += 'Global game_scriptkeys,set_moddir$\n'
-    body += 'Dim in_keys(20)\nDim game_scriptkey(20)\n'
+    body += 'Global game_scriptkeys,set_moddir$,set_rootdir$=SystemProperty("APPDIR")\nConst Ckey_devmenu=21\n'
+    body += 'Dim in_keys(21)\nDim game_scriptkey(20)\n'
     settings_source = (includes / 'load_settings.bb').read_text('utf8')
+    body += (includes / 'modern_files.bb').read_text('utf8') + '\n'
     body += function(settings_source, 'load_settings') + '\n'
     body += function(settings_source, 'save_settings') + '\n'
     body += function(settings_source, 'settings_apply_viewrange') + '\n'
@@ -38,6 +39,16 @@ def main():
     for name in ('mb_reset', 'e_environment_setup_water', 'grass_map', 'grass_heightmap', 'grass_spread'):
         body += f'Function {name}()\nEnd Function\n'
     body += '''
+If CommandLine$()="devmenu" Then
+ Local binding_report=WriteFile("devmenu-settings-result.txt")
+ load_settings():WriteLine binding_report,in_keys(Ckey_devmenu)
+ in_keys(Ckey_devmenu)=0:save_settings():load_settings()
+ WriteLine binding_report,in_keys(Ckey_devmenu)
+ in_keys(Ckey_devmenu)=63:save_settings():load_settings()
+ WriteLine binding_report,in_keys(Ckey_devmenu)
+ CloseFile binding_report
+ End
+EndIf
 If CommandLine$()="roundtrip" Then
  load_settings()
  Local range_report=WriteFile("viewrange-result.txt")
@@ -64,6 +75,24 @@ EndIf
     source.write_text(body, encoding='utf8')
     exe = output / 'settings-test.exe'
     engine.compile_test(source, exe, cwd=output)
+    # Old controls retain their binary prefix; only the tagged developer extension is new.
+    controls = output / 'sys/controls.cfg'
+    marker = output / 'core/development.flag'
+    if controls.exists():controls.unlink()
+    if marker.exists():marker.unlink()
+    subprocess.run([str(exe), 'devmenu'], cwd=output, check=True, timeout=15,
+                   creationflags=subprocess.CREATE_NO_WINDOW)
+    values = (output / 'devmenu-settings-result.txt').read_text('utf8').splitlines()
+    if values != ['0', '0', '63']:
+        raise AssertionError(f'Release developer shortcut default/save/reload: {values}')
+    controls.unlink();marker.parent.mkdir(exist_ok=True);marker.write_text('local\n')
+    subprocess.run([str(exe), 'devmenu'], cwd=output, check=True, timeout=15,
+                   creationflags=subprocess.CREATE_NO_WINDOW)
+    values = (output / 'devmenu-settings-result.txt').read_text('utf8').splitlines()
+    if values != ['210', '0', '63']:
+        raise AssertionError(f'Local developer shortcut default/explicit None/custom key: {values}')
+    marker.unlink();controls.unlink()
+    print('Developer shortcut release/local defaults and saved None/custom binding: passed')
     # This file follows the original settings format and represents a player who
     # chose lower quality, different volumes, and disabled motion blur.
     custom = ('### personal settings\n1024\n768\n16\n1\n0\n2\n1\n0\n'
