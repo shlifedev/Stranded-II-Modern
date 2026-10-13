@@ -13,7 +13,7 @@ SCHEMA = {
     'protocol': 'stranded-studio/1',
     'commands': ['init','inspect','revision','catalog','thumbnail','commands','apply','validate','export','undo','redo','preview','schema','serve','engine'],
     'thumbnail': {'kind': 'item|object|unit|building|recipe|info', 'contentId': 'definition ID or recipe identifier (CLI: --id)',
-                  'result': 'revision, status (ready|unavailable), additionalResults; ready: PNG dataUrl, source, width, height; unavailable: reason'},
+                  'result': 'revision, version (content resources only), status (ready|unavailable), additionalResults; ready: PNG dataUrl, source, width, height; unavailable: reason'},
     'operations': {
         'content.clone': {'kind': 'item|object|unit|building|recipe|info', 'source': 'existing ID', 'id': 'optional new numeric ID', 'properties': {'name': 'New name'}},
         'content.create': {'kind': 'item|object|unit|building|recipe|info', 'id': 'optional numeric ID', 'properties': {'req': ['24,2','23,1'], 'gen': ['30,1']}},

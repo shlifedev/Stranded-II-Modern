@@ -125,13 +125,66 @@ test('stop during native loading waits for the editor and ignores the stale firs
 });
 
 test('canvas picks account for scale and drop retains content identity',async()=>{
-  const host=viewport();
+  const host=viewport();ready(host);
+  vm.runInContext("initial.available.push('object/22')",host.context);
   host.canvasListeners.drop({clientX:340,clientY:230,shiftKey:false,preventDefault(){},
     dataTransfer:{getData:()=>JSON.stringify({kind:'object',id:22})}});
-  assert.equal(await host.bridge('studio-poll\x1f'),'pick\x1f640\x1f400\x1f1\x1f1');
+  assert.equal(await host.bridge('studio-poll\x1f'),'pick\x1f640\x1f400\x1f1\x1f1\x1f1\x1f22\x1f0');
   await host.bridge('studio-event\x1fpick\x1f1\x1f0\x1f0\x1f12\x1f160\x1f24\x1f1');
   const result=host.messages.at(-1);
   assert.equal(result.content.id,22);assert.equal(result.purpose,'place');assert.equal(result.hit,true);
+  assert.equal(result.placementSample,true);
+});
+
+test('placement hover samples the latest scaled pointer without flooding the native queue',async()=>{
+  const host=viewport();ready(host);
+  host.send({type:'tool',tool:'place',placement:{kind:'object',id:1},snap:16,entities:[]});
+  assert.equal(await host.bridge('studio-poll'),'select\x1f0\x1f0');
+  for(let i=0;i<100;i++)host.canvasListeners.pointermove({clientX:241+i,clientY:230});
+  assert.equal(await host.bridge('studio-hover'),'1\x1f1\x1f640\x1f400\x1f16');
+  assert.equal(await host.bridge('studio-poll'),'','hover does not queue pick commands');
+  assert.equal(await host.bridge('studio-hover'),'1\x1f1\x1f640\x1f400\x1f16','stationary pointer follows camera every frame');
+  host.send({type:'tool',tool:'place',placement:{kind:'unit',id:1},snap:32,entities:[]});
+  assert.equal(await host.bridge('studio-hover'),'2\x1f1\x1f640\x1f400\x1f32');
+});
+
+test('placement click captures its model and snap before the selected content changes',async()=>{
+  const host=viewport();ready(host);
+  host.send({type:'tool',tool:'place',placement:{kind:'unit',id:1},snap:16,entities:[]});
+  await host.bridge('studio-poll');
+  host.canvasListeners.pointerdown(pointer());
+  host.canvasListeners.pointerup({...pointer(),shiftKey:false});
+  host.send({type:'tool',tool:'place',placement:{kind:'object',id:1},snap:32,entities:[]});
+  assert.equal(await host.bridge('studio-poll'),'pick\x1f640\x1f400\x1f1\x1f1\x1f2\x1f1\x1f16');
+  await host.bridge('studio-event\x1fpick\x1f1\x1f0\x1f0\x1f16\x1f170\x1f32\x1f1');
+  const result=host.messages.at(-1);
+  assert.equal(result.content.kind,'unit');assert.equal(result.placementSample,true);
+  assert.equal(result.x,16);assert.equal(result.y,170);assert.equal(result.z,32);
+});
+
+test('placement preview clears on leaving, camera rotation, Escape, blur and unavailable content',async()=>{
+  const host=viewport();ready(host);
+  const choose=()=>host.send({type:'tool',tool:'place',placement:{kind:'object',id:1},snap:0,entities:[]});
+  const move=()=>host.canvasListeners.pointermove(pointer());
+  choose();move();assert.notEqual(await host.bridge('studio-hover'),'');
+  host.canvasListeners.pointerleave();assert.equal(await host.bridge('studio-hover'),'');
+  move();host.listeners.blur();assert.equal(await host.bridge('studio-hover'),'');
+  move();host.canvasListeners.pointerdown({...pointer(),button:2});assert.equal(await host.bridge('studio-hover'),'');
+  host.canvasListeners.pointerup({...pointer(),button:2});assert.notEqual(await host.bridge('studio-hover'),'');
+  host.listeners.keydown({code:'Escape',preventDefault(){}});
+  assert.equal(await host.bridge('studio-hover'),'');assert.equal(host.messages.at(-1).type,'cancel-placement');
+  choose();move();host.document.hidden=true;assert.equal(await host.bridge('studio-hover'),'');host.document.hidden=false;
+  host.send({type:'tool',tool:'place',placement:{kind:'object',id:999},entities:[]});
+  assert.equal(await host.bridge('studio-hover'),'');
+  choose();host.send({type:'play',id:1});assert.equal(await host.bridge('studio-hover'),'');
+});
+
+test('building drop uses its resolved model and rejects unapplied definitions',async()=>{
+  const host=viewport();ready(host);
+  const drop=placement=>host.canvasListeners.drop({...pointer(),dataTransfer:{getData:()=>JSON.stringify({kind:'building',id:99,placement})}});
+  drop({kind:'unit',id:1});
+  assert.equal(await host.bridge('studio-poll'),'pick\x1f640\x1f400\x1f1\x1f1\x1f2\x1f1\x1f0');
+  drop({kind:'unit',id:999});assert.equal(await host.bridge('studio-poll'),'');
 });
 
 test('messages from another window or origin do not reach Blitz',async()=>{
@@ -242,6 +295,19 @@ test('world handles have enlarged hit areas and objects hide the Y axis',async()
   const host=viewport();ready(host);select(host,'object');await projectGizmo(host);
   assert.match(host.overlay.innerHTML,/stroke-width="14"/);assert.match(host.overlay.innerHTML,/width="18"/);
   assert.doesNotMatch(host.overlay.innerHTML,/data-axis="y"/);
+});
+
+test('ground drag released outside the canvas finishes on a missed final terrain pick',async()=>{
+  const host=viewport();ready(host);select(host);await projectGizmo(host);await host.bridge('studio-poll');
+  host.overlayListeners.pointerdown(pointer('ground'));await host.bridge('studio-poll');await host.bridge('studio-poll');
+  await host.bridge('studio-event\x1fpick\x1f1\x1f0\x1f0\x1f0\x1f160\x1f0\x1f1');
+  host.overlayListeners.pointermove(pointer('ground',380));await host.bridge('studio-poll');
+  await host.bridge('studio-event\x1fpick\x1f2\x1f0\x1f0\x1f37\x1f140\x1f20\x1f1');
+  host.overlayListeners.pointerup(pointer('ground',900));
+  assert.equal(await host.bridge('studio-poll'),'pick\x1f1760\x1f400\x1f3\x1f1');
+  await host.bridge('studio-event\x1fpick\x1f3\x1f0\x1f0\x1f0\x1f0\x1f0\x1f0');
+  const commits=host.messages.filter(m=>m.type==='drag-commit');
+  assert.equal(commits.length,1);assert.equal(commits[0].delta.x,32);assert.equal(commits[0].delta.z,16);
 });
 
 test('camera survives explicit resource initialization and play-stop',async()=>{

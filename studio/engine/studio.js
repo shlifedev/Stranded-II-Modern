@@ -8,6 +8,7 @@ let pitch=25,yaw=0,pickSerial=0,lastX=0,lastY=0,snapshotPending=null;
 let acknowledged=null,inFlight=null,requested=false,wantSync=false,syncFailed=false,resourceBlocked=false,mapSize=0;
 let selected=[],revision=0,snap=0,projection=null,drag=null,dragSerial=0,transient=null,editorPose=null;
 let firstFrame=false,transition=null,playRequest=null,playId=0,stopPending=false;
+let placement=null,pointer=null;
 
 const send=(type,value={})=>parent.postMessage({source:'blitz-studio',type,...value},location.origin);
 const command=(...parts)=>queue.push(parts.join(SEP));
@@ -58,11 +59,31 @@ function validatePatch(encoded){
   if(offset!==bytes.length)throw new Error('장면 패치 길이 오류');
   return bytes;
 }
-function pick(event,purpose,terrain=false,content=null,extra={}){
+function canvasPoint(event,bounded=true){
   const rect=canvas.getBoundingClientRect();
   const x=(event.clientX-rect.left)*canvas.width/rect.width,y=(event.clientY-rect.top)*canvas.height/rect.height;
-  const token=String(++pickSerial);pendingPicks.set(token,{purpose,shift:event.shiftKey,selection,content,...extra});
-  command('pick',x,y,token,terrain?1:0);
+  return Number.isFinite(x)&&Number.isFinite(y)&&(!bounded||(x>=0&&y>=0&&x<canvas.width&&y<canvas.height))?{x,y}:null;
+}
+function placementContent(content){
+  const value=content?.placement||content,classes={object:1,unit:2,item:3,info:4};
+  const entityClass=classes[value?.kind],id=Number(value?.id);
+  return entityClass&&Number.isInteger(id)&&id>0&&initial?.available.includes(value.kind+'/'+id)?{kind:value.kind,id,class:entityClass}:null;
+}
+function hoverPlacement(){
+  if(!loaded||playing||transition||drag||rotating||syncFailed||resourceBlocked||document.hidden||tool!=='place'||!pointer)return '';
+  const target=placementContent(placement),point=canvasPoint(pointer);
+  return target&&point?[target.class,target.id,point.x,point.y,snap].join(SEP):'';
+}
+function pick(event,purpose,terrain=false,content=null,extra={}){
+  // Captured ground drags must finish even when released outside the canvas.
+  const point=canvasPoint(event,purpose==='place');if(!point)return;
+  const target=purpose==='place'?placementContent(content||placement):null;
+  if(purpose==='place'&&!target)return;
+  const token=String(++pickSerial);
+  pendingPicks.set(token,{purpose,shift:event.shiftKey,selection,content:target||content,placementSample:!!target,...extra});
+  const parts=['pick',point.x,point.y,token,terrain?1:0];
+  if(target)parts.push(target.class,target.id,snap);
+  command(...parts);
 }
 async function bridge(request){
   const [op,...args]=request.split(SEP),FS=Module.FS;
@@ -85,6 +106,9 @@ async function bridge(request){
     case 'search-position':{const rect=canvas.getBoundingClientRect();Object.assign(search.style,{left:(rect.left+Number(args[0])*rect.width/canvas.width)+'px',top:(rect.top+Number(args[1])*rect.height/canvas.height)+'px',width:(Number(args[2])*rect.width/canvas.width)+'px',height:(Number(args[3])*rect.height/canvas.height)+'px'});return 1;}
     case 'search-focus':Number(args[0])===2?search.focus():canvas.focus();return 1;
     case 'control-focus':return document.activeElement===search?2:1;
+    // Read the latest pointer once per rendered frame; pointermove never queues
+    // picks or allocates map entities, so camera/patch commands cannot starve.
+    case 'studio-hover':return hoverPlacement();
     case 'studio-poll':
       if(stopPending){
         // Gameplay may write its MEMFS map. Restore the authoring snapshot only
@@ -208,6 +232,7 @@ function receive(message){
     const identities=entities=>entities.map(e=>e.kind+'/'+e.id).join(',');
     if(drag&&!drag.finishing&&(tool!==message.tool||identities(selected)!==identities(message.entities||[])))cancelDrag();
     tool=message.tool;selection=message.selection||null;selected=message.entities||[];revision=message.revision;snap=message.snap||0;
+    placement=message.placement||null;
     command('select',selection?.class||0,selection?.id||0);drawGizmo();
   }else if(message.type==='focus'&&message.selection&&!drag&&!playing&&!transition){command('focus',message.selection.class,message.selection.id);command('pose');}
   else if(message.type==='drag-result'){
@@ -315,10 +340,12 @@ canvas.addEventListener('pointerdown',event=>{
   if(event.button===0){dragging=true;if(tool==='select'||tool==='move')pick(event,'select');}
 });
 canvas.addEventListener('pointermove',event=>{
+  pointer={clientX:event.clientX,clientY:event.clientY};
   if(playing||transition)return;
   if(rotating){yaw+=(event.clientX-lastX)*.25;pitch=Math.max(-85,Math.min(85,pitch+(event.clientY-lastY)*.25));lastX=event.clientX;lastY=event.clientY;}
 });
 canvas.addEventListener('pointerup',event=>{
+  pointer={clientX:event.clientX,clientY:event.clientY};
   if(playing||transition)return;
   if(event.button===2)rotating=false;
   if(event.button===0&&dragging){
@@ -327,10 +354,13 @@ canvas.addEventListener('pointerup',event=>{
     else if(tool==='terrain')pick(event,'terrain',true);
   }
 });
+canvas.addEventListener('pointerleave',()=>{pointer=null;});
+canvas.addEventListener('pointercancel',()=>{pointer=null;rotating=dragging=false;});
 canvas.addEventListener('wheel',event=>{if(!playing&&!transition&&!drag){event.preventDefault();command('camera',pitch,yaw,0,0,-Math.sign(event.deltaY)*25);}},{passive:false});
 window.addEventListener('keydown',event=>{
   if(playing||transition)return;
   if(event.code==='Escape'&&drag&&!drag.finishing){event.preventDefault();cancelDrag();return;}
+  if(event.code==='Escape'&&tool==='place'){event.preventDefault();tool='select';placement=null;dragging=false;send('cancel-placement');return;}
   if(drag)return;
   let shortcut;
   if(event.ctrlKey||event.metaKey){if(event.code==='KeyZ')shortcut=event.shiftKey?'redo':'undo';if(event.code==='KeyD')shortcut='duplicate';}
@@ -340,7 +370,7 @@ window.addEventListener('keydown',event=>{
   if(event.code==='KeyF'&&selection){command('focus',selection.class,selection.id);command('pose');}
 });
 window.addEventListener('keyup',event=>keys.delete(event.code));
-window.addEventListener('blur',()=>{keys.clear();rotating=dragging=false;if(!drag?.finishing)cancelDrag();});
+window.addEventListener('blur',()=>{pointer=null;keys.clear();rotating=dragging=false;if(!drag?.finishing)cancelDrag();});
 canvas.addEventListener('contextmenu',event=>event.preventDefault());
 canvas.addEventListener('dragover',event=>{if(!playing&&!transition&&event.dataTransfer.types.includes('application/s2-content')){event.preventDefault();event.dataTransfer.dropEffect='copy';}});
 canvas.addEventListener('drop',event=>{

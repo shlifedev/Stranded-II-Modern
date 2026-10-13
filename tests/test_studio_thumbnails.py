@@ -67,14 +67,30 @@ class Thumbnails(TestCase):
         self.assertEqual(info.getpixel((0, 0))[3], 0)
 
     def test_import_override_definition_changes_and_undo_refresh(self):
-        before = self.query()['dataUrl']
+        initial = self.query(); before = initial['dataUrl']
         imported = self.root / 'new.png'; Image.new('RGB', (40, 40), 'blue').save(imported)
         self.project.apply([{'op': 'asset.import', 'path': str(imported), 'destination': MOD + 'gfx/first.bmp'}])
         after = self.query(); self.assertNotEqual(before, after['dataUrl']); self.assertEqual(after['revision'], 1)
+        self.assertNotEqual(initial['version'], after['version'])
         self.assertEqual(self.decoded(after).getpixel((1, 1)), (0, 0, 255, 255))
         self.project.undo(); self.assertEqual(self.query()['dataUrl'], before)
+        self.assertEqual(self.query()['version'], initial['version'])
         self.project.apply([{'op': 'content.set', 'kind': 'item', 'id': 1, 'properties': {'icon': 'gfx/second.png'}}])
         self.assertEqual(self.query()['dataUrl'], self.query(identifier=2)['dataUrl'])
+        self.assertNotEqual(self.query()['version'], initial['version'])
+
+    def test_map_edits_and_undo_keep_thumbnail_version_and_pixels(self):
+        initial = self.query()
+        self.project.apply([{'op': 'map.create', 'name': 'island', 'size': 16}])
+        for x in (0, 64, 128):
+            self.project.apply([{'op': 'entity.add', 'map': 'island', 'kind': 'item', 'type': 1, 'values': {'x': x, 'z': 0, 'y': 100}}])
+            result = self.query()
+            self.assertEqual(result['version'], initial['version'])
+            self.assertEqual(self.project.snapshot('island')['thumbnailVersion'], initial['version'])
+            self.assertEqual(result['dataUrl'], initial['dataUrl'])
+            self.assertGreater(result['revision'], initial['revision'])
+        self.project.undo(); self.project.undo(redo=True)
+        self.assertEqual(self.query()['version'], initial['version'])
 
     def test_missing_corrupt_and_invalid_references_are_local_failures(self):
         self.assertEqual(self.query(identifier=3)['reason'], 'no-icon')

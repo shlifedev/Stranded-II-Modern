@@ -4,6 +4,7 @@ import {ScriptEditor} from './ScriptEditor';
 import {useDraft} from './useDraft';
 import {useTextDialog} from './useTextDialog';
 import {ContentThumbnail} from './ContentThumbnail';
+import {placementTarget} from './placement';
 
 type Selection={kind:Kind;id:number};
 type Tool='select'|'move'|'place'|'terrain';
@@ -53,7 +54,9 @@ export function App(){
   function sendTool(){
     const state=current.current,primary=state.selection.at(-1);
     const entities=state.selection.map(s=>state.snapshot?.map?.entities.find(e=>e.kind===s.kind&&e.id===s.id)).filter((e):e is Entity=>!!e).map(e=>({...e,class:classes[e.kind]}));
-    post('tool',{tool:state.tool,selection:primary?{...primary,class:classes[primary.kind]}:null,entities,revision:state.snapshot?.revision,snap:state.snap});
+    const target=placementTarget(state.contentSelection,state.snapshot?.catalog||[]);
+    const placement=target&&state.preview?.available.includes(target.kind+'/'+target.id)?target:null;
+    post('tool',{tool:state.tool,selection:primary?{...primary,class:classes[primary.kind]}:null,entities,revision:state.snapshot?.revision,snap:state.snap,placement});
   }
   async function fullPreview(dir:string,map:string){
     const value=await request<Preview>({command:'preview',project:dir,map});
@@ -107,7 +110,7 @@ export function App(){
   }
   useEffect(()=>{
     sendTool();
-  },[tool,selection,snapshot,snap]);
+  },[tool,selection,contentSelection,snapshot,snap]);
   useEffect(()=>{
     if(!project)return;
     const timer=setInterval(async()=>{
@@ -135,6 +138,7 @@ export function App(){
         return;
       }
       if(data.type==='pose'){cameraPose.current=data.pose;return;}
+      if(data.type==='cancel-placement'){setTool('select');return;}
       if(data.type==='resources'){setResourcesPending(data.pending);setAvailable(data.available||[]);if(data.required)setError('새 콘텐츠를 장면에 표시하려면 리소스 적용이 필요합니다.');return;}
       if(data.type==='applied'){setEngineStatus('Blitz 연결됨');return;}
       if(data.type==='request-preview'){
@@ -163,13 +167,9 @@ export function App(){
         if(data.kind){setSelection(previous=>data.shift?[...previous.filter(s=>s.kind!==data.kind||s.id!==data.id),{kind:data.kind,id:data.id}]:[{kind:data.kind,id:data.id}]);setContentSelection(null);}
         else if(!data.shift)setSelection([]);
       }else if(data.purpose==='place'){
-        let record=data.content||state.contentSelection;
-        if(record?.kind==='building'){
-          const building=state.snapshot?.catalog.find(r=>r.kind==='building'&&String(r.id)===String(record.id));
-          record=building?.properties.objectid?{kind:'object',id:Number(building.properties.objectid[0])}:building?.properties.unitid?{kind:'unit',id:Number(building.properties.unitid[0])}:null;
-        }
+        const record=placementTarget(data.content||state.contentSelection,state.snapshot?.catalog||[]);
         if(record&&classes[record.kind as Kind]&&!state.preview?.available.includes(record.kind+'/'+record.id)){setError('새 콘텐츠는 리소스 적용 후 배치할 수 있습니다.');return;}
-        if(record&&classes[record.kind as Kind])void mutate([{op:'entity.add',map:state.activeMap,kind:record.kind,type:Number(record.id),values:{x:round(data.x),z:round(data.z),...(record.kind==='object'?{}:{y:data.y})}}]);
+        if(record&&classes[record.kind as Kind])void mutate([{op:'entity.add',map:state.activeMap,kind:record.kind,type:Number(record.id),values:{x:data.placementSample?data.x:round(data.x),z:data.placementSample?data.z:round(data.z),...(record.kind==='object'?{}:{y:data.y})}}]);
       }else if(data.purpose==='terrain'&&state.snapshot?.map){
         const size=state.snapshot.map.size;void mutate([{op:'terrain.brush',map:state.activeMap,x:data.x/64+size/2,z:data.z/64+size/2,radius:state.radius,strength:state.strength,mode:state.brush}]);
       }
@@ -249,17 +249,17 @@ export function App(){
       <div className="scene-viewport">
       {activeMap&&engineReady&&preview?<iframe key={frameVersion} ref={frame} src="/engine/index.html" title="Blitz 3D 월드" allow="autoplay; fullscreen"/>:<div className="scene-empty"><div className="island-symbol">⌁</div><h2>{activeMap?'Blitz 엔진을 빌드해주세요':'첫 번째 섬을 만들어보세요'}</h2><p>{activeMap?'python scripts/studio.py engine build':'왼쪽 + 버튼으로 새 맵을 만들거나 기존 .s2 맵을 가져올 수 있습니다.'}</p></div>}
       </div>
-      <div className="scene-hint">{playing?'화면을 클릭하면 플레이 · Esc로 마우스 해제':tool==='place'?`${selectedContent?.name||'아래에서 콘텐츠를 선택하세요'} · 지형을 클릭하여 배치`:tool==='terrain'?'지형을 클릭하면 브러시 적용':tool==='move'?'축: 방향 이동 · 가운데: 지형 위 이동 · Esc: 취소 · Shift 클릭: 다중 선택':'우클릭 드래그: 시점 · WASD/QE: 이동 · F: 선택 개체 보기 · 휠: 줌'}</div>
+      <div className="scene-hint">{playing?'화면을 클릭하면 플레이 · Esc로 마우스 해제':tool==='place'?`${selectedContent?.name||'아래에서 콘텐츠를 선택하세요'} · 초록색 모델 미리보기 · 클릭: 배치 · Esc: 취소`:tool==='terrain'?'지형을 클릭하면 브러시 적용':tool==='move'?'축: 방향 이동 · 가운데: 지형 위 이동 · Esc: 취소 · Shift 클릭: 다중 선택':'우클릭 드래그: 시점 · WASD/QE: 이동 · F: 선택 개체 보기 · 휠: 줌'}</div>
     </main>
     <aside className="inspector panel"><div className="panel-title">속성<span>INSPECTOR</span></div>
       {selectedEntity?<><div className="selection-title"><span className="kind-badge">{labels[selectedEntity.kind]} #{selectedEntity.id}</span><h2>{entityLabel(selectedEntity)}</h2></div><fieldset disabled={busy||playing||dragActive}><PropertyForm key={project+activeMap+selectedEntity.kind+selectedEntity.id} draftKey={'studio.entity:'+project+':'+activeMap+':'+selectedEntity.kind+selectedEntity.id} revision={snapshot.revision} values={Object.fromEntries(Object.entries(selectedEntity).filter(([key])=>['x','y','z','yaw','pitch','health','health_max','count','vars'].includes(key)))} onSave={(values,expected)=>mutate([{op:'entity.set',map:activeMap,kind:selectedEntity.kind,id:selectedEntity.id,values}],expected)}/></fieldset><button className="wide" disabled={playing||dragActive} onClick={()=>{setContentSelection({kind:selectedEntity.kind,id:selectedEntity.type});setSelection([]);}}>콘텐츠 정의 열기 →</button><button className="wide" onClick={()=>setTab('script')}>개체 이벤트 스크립트</button></>:
-      selectedContent?<><div className="selection-title"><span className="kind-badge">{labels[selectedContent.kind]} · {selectedContent.id}</span><h2>{selectedContent.name}</h2><p>{selectedContent.path.split('/').pop()}</p></div><ContentThumbnail project={project} revision={snapshot.revision} record={selectedContent} large/><fieldset disabled={busy||playing||dragActive}><ContentForm key={project+selectedContent.kind+selectedContent.id} draftKey={'studio.content:'+project+':'+selectedContent.kind+selectedContent.id} revision={snapshot.revision} record={selectedContent} catalog={snapshot.catalog} onSave={(properties,expected)=>mutate([{op:'content.set',kind:selectedContent.kind,id:selectedContent.id,properties}],expected)}/></fieldset><button className="wide" disabled={busy||playing||dragActive} onClick={()=>void cloneContent()}>새 콘텐츠로 복제</button><button className="wide" onClick={()=>setTab('script')}>정의 스크립트 편집</button></>:
+      selectedContent?<><div className="selection-title"><span className="kind-badge">{labels[selectedContent.kind]} · {selectedContent.id}</span><h2>{selectedContent.name}</h2><p>{selectedContent.path.split('/').pop()}</p></div><ContentThumbnail project={project} version={snapshot.thumbnailVersion} record={selectedContent} large/><fieldset disabled={busy||playing||dragActive}><ContentForm key={project+selectedContent.kind+selectedContent.id} draftKey={'studio.content:'+project+':'+selectedContent.kind+selectedContent.id} revision={snapshot.revision} record={selectedContent} catalog={snapshot.catalog} onSave={(properties,expected)=>mutate([{op:'content.set',kind:selectedContent.kind,id:selectedContent.id,properties}],expected)}/></fieldset><button className="wide" disabled={busy||playing||dragActive} onClick={()=>void cloneContent()}>새 콘텐츠로 복제</button><button className="wide" onClick={()=>setTab('script')}>정의 스크립트 편집</button></>:
       <div className="inspector-empty"><h3>선택한 콘텐츠의 속성</h3><p>장면의 개체 또는 아래 콘텐츠 목록에서 항목을 선택하세요.</p>{activeMap&&<button onClick={()=>setTab('script')}>맵 전체 스크립트</button>}</div>}
     </aside>
     <section className="bottom panel"><div className="resize-handle" onPointerDown={e=>{const start=e.clientY,old=bottomHeight;e.currentTarget.setPointerCapture(e.pointerId);const move=(event:PointerEvent)=>setBottomHeight(Math.max(180,Math.min(600,old+start-event.clientY)));const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);}}/>
       <div className="tabs"><button className={tab==='assets'?'active':''} onClick={()=>setTab('assets')}>콘텐츠 <small>PROJECT</small></button><button className={tab==='script'?'active':''} onClick={()=>setTab('script')}>스크립트 {scriptDirty?'●':''}</button><button className={tab==='console'?'active':''} onClick={()=>setTab('console')}>진단 <span className={snapshot.diagnostics.length?'error-count':'count'}>{snapshot.diagnostics.length}</span></button></div>
       {tab==='assets'?<div className="asset-browser"><nav>{(Object.keys(labels) as Kind[]).map(kind=><button key={kind} className={filter===kind?'active':''} onClick={()=>setFilter(kind)}>{labels[kind]}<small>{snapshot.catalog.filter(r=>r.kind===kind).length}</small></button>)}</nav><div className="asset-main"><div className="asset-toolbar"><input placeholder="이름 또는 ID 검색…" value={query} onChange={e=>setQuery(e.target.value)}/><button disabled={busy||playing||!selectedContent} onClick={()=>void cloneContent()}>선택 항목 복제</button><button disabled={busy||playing||dragActive} onClick={()=>void run(async()=>{const path=await window.studio.choose({title:'모델·이미지·오디오 가져오기'});if(!path)return;const filename=path.replaceAll('\\','/').split('/').pop();const destination=await ask('게임 리소스 경로','mods/Stranded II/gfx/'+filename);if(!destination)return;await request({command:'apply',project,expectRevision:snapshot.revision,operations:{op:'asset.import',path,destination}});await refresh();})}>에셋 가져오기</button></div>
-        <div className="asset-grid">{filtered.map(record=><button key={record.kind+record.id} className={contentSelection?.kind===record.kind&&contentSelection.id===record.id?'asset selected':'asset'} disabled={playing||dragActive} draggable={!playing&&!dragActive&&(!classes[record.kind]||available.includes(record.kind+'/'+record.id))} title={classes[record.kind]&&!available.includes(record.kind+'/'+record.id)?'리소스 적용 후 배치 가능':undefined} onDragStart={event=>event.dataTransfer.setData('application/s2-content',JSON.stringify({kind:record.kind,id:record.id}))} onClick={()=>selectContent(record)} onDoubleClick={()=>{selectContent(record);if(classes[record.kind]||record.kind==='building')setTool('place');}}><ContentThumbnail project={project} revision={snapshot.revision} record={record}/><strong>{record.name}</strong><small>{classes[record.kind]&&!available.includes(record.kind+'/'+record.id)?'적용 대기':record.kind==='recipe'?'조합':`#${record.id}`}</small></button>)}</div></div></div>:
+        <div className="asset-grid">{filtered.map(record=><button key={record.kind+record.id} className={contentSelection?.kind===record.kind&&contentSelection.id===record.id?'asset selected':'asset'} disabled={playing||dragActive} draggable={!playing&&!dragActive&&(!classes[record.kind]||available.includes(record.kind+'/'+record.id))} title={classes[record.kind]&&!available.includes(record.kind+'/'+record.id)?'리소스 적용 후 배치 가능':undefined} onDragStart={event=>event.dataTransfer.setData('application/s2-content',JSON.stringify({kind:record.kind,id:record.id,placement:placementTarget(record,snapshot.catalog)}))} onClick={()=>selectContent(record)} onDoubleClick={()=>{selectContent(record);if(classes[record.kind]||record.kind==='building')setTool('place');}}><ContentThumbnail project={project} version={snapshot.thumbnailVersion} record={record}/><strong>{record.name}</strong><small>{classes[record.kind]&&!available.includes(record.kind+'/'+record.id)?'적용 대기':record.kind==='recipe'?'조합':`#${record.id}`}</small></button>)}</div></div></div>:
       tab==='console'?<div className="console">{snapshot.diagnostics.map((d,i)=><div key={i} className="diagnostic"><b>{d.code}</b><span>{d.message}</span><small>{d.location}</small></div>)}{!snapshot.diagnostics.length&&<p className="valid">✓ 콘텐츠 참조와 맵 구조 검사를 통과했습니다.</p>}{logs.map((line,i)=><pre key={i}>{line}</pre>)}</div>:
       <div className="script-panel"><div className="script-toolbar"><span>{scriptTarget||'맵이나 콘텐츠를 선택하세요'} {scriptDirty&&scriptRevision.current!==snapshot.revision?'· 이전 버전의 초안':''}</span><button disabled={!scriptDirty||busy} onClick={resetScript}>초안 취소</button><button className="primary" disabled={!scriptTarget||busy||playing||!scriptDirty} onClick={()=>void saveScript()}>스크립트 적용</button></div><ScriptEditor value={script} onChange={changeScript} commands={commands}/></div>}
     </section>

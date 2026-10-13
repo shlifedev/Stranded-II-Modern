@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"ko","syncedHash":"01bd97f1c8aa6632a1eacda8978d95c4bf88c0bcf8dd0605e2ccb94ebcfc12cc"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"ko","syncedHash":"a9ef555b756147ed647a03b0668d6a38bc2e585f5666fa135c08098b1eb6a17a"} -->
 
 # Stranded II 개발 지침
 
@@ -30,6 +30,26 @@
 - 하위 에이전트는 사용자가 명시적으로 요청한 경우에만 사용한다.
 - 사용자는 Git 미추적 파일 중 개발·실행에 불필요한 로컬 자료 정리를 요청했다. 의존성·사용자 데이터를 보존하고 경로 및 Git 추적 여부를 확인한 뒤 삭제한다. 커밋·푸시·이력 재작성은 별도 요청 없이 하지 않는다.
 - 원작·제3자 라이선스를 유지한다. 검증 절차는 `docs/development.md`에 있다. 일회성 실행·정리 기록은 공개 안내 문서에 누적하지 않는다. 로컬 정리 기록은 `build/cleanup-report.json`에 있다.
+
+## 커스텀 엔진 구조와 호환성
+
+- `src/engine/`는 Blitz 게임 로직, `src/blitz3d/`는 커스텀 LLVM 기반 Blitz 컴파일러·공통 런타임이다. 런타임의 `graphics.webgpu`는 장치·텍스처·2D/UI·화면 출력, `blitz3d.webgpu`는 3D 장면·메시·재질·그리기를 담당한다.
+- 렌더러는 C++의 `webgpu.h` / `wgpu*` API와 WGSL 셰이더를 사용한다. Rust `wgpu` 크레이트는 사용하지 않는다. Windows는 Dawn → D3D12, macOS는 Dawn → Metal, 웹·Studio는 Emscripten `emdawnwebgpu` → 브라우저 WebGPU 경로다.
+- `runtime.opengl.static`, `bbCreateOpenGLRuntime` 같은 기존 이름이 남아 있다. 실제 렌더링 경로는 연결한 모듈과 백엔드 선택으로 확인한다.
+- 네이티브 타깃은 Blitz 정수·실수를 32비트로 유지하고 내부 포인터는 64비트로 처리한다. 게임에 노출하는 리소스 핸들은 32비트 ID다. 포인터를 Blitz 정수로 직접 변환하지 않으며 `s2Handle`·`s2Pointer`와 해제 시 매핑 제거 규칙을 유지한다.
+- 네이티브 핸들 래퍼는 `commands.decls`와 `legacy32.py`에서 생성한다. 선언·생성기를 수정하고 빌드 생성물은 직접 고치지 않는다. 원작의 숫자 연산·바이너리·저장 의미를 유지한다.
+- 기존 D3D7 고정 기능의 조명·광택·텍스처 합성·안개·알파 테스트·투명색 의미를 보존한다. 반투명 그리기 순서를 유지하고 호환되는 인접 draw만 병합한다.
+- C++의 vertex·uniform·instance 구조체와 WGSL의 크기·오프셋·stride·padding을 함께 검토한다. dynamic offset 정렬은 장치 한도를 따른다.
+- pass 종료, queue 제출, GPU 완료는 서로 다르다. 기록한 draw는 버퍼 내용을 자동으로 보존하지 않으므로 이전 draw의 데이터가 덮어써지지 않도록 메시 버퍼 버전과 제출 순서를 유지한다. 동일 버퍼 `CopyRect`는 스냅샷을 사용해 앞선 쓰기를 읽는 순서를 보존한다.
+- 지형 높이 변경은 해당 점과 경계를 순환하는 이웃의 법선 캐시를 무효화하고, 지형 초기화는 전체 캐시를 무효화한다. 메시 가시성 캐시는 한 번의 장면 준비 안에서만 재사용하고 다음 `RenderWorld`의 준비에서 초기화한다.
+- `RenderWorldCube camera,texture[,tween]`의 6방향 준비 공유는 `tween=1`이고 카메라에 자식이 없을 때만 적용한다. 방향별 가시성·페이드·투명도 정렬을 유지한다. 현재 큐브 텍스처의 면별 저장·샘플링은 미완성이며 마지막으로 복사한 2D 이미지가 사용된다.
+- 성능 개선 시 물 반사 갱신 주기·풀 밀도·시야 거리·사용자 그래픽 설정을 유지한다. API 이름이나 고정 capability 값만으로 기능이 완전히 구현됐다고 판단하지 않는다.
+
+변경할 계층에 해당하는 문서와 검증을 선택한다.
+
+- 렌더러: [WebGPU 마이그레이션](docs/wgpu-migration-ko.md). Windows의 실제 offscreen D3D12 검사는 `python scripts/verify_engine.py --render`, 창·컨텍스트 수명 검사는 `python scripts/verify_engine.py --graphics`다.
+- 컴파일러·네이티브 ABI: [macOS 구현 원리](docs/macos-architecture-ko.md)의 숫자·포인터 설명과 `python scripts/verify_engine.py`의 원본 Blitz3D 1.118 기준 출력 비교를 사용한다. `--input`은 창 없는 SDL 입력 큐 검사이며 실제 IME·Alt+Tab 검증을 대신하지 않는다.
+- 플랫폼·에디션: [개발 가이드](docs/development-ko.md)와 [웹 구현 원리](docs/web-architecture-ko.md)를 따른다. 공통 엔진 변경은 Windows 두 판을 빌드·검사하고, 영향을 받는 Metal·브라우저 경로는 해당 환경에서 별도로 검증한다. Windows 성공만으로 다른 플랫폼 검증을 주장하지 않는다.
 
 ## 문서 작성·갱신
 

@@ -11,10 +11,10 @@ const reasons:Record<string,string>={
   'request-failed':'미리보기를 불러오지 못했습니다.'
 };
 
-export function ContentThumbnail({project,revision,record,large=false}:{project:string;revision:number;record:RecordInfo;large?:boolean}){
+export function ContentThumbnail({project,version,record,large=false}:{project:string;version:string;record:RecordInfo;large?:boolean}){
   const container=useRef<HTMLSpanElement>(null),[visible,setVisible]=useState(large);
   const [loaded,setLoaded]=useState<{key:string;value:Thumbnail}|null>(null);
-  const input={command:'thumbnail' as const,project,kind:record.kind,contentId:record.id},key=thumbnailKey(input,revision);
+  const input={command:'thumbnail' as const,project,kind:record.kind,contentId:record.id},key=thumbnailKey(input,version);
   const value=loaded?.key===key?loaded.value:null;
   const additional=record.kind==='recipe'?Math.max(0,(record.properties.gen?.length||0)-1):0;
   useEffect(()=>{
@@ -28,9 +28,9 @@ export function ContentThumbnail({project,revision,record,large=false}:{project:
   useEffect(()=>{
     if(!visible)return;
     let current=true;
-    const unsubscribe=loader.subscribe(input,revision,result=>{
-      if(current)setLoaded({key,value:result.revision===revision?result:
-        {revision,status:'unavailable',reason:'changed',additionalResults:additional}});
+    const unsubscribe=loader.subscribe(input,version,result=>{
+      if(current)setLoaded({key,value:result.version===version?result:
+        {version,status:'unavailable',reason:'changed',additionalResults:additional}});
     },large);
     return ()=>{current=false;unsubscribe();};
   },[key,visible,large]);
@@ -40,7 +40,7 @@ export function ContentThumbnail({project,revision,record,large=false}:{project:
   return <span ref={container} className={large?'content-preview':'content-thumbnail'} title={message}>
     <span className="thumbnail-image" aria-busy={!value}>
       {ready?<img src={value.dataUrl} alt={`${record.name} 아이콘`} draggable={false}
-        onError={()=>setLoaded({key,value:{revision,status:'unavailable',reason:'unreadable-image',additionalResults:additional}})}/>:
+        onError={()=>setLoaded({key,value:{version,status:'unavailable',reason:'unreadable-image',additionalResults:additional}})}/>:
         <span className={'asset-icon '+record.kind} aria-label={message}>{symbols[record.kind]}</span>}
       {additional>0&&<span className="thumbnail-count" title={`결과 ${additional+1}종 · 첫 번째 결과 이미지`}>+{additional}</span>}
     </span>

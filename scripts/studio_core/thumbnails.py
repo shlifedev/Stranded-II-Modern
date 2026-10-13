@@ -102,7 +102,7 @@ def _decode(raw, frame, mask):
 
 def thumbnail(project, kind, identifier):
     record = project.find(kind, identifier)
-    result = {'revision': project.data['revision'], 'status': 'unavailable',
+    result = {'revision': project.data['revision'], 'version': project.thumbnail_version(), 'status': 'unavailable',
               'additionalResults': max(0, len(record.properties.get('gen', [])) - 1) if kind == 'recipe' else 0}
     try:
         relative, frame, mask = _image_source(project, record)

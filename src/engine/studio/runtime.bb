@@ -40,8 +40,10 @@ Function studio_find(class,id)
 End Function
 
 Include "studio\scene.bb"
+Include "studio\placement.bb"
 
 Function studio_load(play=0,keepcamera=0)
+ studio_placement_clear()
  studio_drag_cancel()
  Local cx#=EntityX(cam),cy#=EntityY(cam),cz#=EntityZ(cam)
  Local pitch#=EntityPitch(cam),yaw#=EntityYaw(cam)
@@ -93,32 +95,54 @@ Function studio_load(play=0,keepcamera=0)
  web_service("studio-event","loaded"+Chr(31)+play+Chr(31)+ter_size)
 End Function
 
-Function studio_pick(x#,y#,token$,terrainonly=0)
- If studio_loaded=0 Or studio_playing Then Return
- If terrainonly Then editor_picking(0)
+Function studio_restore_picking()
+ For po.Tobject=Each Tobject
+  EntityPickMode po\h,2,1
+ Next
+ For pu.Tunit=Each Tunit
+  EntityPickMode pu\h,2,1
+  EntityPickMode pu\mh,2,1
+ Next
+ For pit.Titem=Each Titem
+  EntityPickMode pit\h,2,1
+ Next
+ For pn.Tinfo=Each Tinfo
+  If pn\h<>0 Then EntityPickMode pn\h,2,1
+ Next
+End Function
+
+Function studio_terrain_pick(x#,y#)
+ editor_picking(0)
+ ; Units have a separate pickable visual model below their collision pivot.
+ For pu.Tunit=Each Tunit
+  EntityPickMode pu\mh,0
+ Next
  CameraPick cam,x,y
+ Local hit=(PickedEntity()=ter)
+ studio_restore_picking()
+ Return hit
+End Function
+
+Function studio_pick(x#,y#,token$,terrainonly=0,placeclass=0,placetype=0,placesnap#=0)
+ If studio_loaded=0 Or studio_playing Then Return
+ If placeclass>0 Then
+  Local hit=studio_placement_sample(placeclass,placetype,x,y,placesnap)
+  web_service("studio-event","pick"+Chr(31)+token$+Chr(31)+0+Chr(31)+0+Chr(31)+studio_place_x+Chr(31)+studio_place_y+Chr(31)+studio_place_z+Chr(31)+hit)
+  Return
+ EndIf
+ If terrainonly Then
+  studio_terrain_pick(x,y)
+ Else
+  CameraPick cam,x,y
+ EndIf
  Local picked=PickedEntity(),class=0,id=0
  Local px#=PickedX(),py#=PickedY(),pz#=PickedZ()
- If terrainonly Then
-  For po.Tobject=Each Tobject
-   EntityPickMode po\h,2,1
-  Next
-  For pu.Tunit=Each Tunit
-   EntityPickMode pu\h,2,1
-  Next
-  For pit.Titem=Each Titem
-   EntityPickMode pit\h,2,1
-  Next
-  For pn.Tinfo=Each Tinfo
-   If pn\h<>0 Then EntityPickMode pn\h,2,1
-  Next
- EndIf
  For o.Tobject=Each Tobject
   If o\h=picked Then class=Cclass_object:id=o\id:Exit
  Next
  If class=0 Then
   For u.Tunit=Each Tunit
-   If u\h=picked Then class=Cclass_unit:id=u\id:Exit
+   If u\h=picked Or u\mh=picked Then class=Cclass_unit:id=u\id:Exit
   Next
  EndIf
  If class=0 Then
@@ -156,7 +180,7 @@ Function studio_process(command$)
     PointEntity cam,h
    EndIf
   Case "pick"
-   studio_pick(Float(studio_arg(command$,1)),Float(studio_arg(command$,2)),studio_arg(command$,3),Int(studio_arg(command$,4)))
+   studio_pick(Float(studio_arg(command$,1)),Float(studio_arg(command$,2)),studio_arg(command$,3),Int(studio_arg(command$,4)),Int(studio_arg(command$,5)),Int(studio_arg(command$,6)),Float(studio_arg(command$,7)))
   Case "camera"
    If studio_loaded And studio_playing=0 Then
     RotateEntity cam,Float(studio_arg(command$,1)),Float(studio_arg(command$,2)),0
@@ -192,6 +216,7 @@ Function studio_render()
  UpdateWorld(f#)
  cull()
  e_environment_update_water()
+ studio_placement_update()
  RenderWorld()
  mb_update()
  e_environment_water2dfx()
@@ -231,6 +256,7 @@ While Not m_performquit
  EndIf
 Wend
 qol_shutdown()
+studio_placement_clear()
 e_clear()
 EndGraphics()
 End

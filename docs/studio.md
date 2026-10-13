@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"a795c43babb5c81acb838adf2fd8c31a01d30f0b8d1ce686afeef4ac23ae5835"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"527a5abeb7dfe620d1fca831ccc2f77d6f602aa96ef5fb90b4f377ec3add8248"} -->
 
 # Stranded II Studio
 
@@ -35,7 +35,7 @@ Create a project in an empty folder or open an existing project on the start scr
 | --- | --- |
 | World | `+` creates a 32×32 island; `↥` imports a prepared UTF-8 `.s2` map. Other sizes are available through the CLI. |
 | Scene | Right-drag to look, WASD/QE to move, Shift to accelerate, wheel to zoom, F to frame the selection. |
-| Placement | Drag content into the scene or click terrain with the placement tool. New definitions become placeable after **Apply resources**. Shift selects multiple entities. |
+| Placement | Drag content into the scene, or select it and click terrain with the **Placement** tool. A translucent green preview follows the cursor in placement mode; Esc cancels. New definitions become placeable after **Apply resources**. Shift selects multiple entities. |
 | Move | Drag the thick X/Z axes for directional movement or the center square to move along terrain. Y is available when the selection contains no objects. The last selected entity anchors snapping; Esc or lost pointer capture cancels the drag. |
 | Inspector | Edit coordinates, rotation, health and quantity, then **Apply**. Objects derive their height from terrain, as in the game. |
 | Terrain | Choose raise, lower, flatten or smooth, then click terrain. Adjust radius and strength; strength applies to raise/lower. |
@@ -47,7 +47,9 @@ Create a project in an empty folder or open an existing project on the start scr
 
 Content icons fit a 64px tile and expand to at most 160px in the inspector, preserving their aspect ratio. Most originals are 40×40; enlargement does not add detail. Buildings show their completed result, and recipes show the first output item with `+N` for additional outputs. Map information uses the game's icon frames. Missing or unreadable images display a fallback symbol and a reason.
 
-Icons work without a map or the 3D engine. Imported project images take precedence, and saved changes refresh after **Apply definition**, asset import or undo. Unapplied drafts are excluded; icon updates are independent of the scene's **Apply resources** action.
+Icons work without a map or the 3D engine. Imported project images take precedence, and icons refresh when saved definitions or assets change. Placement, movement, terrain edits and their undo/redo retain existing thumbnails. Unapplied drafts are excluded; icon updates are independent of the scene's **Apply resources** action.
+
+The placement preview displays the currently applied item, object or unit model in green at 40% opacity. Buildings use their completed result model; map information uses a position marker. Preview and click placement share the same snapping, terrain height and alignment rules. The temporary model is never saved in the map and hides outside terrain or while looking with the right mouse button.
 
 **Test** reuses the current engine and its loaded resources. It checks the latest saved map immediately before rebuilding the playable world in that engine, running `on:preload`, `on:start` and `on:load` in their existing order. The engine and resources are not reinitialized, but map loading and startup scripts still take time. After changing definitions, models, translations or fonts, use **Apply resources** before testing. Unapplied drafts are excluded from play.
 
@@ -63,7 +65,7 @@ Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z redoes, Ctrl/Cmd+D duplicates entities and D
 
 The CLI works without a GUI and returns JSON on stdout. Errors and failed validation exit with code 1. `serve` implements JSON Lines with echoed request IDs; the GUI uses the same protocol.
 
-`thumbnail PROJECT --kind KIND --id ID` returns a PNG `dataUrl`, original `width`/`height`, resource path and revision without modifying the project. Unavailable images return `status: "unavailable"` and `reason`; unknown definition IDs are command errors. For recipes, use the identifier string returned by `catalog` unchanged.
+`thumbnail PROJECT --kind KIND --id ID` returns a PNG `dataUrl`, original `width`/`height`, resource path, `revision` and `version` without modifying the project. `version` is the content-resource cache key exposed as `thumbnailVersion` by `inspect`; map edits leave it unchanged. Unavailable images return `status: "unavailable"` and `reason`; unknown definition IDs are command errors. For recipes, use the identifier string returned by `catalog` unchanged.
 
 JSON requests pass the content identifier as `contentId`. The `id` field identifies the protocol request.
 
@@ -107,6 +109,6 @@ npm --prefix studio run check
 npm --prefix studio test
 ```
 
-Icon checks cover color keys, frames and output-image selection, asset precedence, refresh after edits/undo, path restrictions, read-only behavior, request caching/cancellation and IPC responses.
+Icon checks cover color keys, frames and output-image selection, asset precedence, refresh after resource edits and cache retention during map edits, path restrictions, read-only behavior, request caching/cancellation and IPC responses. Placement checks cover display scaling, latest-pointer delivery, model/snap capture, preview cancellation and rejection of unapplied definitions. Actual translucent model display still requires a separate check in the app.
 
 Tests cover data preservation, transactions, deltas/ACKs, pending resources, movement math, cancellation/conflicts, IPC, engine reuse, the latest saved map, stale requests, canceled starts, and map/camera restoration without launching a GUI. `engine check` verifies actual Blitz build artifacts, Extended catalogs, allowlisted resources and audio conversion. After changing the shared map loader, build/check both editions and run `python scripts/verify_game.py` and `python scripts/verify_game.py --edition extended` to check existing save/load behavior. View switching, selection, dragging, mouse capture, Alt-Tab, scaling, sound and Korean rendering still require separate checks in the app. The diagnostic log's time from start request to first game frame is not an FPS measurement.

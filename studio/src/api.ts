@@ -1,12 +1,12 @@
 export type Kind = 'object'|'unit'|'item'|'info'|'building'|'recipe';
 export type RecordInfo = {kind:Kind;id:number|string;name:string;path:string;properties:Record<string,string[]>};
-export type Thumbnail = {revision:number;additionalResults:number} & (
+export type Thumbnail = {version:string;additionalResults:number;revision?:number} & (
   {status:'ready';dataUrl:string;source:string;width:number;height:number} |
   {status:'unavailable';reason:string}
 );
 export type Entity = {kind:Kind;id:number;type:number;x:number;z:number;y?:number;yaw:number;pitch?:number;health?:number;health_max?:number;count?:number;vars?:string;script:string};
 export type Diagnostic = {severity:string;code:string;message:string;location:string};
-export type Snapshot = {name:string;project:string;base:string;revision:number;maps:string[];activeMap:string|null;catalog:RecordInfo[];baseMaps:string[];assets:string[];canUndo:boolean;canRedo:boolean;
+export type Snapshot = {name:string;project:string;base:string;revision:number;thumbnailVersion:string;maps:string[];activeMap:string|null;catalog:RecordInfo[];baseMaps:string[];assets:string[];canUndo:boolean;canRedo:boolean;
   map:{size:number;worldSize:number;entities:Entity[];script:string;attachments:string[]}|null;diagnostics:Diagnostic[]};
 export type Operation = Record<string,unknown> & {op:string};
 export type Preview = {files:Record<string,string>;map:string;revision:number;mode:'full'|'delta';token:string;baseToken?:string;available:string[];resourcesPending:boolean;resourcesRequired:boolean;patch?:string;restorePose?:number[]};

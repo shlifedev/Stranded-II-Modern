@@ -449,6 +449,10 @@ class Project:
                 error('invalid-map', str(exc), name)
         return issues
 
+    def thumbnail_version(self):
+        # Map edits and their revision counter do not change content images.
+        return digest(encode({'base': str(self.base), 'files': self.data['files'], 'assets': self.data['assets']}))
+
     def snapshot(self, map_name=None):
         if map_name and map_name not in self.data['maps']:
             map_name = next(iter(self.data['maps']), None)
@@ -456,7 +460,8 @@ class Project:
         base_maps = sorted(p.relative_to(self.base).as_posix() for p in (self.base/MOD/'maps').rglob('*.s2')
                            if 'editor' not in p.relative_to(self.base/MOD/'maps').parts)
         return {'name': self.data['name'], 'project': str(self.root), 'base': str(self.base),
-                'revision': self.data['revision'], 'maps': list(self.data['maps']), 'activeMap': map_name,
+                'revision': self.data['revision'], 'thumbnailVersion': self.thumbnail_version(),
+                'maps': list(self.data['maps']), 'activeMap': map_name,
                 'catalog': self.public_catalog(), 'baseMaps': base_maps,
                 'assets': list(self.data['assets']), 'canUndo': bool(history['undo']), 'canRedo': bool(history['redo']),
                 'map': EditableMap(self.map_bytes(map_name)).summary() if map_name else None,
