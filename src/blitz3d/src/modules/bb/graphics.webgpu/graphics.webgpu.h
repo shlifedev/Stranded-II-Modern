@@ -27,6 +27,7 @@ struct WebGPUCanvasListener{
 	void (*view_gone)( void *ctx,WGPUTextureView view );
 	void (*canvas_gone)( void *ctx,WebGPUCanvas *canvas );
 	void (*pre_flush)( void *ctx );
+	void (*post_flush)( void *ctx );
 };
 
 inline WGPUStringView bbStrView( const char *s ){

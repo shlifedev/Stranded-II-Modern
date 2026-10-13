@@ -116,6 +116,7 @@ public:
 	bool index16=false;
 
 	unsigned drawn_marker=0;
+	int drawn_v0=0,drawn_v1=0,drawn_t0=0,drawn_t1=0;
 
 	int dirty_v0=0,dirty_v1=0,dirty_t0=0,dirty_t1=0;
 
@@ -147,7 +148,10 @@ public:
 		if( n+1>dirty_v1 ) dirty_v1=n+1;
 	}
 
-	void unlock();
+	// Keep edits on the CPU until the mesh is actually drawn. Sprites share a
+	// mesh, so their separate lock/unlock calls become one contiguous upload.
+	void unlock(){}
+	void upload();
 
 	void setVertex( int n,const void *_v ){
 		const Surface::Vertex *v=(const Surface::Vertex*)_v;
@@ -224,7 +228,10 @@ private:
 	uint32_t bound_frame_offset=0,bound_entity_offset=0;
 	WGPUBindGroup bound_tex_group=0;
 	WGPUBuffer bound_vertex_buffer=0,bound_index_buffer=0;
+	bool bound_instances=false;
 	unsigned bound_mesh_generation=0;
+	uint32_t pending_instances=0,pending_first_instance=0;
+	int pending_index_first=0,pending_index_count=0,pending_base_vertex=0;
 
 	WGPUTextureView last_views[8];
 	WGPUSampler last_samplers[8];
@@ -237,6 +244,7 @@ private:
 		bound_frame=bound_entity=false;
 		bound_tex_group=0;
 		bound_vertex_buffer=bound_index_buffer=0;
+		bound_instances=false;
 	}
 
 	std::vector<WebGPULight*> lights;
@@ -272,6 +280,9 @@ private:
 	WGPUBuffer uniform_buffer=0;
 	size_t uniform_capacity=0,uniform_used=0,uniform_uploaded=0;
 	std::vector<unsigned char> uniform_stage;
+	WGPUBuffer instance_buffer=0;
+	size_t instance_capacity=0,instance_used=0;
+	std::vector<unsigned char> instance_stage;
 	WGPUBindGroup frame_group=0,entity_group=0,clear_group=0;
 
 	std::map<std::array<uintptr_t,16>,WGPUBindGroup> tex_groups;
@@ -302,7 +313,16 @@ private:
 		((WebGPUScene*)ctx)->onCanvasGone( canvas );
 	}
 	static void preFlushThunk( void *ctx ){
-		((WebGPUScene*)ctx)->uploadStagedUniforms();
+		WebGPUScene *scene=(WebGPUScene*)ctx;
+		scene->endPass();
+		scene->uploadStagedUniforms();
+		if( scene->instance_used ){
+			wgpuQueueWriteBuffer( scene->res->queue,scene->instance_buffer,0,
+			                      scene->instance_stage.data(),scene->instance_used );
+		}
+	}
+	static void postFlushThunk( void *ctx ){
+		((WebGPUScene*)ctx)->resetAfterFlush();
 	}
 
 	void uploadStagedUniforms(){
@@ -314,6 +334,7 @@ private:
 	}
 
 	void onViewGone( WGPUTextureView view ){
+		flushPendingDraw();
 		uintptr_t v=(uintptr_t)view;
 		std::map<std::array<uintptr_t,16>,WGPUBindGroup>::iterator it=tex_groups.begin();
 		while( it!=tex_groups.end() ){
@@ -374,6 +395,7 @@ public:
 		l.view_gone=viewGoneThunk;
 		l.canvas_gone=canvasGoneThunk;
 		l.pre_flush=preFlushThunk;
+		l.post_flush=postFlushThunk;
 		res->addListener( l );
 	}
 
@@ -411,6 +433,7 @@ public:
 		if( entity_group ){ wgpuBindGroupRelease( entity_group );entity_group=0; }
 		if( clear_group ){ wgpuBindGroupRelease( clear_group );clear_group=0; }
 		if( uniform_buffer ){ wgpuBufferRelease( uniform_buffer );uniform_buffer=0; }
+		if( instance_buffer ){ wgpuBufferRelease( instance_buffer );instance_buffer=0; }
 		if( scene_layout ){ wgpuPipelineLayoutRelease( scene_layout );scene_layout=0; }
 		if( clear_layout ){ wgpuPipelineLayoutRelease( clear_layout );clear_layout=0; }
 		if( bgl_frame ){ wgpuBindGroupLayoutRelease( bgl_frame );bgl_frame=0; }
@@ -519,6 +542,13 @@ public:
 		uniform_used=0;
 		uniform_uploaded=0;
 		uniform_stage.resize( uniform_capacity );
+
+		instance_capacity=(size_t)4*1024*1024;
+		bd.label=bbStrView( "bb.3d.instance.arena" );
+		bd.usage=WGPUBufferUsage_Vertex|WGPUBufferUsage_CopyDst;
+		bd.size=instance_capacity;
+		instance_buffer=wgpuDeviceCreateBuffer( res->device,&bd );
+		instance_stage.resize( instance_capacity );
 
 		{
 			WGPUBindGroupEntry e={};
@@ -664,11 +694,21 @@ public:
 		attrs[4].offset=offsetof( BBWebGPU3DVertex,tex_coord1 );
 		attrs[4].shaderLocation=4;
 
-		WGPUVertexBufferLayout vbl={};
-		vbl.stepMode=WGPUVertexStepMode_Vertex;
-		vbl.arrayStride=sizeof( BBWebGPU3DVertex );
-		vbl.attributeCount=5;
-		vbl.attributes=attrs;
+		WGPUVertexAttribute instance_attrs[7]={};
+		for( int i=0;i<7;++i ){
+			instance_attrs[i].format=WGPUVertexFormat_Float32x4;
+			instance_attrs[i].offset=i*4*sizeof(float);
+			instance_attrs[i].shaderLocation=5+i;
+		}
+		WGPUVertexBufferLayout vbl[2]={};
+		vbl[0].stepMode=WGPUVertexStepMode_Vertex;
+		vbl[0].arrayStride=sizeof( BBWebGPU3DVertex );
+		vbl[0].attributeCount=5;
+		vbl[0].attributes=attrs;
+		vbl[1].stepMode=WGPUVertexStepMode_Instance;
+		vbl[1].arrayStride=sizeof( BBWebGPUInstance );
+		vbl[1].attributeCount=7;
+		vbl[1].attributes=instance_attrs;
 
 		WGPUBlendState blend_state={};
 		blend_state.color.operation=WGPUBlendOperation_Add;
@@ -733,8 +773,8 @@ public:
 		desc.layout=scene_layout;
 		desc.vertex.module=shader;
 		desc.vertex.entryPoint=bbStrView( "vs_main" );
-		desc.vertex.bufferCount=1;
-		desc.vertex.buffers=&vbl;
+		desc.vertex.bufferCount=2;
+		desc.vertex.buffers=vbl;
 		desc.primitive.topology=wireframe?WGPUPrimitiveTopology_LineList:WGPUPrimitiveTopology_TriangleList;
 		desc.primitive.stripIndexFormat=WGPUIndexFormat_Undefined;
 		desc.primitive.frontFace=flipped_tris?WGPUFrontFace_CW:WGPUFrontFace_CCW;
@@ -801,8 +841,9 @@ public:
 		return (uint32_t)offset;
 	}
 
-	uint32_t pushCached( UniformCache &cache,const void *data,size_t size,size_t bind_size ){
-		if( cache.valid&&cache.bytes.size()==size&&memcmp( cache.bytes.data(),data,size )==0 ){
+	uint32_t pushCached( UniformCache &cache,const void *data,size_t size,size_t bind_size,size_t skip=0 ){
+		if( cache.valid&&cache.bytes.size()==size&&
+		    memcmp( cache.bytes.data()+skip,(const unsigned char*)data+skip,size-skip )==0 ){
 			return cache.offset;
 		}
 		uint32_t offset=pushUniforms( data,size,bind_size );
@@ -812,7 +853,15 @@ public:
 		return offset;
 	}
 
+	void flushPendingDraw(){
+		if( !pending_instances ) return;
+		wgpuRenderPassEncoderDrawIndexed( pass,(uint32_t)pending_index_count,pending_instances,
+		                                 (uint32_t)pending_index_first,pending_base_vertex,pending_first_instance );
+		pending_instances=0;
+	}
+
 	void endPass(){
+		flushPendingDraw();
 		if( pass ){
 			wgpuRenderPassEncoderEnd( pass );
 			wgpuRenderPassEncoderRelease( pass );
@@ -825,8 +874,12 @@ public:
 	void flushAll(){
 		endPass();
 		res->flush();
+	}
+
+	void resetAfterFlush(){
 		uniform_used=0;
 		uniform_uploaded=0;
+		instance_used=0;
 		++submit_marker;
 		frame_dirty=true;
 		entity_dirty=true;
@@ -988,6 +1041,7 @@ public:
 	}
 
 	void setViewport( int x,int y,int w,int h ){
+		flushPendingDraw();
 		viewport[0]=x;viewport[1]=y;viewport[2]=w;viewport[3]=h;
 		if( pass&&pass_canvas==target ) applyViewport();
 	}
@@ -1182,7 +1236,10 @@ public:
 		ensurePipelineObjects();
 		if( !shader ) return false;
 
-		flushAll();
+		// Camera changes only require a new pass. Keep earlier camera uniforms
+		// and draws until a real submission or a conflicting mesh update.
+		endPass();
+		res->endPass();
 
 		if( tex_groups.size()>2048 ){
 			for( std::map<std::array<uintptr_t,16>,WGPUBindGroup>::iterator it=tex_groups.begin();it!=tex_groups.end();++it ){
@@ -1222,6 +1279,7 @@ public:
 	void clear( const float rgb[3],float alpha,float z,bool clear_argb,bool clear_z ){
 		if( !clear_argb&&!clear_z ) return;
 		if( !target ) return;
+		flushPendingDraw();
 
 		int cw=target->getWidth(),ch=target->getHeight();
 		bool full=( viewport[2]>0&&viewport[3]>0&&
@@ -1263,6 +1321,7 @@ public:
 		if( !mesh||!mesh->vertex_buffer||!mesh->index_buffer||tri_cnt<=0 ) return;
 		if( !target ) return;
 
+		mesh->upload();
 		WGPUBuffer index_buffer=mesh->index_buffer;
 		bool index16=mesh->index16;
 		int index_first=first_tri*3,index_count=tri_cnt*3;
@@ -1272,6 +1331,7 @@ public:
 			index_first=first_tri*6;
 			index_count=tri_cnt*6;
 		}
+		if( instance_used+sizeof(BBWebGPUInstance)>instance_capacity ) flushAll();
 
 		for( int attempt=0;attempt<4;++attempt ){
 			if( frame_dirty ){
@@ -1280,7 +1340,8 @@ public:
 				frame_dirty=false;
 			}
 			if( entity_dirty ){
-				entity_offset=pushCached( entity_cache,&entity,BBWebGPUEntityState::usedSize( entity.texs_used ),sizeof(entity) );
+				entity_offset=pushCached( entity_cache,&entity,BBWebGPUEntityState::usedSize( entity.texs_used ),
+				                          sizeof(entity),offsetof(BBWebGPUEntityState,ambient) );
 				entity_dirty=false;
 			}
 			if( !frame_dirty&&!entity_dirty ) break;
@@ -1290,11 +1351,26 @@ public:
 		if( !p ) return;
 
 		if( bound_mesh_generation!=g_mesh_generation ){
+			flushPendingDraw();
 			bound_vertex_buffer=bound_index_buffer=0;
 			bound_mesh_generation=g_mesh_generation;
 		}
 
 		WGPURenderPipeline pipeline=getScenePipeline( target->format() );
+		WGPUBindGroup tex_group=current_tex_group?current_tex_group:defaultTexGroup();
+		uint32_t first_instance=(uint32_t)(instance_used/sizeof(BBWebGPUInstance));
+		BBWebGPUInstance instance;
+		memcpy( instance.world,entity.world,sizeof(instance.world) );
+		memcpy( instance.normal,entity.normal_mat,sizeof(instance.normal) );
+		memcpy( instance_stage.data()+instance_used,&instance,sizeof(instance) );
+		instance_used+=sizeof(instance);
+
+		bool batchable=blend_mode==BLEND_REPLACE&&zmode==ZMODE_NORMAL&&!wireframe;
+		if( pending_instances&&(!batchable||pipeline!=bound_pipeline||
+		    !bound_frame||bound_frame_offset!=frame_offset||!bound_entity||bound_entity_offset!=entity_offset||
+		    tex_group!=bound_tex_group||mesh->vertex_buffer!=bound_vertex_buffer||index_buffer!=bound_index_buffer||
+		    index_first!=pending_index_first||index_count!=pending_index_count||first_vert!=pending_base_vertex||
+		    first_instance!=pending_first_instance+pending_instances) ) flushPendingDraw();
 		if( pipeline!=bound_pipeline ){
 			wgpuRenderPassEncoderSetPipeline( p,pipeline );
 			bound_pipeline=pipeline;
@@ -1309,7 +1385,6 @@ public:
 			bound_entity=true;
 			bound_entity_offset=entity_offset;
 		}
-		WGPUBindGroup tex_group=current_tex_group?current_tex_group:defaultTexGroup();
 		if( tex_group!=bound_tex_group ){
 			wgpuRenderPassEncoderSetBindGroup( p,2,tex_group,0,0 );
 			bound_tex_group=tex_group;
@@ -1322,9 +1397,30 @@ public:
 			wgpuRenderPassEncoderSetIndexBuffer( p,index_buffer,index16?WGPUIndexFormat_Uint16:WGPUIndexFormat_Uint32,0,WGPU_WHOLE_SIZE );
 			bound_index_buffer=index_buffer;
 		}
-		wgpuRenderPassEncoderDrawIndexed( p,(uint32_t)index_count,1,(uint32_t)index_first,first_vert,0 );
+		if( !bound_instances ){
+			wgpuRenderPassEncoderSetVertexBuffer( p,1,instance_buffer,0,WGPU_WHOLE_SIZE );
+			bound_instances=true;
+		}
+		if( batchable ){
+			if( !pending_instances ){
+				pending_first_instance=first_instance;
+				pending_index_first=index_first;pending_index_count=index_count;pending_base_vertex=first_vert;
+			}
+			++pending_instances;
+		}else{
+			wgpuRenderPassEncoderDrawIndexed( p,(uint32_t)index_count,1,(uint32_t)index_first,first_vert,first_instance );
+		}
 
-		mesh->drawn_marker=submit_marker;
+		if( mesh->drawn_marker!=submit_marker ){
+			mesh->drawn_marker=submit_marker;
+			mesh->drawn_v0=first_vert;mesh->drawn_v1=first_vert+vert_cnt;
+			mesh->drawn_t0=first_tri;mesh->drawn_t1=first_tri+tri_cnt;
+		}else{
+			mesh->drawn_v0=std::min(mesh->drawn_v0,first_vert);
+			mesh->drawn_v1=std::max(mesh->drawn_v1,first_vert+vert_cnt);
+			mesh->drawn_t0=std::min(mesh->drawn_t0,first_tri);
+			mesh->drawn_t1=std::max(mesh->drawn_t1,first_tri+tri_cnt);
+		}
 		tris_drawn+=tri_cnt;
 	}
 
@@ -1385,7 +1481,7 @@ WGPUBuffer WebGPUMesh::wireBuffer(){
 	if( !tris ) return 0;
 	if( wire_buffer&&wire_version==tri_version ) return wire_buffer;
 
-	if( drawn_marker==scene->submit_marker ){
+	if( wire_buffer&&drawn_marker==scene->submit_marker ){
 		scene->flushAll();
 	}
 
@@ -1417,14 +1513,18 @@ WGPUBuffer WebGPUMesh::wireBuffer(){
 	return wire_buffer;
 }
 
-void WebGPUMesh::unlock(){
+void WebGPUMesh::upload(){
 	if( !verts||!tris ) return;
 
 	bool verts_dirty=dirty_v1>dirty_v0;
 	bool tris_dirty=dirty_t1>dirty_t0;
 	if( !verts_dirty&&!tris_dirty ) return;
 
-	if( drawn_marker==scene->submit_marker ){
+	// Updating unused ranges cannot affect queued draws. Overwriting data they
+	// reference must still submit first, so animation/reflection order is kept.
+	bool vertex_overlap=verts_dirty&&dirty_v0<drawn_v1&&dirty_v1>drawn_v0;
+	bool index_overlap=tris_dirty&&dirty_t0<drawn_t1&&dirty_t1>drawn_t0;
+	if( drawn_marker==scene->submit_marker&&(vertex_overlap||index_overlap) ){
 		scene->flushAll();
 	}
 

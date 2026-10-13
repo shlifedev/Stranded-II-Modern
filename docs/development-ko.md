@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"82dae0f4c8bfd6d8fc0fc1e184c736a9eb74baa00243880c35e1461303579ec2"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"e56e09d64caf3777559535b0fd27f5178b90e2e2284a453762b8935b62176508"} -->
 
 # 개발 가이드
 
@@ -13,6 +13,8 @@
 Windows 10/11 x64와 Direct3D 12 지원 GPU, Python 3.12 이상, [requirements.txt](../requirements.txt)이 필요합니다. 작업 폴더는 `C:\Stranded II`처럼 영문 경로를 사용하세요. 공백은 있어도 됩니다.
 
 Visual Studio의 MSVC x64 C++ 빌드 도구, Windows SDK, CMake/Ninja 도구, DIA SDK를 설치합니다. `build`는 저장소의 `src/blitz3d/` 엔진을 LLVM과 함께 빌드해 게임을 x64 네이티브 실행 파일로 연결합니다. 그래픽은 Dawn/D3D12, 오디오는 OpenAL Soft를 사용합니다. Unicode 입력·IME·Windows 서비스는 런타임에 내장하며 `QolInput.dll`은 필요하지 않습니다. 실행에 필요한 DLL과 라이선스는 각 판의 EXE 옆에 복사합니다.
+
+네이티브 런타임은 속도 우선 `Release` 설정(MSVC의 `/O2`)을 사용하며 기존 부동소수점 연산 규칙을 유지합니다. WebGPU는 메시 변경을 그리기 직전까지 모아서 업로드하고, 버퍼 갱신과 그리기 순서를 지키면서 카메라·화면 출력 명령을 함께 제출합니다. 동일한 메시·재질을 쓰는 불투명 복제본은 인스턴싱으로 묶어 그리며, 반투명 오브젝트의 순서는 유지합니다.
 
 아래 의존성은 저장소에 포함하지 않으므로 직접 준비합니다.
 

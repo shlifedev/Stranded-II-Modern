@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"f2e85d2b5919c7255902f4207ac598c70fbec6fbe6453a6836a7f6fc9a938fdb"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"a51ce46e994393b35016d0613a79f166d3ab03451ba17a4831ccb401a9afd885"} -->
 
 # Development guide
 
@@ -13,6 +13,8 @@ For a first build, follow **environment setup → first build**. Once set up, us
 You need Windows 10/11 x64 with a Direct3D 12 GPU, Python 3.12 or later, and [requirements.txt](../requirements.txt). Use an ASCII workspace path such as `C:\Stranded II`; spaces are allowed.
 
 Install Visual Studio’s MSVC x64 C++ build tools, Windows SDK, CMake/Ninja tools and DIA SDK. `build` compiles the editable Blitz3D engine in `src/blitz3d/` with LLVM and links the game as a native x64 executable. Rendering uses Dawn/D3D12 and audio uses OpenAL Soft. Unicode input, IME and Windows services are linked into the runtime; `QolInput.dll` is no longer required. Runtime DLLs and their licenses are copied beside each edition’s EXE.
+
+Native runtimes use the speed-optimized `Release` configuration (`/O2` on MSVC), retaining strict floating-point behavior. WebGPU combines mesh edits until drawing and batches camera/presentation commands while preserving buffer-update and draw order. Opaque copies sharing a mesh and material use instanced draws; transparent objects retain their draw order.
 
 These dependencies are not included in the repository; prepare them yourself:
 

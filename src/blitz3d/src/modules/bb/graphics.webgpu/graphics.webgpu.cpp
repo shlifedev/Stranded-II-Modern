@@ -706,6 +706,9 @@ void WebGPUContextResources::flush(){
 	vertex_used=0;
 	uniform_used=0;
 	last_state_valid=false;
+	for( size_t i=0;i<listeners.size();++i ){
+		if( listeners[i].post_flush ) listeners[i].post_flush( listeners[i].ctx );
+	}
 }
 
 
@@ -993,7 +996,8 @@ bool WebGPUGraphics::init(){
 void WebGPUGraphics::present(){
 	if( !res.device || !fb ) return;
 
-	res.flush();
+	// Finish the framebuffer pass, but submit it together with presentation.
+	res.endPass();
 
 #ifdef BB_WINDOWS
     // The game keeps its selected render resolution while borderless mode
@@ -1003,16 +1007,21 @@ void WebGPUGraphics::present(){
     SDL_GetWindowSize(wnd,&output_width,&output_height);
     if(output_width>0 && output_height>0 &&
        (output_width!=res.surface_width || output_height!=res.surface_height)){
+        res.flush();
         res.releaseSurfaceTexture();
         res.configureSurface(output_width,output_height);
     }
 #endif
 
 	WGPUTextureView src=fb->sampleView();
-	if( !src ) return;
+	if( !src ){ res.flush();return; }
 
 	WGPUTextureView dst=res.acquireSurfaceView();
-	if( !dst ) return;
+	if( !dst ){ res.flush();return; }
+
+	// Reserve both arenas before taking either offset; an overflow resets both.
+	if( ((res.vertex_used+15)&~(size_t)15)+6*sizeof(BBWebGPUVertex)>res.vertex_capacity ||
+	    ((res.uniform_used+255)&~(size_t)255)+256>res.uniform_capacity ) res.flush();
 
 	BBWebGPURenderState state={};
 	state.xywh[2]=(float)res.surface_width;

@@ -216,9 +216,12 @@ IF(BB_ENV MATCHES debug OR BB_ENV MATCHES test)
   # TODO: work to remove the need for this...
   add_definitions(-D_DEBUG)
 ELSE()
-  set(CMAKE_BUILD_TYPE MinSizeRel)
-  # TODO: perhaps enable this as a build option for those interested in speed
-  # over disk space.
+  # Native game and compatibility runtimes favour frame time over binary size.
+  if(S2_NATIVE_GAME OR S2_CONSOLE_ONLY)
+    set(CMAKE_BUILD_TYPE Release)
+  else()
+    set(CMAKE_BUILD_TYPE MinSizeRel)
+  endif()
   # set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
   set(BB_RELEASE true)
   if(NOT BB_MINGW)

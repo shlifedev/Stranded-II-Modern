@@ -1,10 +1,23 @@
 // Compile the actual scene implementation so this fixture can supply an
 // offscreen device directly. No window, swapchain, OS input or game files.
+#include <webgpu/webgpu.h>
+static unsigned indexed_draws=0,drawn_instances=0;
+static void checkedDrawIndexed(WGPURenderPassEncoder pass,uint32_t count,uint32_t instances,
+                               uint32_t first,int32_t base,uint32_t firstInstance){
+    ++indexed_draws;drawn_instances+=instances;
+    wgpuRenderPassEncoderDrawIndexed(pass,count,instances,first,base,firstInstance);
+}
+#define wgpuRenderPassEncoderDrawIndexed checkedDrawIndexed
 #include "../src/modules/bb/blitz3d.webgpu/blitz3d.webgpu.cpp"
+#undef wgpuRenderPassEncoderDrawIndexed
 #include <cstdio>
 #include <cstdlib>
 
 static int failures=0;
+static void expect(bool ok,const char *name){
+    std::printf("%s: %s\n",ok?"PASS":"FAIL",name);
+    if(!ok) ++failures;
+}
 static void error(WGPUDevice const *,WGPUErrorType,WGPUStringView message,void *,void *){
     std::fprintf(stderr,"GPU error: %.*s\n",(int)message.length,message.data);
     ++failures;
@@ -128,10 +141,219 @@ static void checkRendering(WebGPUContextResources &res){
     scene.freeMesh(mesh);
     gx_canvas=nullptr;
 }
+static void fillRegion(BBMesh *mesh,int vertex,int triangle,float left,float right){
+    const float positions[4][3]={{left,-1,10},{right,-1,10},{right,1,10},{left,1,10}};
+    const float normal[3]={0,0,-1},uv[2][2]={{0.5f,0.5f},{0.5f,0.5f}};
+    mesh->lock(false);
+    for(int i=0;i<4;++i) mesh->setVertex(vertex+i,positions[i],normal,uv);
+    mesh->setTriangle(triangle,0,2,1);mesh->setTriangle(triangle+1,0,3,2);
+    mesh->unlock();
+}
+static void beginTarget(WebGPUScene &scene,WebGPUCanvas &target){
+    const float black[3]={0,0,0};
+    gx_canvas=&target;scene.begin({});
+    scene.setCanvas(32,32);scene.setViewport(0,0,32,32);
+    scene.setOrthoProj(0.1f,100,-1,1,1,-1);
+    scene.setViewMatrix(nullptr);scene.setWorldMatrix(nullptr);
+    scene.setAmbient(black);scene.setFogMode(BBScene::FOG_NONE);
+    scene.setZMode(BBScene::ZMODE_DISABLE);
+    scene.clear(black,1,1,true,true);
+}
+static void drawRegion(WebGPUScene &scene,BBMesh *mesh,int vertex,int count,int triangle,unsigned rgb){
+    BBScene::RenderState state={};
+    state.color[0]=((rgb>>16)&255)/255.0f;
+    state.color[1]=((rgb>>8)&255)/255.0f;state.color[2]=(rgb&255)/255.0f;
+    state.alpha=1;state.fx=BBScene::FX_FULLBRIGHT|BBScene::FX_DOUBLESIDED;
+    scene.setRenderState(state);scene.render(mesh,vertex,count,triangle,2);
+}
+static void checkBatchedRendering(WebGPUContextResources &res){
+    WebGPUCanvas target(&res,32,32,BBCanvas::CANVAS_TEX_VIDMEM);
+    WebGPUCanvas second(&res,32,32,BBCanvas::CANVAS_TEX_VIDMEM);
+    WebGPUCanvas copy(&res,32,32,BBCanvas::CANVAS_TEX_VIDMEM);
+    WebGPUScene scene(&res);BBMesh *mesh=scene.createMesh(8,4,0);
+
+    // Two sprites occupy separate ranges of one mesh. The second upload must
+    // not split the command batch or replace the first sprite's vertices.
+    beginTarget(scene,target);
+    fillRegion(mesh,0,0,-1,0);drawRegion(scene,mesh,0,4,0,0xff0000);
+    unsigned before=scene.submit_marker;
+    fillRegion(mesh,4,2,0,1);drawRegion(scene,mesh,4,4,2,0x00ff00);
+    expect(scene.submit_marker==before,"disjoint mesh updates stay in one submission");
+    scene.end();
+    expectPixel("shared mesh left",target.getPixel(8,16),255,0,0);
+    expectPixel("shared mesh right",target.getPixel(24,16),0,255,0);
+
+    // A subsequent camera has new frame/brush uniforms, but the previous
+    // camera and CopyRect must keep theirs until both are submitted.
+    beginTarget(scene,target);drawRegion(scene,mesh,0,4,0,0xff0000);scene.end();
+    before=scene.submit_marker;
+    copy.blit(0,0,&target,0,0,32,32,true);
+    beginTarget(scene,second);drawRegion(scene,mesh,0,4,0,0x0000ff);scene.end();
+    expect(scene.submit_marker==before,"camera and CopyRect passes share submission");
+    expectPixel("previous camera uniforms",target.getPixel(8,16),255,0,0);
+    expectPixel("CopyRect before next camera",copy.getPixel(8,16),255,0,0);
+    expectPixel("next camera uniforms",second.getPixel(8,16),0,0,255);
+
+    // Rewriting a used range does require submission. Pixel checks catch
+    // mistakenly allowing the newer vertices/indices to affect older draws.
+    beginTarget(scene,target);drawRegion(scene,mesh,0,4,0,0xff0000);
+    before=scene.submit_marker;
+    fillRegion(mesh,0,0,0,1);drawRegion(scene,mesh,0,4,0,0x00ff00);
+    expect(scene.submit_marker>before,"overlapping vertex update preserves earlier draw");
+    scene.end();
+    expectPixel("old vertex positions",target.getPixel(8,16),255,0,0);
+    expectPixel("new vertex positions",target.getPixel(24,16),0,255,0);
+
+    fillRegion(mesh,0,0,-1,0);
+    beginTarget(scene,target);drawRegion(scene,mesh,0,8,0,0xff0000);
+    before=scene.submit_marker;
+    mesh->lock(false);mesh->setTriangle(0,4,6,5);mesh->setTriangle(1,4,7,6);mesh->unlock();
+    drawRegion(scene,mesh,0,8,0,0x00ff00);
+    expect(scene.submit_marker>before,"overlapping index update preserves earlier draw");
+    scene.end();
+    expectPixel("old triangle indices",target.getPixel(8,16),255,0,0);
+    expectPixel("new triangle indices",target.getPixel(24,16),0,255,0);
+
+    // Flushes caused by 2D arenas/readback must also retire 3D offsets and
+    // mesh hazards, even when the scene itself did not initiate the flush.
+    beginTarget(scene,target);drawRegion(scene,mesh,0,8,0,0xff0000);
+    res.flush();before=scene.submit_marker;
+    fillRegion(mesh,0,0,-1,0);drawRegion(scene,mesh,0,4,0,0x0000ff);
+    expect(scene.submit_marker==before,"external flush retires mesh hazards");
+    scene.end();
+    expectPixel("uniforms after external flush",target.getPixel(8,16),0,0,255);
+    expectPixel("draw before external flush",target.getPixel(24,16),255,0,0);
+
+    // Repeated cameras exercise the finite uniform arena, including a flush
+    // while pushing the next draw's uniforms. Every earlier draw must survive.
+    beginTarget(scene,target);before=scene.submit_marker;
+    for(int i=0;i<5000;++i){
+        scene.setOrthoProj(0.1f,100+(i&1),-1,1,1,-1);
+        drawRegion(scene,mesh,0,4,0,(i&1)?0xff0000:0x00ff00);
+    }
+    expect(scene.submit_marker>before,"uniform arena overflow submits safely");
+    scene.end();expectPixel("last draw after arena overflow",target.getPixel(8,16),255,0,0);
+    scene.freeMesh(mesh);gx_canvas=nullptr;
+}
+static void setInstance(WebGPUScene &scene,float scale,float x){
+    BBScene::Matrix world={};
+    world.elements[0][0]=scale;world.elements[1][1]=world.elements[2][2]=1;
+    world.elements[3][0]=x;scene.setWorldMatrix(&world);
+}
+static void checkInstancing(WebGPUContextResources &res){
+    WebGPUCanvas target(&res,32,32,BBCanvas::CANVAS_TEX_VIDMEM);
+    WebGPUCanvas red(&res,1,1,BBCanvas::CANVAS_TEXTURE|BBCanvas::CANVAS_TEX_RGB);
+    WebGPUCanvas blue(&res,1,1,BBCanvas::CANVAS_TEXTURE|BBCanvas::CANVAS_TEX_RGB);
+    const unsigned char redPixel[4]={255,0,0,255},bluePixel[4]={0,0,255,255};
+    red.uploadRGBA(redPixel,1,1);blue.uploadRGBA(bluePixel,1,1);
+    WebGPUScene scene(&res);BBMesh *mesh=scene.createMesh(4,2,0);
+    const float front[3]={0,0,-1};fillQuad(mesh,10,front);
+
+    beginTarget(scene,target);scene.setZMode(BBScene::ZMODE_NORMAL);
+    unsigned calls=indexed_draws,instances=drawn_instances;
+    setInstance(scene,0.5f,-0.5f);drawRegion(scene,mesh,0,4,0,0x00ff00);
+    setInstance(scene,0.5f,0.5f);drawRegion(scene,mesh,0,4,0,0x00ff00);
+    scene.end();
+    expect(indexed_draws-calls==1 && drawn_instances-instances==2,"shared opaque mesh uses one instanced draw");
+    expectPixel("first instance transform",target.getPixel(8,16),0,255,0);
+    expectPixel("second instance transform",target.getPixel(24,16),0,255,0);
+
+    beginTarget(scene,target);scene.setZMode(BBScene::ZMODE_NORMAL);calls=indexed_draws;
+    setInstance(scene,0.5f,-0.5f);drawRegion(scene,mesh,0,4,0,0xff0000);
+    setInstance(scene,0.5f,0.5f);drawRegion(scene,mesh,0,4,0,0x00ff00);
+    scene.end();expect(indexed_draws-calls==2,"material change ends instance batch");
+    expectPixel("first instance material",target.getPixel(8,16),255,0,0);
+    expectPixel("second instance material",target.getPixel(24,16),0,255,0);
+
+    // Texture handles can change without any change to material uniform bytes.
+    BBScene::RenderState state={};
+    state.color[0]=state.color[1]=state.color[2]=1;state.alpha=1;
+    state.fx=BBScene::FX_FULLBRIGHT|BBScene::FX_DOUBLESIDED;
+    state.tex_states[0].blend=BBScene::BLEND_MULTIPLY;
+    beginTarget(scene,target);scene.setZMode(BBScene::ZMODE_NORMAL);calls=indexed_draws;
+    setInstance(scene,0.5f,-0.5f);state.tex_states[0].canvas=&red;
+    scene.setRenderState(state);scene.render(mesh,0,4,0,2);
+    setInstance(scene,0.5f,0.5f);state.tex_states[0].canvas=&blue;
+    scene.setRenderState(state);scene.render(mesh,0,4,0,2);
+    scene.end();expect(indexed_draws-calls==2,"texture change ends instance batch");
+    expectPixel("first instance texture",target.getPixel(8,16),255,0,0);
+    expectPixel("second instance texture",target.getPixel(24,16),0,0,255);
+
+    beginTarget(scene,target);scene.setZMode(BBScene::ZMODE_NORMAL);calls=indexed_draws;
+    scene.setViewport(0,0,16,32);drawRegion(scene,mesh,0,4,0,0xff0000);
+    scene.setViewport(16,0,16,32);drawRegion(scene,mesh,0,4,0,0xff0000);
+    scene.end();expect(indexed_draws-calls==2,"viewport change ends instance batch");
+    expectPixel("first instance viewport",target.getPixel(8,16),255,0,0);
+    expectPixel("second instance viewport",target.getPixel(24,16),255,0,0);
+
+    beginTarget(scene,target);scene.setZMode(BBScene::ZMODE_NORMAL);calls=indexed_draws;
+    setInstance(scene,0.5f,0);
+    BBScene::Matrix view={};
+    view.elements[0][0]=view.elements[1][1]=view.elements[2][2]=1;
+    view.elements[3][0]=-0.5f;scene.setViewMatrix(&view);
+    drawRegion(scene,mesh,0,4,0,0xff0000);
+    view.elements[3][0]=0.5f;scene.setViewMatrix(&view);drawRegion(scene,mesh,0,4,0,0xff0000);
+    scene.end();expect(indexed_draws-calls==2,"camera change ends instance batch");
+    expectPixel("first instance camera",target.getPixel(8,16),255,0,0);
+    expectPixel("second instance camera",target.getPixel(24,16),255,0,0);
+
+    // A partial clear must execute after pending instances, not before them.
+    beginTarget(scene,target);scene.setZMode(BBScene::ZMODE_NORMAL);
+    drawRegion(scene,mesh,0,4,0,0xff0000);scene.setViewport(16,0,16,32);
+    const float green[3]={0,1,0};scene.clear(green,1,1,true,true);scene.end();
+    expectPixel("instance before partial clear",target.getPixel(8,16),255,0,0);
+    expectPixel("partial clear after instance",target.getPixel(24,16),0,255,0);
+
+    beginTarget(scene,target);scene.setZMode(BBScene::ZMODE_NORMAL);
+    fillRegion(mesh,0,0,-1,0);drawRegion(scene,mesh,0,4,0,0xff0000);
+    unsigned marker=scene.submit_marker;
+    fillRegion(mesh,0,0,0,1);drawRegion(scene,mesh,0,4,0,0xff0000);scene.end();
+    expect(scene.submit_marker>marker,"mesh mutation submits pending instances");
+    expectPixel("instance before mesh mutation",target.getPixel(8,16),255,0,0);
+    expectPixel("instance after mesh mutation",target.getPixel(24,16),255,0,0);
+
+    fillQuad(mesh,10,front);state.tex_states[0]={};state.blend=BBScene::BLEND_ALPHA;
+    state.alpha=0.5f;state.color[1]=state.color[2]=0;
+    beginTarget(scene,target);scene.setZMode(BBScene::ZMODE_CMPONLY);calls=indexed_draws;
+    scene.setRenderState(state);scene.render(mesh,0,4,0,2);scene.render(mesh,0,4,0,2);
+    scene.end();expect(indexed_draws-calls==2,"transparent draws keep their order without instancing");
+    expectPixel("overlapping transparent copies",target.getPixel(16,16),192,0,0);
+
+    // Copies in one draw still need their own normal matrices for lighting.
+    WebGPULight light;light.type=Light::LIGHT_DISTANT;light.r=light.g=light.b=0.5f;
+    beginTarget(scene,target);scene.begin({&light});scene.setZMode(BBScene::ZMODE_NORMAL);
+    state.blend=BBScene::BLEND_REPLACE;state.alpha=1;state.color[1]=state.color[2]=1;
+    state.fx=BBScene::FX_DOUBLESIDED;scene.setRenderState(state);calls=indexed_draws;
+    setInstance(scene,0.5f,-0.5f);scene.render(mesh,0,4,0,2);
+    BBScene::Matrix rotated={};
+    rotated.elements[0][0]=-0.5f;rotated.elements[1][1]=1;rotated.elements[2][2]=-1;
+    rotated.elements[3][0]=0.5f;rotated.elements[3][2]=20;
+    scene.setWorldMatrix(&rotated);scene.render(mesh,0,4,0,2);scene.end();
+    expect(indexed_draws-calls==1,"rotated copies share one instanced draw");
+    expectPixel("front-lit instance normal",target.getPixel(8,16),128,128,128);
+    expectPixel("back-lit instance normal",target.getPixel(24,16),0,0,0);
+
+    // The instance arena fills independently of cached material uniforms.
+    // Keep all but the two visible copies offscreen to avoid excessive overdraw.
+    beginTarget(scene,target);scene.setZMode(BBScene::ZMODE_NORMAL);
+    calls=indexed_draws;instances=drawn_instances;marker=scene.submit_marker;
+    setInstance(scene,0.5f,-0.5f);drawRegion(scene,mesh,0,4,0,0x00ff00);
+    for(int i=0;i<40000;++i){
+        setInstance(scene,0.5f,4);drawRegion(scene,mesh,0,4,0,0x00ff00);
+    }
+    setInstance(scene,0.5f,0.5f);drawRegion(scene,mesh,0,4,0,0x00ff00);scene.end();
+    expect(scene.submit_marker>marker && indexed_draws-calls==2 && drawn_instances-instances==40002,
+           "instance arena overflow splits into two complete batches");
+    expectPixel("instance before arena overflow",target.getPixel(8,16),0,255,0);
+    expectPixel("instance after arena overflow",target.getPixel(24,16),0,255,0);
+    scene.freeMesh(mesh);gx_canvas=nullptr;
+}
 int main(){
     WebGPUContextResources res;
     if(!initOffscreen(res)){ std::fprintf(stderr,"No offscreen D3D12 device\n");return 2; }
     checkRendering(res);
+    checkBatchedRendering(res);
+    checkInstancing(res);
     res.destroy();
     std::printf("%d rendering failures (offscreen, no window)\n",failures);
     return failures?1:0;

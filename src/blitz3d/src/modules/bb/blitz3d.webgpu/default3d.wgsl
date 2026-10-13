@@ -109,15 +109,22 @@ fn vs_main( @location(0) bbPosition : vec3<f32>,
             @location(1) bbNormal : vec3<f32>,
             @location(2) bbColor : vec4<f32>,
             @location(3) bbTexCoord0 : vec2<f32>,
-            @location(4) bbTexCoord1 : vec2<f32> ) -> BBVertexOut {
+            @location(4) bbTexCoord1 : vec2<f32>,
+            @location(5) world0 : vec4<f32>,
+            @location(6) world1 : vec4<f32>,
+            @location(7) world2 : vec4<f32>,
+            @location(8) world3 : vec4<f32>,
+            @location(9) normal0 : vec4<f32>,
+            @location(10) normal1 : vec4<f32>,
+            @location(11) normal2 : vec4<f32> ) -> BBVertexOut {
   var v : BBVertexOut;
 
-  let modelview = FS.view * RS.world;
+  let modelview = FS.view * mat4x4<f32>( world0, world1, world2, world3 );
   let eye_pos = modelview * vec4<f32>( bbPosition, 1.0 );
   let position = FS.proj * eye_pos;
   v.position = position;
 
-  let eye_normal = mat3of( RS.normal_mat ) * bbNormal;
+  let eye_normal = mat3x3<f32>( normal0.xyz, normal1.xyz, normal2.xyz ) * bbNormal;
 
   var w = position.w;
   if( w==0.0 ){ w = 1.0; }

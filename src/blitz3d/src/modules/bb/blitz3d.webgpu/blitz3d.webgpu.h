@@ -68,6 +68,13 @@ struct BBWebGPU3DVertex{
 };
 static_assert( sizeof(BBWebGPU3DVertex)==44,"3D vertex layout mismatch" );
 
+// Transforms vary per copy; material and camera uniforms stay shared.
+struct BBWebGPUInstance{
+	float world[16];
+	float normal[12];
+};
+static_assert( sizeof(BBWebGPUInstance)==112,"3D instance layout mismatch" );
+
 
 class WebGPUB3DGraphics : public B3DGraphics{
 public:
