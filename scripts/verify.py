@@ -149,6 +149,7 @@ End
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_version.py'),'--output',str(output/'version')],check=True)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_settings.py'),'--output',str(output/'settings')],check=True)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_qol_logic.py'),'--edition',args.edition,'--output',str(output/'qol')],check=True)
+    subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_visibility.py'),'--output',str(output/'visibility')],check=True)
     # Check every emitted reference, including binary map string fields.
     refcount=0
     for p in runtime.rglob('*'):
@@ -174,6 +175,8 @@ End
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'scripts/verify_fonts.py'),'--runtime',str(runtime),'--output',str(output/'fonts')],check=True)
     report={'localization_runtime':'pass','config_preservation':'pass','timing':'pass','modern_save_and_display':'pass','product_version_loader':'pass','initial_settings_and_preservation':'pass','validated_references':refcount,'unicode_glyphs':len(glyphs),'graphics_and_actual_game_save':'requires game smoke test'}
     report['qol_logic']='pass; entity/script test doubles, no rendering or IME'
+    report['grass_visibility_logic']='pass; entity/terrain test doubles, no rendering'
+    report['offscreen_shadow_caster_logic']='pass; object/collision state test doubles, no rendering'
     (output/'report.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf8')
     print('Checks passed:',output)
 if __name__=='__main__':main()

@@ -39,6 +39,7 @@ Function game()
 
 	;The camera follows the resolved position, before next-frame movement.
 	game_setcam()
+	grass_spread()
 
 	;Update Objects / Units / Infos / Timer / Parse Scripts
 	cull()
@@ -63,7 +64,6 @@ Function game()
 	;Environment Stuff (Post Render)
 	mb_update()												;Motion Blur
 	e_environment_water2dfx()								;Water 2D FX (Dive)
-	grass_spread()											;Grass
 	focus_update()											;Focus (Process etc)
 	update_state()											;States
 	sfx_update()											;SFX

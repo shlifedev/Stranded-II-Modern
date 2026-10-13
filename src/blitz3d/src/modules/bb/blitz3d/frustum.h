@@ -44,6 +44,7 @@ public:
 private:
 	Plane planes[6];
 	Vector verts[9];
+	bool parallel=false;
 	void makePlanes();
 };
 

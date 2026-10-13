@@ -79,6 +79,30 @@ static void checkFrustum(){
         }
     }
     expect(boundaries,"prepared bounds retain legacy decisions on touching and nearly touching planes");
+    // Directional shadow cameras have parallel sides, not an eye-centred cone.
+    // Check after world transformation too: RenderContext rebuilds the planes.
+    const Frustum ortho=Frustum::orthographic(1,100,40,20);
+    bool orthoInside=true,orthoOutside=true;
+    for(float yaw:{0.0f,0.8f,-2.0f}) for(int flip:{0,1}){
+        Transform eye(yawMatrix(yaw)*pitchMatrix(0.4f),Vector(100,30,-200));
+        if(flip) eye.m.j=-eye.m.j;
+        Frustum view(ortho,eye);
+        for(float z:{1.1f,20.0f,50.0f,99.0f}){
+            for(Vector p:{Vector(-19,-9,z),Vector(19,9,z)}){
+                const Transform model(eye.m,eye*p);
+                const Box box(Vector(-0.05f,-0.05f,-0.05f),Vector(0.05f,0.05f,0.05f));
+                const Vector point=eye*p;
+                orthoInside&=view.cull(&point,1) && view.cull(box,model) &&
+                    view.cull(box,model,Frustum::Bounds(box,model));
+            }
+            for(Vector p:{Vector(21,0,z),Vector(0,-11,z)}){
+                const Vector point=eye*p;
+                orthoOutside&=!view.cull(&point,1);
+            }
+        }
+    }
+    expect(orthoInside,"orthographic culling retains side casters at every depth and camera rotation");
+    expect(orthoOutside,"orthographic culling still rejects geometry beyond parallel sides");
 }
 static void error(WGPUDevice const *,WGPUErrorType,WGPUStringView message,void *,void *){
     std::fprintf(stderr,"GPU error: %.*s\n",(int)message.length,message.data);
@@ -917,6 +941,102 @@ static void checkPlanarCapture(WebGPUContextResources &res){
     scene.freeMesh(mesh);bbScene=nullptr;gx_canvas=nullptr;
 }
 
+static void checkRotatingVisibility(WebGPUContextResources &res){
+    struct ReadbackCanvas : WebGPUCanvas{
+        using WebGPUCanvas::WebGPUCanvas;
+        using WebGPUCanvas::readPixels;
+    } target(&res,64,64,BBCanvas::CANVAS_TEX_VIDMEM);
+    WebGPUCanvas reflection(&res,32,32,BBCanvas::CANVAS_TEXTURE|BBCanvas::CANVAS_TEX_RGB);
+    WebGPUScene scene(&res);bbScene=&scene;gx_canvas=&target;
+    {
+        World world;Camera camera;Light sun(Light::LIGHT_DISTANT);
+        camera.setViewport(0,0,64,64);camera.setCanvas(&target);camera.setRange(1,50);
+        camera.setLocalPosition(Vector(0,4,0));
+        sun.setLocalRotation(rotationQuat(0.9f,-0.4f,0));
+        CheckedMeshModel *patches[8];
+        for(int i=0;i<8;++i){
+            const float angle=i*0.78539816339f;
+            patches[i]=new CheckedMeshModel;
+            patches[i]->setLocalPosition(Matrix(rotationQuat(0,angle,0))*Vector(0,0,8)+Vector(0,4,0));
+            patches[i]->setLocalRotation(rotationQuat(0,angle,0));
+            patches[i]->setLocalScale(Vector(1.8f,3,1));
+            patches[i]->setColor(Vector(0.1f,0.8f,0.2f));
+            patches[i]->setAlpha(i&1?0.39f:1.0f);
+            patches[i]->setAutoFade(5,30);
+        }
+        bool same=true,visible=true,bounds=true;
+        // Rapid changes include pitch, reversal and the -pi/pi wrap. Compare
+        // the main view to itself without intervening shadow/reflection views.
+        for(int heading:{0,3,7,4,1,6,2,5,0}) for(float pitch:{-0.15f,0.15f}){
+            camera.setLocalRotation(rotationQuat(pitch,heading*0.78539816339f,0));
+            std::vector<unsigned char> expected,actual;
+            world.render(1);target.readPixels(expected);
+            visible&=expected[(32*64+32)*4+1]>50;
+            world.renderShadows(&camera,&sun,30,1);
+            world.renderPlanar(&camera,&reflection,0,1);
+            world.render(1);target.readPixels(actual);
+            same&=actual==expected;
+        }
+        for(auto patch:patches){ bounds&=patch->matching && patch->views>0;delete patch; }
+        expect(visible,"rapid yaw and pitch turns keep newly visible opaque and faded patches on screen");
+        expect(same && bounds,"reflection and shadow views do not retain main-camera culling or fade state");
+    }
+    bbScene=nullptr;gx_canvas=nullptr;
+}
+
+static void checkOffscreenShadows(WebGPUContextResources &res){
+    WebGPUCanvas target(&res,128,128,BBCanvas::CANVAS_TEX_VIDMEM);
+    WebGPUScene scene(&res);bbScene=&scene;gx_canvas=&target;
+    {
+        World world;Camera camera;Light sun(Light::LIGHT_DISTANT);
+        camera.setViewport(0,0,128,128);camera.setCanvas(&target);camera.setRange(1,100);
+        camera.setLocalPosition(Vector(0,6,-8));camera.setZoom(2);
+        sun.setLocalRotation(rotationQuat(0.8f,-1.57079632679f,0));
+        sun.setColor(Vector(0.8f,0.8f,0.8f));
+        const float ambient[3]={0.1f,0.1f,0.1f};scene.setAmbient(ambient);
+        scene.setRenderEffects(true,false,0);
+        const Vector receiver(0,0,8);
+        MeshModel ground,caster;
+        auto plane=[](MeshModel &model,float size){
+            Surface *s=model.createSurface(Brush());
+            for(Vector p:{Vector(-size,0,-size),Vector(size,0,-size),Vector(size,0,size),Vector(-size,0,size)}){
+                Surface::Vertex v;v.coords=p;v.normal=Vector(0,1,0);s->addVertex(v);
+            }
+            s->addTriangle(Surface::Triangle{{0,2,1}});s->addTriangle(Surface::Triangle{{0,3,2}});
+            model.setFX(BBScene::FX_DOUBLESIDED);
+        };
+        plane(ground,50);plane(caster,2);
+        ground.setLocalPosition(receiver);
+        caster.setLocalPosition(receiver-Matrix(sun.getLocalRotation()).k*20);
+        bool outside=true,shadowed=true,restored=true,oldMissing=true;
+        for(float yaw:{-0.12f,0.0f,0.12f,0.0f}) for(int hidden:{0,1}){
+            camera.setLocalRotation(rotationQuat(atanf(6.0f/16),yaw,0));
+            Frustum view(camera.getFrustum(),camera.getWorldTform());
+            outside&=!view.cull(caster.getBox(),caster.getWorldTform());
+            const Vector p=(-camera.getWorldTform())*receiver;
+            const int x=int(64+128*p.x/p.z),y=int(64-128*p.y/p.z);
+            // Legacy object culling leaves either a hidden mesh or an alpha-zero collider.
+            caster.setVisible(!hidden);caster.setEnabled(!hidden);caster.setAlpha(hidden?1.0f:0.0f);
+            world.renderShadows(&camera,&sun,80,1);world.render(1);
+            const int missing=target.getPixel(x,y)&255;
+            const bool wasVisible=caster.visible(),wasEnabled=caster.enabled();
+            const float wasAlpha=caster.getBrush().getAlpha();
+            caster.setVisible(true);caster.setEnabled(true);caster.setAlpha(1);
+            world.renderShadows(&camera,&sun,80,1);
+            caster.setAlpha(wasAlpha);caster.setVisible(wasVisible);caster.setEnabled(wasEnabled);
+            world.render(1);
+            const int fixed=target.getPixel(x,y)&255;
+            std::printf("Off-screen shadow yaw %.2f hidden %d: %d -> %d\n",yaw,hidden,missing,fixed);
+            oldMissing&=missing>100;shadowed&=fixed+70<missing;
+            restored&=caster.visible()==wasVisible && caster.enabled()==wasEnabled && caster.getBrush().getAlpha()==wasAlpha;
+        }
+        expect(outside,"shadow fixture caster is outside the main view throughout a small camera turn");
+        expect(oldMissing && shadowed,"off-screen caster shadows survive camera turns after restoring culled meshes for capture");
+        expect(restored,"shadow capture retains original hidden, collision-enabled and alpha states for the main view");
+    }
+    bbScene=nullptr;gx_canvas=nullptr;
+}
+
 static void checkWaterCoverage(WebGPUContextResources &res){
     struct ReadbackCanvas : WebGPUCanvas{
         using WebGPUCanvas::WebGPUCanvas;
@@ -974,6 +1094,8 @@ int main(){
     checkTerrainNormals(res);
     checkRemaster(res);
     checkPlanarCapture(res);
+    checkRotatingVisibility(res);
+    checkOffscreenShadows(res);
     checkWaterCoverage(res);
     res.destroy();
     std::printf("%d rendering failures (offscreen, no window)\n",failures);

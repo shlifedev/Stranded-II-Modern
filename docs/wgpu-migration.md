@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"70dd65dd2eeedaaf606a65401e88859ba6ec5240ad4855887b1f691e2b37c354"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"2e8a6fbcc1ff8d49fe4b26f41510ada43c43cc9ee4f048330ce1195b9c8b57e0"} -->
 
 # Stranded II's wgpu/WebGPU cross-platform renderer migration
 
@@ -100,6 +100,8 @@ Both editions share independent, default-off options in [remaster.bb](../src/eng
 - Water: `RenderWorldPlanar` reflects the source camera across a horizontal plane, clips submerged geometry, and retains its aspect ratio without moving the camera or its children. The water shader uses projective sampling and procedural wave distortion. Fresnel opacity uses the mean horizontal surface, preventing wave slopes from alternating reflections into bright and dark bands at grazing angles. Reflection quality and update cadence still follow the existing water setting; qualities without reflections use only the wave shading.
 - Lighting: optional per-pixel diffuse/specular lighting and a time-dependent directional sun. Atmospheric shading adds hemispheric ambient light and per-pixel linear fog using the game's existing colours.
 - Shadows: `RenderWorldShadows` renders two 1024×1024 `Depth32Float` layers for the selected directional light. The game uses a 1000-unit range, a 30% split, overlapping cascades, texel-snapped translation, 3×3 PCF and distance fade. Alpha-tested foliage casts cutout shadows; blended effects and water do not. Ambient light remains unshadowed. No night shadow capture runs.
+
+The game's object culling records when the main camera hides an otherwise in-range model or sets its alpha to zero for collision. Shadow capture temporarily restores those models with their object alpha, then restores the prior hidden and material-alpha states before other rendering or world updates. Collision-only meshes are untouched; objects beyond their configured view distance and script-invisible objects stay excluded. This keeps off-screen trees casting shadows as the camera turns. `verify_visibility.py` checks the actual game culling/capture functions with entity doubles; the offscreen GPU fixture also checks shadowed ground during small camera turns with its caster outside the main view.
 
 Shader overrides specialize disabled lighting/atmosphere/shadow paths out of the pipeline. Main 3D pipelines bind the shadow depth array and comparison sampler in group 3; depth-only capture pipelines use groups 0–2 and never sample their own attachments. Each pass retains its own staged uniforms until submission. `FX_WATER` uses transparent sorting/blending even at entity alpha 1; `FX_NOSHADOW` excludes a material from shadow capture.
 
@@ -465,6 +467,8 @@ WebGPU batching merges **adjacent draws only**, requiring these matches:
 Compatible draws increment `pending_instances` and become one `wgpuRenderPassEncoderDrawIndexed(..., instanceCount, ...)`. An intervening incompatible transparent draw ends the batch. Different tint and alpha/fade values live in instance data and need not split material uniforms. Wireframe is excluded from this instancing merge path.
 
 CPU frustum tests remain in the shared [frustum implementation](../src/blitz3d/src/modules/bb/blitz3d/frustum.cpp) and [meshmodel](../src/blitz3d/src/modules/bb/blitz3d/meshmodel.cpp). They were not replaced by GPU occlusion queries or compute culling. Current optimization reuses camera planes and transformed-box calculations on the CPU.
+
+[Grass placement](../src/engine/includes/grasspread.bb) keeps terrain-eligible patches available to the renderer. Visibility is tested separately for each render view every frame, without a timed main-camera `HideEntity` cache. Gameplay updates placement before shadow, reflection and main rendering; density and distance fading retain the selected settings. Changing the height mask invalidates placement even with a stationary camera. Orthographic shadow frusta use parallel side planes and retain that projection through world transforms.
 
 ## 14. Preserving 2D UI, font and image semantics
 

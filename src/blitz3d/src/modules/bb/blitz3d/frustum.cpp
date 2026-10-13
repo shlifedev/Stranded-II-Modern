@@ -8,6 +8,7 @@ Frustum::Frustum(){
 
 Frustum Frustum::orthographic( float nr,float fr,float w,float h ){
 	Frustum f( nr,fr,w,h );
+	f.parallel=true;
 	for( int i=0;i<4;++i ){
 		f.verts[i+4]=f.verts[i];
 		f.verts[i+4].z=fr;
@@ -49,7 +50,7 @@ Frustum::Frustum( float nr,float fr,float l,float r,float u,float d ){
 	makePlanes();
 }
 
-Frustum::Frustum( const Frustum &f,const Transform &t ){
+Frustum::Frustum( const Frustum &f,const Transform &t ):parallel(f.parallel){
 	for( int k=0;k<9;++k ){
 		verts[k]=t*f.verts[k];
 	}
@@ -159,10 +160,13 @@ float Frustum::getFar()const{
 }
 
 void Frustum::makePlanes(){
-	planes[PLANE_TOP]=Plane( verts[VERT_EYE],verts[VERT_TRFAR],verts[VERT_TLFAR] );
-	planes[PLANE_LEFT]=Plane( verts[VERT_EYE],verts[VERT_TLFAR],verts[VERT_BLFAR] );
-	planes[PLANE_BOTTOM]=Plane( verts[VERT_EYE],verts[VERT_BLFAR],verts[VERT_BRFAR] );
-	planes[PLANE_RIGHT]=Plane( verts[VERT_EYE],verts[VERT_BRFAR],verts[VERT_TRFAR] );
+	// Parallel projection sides pass through the matching near edge. Using
+	// the eye instead cuts a cone out of the shadow volume, dropping casters
+	// at its sides as the main camera moves or turns. Keep this after transforms.
+	planes[PLANE_TOP]=Plane( verts[parallel?VERT_TRNEAR:VERT_EYE],verts[VERT_TRFAR],verts[VERT_TLFAR] );
+	planes[PLANE_LEFT]=Plane( verts[parallel?VERT_TLNEAR:VERT_EYE],verts[VERT_TLFAR],verts[VERT_BLFAR] );
+	planes[PLANE_BOTTOM]=Plane( verts[parallel?VERT_BLNEAR:VERT_EYE],verts[VERT_BLFAR],verts[VERT_BRFAR] );
+	planes[PLANE_RIGHT]=Plane( verts[parallel?VERT_BRNEAR:VERT_EYE],verts[VERT_BRFAR],verts[VERT_TRFAR] );
 	planes[PLANE_NEAR]=Plane( verts[VERT_TRNEAR],verts[VERT_TLNEAR],verts[VERT_BLNEAR] );
 	planes[PLANE_FAR]=Plane( verts[VERT_TLFAR],verts[VERT_TRFAR],verts[VERT_BRFAR] );
 	if( planes[PLANE_NEAR].distance( verts[VERT_EYE] )>0 ){

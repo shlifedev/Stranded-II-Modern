@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"600c3d012af1e4ab7c85bf53881830909faf8d81dd952d502f2291eff95390f1"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"abd784a8ebf7b4eabe30cd8569aa8f68935e139aa63cd688953fd8aec1b790d1"} -->
 
 # Stranded II의 wgpu/WebGPU 크로스플랫폼 렌더러 마이그레이션
 
@@ -100,6 +100,8 @@ WebGPU 구현체와 플랫폼 surface
 - 물: `RenderWorldPlanar`가 원본 카메라를 수평면에 반사해 수중 기하를 잘라냅니다. 카메라와 자식을 이동하지 않고 원본 종횡비를 유지합니다. 물 셰이더는 투영 좌표 샘플링과 절차적 파도 왜곡을 사용합니다. Fresnel 불투명도는 평균 수평면 기준으로 계산해, 비스듬한 시야에서 파도마다 반사가 밝고 어두운 띠로 변하지 않게 합니다. 반사 품질·갱신 주기는 기존 물 설정을 따르며 반사가 없는 품질에서는 파도 음영만 사용합니다.
 - 조명: 픽셀 단위 diffuse/specular와 시간에 따라 움직이는 방향성 태양광을 선택할 수 있습니다. 대기 음영은 기존 게임 색상을 사용해 반구형 주변광과 픽셀 단위 선형 안개를 추가합니다.
 - 그림자: `RenderWorldShadows`는 선택한 방향광에 대해 1024×1024 `Depth32Float` 레이어 2개를 렌더링합니다. 게임은 거리 1000, 30% 분할, cascade 중첩, texel 단위 위치 정렬, 3×3 PCF와 거리 페이드를 사용합니다. 알파 테스트 잎은 투명한 부분을 반영하며 블렌딩 효과와 물은 그림자를 만들지 않습니다. 주변광은 가리지 않습니다. 밤에는 그림자 캡처를 하지 않습니다.
+
+게임의 오브젝트 컬링은 표시 거리 안의 모델을 주 카메라 시야 때문에 숨기거나 충돌을 위해 알파만 0으로 만든 경우를 기록합니다. 그림자 캡처 동안 해당 모델을 오브젝트 알파로 표시하고, 다른 렌더링이나 월드 갱신 전에 기존 숨김·재질 알파 상태로 복원합니다. 충돌 전용 메시에는 손대지 않으며, 설정한 표시 거리를 넘거나 스크립트로 투명하게 만든 오브젝트는 계속 제외합니다. 따라서 카메라를 돌려 나무가 화면 밖으로 나가도 그림자는 유지됩니다. `verify_visibility.py`는 엔티티 대역으로 실제 게임 컬링·캡처 함수를 검사하며, offscreen GPU 검사에서는 화면 밖의 물체가 바닥에 드리운 그림자가 작은 카메라 회전에도 유지되는지 확인합니다.
 
 셰이더 override는 꺼진 조명·대기·그림자 경로를 파이프라인에서 제거합니다. 기본 3D 파이프라인의 group 3에 그림자 depth array와 비교 sampler를 바인딩합니다. 깊이 캡처 파이프라인은 group 0–2만 사용하며 자신의 attachment를 샘플링하지 않습니다. 각 pass의 uniform은 제출까지 staging에 유지합니다. `FX_WATER`는 entity alpha가 1이어도 투명 정렬·블렌딩을 사용하며, `FX_NOSHADOW`는 재질을 그림자 캡처에서 제외합니다.
 
@@ -467,6 +469,8 @@ WebGPU draw 병합은 **인접한 draw만** 대상으로 합니다. 다음 항�
 조건이 유지되면 `pending_instances`를 늘린 뒤 `wgpuRenderPassEncoderDrawIndexed(..., instanceCount, ...)` 한 번으로 기록합니다. 다른 투명 draw가 사이에 있으면 배치를 끝냅니다. 서로 다른 tint·alpha/fade는 instance 데이터에 있으므로 그것만으로 material uniform을 분리할 필요가 없습니다. wireframe은 이 인스턴싱 병합 경로에서 제외합니다.
 
 CPU frustum 검사는 공통 [frustum 구현](../src/blitz3d/src/modules/bb/blitz3d/frustum.cpp)과 [meshmodel](../src/blitz3d/src/modules/bb/blitz3d/meshmodel.cpp)에 있습니다. GPU occlusion query나 compute culling으로 바뀐 것이 아닙니다. 현재 최적화는 카메라의 평면·변환된 box 계산을 재사용하는 CPU 작업입니다.
+
+[풀 배치](../src/engine/includes/grasspread.bb)는 지형 조건을 만족하는 풀을 렌더러가 사용할 수 있게 유지합니다. 주 카메라 기준의 `HideEntity` 상태를 일정 시간 저장하지 않고, 매 프레임 각 렌더링 시야에서 표시 여부를 판단합니다. 게임 플레이에서는 그림자·반사·본 화면을 그리기 전에 배치를 갱신하며, 밀도와 거리 페이드는 선택한 설정을 유지합니다. 높이 마스크가 바뀌면 카메라가 정지해 있어도 배치를 다시 갱신합니다. 직교 투영 그림자의 시야는 평행한 측면을 사용하며 월드 변환 후에도 이 투영 방식을 유지합니다.
 
 ## 14. 2D UI·글꼴·이미지의 기존 의미 보존
 

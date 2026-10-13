@@ -82,5 +82,31 @@ End Function
 Function remaster_shadow_frame()
  Local distance#=0.
  If remaster_enabled(Cremaster_shadows) And map_hour>=6 And map_hour<18 Then distance=1000.
+ ; Main-camera culling must not remove off-screen trees from the light's view.
+ ; Only undo view culling during capture; distance limits, script alpha and
+ ; collision meshes retain their existing behavior outside this render pass.
+ Local caster.Tobject,brush
+ If distance>0. Then
+  For caster.Tobject=Each Tobject
+   caster\shadow_restore=0
+   If caster\view_cull<>0 And caster\alpha>0. Then
+    brush=GetEntityBrush(caster\h)
+    caster\shadow_alpha=GetBrushAlpha(brush)
+    FreeBrush brush
+    caster\shadow_restore=caster\view_cull
+    If caster\view_cull=1 Then ShowEntity caster\h
+    EntityAlpha caster\h,caster\alpha
+   EndIf
+  Next
+ EndIf
  RenderWorldShadows cam,env_light,distance
+ If distance>0. Then
+  For caster.Tobject=Each Tobject
+   If caster\shadow_restore<>0 Then
+    EntityAlpha caster\h,caster\shadow_alpha
+    If caster\shadow_restore=1 Then HideEntity caster\h
+    caster\shadow_restore=0
+   EndIf
+  Next
+ EndIf
 End Function

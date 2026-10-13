@@ -637,6 +637,7 @@ End Function
 
 ;############################################ Grassmap to Buffer
 Function editor_grassmaptobuffer()
+	grass_x=-2147483648
 	;Update Grassmap Colors
 	SetBuffer TextureBuffer(ter_tex_color)
 	LockBuffer TextureBuffer(ter_tex_color)
@@ -911,6 +912,7 @@ End Function
 
 ;############################################ Buffer Paint Grassmap
 Function editor_bufferpaintgrassmap(x,y,size)
+	grass_x=-2147483648
 	Local bsize=ImageHeight(in_editor_buffer)
 	SetBuffer ImageBuffer(in_editor_buffer)
 	LockBuffer ImageBuffer(in_editor_buffer)

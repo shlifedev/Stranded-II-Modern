@@ -633,7 +633,6 @@ Global grass_dist=15						;Grass Distance
 Global grass_mapsize						;Grass Map Size
 Global grass_f#								;Grass Factor Stuff
 Global grass_x,grass_y						;Grass Position (Update req?)
-Global grass_yaw							;Grass Yaw
 Global grass_wind#							;Grass Wind
 Dim grass_rgb(0,0,0)						;Grass Colors
 Dim grass_h(grass_c,grass_c)				;Grass Handles
@@ -744,6 +743,8 @@ Type Tobject
 	Field windsway#							;Windsway
 	Field daytimer							;Daytimer
 	Field alpha#
+	Field view_cull						;1: hidden by view, 2: collision-only alpha
+	Field shadow_restore,shadow_alpha#	;Temporary shadow-pass state
 	Field chan
 End Type
 

@@ -176,6 +176,7 @@ Function load_map(path$,pw$)
 			grass_rgb(x,y,3)=ReadByte(stream)			;Gras? 1/0
 		Next
 	Next
+	grass_x=-2147483648
 	grass_spread()
 	
 	;Debug
