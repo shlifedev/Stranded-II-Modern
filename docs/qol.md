@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/qol.md","language":"en","syncedHash":"b9bfca3a2da137b2db2b3c00dba863d46f00242f224b76a02640ef8452a8b5ff"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/qol.md","language":"en","syncedHash":"7a7431368afb3211d49ff22e8d289070897062098d43e58d55f045842ef65b23"} -->
 
 # QOL options
 
@@ -17,3 +17,7 @@ Both Stranded II and Extended provide these features under **Settings → QOL**.
 | Hold to build | Hold right-click with a hammer to keep supplying materials to the same construction target. It stops on release, completion, target or equipment changes, menu or focus changes, or leaving range. |
 
 Crafting conditions, weight limits, construction costs, and hammer intervals follow the existing rules. Sorting changes only the display order; it does not automatically transfer or delete items. Stranded II and Extended keep separate settings and saves.
+
+## FPS display
+
+In both editions, **F2** toggles an FPS-only display in the top-right corner without enabling debug mode. It starts hidden on each launch and is independent of the QOL options. Full debug mode keeps its existing FPS display.

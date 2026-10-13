@@ -301,6 +301,10 @@ Function endinput(tooltip=1,cursor=1,scripthelper=1)
 		If in_cursorf>=0 Then DrawImage gfx_cursor(in_cursorf),in_mx,in_my	
 	EndIf
 		
+	;FPS-only overlay (F2), independent of debug output and its extra work.
+	If KeyHit(60) Then fps_visible=Not fps_visible
+	If fps_visible And set_debug=0 Then bmpf_txt_r(set_scrx-3,0,fps+" FPS",Cbmpf_tiny)
+
 	;Debug Outputs (FPS etc.)
 	debug()
 	

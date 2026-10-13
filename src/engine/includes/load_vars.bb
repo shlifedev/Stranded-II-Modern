@@ -3,6 +3,7 @@
 Global ms,lastms							;Millisecs
 Global gt									;Gametimer
 Global fps,fpsms,fpsf,fo1#,fo2#,f#			;FPS Stuff
+Global fps_visible=0						;Session-only FPS overlay (F2)
 Global tmod#=1.								;Time Modification
 Global gframe								;Frame
 
