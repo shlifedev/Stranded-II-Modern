@@ -332,11 +332,14 @@ struct OrderComp{
 	}
 };
 
+struct TransparentDraw{
+	Model *model;
+	float distance;
+};
+
 struct TransComp{
-	bool operator()( Model *a,Model *b )const{
-		return
-		cam_tform.v.distance( a->getRenderTform().v )<
-		cam_tform.v.distance( b->getRenderTform().v );
+	bool operator()( const TransparentDraw &a,const TransparentDraw &b )const{
+		return a.distance<b.distance;
 	}
 };
 
@@ -348,7 +351,7 @@ static std::priority_queue<Model*,std::vector<Model*>,OrderComp> ord_que;
 
 static std::priority_queue<Camera*,std::vector<Camera*>,OrderComp> cam_que;
 
-static std::priority_queue<Model*,std::vector<Model*>,TransComp> transparents;
+static std::priority_queue<TransparentDraw,std::vector<TransparentDraw>,TransComp> transparents;
 
 void World::capture(){
 
@@ -490,7 +493,10 @@ void World::render( Model *mod,const RenderContext &rc,bool defer ){
 	}
 
 	if( trans || mod->queueSize( Model::QUEUE_TRANSPARENT ) ){
-		transparents.push( mod );
+		// Distance is constant while this camera's queue is drained. Keep the
+		// same heap/order, computing it once rather than for every comparison.
+		TransparentDraw draw={ mod,cam_tform.v.distance( mod->getRenderTform().v ) };
+		transparents.push( draw );
 	}
 }
 
@@ -519,7 +525,7 @@ void World::flushTransparent(){
 	bool local=true;
 
 	for( ;transparents.size();transparents.pop() ){
-		Model *mod=transparents.top();
+		Model *mod=transparents.top().model;
 		if( mod->getRenderSpace()==Model::RENDER_SPACE_LOCAL ){
 			bbScene->setWorldMatrix( (BBScene::Matrix*)&mod->getRenderTform() );
 			local=true;

@@ -56,7 +56,7 @@ def check_render(output):
                env=engine.environment())
     engine.install_windows_runtime(directory)
     execute(directory / 's2_render_check.exe', output, 'render')
-    return 'D3D12 matte/specular colour, textures, fog and auto-fade pixels passed (no window)'
+    return 'D3D12 materials, ordered transparency, instancing, fade, depth and frustum checks passed (no window)'
 
 
 def main():

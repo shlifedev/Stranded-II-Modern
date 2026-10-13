@@ -26,10 +26,7 @@ struct BBWebGPUFrameState{
 static_assert( sizeof(BBWebGPUFrameState)==656,"BBFrameState layout mismatch" );
 
 struct BBWebGPUEntityState{
-	float world[16];
-	float normal_mat[16];
 	float ambient[4];
-	float brush_color[4];
 	float fog_color[4];
 	float fog_range[2];
 	int32_t texs_used;
@@ -49,8 +46,8 @@ struct BBWebGPUEntityState{
 		return offsetof( BBWebGPUEntityState,texs )+sizeof( TexState )*(size_t)used;
 	}
 };
-static_assert( sizeof(BBWebGPUEntityState)==864,"BBEntityState layout mismatch" );
-static_assert( offsetof(BBWebGPUEntityState,texs)==224,"BBEntityState texs offset mismatch" );
+static_assert( sizeof(BBWebGPUEntityState)==720,"BBEntityState layout mismatch" );
+static_assert( offsetof(BBWebGPUEntityState,texs)==80,"BBEntityState texs offset mismatch" );
 
 struct BBWebGPUClearState{
 	float color[4];
@@ -68,12 +65,13 @@ struct BBWebGPU3DVertex{
 };
 static_assert( sizeof(BBWebGPU3DVertex)==44,"3D vertex layout mismatch" );
 
-// Transforms vary per copy; material and camera uniforms stay shared.
+// Tint and fade vary per copy too, without splitting shared-material draws.
 struct BBWebGPUInstance{
 	float world[16];
 	float normal[12];
+	float color[4];
 };
-static_assert( sizeof(BBWebGPUInstance)==112,"3D instance layout mismatch" );
+static_assert( sizeof(BBWebGPUInstance)==128,"3D instance layout mismatch" );
 
 
 class WebGPUB3DGraphics : public B3DGraphics{

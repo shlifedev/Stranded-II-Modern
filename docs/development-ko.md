@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"e56e09d64caf3777559535b0fd27f5178b90e2e2284a453762b8935b62176508"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"f0b5935d5b662ecfee92732e220eb51ca87d1afef058170fa8e31784b23de7f3"} -->
 
 # 개발 가이드
 
@@ -14,7 +14,7 @@ Windows 10/11 x64와 Direct3D 12 지원 GPU, Python 3.12 이상, [requirements.t
 
 Visual Studio의 MSVC x64 C++ 빌드 도구, Windows SDK, CMake/Ninja 도구, DIA SDK를 설치합니다. `build`는 저장소의 `src/blitz3d/` 엔진을 LLVM과 함께 빌드해 게임을 x64 네이티브 실행 파일로 연결합니다. 그래픽은 Dawn/D3D12, 오디오는 OpenAL Soft를 사용합니다. Unicode 입력·IME·Windows 서비스는 런타임에 내장하며 `QolInput.dll`은 필요하지 않습니다. 실행에 필요한 DLL과 라이선스는 각 판의 EXE 옆에 복사합니다.
 
-네이티브 런타임은 속도 우선 `Release` 설정(MSVC의 `/O2`)을 사용하며 기존 부동소수점 연산 규칙을 유지합니다. WebGPU는 메시 변경을 그리기 직전까지 모아서 업로드하고, 버퍼 갱신과 그리기 순서를 지키면서 카메라·화면 출력 명령을 함께 제출합니다. 동일한 메시·재질을 쓰는 불투명 복제본은 인스턴싱으로 묶어 그리며, 반투명 오브젝트의 순서는 유지합니다.
+네이티브 런타임은 속도 우선 `Release` 설정(MSVC의 `/O2`)을 사용하며 기존 부동소수점 연산 규칙을 유지합니다. WebGPU는 메시 변경을 그리기 직전까지 모아서 업로드하고, 버퍼 갱신과 그리기 순서를 지키면서 카메라·화면 출력 명령을 함께 제출합니다. 동일한 메시·재질의 복제본은 각자의 색과 페이드 값을 유지하며 인스턴싱으로 묶어 그립니다. 반투명 복제본은 연속된 명령만 묶어 깊이 순서를 유지합니다. 메시 가시성 검사는 카메라의 시야 평면을 재사용하고, 반투명 정렬용 거리는 카메라마다 물체당 한 번만 계산합니다. 반사 갱신 주기·풀 밀도·그래픽 설정은 바꾸지 않습니다.
 
 아래 의존성은 저장소에 포함하지 않으므로 직접 준비합니다.
 
@@ -79,6 +79,22 @@ Python으로 직접 실행할 수도 있습니다.
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 scripts/dev.py run -- -win -fps 120
 ```
+
+## 네이티브 렌더링 벤치마크
+
+Windows에서 선택한 에디션의 실행 환경을 준비한 뒤 격리된 벤치마크를 실행합니다. 고정 시드로 나무·바위 0/256/768/1536개를 배치한 `.s2` 스트레스 지도를 생성·재로드하고 첫 모험 섬도 검사합니다. 실제 게임 루프·네이티브 렌더러·시계를 사용하며 카메라와 입력은 고정합니다. GUI 조작이 필요 없으며 기존 게임·세이브·설정을 보존합니다.
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --run
+.\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --existing build/benchmark-<name> --run --suite resolution --width 1280 --height 720 --label lowres
+.\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --existing build/benchmark-<name> --rebuild --run --cases baseline,island,objects_1536 --label optimized
+```
+
+기본값은 2048×1152, 조건별 3회 반복, 준비 3초·측정 8초이며 매회 프로세스를 새로 시작합니다. 물·풀·시야 거리·지형·바람·모션 블러·오브젝트 밀도·하늘 방향을 비교합니다. `--suite smoke`는 대조 조건 5개, `--cases baseline,water_3,grass_0`는 개별 조건을 선택합니다. 기존 결과를 남기고 다시 측정하려면 새 `--label`을 지정합니다. `--edition extended`는 해당 에디션의 리소스·설정만 사용하며 기존 폴더를 재사용할 때도 지정해야 합니다.
+
+각 측정값은 `build/benchmark-<name>/results.json`, 조건별 중앙값·범위·완료한 반복 횟수는 `summary.json`에 저장합니다. 소스 해시·실행 계획·로그·프레임별 CSV·캡처·생성 지도도 함께 남깁니다. 측정 전후 GPU 픽셀 읽기로 제출한 작업의 완료를 기다립니다. FPS에는 마지막 완료 대기가 포함됩니다. 구간별 시간과 p95/p99 프레임 간격은 호스트에서 잰 경과 시간이며 GPU 타임스탬프가 아닙니다. 반사 시간은 물 시간에 포함됩니다. `sync_control`은 매 프레임 비용이 큰 픽셀 읽기를 추가하는 완료 확인용 조건입니다.
+
+테스트 복사본만 포커스 없이 렌더링을 계속하며 최소화된 측정은 무효 처리합니다. 백그라운드 결과는 렌더링 완료 처리량이며 전경 플레이나 실제 화면 출력 FPS와 다릅니다. 같은 조건에서 옵션을 비교하고 캡처를 확인하세요. 입력 반응·카메라 이동·전체 플레이 검증을 대신하지 않습니다.
 
 ## 실험용 WebGPU 빌드
 
@@ -293,7 +309,7 @@ msg "[[loc:quest.island1.arrival]]";
 
 `check`는 원본 Blitz3D 1.118의 고정 결과와 네이티브 ABI를 비교하고 렌더링 없이 타이머·파서·저장 파일 처리 등을 검사합니다. 시야 거리도 실제 설정 저장·재로드 경로를 거쳐 모든 단계에서 동일하게 적용되는지 확인합니다. `python scripts/verify_engine.py --input`은 창이나 OS 입력 없이 실제 SDL 큐를 통해 콘솔 문자 코드·키 누름 유지·확정된 텍스트·마우스 이벤트 전달을 검사합니다. 캡처 상태만 대체한 검사에서 읽기와 중앙 복귀 사이의 1단위 이동 보존, 축별 소비, 방향 반전과 0.02도 회전도 확인합니다.
 
-`python scripts/verify_engine.py --render`는 창 없이 실제 D3D12 장치와 엔진 셰이더로 텍스처에 그려 무광·광택 재질의 색, 텍스처 합성, 안개와 거리 페이드 픽셀을 검사합니다. 광택은 기존 D3D7 재질의 강도·지수를 따르며 텍스처 처리 후 합성합니다. `--graphics`는 창을 사용하는 격리된 테스트에서 D3D12 그리기·픽셀 읽기·그래픽 컨텍스트 수명도 검사합니다. 실제 렌더링 FPS, 상대 마우스 반응, Alt-Tab, 화면의 부드러움과 전체 진행은 게임에서 따로 확인해야 합니다.
+`python scripts/verify_engine.py --render`는 창 없이 실제 D3D12 장치와 엔진 셰이더로 텍스처에 그려 무광·광택 색, 텍스처, 안개, 거리 페이드, 반투명 인스턴싱, 알파 테스트 윤곽과 카메라별 깊이 순서를 검사합니다. 최적화한 시야 검사도 변환된 경계 상자의 꼭짓점 및 기존 계산과 비교합니다. 광택은 기존 D3D7 재질의 강도·지수를 따르며 텍스처 처리 후 합성합니다. `--graphics`는 창을 사용하는 격리된 테스트에서 D3D12 그리기·픽셀 읽기·그래픽 컨텍스트 수명도 검사합니다. 실제 렌더링 FPS, 상대 마우스 반응, Alt-Tab, 화면의 부드러움과 전체 진행은 게임에서 따로 확인해야 합니다.
 
 두 판의 `check`는 `verify_qol_logic.py`를 실행합니다. 판별 기본값, 누락·잘못된 설정, 옵션 조합 32가지와 공통 엔진 함수를 엔티티·스크립트 대역으로 검사하며 화면, 실제 스크립트, 지도 저장, IME는 검증하지 않습니다. 두 QOL 검증 명령 모두 `--edition classic|extended`를 받으며 생략하면 기본판, 확장판 결과는 `build/extended/` 아래입니다. `verify_qol.py --interactive`는 QOL을 켠 별도 테스트 게임을 개인 세이브 없이 준비하며 자동 실행하지 않습니다. 이 복사본에서 한글 조합·확정·취소, 검색창 포커스와 Alt-Tab, 긴 이름·상세 스크롤, Shift 클릭·R·Shift+R, 옵션별 켜기/끄기, 건축 반복 취소를 확인하세요. `--language en`은 영어, `--desktop`은 전체 창입니다. 시뮬레이션한 건축 간격은 실제 렌더링 FPS 측정과 다릅니다.
 

@@ -55,9 +55,36 @@ bool Frustum::cull( const Vector v[],int cnt )const{
 }
 
 bool Frustum::cull( const Box &b )const{
-	Vector v[8];
-	for( int k=0;k<8;++k ) v[k]=b.corner(k);
-	return cull( v,8 );
+	if( b.empty() ){
+		Vector v[8];
+		for( int k=0;k<8;++k ) v[k]=b.corner(k);
+		return cull( v,8 );
+	}
+	for( int k=0;k<6;++k ){
+		const Plane &p=planes[k];
+		// The corner furthest along the plane normal decides whether every
+		// corner is outside. Avoid testing all eight corners per plane.
+		Vector v( p.n.x>=0?b.b.x:b.a.x,p.n.y>=0?b.b.y:b.a.y,p.n.z>=0?b.b.z:b.a.z );
+		if( p.distance(v)<0 ) return false;
+	}
+	return true;
+}
+
+bool Frustum::cull( const Box &b,const Transform &t )const{
+	// Pull each world plane into model space. This avoids inverting the model
+	// and rebuilding/normalizing six frustum planes for every mesh and camera.
+	// No normalization is needed: only the sign of each distance matters.
+	for( int k=0;k<6;++k ){
+		const Plane &p=planes[k];
+		Vector n( p.n.dot(t.m.i),p.n.dot(t.m.j),p.n.dot(t.m.k) );
+		Vector v( n.x>=0?b.b.x:b.a.x,n.y>=0?b.b.y:b.a.y,n.z>=0?b.b.z:b.a.z );
+		float d=p.distance(t.v);
+		// Roundoff at a touching plane may retain a tiny extra sliver, but
+		// must not make a visible object pop out of the frame or reflection.
+		float tolerance=1e-5f*(fabsf(n.x*v.x)+fabsf(n.y*v.y)+fabsf(n.z*v.z)+fabsf(d)+1);
+		if( n.dot(v)+d < -tolerance ) return false;
+	}
+	return true;
 }
 
 float Frustum::getLeft()const{

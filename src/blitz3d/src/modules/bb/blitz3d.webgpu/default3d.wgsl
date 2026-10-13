@@ -26,10 +26,7 @@ struct BBTexState {
 };
 
 struct BBEntityState {
-  world : mat4x4<f32>,
-  normal_mat : mat4x4<f32>,
   ambient : vec4<f32>,
-  brush_color : vec4<f32>,
   fog_color : vec4<f32>,
   fog_range : vec2<f32>,
   texs_used : i32,
@@ -86,6 +83,7 @@ struct BBVertexOut {
   @location(4) tc45 : vec4<f32>,
   @location(5) tc67 : vec4<f32>,
   @location(6) specular : vec3<f32>,
+  @location(7) @interpolate(flat) alpha_ref : f32,
 };
 
 fn layerCoord( i : i32, eye_normal : vec3<f32>, ndc : vec3<f32>,
@@ -116,8 +114,10 @@ fn vs_main( @location(0) bbPosition : vec3<f32>,
             @location(8) world3 : vec4<f32>,
             @location(9) normal0 : vec4<f32>,
             @location(10) normal1 : vec4<f32>,
-            @location(11) normal2 : vec4<f32> ) -> BBVertexOut {
+            @location(11) normal2 : vec4<f32>,
+            @location(12) brush_color : vec4<f32> ) -> BBVertexOut {
   var v : BBVertexOut;
+  v.alpha_ref = RS.alpha_ref * brush_color.a;
 
   let modelview = FS.view * mat4x4<f32>( world0, world1, world2, world3 );
   let eye_pos = modelview * vec4<f32>( bbPosition, 1.0 );
@@ -144,7 +144,7 @@ fn vs_main( @location(0) bbPosition : vec3<f32>,
   if( RS.use_vertex_color>0 ){
     mat_color = bbColor;
   }else{
-    mat_color = RS.brush_color;
+    mat_color = brush_color;
   }
 
   v.specular = vec3<f32>( 0.0 );
@@ -253,7 +253,7 @@ fn fs_main( v : BBVertexOut ) -> @location(0) vec4<f32> {
     color = mix( color, fog_color, v.fog_factor );
   }
 
-  if( RS.alpha_test==1 && color.a*255.0<=RS.alpha_ref ){
+  if( RS.alpha_test==1 && color.a*255.0<=v.alpha_ref ){
     discard;
   }
 

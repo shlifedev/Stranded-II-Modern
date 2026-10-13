@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"a51ce46e994393b35016d0613a79f166d3ab03451ba17a4831ccb401a9afd885"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"75d2eae9361a740a12bdc32c88cbec2a35ac17665bd40a90962173f306cd6830"} -->
 
 # Development guide
 
@@ -14,7 +14,7 @@ You need Windows 10/11 x64 with a Direct3D 12 GPU, Python 3.12 or later, and [re
 
 Install Visual Studio’s MSVC x64 C++ build tools, Windows SDK, CMake/Ninja tools and DIA SDK. `build` compiles the editable Blitz3D engine in `src/blitz3d/` with LLVM and links the game as a native x64 executable. Rendering uses Dawn/D3D12 and audio uses OpenAL Soft. Unicode input, IME and Windows services are linked into the runtime; `QolInput.dll` is no longer required. Runtime DLLs and their licenses are copied beside each edition’s EXE.
 
-Native runtimes use the speed-optimized `Release` configuration (`/O2` on MSVC), retaining strict floating-point behavior. WebGPU combines mesh edits until drawing and batches camera/presentation commands while preserving buffer-update and draw order. Opaque copies sharing a mesh and material use instanced draws; transparent objects retain their draw order.
+Native runtimes use the speed-optimized `Release` configuration (`/O2` on MSVC), retaining strict floating-point behavior. WebGPU combines mesh edits until drawing and batches camera/presentation commands while preserving buffer-update and draw order. Copies sharing a mesh and material use instanced draws with individual colours and fade values. Transparent copies are merged only when consecutive, preserving depth order. Mesh visibility reuses the camera's frustum planes, and transparent sorting computes each model's distance once per camera; reflection frequency, grass density and graphics settings are unchanged.
 
 These dependencies are not included in the repository; prepare them yourself:
 
@@ -79,6 +79,22 @@ You can also launch directly through Python:
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 scripts/dev.py run -- -win -fps 120
 ```
+
+## Native rendering benchmark
+
+On Windows, prepare the selected edition's runtime, then run the isolated benchmark. It generates and reloads seeded `.s2` stress maps with 0/256/768/1536 trees and rocks, and also tests the first adventure island. It uses the real game loop, native renderer and clock. Camera position and input are fixed; no GUI operation is needed. Existing games, saves and settings are preserved.
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --run
+.\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --existing build/benchmark-<name> --run --suite resolution --width 1280 --height 720 --label lowres
+.\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --existing build/benchmark-<name> --rebuild --run --cases baseline,island,objects_1536 --label optimized
+```
+
+The default is 2048×1152, three repeats per case, a 3-second warmup and 8-second measurement. Each trial starts a fresh process. It compares water, grass, view range, terrain, wind, motion blur, object density and sky views. `--suite smoke` selects five controls; `--cases baseline,water_3,grass_0` selects individual cases. Use a new `--label` to retain earlier results. `--edition extended` uses only that edition's resources and settings; include it when reusing its folder.
+
+Trials are in `build/benchmark-<name>/results.json`; `summary.json` contains each condition's median and range, with completed repeat counts. Source hashes, plans, logs, per-frame CSVs, screenshots and generated maps are stored alongside them. GPU readbacks drain work before and after each measurement. FPS includes the final drain; phase timings and p95/p99 frame intervals are host elapsed times, not GPU timestamps. Reflection time is included in water time. The `sync_control` case adds a costly readback every frame and is only a completion control.
+
+Only the test copy continues rendering without focus; minimize it and the trial is rejected. Background results measure completed rendering throughput, not foreground presentation or display scanout FPS. Compare options under the same conditions and inspect captures; this does not verify input response, camera movement or full gameplay.
 
 ## Experimental WebGPU build
 
@@ -293,7 +309,7 @@ For movement and collision changes, run `verify_collisions.py` for both editions
 
 `check` compares the native ABI with the frozen original Blitz3D 1.118 output and tests timers, parsers, save-file handling and related behavior without rendering. It also exercises actual settings saves and reloads to check that every view-distance level applies consistently. `python scripts/verify_engine.py --input` checks console character codes, held keys, committed text and mouse event delivery through the real SDL queue without a window or OS input. With only capture state substituted, it also checks single counts arriving between reads and recentering, independent axis consumption, direction reversal and 0.02-degree rotation.
 
-`python scripts/verify_engine.py --render` draws into textures using a real D3D12 device and the engine shaders without a window, checking matte/specular material colours, texture composition, fog and distance-fade pixels. Specular lighting follows the original D3D7 material strength and exponent and is added after texturing. `--graphics` additionally checks D3D12 drawing, pixel readback and graphics-context lifetime in an isolated fixture with a window. Actual rendering FPS, raw mouse response, Alt-Tab, visual smoothness, and full progression require separate in-game checks.
+`python scripts/verify_engine.py --render` draws into textures using a real D3D12 device and the engine shaders without a window, checking matte/specular colours, textures, fog, distance fade, instanced transparency, alpha-test silhouettes and depth order across cameras. It also compares optimized frustum tests against transformed bounding-box corners and the legacy calculation. Specular lighting follows the original D3D7 material strength and exponent and is added after texturing. `--graphics` additionally checks D3D12 drawing, pixel readback and graphics-context lifetime in an isolated fixture with a window. Actual rendering FPS, raw mouse response, Alt-Tab, visual smoothness, and full progression require separate in-game checks.
 
 Both editions' `check` runs `verify_qol_logic.py`. It tests edition defaults, missing/invalid settings, all 32 option combinations, and the shared engine functions with entity/script test doubles; it does not verify display, real scripts, map saves, or IME. Both QOL verification commands accept `--edition classic|extended` and default to Stranded II; Extended reports are under `build/extended/`. `verify_qol.py --interactive` prepares a separate test game with QOL enabled and no personal saves, without launching it. Run that copy to check Korean composition/commit/cancel, search focus and Alt-Tab, long names and detail scrolling, Shift-click/R/Shift+R, each option on/off, and cancellation of held construction. Use `--language en` for English and `--desktop` for borderless mode. Simulated construction intervals do not measure actual rendering FPS.
 

@@ -19,6 +19,7 @@ public:
 	Frustum( const Frustum &f,const Transform &t );
 
 	bool cull( const Box &box )const;
+	bool cull( const Box &box,const Transform &transform )const;
 	bool cull( const Vector vecs[],int cnt )const;
 
 	const Plane &getPlane( int n )const{ return planes[n]; }

@@ -213,6 +213,7 @@ private:
 
 	BBWebGPUFrameState frame;
 	BBWebGPUEntityState entity;
+	BBWebGPUInstance instance={};
 	bool frame_dirty=true,entity_dirty=true;
 	uint32_t frame_offset=0,entity_offset=0;
 
@@ -378,12 +379,12 @@ public:
 		memset( &entity,0,sizeof(entity) );
 		bbMat4Identity( frame.proj );
 		bbMat4Identity( frame.view );
-		bbMat4Identity( entity.world );
-		bbMat4Identity( entity.normal_mat );
+		bbMat4Identity( instance.world );
+		instance.normal[0]=instance.normal[5]=instance.normal[10]=1.0f;
 		bbMat4Identity( view_matrix );
 		bbMat4Identity( world_matrix );
 
-		entity.brush_color[0]=entity.brush_color[1]=entity.brush_color[2]=entity.brush_color[3]=1.0f;
+		instance.color[0]=instance.color[1]=instance.color[2]=instance.color[3]=1.0f;
 
 		const float MIDLEVEL[]={ 0.5f,0.5f,0.5f };
 		setAmbient( MIDLEVEL );
@@ -694,8 +695,8 @@ public:
 		attrs[4].offset=offsetof( BBWebGPU3DVertex,tex_coord1 );
 		attrs[4].shaderLocation=4;
 
-		WGPUVertexAttribute instance_attrs[7]={};
-		for( int i=0;i<7;++i ){
+		WGPUVertexAttribute instance_attrs[8]={};
+		for( int i=0;i<8;++i ){
 			instance_attrs[i].format=WGPUVertexFormat_Float32x4;
 			instance_attrs[i].offset=i*4*sizeof(float);
 			instance_attrs[i].shaderLocation=5+i;
@@ -707,7 +708,7 @@ public:
 		vbl[0].attributes=attrs;
 		vbl[1].stepMode=WGPUVertexStepMode_Instance;
 		vbl[1].arrayStride=sizeof( BBWebGPUInstance );
-		vbl[1].attributeCount=7;
+		vbl[1].attributeCount=8;
 		vbl[1].attributes=instance_attrs;
 
 		WGPUBlendState blend_state={};
@@ -841,9 +842,9 @@ public:
 		return (uint32_t)offset;
 	}
 
-	uint32_t pushCached( UniformCache &cache,const void *data,size_t size,size_t bind_size,size_t skip=0 ){
+	uint32_t pushCached( UniformCache &cache,const void *data,size_t size,size_t bind_size ){
 		if( cache.valid&&cache.bytes.size()==size&&
-		    memcmp( cache.bytes.data()+skip,(const unsigned char*)data+skip,size-skip )==0 ){
+		    memcmp( cache.bytes.data(),data,size )==0 ){
 			return cache.offset;
 		}
 		uint32_t offset=pushUniforms( data,size,bind_size );
@@ -1115,8 +1116,13 @@ public:
 		memcpy( frame.view,mat,sizeof(frame.view) );
 		frame_dirty=true;
 
-		bbNormalMatrix( view_matrix,world_matrix,entity.normal_mat );
-		entity_dirty=true;
+		updateNormalMatrix();
+	}
+
+	void updateNormalMatrix(){
+		float normal[16];
+		bbNormalMatrix( view_matrix,world_matrix,normal );
+		memcpy( instance.normal,normal,sizeof(instance.normal) );
 	}
 
 	void setWorldMatrix( const Matrix *matrix ){
@@ -1136,16 +1142,15 @@ public:
 		}
 
 		memcpy( world_matrix,mat,sizeof(world_matrix) );
-		memcpy( entity.world,mat,sizeof(entity.world) );
-		bbNormalMatrix( view_matrix,world_matrix,entity.normal_mat );
-		entity_dirty=true;
+		memcpy( instance.world,mat,sizeof(instance.world) );
+		updateNormalMatrix();
 	}
 
 	void setRenderState( const RenderState &rs ){
 		int alpha_test;
 		if( rs.fx&FX_ALPHATEST && !(rs.fx&FX_VERTEXALPHA) ){
 			alpha_test=1;
-			entity.alpha_ref=128.0f*rs.alpha;
+			entity.alpha_ref=128.0f;
 		}else{
 			alpha_test=0;
 			entity.alpha_ref=0.0f;
@@ -1157,8 +1162,8 @@ public:
 		blend_mode=rs.blend;
 
 
-		entity.brush_color[0]=rs.color[0];entity.brush_color[1]=rs.color[1];entity.brush_color[2]=rs.color[2];
-		entity.brush_color[3]=rs.alpha;
+		instance.color[0]=rs.color[0];instance.color[1]=rs.color[1];instance.color[2]=rs.color[2];
+		instance.color[3]=rs.alpha;
 		entity.brush_shininess=rs.shininess;
 
 		entity.fullbright=rs.fx&FX_FULLBRIGHT;
@@ -1341,7 +1346,7 @@ public:
 			}
 			if( entity_dirty ){
 				entity_offset=pushCached( entity_cache,&entity,BBWebGPUEntityState::usedSize( entity.texs_used ),
-				                          sizeof(entity),offsetof(BBWebGPUEntityState,ambient) );
+				                          sizeof(entity) );
 				entity_dirty=false;
 			}
 			if( !frame_dirty&&!entity_dirty ) break;
@@ -1359,13 +1364,12 @@ public:
 		WGPURenderPipeline pipeline=getScenePipeline( target->format() );
 		WGPUBindGroup tex_group=current_tex_group?current_tex_group:defaultTexGroup();
 		uint32_t first_instance=(uint32_t)(instance_used/sizeof(BBWebGPUInstance));
-		BBWebGPUInstance instance;
-		memcpy( instance.world,entity.world,sizeof(instance.world) );
-		memcpy( instance.normal,entity.normal_mat,sizeof(instance.normal) );
 		memcpy( instance_stage.data()+instance_used,&instance,sizeof(instance) );
 		instance_used+=sizeof(instance);
 
-		bool batchable=blend_mode==BLEND_REPLACE&&zmode==ZMODE_NORMAL&&!wireframe;
+		// Only adjacent draws are merged, in their original instance order.
+		// This preserves back-to-front blending of transparent grass and fades.
+		bool batchable=!wireframe;
 		if( pending_instances&&(!batchable||pipeline!=bound_pipeline||
 		    !bound_frame||bound_frame_offset!=frame_offset||!bound_entity||bound_entity_offset!=entity_offset||
 		    tex_group!=bound_tex_group||mesh->vertex_buffer!=bound_vertex_buffer||index_buffer!=bound_index_buffer||
