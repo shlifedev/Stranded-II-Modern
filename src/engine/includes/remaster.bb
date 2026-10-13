@@ -96,13 +96,21 @@ Function remaster_frame()
  If remaster_enabled(1) Or remaster_enabled(2) Then
   Local hour#=Float(map_hour)+Float(map_minute)/60.,elevation#=Sin((hour-6.)*15.)
   Local strength#=Max(0.,elevation),pitch#=15.+Abs(elevation)*50.
+  Local ambientr#=Max(0,env_col(0)-55),ambientg#=Max(0,env_col(1)-55),ambientb#=Max(0,env_col(2)-55)
   RotateEntity env_light,pitch,(-60.+(hour-12.)*8.),0
   If elevation>0. Then
-   LightColor env_light,45.+strength*75.,36.+strength*82.,27.+strength*88.
+   Local sunr#=45.+strength*75.,sung#=36.+strength*82.,sunb#=27.+strength*88.
+   Local budget#=0.30*strength/Max(sunr,Max(sung,sunb))
+   sunr=ambientr*sunr*budget:sung=ambientg*sung*budget:sunb=ambientb*sunb*budget
+   ; Share the original ambient budget: flat ground keeps its daytime brightness.
+   Local up#=Sin(pitch),u#=Min(1.,strength/Sin(15.)),blend#=u*u*(3.-2.*u)
+   LightColor env_light,16.+(sunr-16.)*blend,20.+(sung-20.)*blend,27.+(sunb-27.)*blend
+   ; Smoothly meet the unchanged night values at sunrise and sunset.
+   AmbientLight ambientr*(0.9+0.1*blend)-sunr*up*blend,ambientg*(0.9+0.1*blend)-sung*up*blend,ambientb*(0.9+0.1*blend)-sunb*up*blend
   Else
    LightColor env_light,16,20,27
+   AmbientLight ambientr*0.9,ambientg*0.9,ambientb*0.9
   EndIf
-  AmbientLight Max(0,env_col(0)-55)*0.9,Max(0,env_col(1)-55)*0.9,Max(0,env_col(2)-55)*0.9
  EndIf
 End Function
 

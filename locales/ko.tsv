@@ -2674,7 +2674,7 @@ render.lighting	픽셀 단위 조명
 render.shadows	태양 그림자
 render.atmosphere	대기 음영
 render.antialias	계단현상 완화
-render.help	FXAA는 기본값이며 저비용으로 윤곽을 부드럽게 합니다. MSAA 4x는 더 선명하지만 GPU 부하가 큽니다. 둘 다 글자에는 적용하지 않습니다. 다른 효과는 기본 끔이며 적용하면 즉시 반영됩니다.
+render.help	FXAA는 기본값이며 저비용으로 윤곽을 부드럽게 합니다. MSAA 4x는 더 선명하지만 GPU 부하가 큽니다. 둘 다 글자에는 적용하지 않습니다. 물·조명·대기는 기본 켜짐, 태양 그림자는 기본 끔입니다. 적용하면 즉시 반영됩니다.
 dev.title	개발자 메뉴
 dev.status	상태
 dev.cheats	치트 / 테스트

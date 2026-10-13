@@ -910,6 +910,31 @@ static void checkRemaster(WebGPUContextResources &res){
     expectPixel("sun shadow ends at configured distance",draw(scene,target,mesh,state,{&light},ambient),179,179,179);
     scene.setShadowLight(nullptr,depth,0,0);fillQuad(mesh,10,normal);
     expectPixel("disabling sun shadows removes stale captures",draw(scene,target,mesh,state,{&light},ambient),179,179,179);
+
+    // Game noon values for env_col=(255,255,255), independently checked by
+    // verify_lighting.py. Keep the original 200/255 flat-ground brightness.
+    const float noonAmbient[3]={145.62153f/255,146.52784f/255,147.88730f/255};
+    const float up[3]={0,1,0},towardSun[3]={0,0.9063078f,-0.4226183f};
+    light.r=60.0f/255;light.g=59.0f/255;light.b=57.5f/255;
+    bbMat4Identity(light.matrix);
+    light.matrix[5]=0.4226183f;light.matrix[6]=0.9063078f;
+    light.matrix[9]=-0.9063078f;light.matrix[10]=0.4226183f;
+    fillQuad(mesh,10,up);
+    expectPixel("budgeted noon flat ground",draw(scene,target,mesh,state,{&light},noonAmbient),200,200,200);
+    scene.setRenderEffects(true,true,0);
+    expectPixel("atmosphere keeps budgeted upward ground",draw(scene,target,mesh,state,{&light},noonAmbient),200,200,200);
+    scene.setRenderEffects(true,false,0);fillQuad(mesh,10,towardSun);
+    expectPixel("budgeted sun-facing surface retains contrast",draw(scene,target,mesh,state,{&light},noonAmbient),206,206,205);
+    capture(255,true);fillQuad(mesh,10,up);
+    expectPixel("budgeted sun shadow retains ambient",draw(scene,target,mesh,state,{&light},noonAmbient),146,147,148);
+    scene.setShadowLight(nullptr,depth,0,0);
+    expectPixel("budgeted noon after shadow removal",draw(scene,target,mesh,state,{&light},noonAmbient),200,200,200);
+    // With both options off, the game's original vertical sun does not light
+    // upward terrain; the ambient value and legacy shader must remain intact.
+    scene.setRenderEffects(false,false,0);bbMat4Identity(light.matrix);
+    light.r=light.g=light.b=50.0f/255;
+    const float originalAmbient[3]={200.0f/255,200.0f/255,200.0f/255};
+    expectPixel("both enhancements off retain original ground",draw(scene,target,mesh,state,{&light},originalAmbient),200,200,200);
     scene.freeMesh(mesh);gx_canvas=nullptr;
 }
 
@@ -1141,6 +1166,8 @@ static void checkAntialias(WebGPUContextResources &res){
         world.renderShadows(&camera,nullptr,0,1);
         expect(scene.aaCalls==1,"reflection and shadow captures bypass screen FXAA");
         scene.setAntialiasSamples(4);
+        // Cube capture leaves the source camera on its last (upward) face.
+        camera.setLocalRotation(rotationQuat(0,0,0));
         camera.setProjMode(Camera::PROJ_ORTHO);
         camera.setClsColor(Vector(0,0,0));
         CheckedMeshModel diagonal;
@@ -1157,6 +1184,7 @@ static void checkAntialias(WebGPUContextResources &res){
         covered=0;
         for(size_t i=0;i<actual.size();i+=4) if(actual[i]>0 && actual[i]<255) ++covered;
         expect(covered==0,"switching MSAA OFF restores single-sample geometry");
+        expectPixel("single-sample comparison contains opaque geometry",target.getPixel(16,24),255,255,255);
     }
     res.antialias=false;res.antialias_samples=1;bbScene=nullptr;gx_canvas=nullptr;
 }

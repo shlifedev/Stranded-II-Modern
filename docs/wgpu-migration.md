@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"633a4bb1c0388a2eadd8a9e0069308d99b3338e48e035444124024bfe54c225e"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"fec40feb1e319f63efb48429fd9ad4a850ad1fcdb528a36f600cbc4da35eaee8"} -->
 
 # Stranded II's wgpu/WebGPU cross-platform renderer migration
 
@@ -95,7 +95,7 @@ WebGPU implementation and platform surface
 
 ### 2.2 Optional graphics enhancements
 
-Both editions share independent options in [remaster.bb](../src/engine/includes/remaster.bb). Scene FXAA defaults on; anti-aliasing also offers off and MSAA 4x. The other enhancements default off:
+Both editions share independent options in [remaster.bb](../src/engine/includes/remaster.bb). Scene FXAA, water, lighting and atmosphere default on; sun shadows default off. Anti-aliasing also offers off and MSAA 4x. Existing saved selections take precedence.
 
 - Anti-aliasing: `render_antialias=1` enables FXAA once after ordinary `RenderWorld`, before bitmap text and HUD. `AntiAlias(0|1)` retains off/FXAA semantics; `AntiAlias(4)` selects MSAA 4x. An optional `BBScene::applyAntialias(BBCanvas*)` hook performs the FXAA pass. Planar/cube reflections and shadow captures bypass it. The pass reads a reusable GPU snapshot shared with `CopyRect`, preserves alpha and adds no dithering or GPU completion wait. Low-contrast pixels return their original colour when the luminance range is below `max(1/16, maximum luminance × 1/8)`. Moving thin foliage can still shimmer.
 
@@ -104,6 +104,8 @@ MSAA uses matching four-sample colour/depth attachments and sample-count-specifi
 - Water: `RenderWorldPlanar` reflects the source camera across a horizontal plane, clips submerged geometry, and retains its aspect ratio without moving the camera or its children. The water shader uses projective sampling and procedural wave distortion. Fresnel opacity uses the mean horizontal surface, preventing wave slopes from alternating reflections into bright and dark bands at grazing angles. Reflection quality and update cadence still follow the existing water setting; qualities without reflections use only the wave shading.
 - Lighting: optional per-pixel diffuse/specular lighting and a time-dependent directional sun. Atmospheric shading adds hemispheric ambient light and per-pixel linear fog using the game's existing colours.
 - Shadows: `RenderWorldShadows` renders two 1024×1024 `Depth32Float` layers for the selected directional light. The game uses a 1000-unit range, a 30% split, overlapping cascades, texel-snapped translation, 3×3 PCF and distance fade. Alpha-tested foliage casts cutout shadows; blended effects and water do not. Ambient light remains unshadowed. No night shadow capture runs.
+
+Lighting or shadows enables the same sun once. During the day, sun light shares the original per-channel ambient budget `A=max(env_col-55,0)`. With sun colour ratios `T` normalized by the largest channel and the existing elevation factor `strength`, `S=A*0.30*strength*T`; ambient becomes `A-S*Sin(pitch)`, keeping the flat-ground total at the original brightness. At sunrise/sunset, a smoothstep of `strength/Sin(15)` clamped to 0–1 interpolates from the existing night sun `(16,20,27)` and ambient `0.9*A`. Sun direction, night values, the path with both options off and material specular remain unchanged; no rendering pass is added. `verify_lighting.py` compiles the actual Blitz function to check times, sky colours, option combinations and boundary continuity; offscreen GPU checks cover noon ground brightness and shadow contrast.
 
 The game's object culling records when the main camera hides an otherwise in-range model or sets its alpha to zero for collision. Shadow capture temporarily restores those models with their object alpha, then restores the prior hidden and material-alpha states before other rendering or world updates. Collision-only meshes are untouched; objects beyond their configured view distance and script-invisible objects stay excluded. This keeps off-screen trees casting shadows as the camera turns. `verify_visibility.py` checks the actual game culling/capture functions with entity doubles; the offscreen GPU fixture also checks shadowed ground during small camera turns with its caster outside the main view.
 

@@ -56,7 +56,7 @@ def check_render(output):
                env=engine.environment())
     engine.install_windows_runtime(directory)
     execute(directory / 's2_render_check.exe', output, 'render', timeout=180)
-    return 'D3D12 materials, transparency, instancing, mesh versions, terrain normals, planar/cube capture, stable water coverage, per-pixel lighting, alpha-tested cascaded shadows and scene FXAA with sharp HUD passed (no window)'
+    return 'D3D12 materials, transparency, instancing, mesh versions, terrain normals, planar/cube capture, stable water coverage, per-pixel lighting, budgeted noon brightness, alpha-tested cascaded shadows and scene FXAA with sharp HUD passed (no window)'
 
 
 def main():

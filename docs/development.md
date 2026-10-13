@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"ef78732d93870a1767513f5d85d5303539c6b4cd6ba9a63a9873df304b27a8ad"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"0e0bdeaa24b4ecc7770a39c5ef9a37a6ccc67403f44aa1354fef07aa45008f23"} -->
 
 # Development guide
 
@@ -101,6 +101,8 @@ Shared game UI lives in `src/engine/includes/devmenu.bb`, native ImGui/SDL/WebGP
 ## Native rendering benchmark
 
 Both Windows editions expose Settings → Graphics enhancements. `render_antialias` selects off (`0`), low-cost FXAA (`1`, default), or sharper MSAA 4x (`4`). Saved selections are preserved; missing or invalid values use `1`. FXAA runs once after ordinary `RenderWorld`; MSAA renders the main canvas with four colour/depth samples and resolves before bitmap text and HUD. Both skip reflection/shadow captures; MSAA does not also apply FXAA and costs more GPU time and memory. Water, lighting and atmosphere default to ON (`render_water=1`, `render_lighting=1`, `render_atmosphere=1`); sun shadows default to OFF (`render_shadows=0`). These defaults also apply when keys are missing; existing saved selections take precedence. Applying changes updates the current scene only after settings save successfully. Water uses the existing reflection resolution and cadence; shadows increase rendering cost. The FPS selector offers Unlimited (`fps=0`, or `-fps 0`) and 60/120/144; display/FPS changes still require restart.
+
+When lighting or shadows is enabled, sun light shares the original ambient budget to reduce excessive daytime brightness and transitions smoothly to night values at sunrise/sunset. The `check` suite's `verify_lighting.py` tests times, sky colours and option combinations through the actual Blitz function; `verify_engine.py --render` checks noon ground brightness and shadow contrast using actual D3D12 pixels.
 
 On Windows, prepare the selected edition's runtime, then run the isolated benchmark. It generates and reloads seeded `.s2` stress maps with 0/256/768/1536 trees and rocks, and also tests the first adventure island. It uses the real game loop, native renderer and clock. Camera position and input are fixed; no GUI operation is needed. Existing games, saves and settings are preserved.
 

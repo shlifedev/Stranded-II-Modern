@@ -2674,7 +2674,7 @@ render.lighting	Per-pixel lighting
 render.shadows	Sun shadows
 render.atmosphere	Atmospheric shading
 render.antialias	Edge smoothing
-render.help	FXAA is the low-cost default. MSAA 4x keeps textures sharper at higher GPU cost. Neither filters text. Other effects start off. Apply takes effect immediately.
+render.help	FXAA is the low-cost default. MSAA 4x keeps textures sharper at higher GPU cost. Neither filters text. Water, lighting and atmosphere start on; sun shadows start off. Apply takes effect immediately.
 dev.title	Developer menu
 dev.status	Status
 dev.cheats	Cheats / testing
