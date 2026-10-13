@@ -173,7 +173,7 @@ int Brush::getBlend()const{
 		return rs.blend=BBScene::BLEND_ALPHA;
 	}
 
-	if( (rs.fx&BBScene::FX_VERTEXALPHA) || rs.alpha<1 ){
+	if( (rs.fx&(BBScene::FX_VERTEXALPHA|BBScene::FX_WATER)) || rs.alpha<1 ){
 		return rs.blend=BBScene::BLEND_ALPHA;
 	}
 

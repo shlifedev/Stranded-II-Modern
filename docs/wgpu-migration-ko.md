@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"ed095de3a4793e56f9ade8e29a30d886163e3d487e63ad14207caa57c7385f00"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"600c3d012af1e4ab7c85bf53881830909faf8d81dd952d502f2291eff95390f1"} -->
 
 # Stranded II의 wgpu/WebGPU 크로스플랫폼 렌더러 마이그레이션
 
@@ -92,6 +92,18 @@ WebGPU 구현체와 플랫폼 surface
 ```
 
 `BBScene`·`BBMesh`·`BBCanvas`가 게임 의미와 GPU 실행을 연결하는 경계입니다. 3D 월드 열거·가시성·정렬은 공통 엔진에 남고, 리소스·셰이더·draw encoding은 WebGPU 모듈이 맡습니다.
+
+### 2.2 선택형 그래픽 개선
+
+두 에디션은 [remaster.bb](../src/engine/includes/remaster.bb)의 개별 옵션을 공유하며 기본값은 모두 끔입니다.
+
+- 물: `RenderWorldPlanar`가 원본 카메라를 수평면에 반사해 수중 기하를 잘라냅니다. 카메라와 자식을 이동하지 않고 원본 종횡비를 유지합니다. 물 셰이더는 투영 좌표 샘플링과 절차적 파도 왜곡을 사용합니다. Fresnel 불투명도는 평균 수평면 기준으로 계산해, 비스듬한 시야에서 파도마다 반사가 밝고 어두운 띠로 변하지 않게 합니다. 반사 품질·갱신 주기는 기존 물 설정을 따르며 반사가 없는 품질에서는 파도 음영만 사용합니다.
+- 조명: 픽셀 단위 diffuse/specular와 시간에 따라 움직이는 방향성 태양광을 선택할 수 있습니다. 대기 음영은 기존 게임 색상을 사용해 반구형 주변광과 픽셀 단위 선형 안개를 추가합니다.
+- 그림자: `RenderWorldShadows`는 선택한 방향광에 대해 1024×1024 `Depth32Float` 레이어 2개를 렌더링합니다. 게임은 거리 1000, 30% 분할, cascade 중첩, texel 단위 위치 정렬, 3×3 PCF와 거리 페이드를 사용합니다. 알파 테스트 잎은 투명한 부분을 반영하며 블렌딩 효과와 물은 그림자를 만들지 않습니다. 주변광은 가리지 않습니다. 밤에는 그림자 캡처를 하지 않습니다.
+
+셰이더 override는 꺼진 조명·대기·그림자 경로를 파이프라인에서 제거합니다. 기본 3D 파이프라인의 group 3에 그림자 depth array와 비교 sampler를 바인딩합니다. 깊이 캡처 파이프라인은 group 0–2만 사용하며 자신의 attachment를 샘플링하지 않습니다. 각 pass의 uniform은 제출까지 staging에 유지합니다. `FX_WATER`는 entity alpha가 1이어도 투명 정렬·블렌딩을 사용하며, `FX_NOSHADOW`는 재질을 그림자 캡처에서 제외합니다.
+
+기존 에셋을 재사용합니다. Windows 검사는 실제 WGSL을 offscreen D3D12로 검사하며 Metal·브라우저 실행은 각 환경에서 별도 검증해야 합니다. 옵션은 고정 렌더링 FPS를 보장하지 않습니다.
 
 ## 3. 실제로 빌드에 연결하는 방법
 
@@ -231,8 +243,8 @@ GPU는 C++ 필드 이름을 알지 못합니다. byte offset, stride, 정수/실
 
 | 자료 | C++ 크기 | 핵심 배치 | 사용하는 binding |
 | --- | --- | --- | --- |
-| `BBWebGPUFrameState` | 656 byte | proj 0, view 64, lights 128, lights_used 640, lod_bias 644 | group 0 / binding 0 |
-| `BBWebGPUEntityState` | 720 byte | ambient 0, fog_color 16, fog_range 32, alpha_ref 64, texs 80 | group 1 / binding 0 |
+| `BBWebGPUFrameState` | 928 byte | proj 0, view 64, lights 128, clip_plane 656, reflection 672, eye 736, effects 752, shadow 768, shadow_depth 896, shadow_params 912 | group 0 / binding 0 |
+| `BBWebGPUEntityState` | 720 byte | ambient 0, fog_color 16, fog_range 32, alpha_ref 64, water 68, clip_enabled 72, texs 80 | group 1 / binding 0 |
 | `BBWebGPUClearState` | 32 byte | color 0, z 16, 끝 padding | clear pipeline의 group 0 / binding 0 |
 | `BBWebGPURenderState` | 64 byte | 2D 좌표·해상도·색·image mode | 2D group 0 / binding 0 |
 
@@ -242,10 +254,10 @@ GPU는 C++ 필드 이름을 알지 못합니다. byte offset, stride, 정수/실
 
 ### 7.3 dynamic offset과 arena
 
-3D uniform arena와 instance arena는 각각 **4 MiB**로 생성됩니다. uniform allocation은 다음 계산으로 256-byte 경계에 맞춥니다.
+3D uniform arena와 instance arena는 각각 **4 MiB**로 생성됩니다. uniform allocation은 장치의 최소 uniform-buffer offset 정렬을 사용하며, 최소 256-byte 경계에 맞춥니다.
 
 ```cpp
-size_t offset = (uniform_used + 255) & ~(size_t)255;
+size_t offset = (uniform_used + uniform_alignment - 1) & ~(uniform_alignment - 1);
 size_t extent = size > bind_size ? size : bind_size;
 if (offset + extent > uniform_capacity) {
     flushAll();
@@ -254,7 +266,7 @@ if (offset + extent > uniform_capacity) {
 memcpy(uniform_stage.data() + offset, data, size);
 ```
 
-656-byte frame 또는 전체 720-byte entity 뒤의 다음 시작점은 768-byte 간격이 됩니다. 이는 데이터 구조가 768 byte라는 뜻이 아니라 다음 allocation의 정렬 결과입니다. clear payload는 32 byte라도 다음 allocation은 256-byte 경계에서 시작합니다.
+정렬 단위가 256 byte이면 928-byte frame 뒤의 다음 allocation은 1024 byte, 전체 720-byte entity 뒤에는 768 byte 간격으로 시작합니다. 이는 구조체 크기가 아닌 allocation 간격입니다. 32-byte clear payload 뒤에는 256 byte 간격을 사용합니다.
 
 entity는 `usedSize(n)=80+80*n`으로 실제 사용 texture stage까지만 CPU staging을 갱신합니다. GPU binding의 크기는 여전히 720 byte이므로 arena 끝의 capacity 검사는 `bind_size`까지 포함합니다. 셰이더는 `texs_used`를 통해 미사용 stage를 읽지 않습니다. `pushCached()`는 같은 상태 byte의 offset을 재사용하고, 제출 후 cache를 무효화해 이전 arena offset이 새 데이터에 잘못 연결되지 않게 합니다.
 

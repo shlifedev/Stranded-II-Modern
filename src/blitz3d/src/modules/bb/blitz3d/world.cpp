@@ -391,6 +391,90 @@ void World::renderCubeMap( Camera *camera,BBCanvas *texture,float tween ){
 	}
 }
 
+void World::renderPlanar( Camera *camera,BBCanvas *texture,float height,float tween ){
+	// A dedicated capture renders only this view, without moving the caller's
+	// camera or its children. Keep the source camera's projection/aspect ratio.
+	prepareRender( tween );
+	camera->beginRender( tween );
+	if( !bbScene->begin( _lights ) ) return;
+	BBCanvas *saved=gx_canvas;
+	if( saved ) saved->unset();
+	gx_canvas=texture;texture->set();
+	if( bbScene->setCamera( camera,texture ) ){
+		bbScene->setViewport( 0,0,texture->getWidth(),texture->getHeight() );
+		bbScene->clear( &(camera->getClsColor().x),1,1,true,true );
+		const float clip[4]={0,1,0,-height};
+		bbScene->setClipPlane( clip );
+		Mirror mirror;
+		mirror.setLocalPosition( Vector( 0,height,0 ) );
+		mirror.beginRender( 1 );
+		render( camera,&mirror );
+		bbScene->captureReflectionMatrix();
+		const float no_clip[4]={0,0,0,0};
+		bbScene->setClipPlane( no_clip );
+	}
+	bbScene->end();
+	texture->unset();gx_canvas=saved;
+	if( saved ) saved->set();
+	// Queues and culling caches belong to this preparation only.
+	while( !cam_que.empty() ) cam_que.pop();
+}
+
+void World::renderShadows( Camera *camera,Light *light,float distance,float tween ){
+	const float disabled[4]={};
+	bbScene->setShadowLight( 0,disabled,0,0 );
+	if( distance<=0 || !light || light->getType()!=Light::LIGHT_DISTANT ) return;
+	distance=std::min( distance,camera->getFrustumFar() );
+	if( distance<=camera->getFrustumNear() ) return;
+	prepareRender( tween );
+	camera->beginRender( tween );
+	light->beginRender( tween );
+	while( !cam_que.empty() ) cam_que.pop();
+	if( !bbScene->begin( _lights ) ) return;
+	bbScene->setCanvas( gx_canvas->getWidth(),gx_canvas->getHeight() );
+	const Transform &eye=camera->getRenderTform();
+	Transform inverse=-eye;
+	const float eye_depth[4]={ inverse.m.i.z,inverse.m.j.z,inverse.m.k.z,inverse.v.z };
+	const float split=distance*0.3f;
+	bbScene->setShadowLight( light->getRep(),eye_depth,split,distance );
+	const Frustum &view=camera->getFrustum();
+	const float clip_near=camera->getFrustumNear();
+	const float hx=std::max( fabsf(view.getLeft()),fabsf(view.getRight()) )/clip_near;
+	const float hy=std::max( fabsf(view.getTop()),fabsf(view.getBottom()) )/clip_near;
+	Matrix basis=light->getRenderTform().m;
+	basis.i.normalize();basis.j.normalize();basis.k.normalize();
+	for( int cascade=0;cascade<2;++cascade ){
+		const float start=cascade?split*0.85f:clip_near,end=cascade?distance:split;
+		Vector center=eye*Vector(0,0,(start+end)*0.5f);
+		float radius=sqrtf(end*end*(hx*hx+hy*hy)+(end-start)*(end-start)*0.25f);
+		radius=ceilf(radius/16)*16;
+		// Stable texel-sized translation reduces shimmering during camera motion.
+		Transform light_frame(basis);
+		Vector local=(-light_frame)*center;
+		const float texel=radius*2/1024;
+		local.x=floorf(local.x/texel+0.5f)*texel;
+		local.y=floorf(local.y/texel+0.5f)*texel;
+		center=light_frame*local;
+		const float depth=radius+800;
+		cam_tform=Transform(basis,center-basis.k*depth);
+		if( !bbScene->beginShadow(cascade) ) break;
+		bbScene->setFlippedTris(false);
+		bbScene->setViewMatrix((BBScene::Matrix*)&(-cam_tform));
+		bbScene->setOrthoProj(1,depth*2,-radius,radius,-radius,radius);
+		bbScene->setFogMode(BBScene::FOG_NONE);
+		bbScene->setZMode(BBScene::ZMODE_NORMAL);
+		RenderContext rc(cam_tform,Frustum::orthographic(1,depth*2,radius*2,radius*2),false);
+		for( Model *mod:unord_mods ){
+			// Preserve player-distance fading, even though the shadow camera is distant.
+			if( mod->doAutoFade(eye.v) ) render(mod,rc,true);
+		}
+		flushOpaque();
+		flushTransparent();
+		bbScene->endShadow(cascade);
+	}
+	bbScene->end();
+}
+
 void World::prepareRender( float tween ){
 	ord_mods.clear();
 	unord_mods.clear();

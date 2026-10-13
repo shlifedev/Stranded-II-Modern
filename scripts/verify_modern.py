@@ -8,6 +8,7 @@ import blitz3d_toolchain as engine
 import argparse, ctypes, json, os, subprocess
 from verify_timing import function
 from verify_qol_logic import declarations
+from remaster_fixture import settings_fixture
 
 
 def main():
@@ -106,6 +107,7 @@ End Function
     for name in ('qol_init', 'qol_settings_reset', 'qol_setting_owned', 'qol_settings_write', 'qol_settings_apply'):
         body += function(hooks, name) + '\n'
     body += '\nqol_init()\n'
+    body += settings_fixture(includes)
     settings = (includes / 'modern_settings.bb').read_text('utf8')
     body += settings[:settings.index('Function ')]
     for name in ('modern_fit_resolution', 'modern_resolve_resolution', 'modern_capture_settings', 'modern_settings_reset',
@@ -167,11 +169,17 @@ check(in_quicksave=0,"world-clearing load safely drains requests")
 modern_queue_save(4):modern_process_saves()
 check(loaded$=modern_latest_save(1),"autoload chooses latest rolling slot")
 modern_capture_settings()
+remaster_option("render_water","1"):remaster_option("render_shadows","1")
+remaster_option("render_shadows","invalid")
+check(remaster_enabled(0)=1 And remaster_enabled(2)=1,"renderer config accepts flags and ignores invalid values")
+remaster_settings_reset():remaster_pending(0)=0:remaster_settings_reset()
+check(remaster_pending(0)=1,"cancel retains renderer selections")
 modern_pending_fps=60:modern_pending_native=1:modern_pending_borderless=0
 modern_settings_reset()
 check(modern_pending_fps=144 And modern_pending_native=0 And modern_pending_borderless=1,"cancel discards pending display settings")
 modern_pending_fps=120:modern_pending_native=1:modern_pending_borderless=0:loc_pending$="en"
 check(modern_options_save(),"settings committed")
+check(remaster_enabled(0)=1 And remaster_enabled(2)=1,"renderer selections applied")
 check(modern_fps=144 And modern_native=0 And modern_borderless=1,"apply waits for restart")
 check(modern_saved_fps=120 And loc_saved$="en","saved selections updated")
 modern_settings_reset():check(modern_pending_fps=120,"reopening settings retains saved choices")
@@ -214,6 +222,8 @@ End
     for line in ('# keep comment', 'diagnostics=1', 'custom_flag=yes', 'fps=120',
                  'display=windowed', 'resolution=desktop', 'language=en'):
         assert line in saved, line
+    for key in ('render_water=1', 'render_shadows=1', 'render_lighting=0', 'render_atmosphere=0'):
+        assert saved.splitlines().count(key) == 1, key
     assert (out / 'core/modern.ini.bak').read_text('utf8') == config
     assert len(list((out/'saves').glob('AUTOSAVE*.sav'))) == 5
     (out / 'report.json').write_text(json.dumps({'save_replacement': 'pass',

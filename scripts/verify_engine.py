@@ -7,10 +7,10 @@ import tempfile
 import blitz3d_toolchain as engine
 
 
-def execute(exe, output, name):
+def execute(exe, output, name, timeout=60):
     with (output / (name + '.log')).open('w', encoding='utf8') as log:
         subprocess.run([str(exe)], cwd=output, stdout=log, stderr=subprocess.STDOUT,
-                       check=True, timeout=60)
+                       check=True, timeout=timeout)
 
 
 def check_abi(output):
@@ -55,8 +55,8 @@ def check_render(output):
     engine.run(['cmake', '--build', directory, '--target', 's2_render_check', '-j', '8'],
                env=engine.environment())
     engine.install_windows_runtime(directory)
-    execute(directory / 's2_render_check.exe', output, 'render')
-    return 'D3D12 materials, ordered transparency, instancing, mesh versions, fade, depth, frustum, six-view capture and terrain normal checks passed (no window)'
+    execute(directory / 's2_render_check.exe', output, 'render', timeout=180)
+    return 'D3D12 materials, transparency, instancing, mesh versions, terrain normals, planar/cube capture, stable water coverage, per-pixel lighting and alpha-tested cascaded shadows passed (no window)'
 
 
 def main():

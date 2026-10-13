@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"1f704c094611991ed18fffac9d65e7fe628fa3bb98f4aede990a6828b829c446"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"7dc6f4bd4e2a2e279bc240e4e36aac8f1631c49f0af0703143a33f619b7c0e93"} -->
 
 # 개발 가이드
 
@@ -92,12 +92,15 @@ Python으로 직접 실행할 수도 있습니다.
 
 ## 네이티브 렌더링 벤치마크
 
+Windows 두 에디션의 설정 → 그래픽 개선에서 효과를 개별 선택합니다. 각 실행 환경의 `core/modern.ini`에 있는 `render_water`, `render_lighting`, `render_shadows`, `render_atmosphere`는 모두 `0`이 기본값이며 적용하면 현재 장면에 반영합니다. 물은 기존 반사 해상도·갱신 주기를 유지합니다. 그림자는 렌더링 비용을 늘립니다. FPS 선택에는 제한 없음(`fps=0` 또는 `-fps 0`)을 추가했고 60/120/144도 유지합니다. 화면·FPS 변경은 기존처럼 재시작이 필요합니다.
+
 Windows에서 선택한 에디션의 실행 환경을 준비한 뒤 격리된 벤치마크를 실행합니다. 고정 시드로 나무·바위 0/256/768/1536개를 배치한 `.s2` 스트레스 지도를 생성·재로드하고 첫 모험 섬도 검사합니다. 실제 게임 루프·네이티브 렌더러·시계를 사용하며 카메라와 입력은 고정합니다. GUI 조작이 필요 없으며 기존 게임·세이브·설정을 보존합니다.
 
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --run
 .\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --existing build/benchmark-<name> --run --suite resolution --width 1280 --height 720 --label lowres
 .\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --existing build/benchmark-<name> --rebuild --run --cases baseline,island,objects_1536 --label optimized
+.\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --run --cases baseline,island --width 1920 --height 1080 --render water,lighting,shadows,atmosphere --label remaster
 ```
 
 기본값은 2048×1152, 조건별 3회 반복, 준비 3초·측정 8초이며 매회 프로세스를 새로 시작합니다. 물·풀·시야 거리·지형·바람·모션 블러·오브젝트 밀도·하늘 방향을 비교합니다. `--suite smoke`는 대조 조건 5개, `--cases baseline,water_3,grass_0`는 개별 조건을 선택합니다. 기존 결과를 남기고 다시 측정하려면 새 `--label`을 지정합니다. `--edition extended`는 해당 에디션의 리소스·설정만 사용하며 기존 폴더를 재사용할 때도 지정해야 합니다.
@@ -105,6 +108,8 @@ Windows에서 선택한 에디션의 실행 환경을 준비한 뒤 격리된 �
 각 측정값은 `build/benchmark-<name>/results.json`, 조건별 중앙값·범위·완료한 반복 횟수는 `summary.json`에 저장합니다. 소스 해시·실행 계획·로그·프레임별 CSV·캡처·생성 지도도 함께 남깁니다. 측정 전후 GPU 픽셀 읽기로 제출한 작업의 완료를 기다립니다. FPS에는 마지막 완료 대기가 포함됩니다. 구간별 시간과 p95/p99 프레임 간격은 호스트에서 잰 경과 시간이며 GPU 타임스탬프가 아닙니다. 반사 시간은 물 시간에 포함됩니다. `sync_control`은 매 프레임 비용이 큰 픽셀 읽기를 추가하는 완료 확인용 조건입니다.
 
 테스트 복사본만 포커스 없이 렌더링을 계속하며 최소화된 측정은 무효 처리합니다. 백그라운드 결과는 렌더링 완료 처리량이며 전경 플레이나 실제 화면 출력 FPS와 다릅니다. 같은 조건에서 옵션을 비교하고 캡처를 확인하세요. 입력 반응·카메라 이동·전체 플레이 검증을 대신하지 않습니다.
+
+`--render`는 임시 실행 환경에서 지정한 효과만 켭니다. 생략하면 기존 렌더링 경로를 사용합니다. 실행 계획에 효과 선택을 기록하며, 144 FPS 목표를 평가할 때는 장면·해상도·그래픽 설정을 맞춰 비교합니다.
 
 ## 실험용 WebGPU 빌드
 

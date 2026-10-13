@@ -22,8 +22,17 @@ struct BBWebGPUFrameState{
 	int32_t lights_used;
 	float lod_bias;
 	int32_t _pad[2];
+	float clip_plane[4];
+	float reflection[16];
+	float eye[4];
+	float effects[4];
+	float shadow[2][16];
+	float shadow_depth[4];
+	float shadow_params[4];
 };
-static_assert( sizeof(BBWebGPUFrameState)==656,"BBFrameState layout mismatch" );
+static_assert( sizeof(BBWebGPUFrameState)==928,"BBFrameState layout mismatch" );
+static_assert( offsetof(BBWebGPUFrameState,reflection)==672,"Reflection matrix offset mismatch" );
+static_assert( offsetof(BBWebGPUFrameState,shadow)==768,"Shadow matrix offset mismatch" );
 
 struct BBWebGPUEntityState{
 	float ambient[4];
@@ -36,7 +45,7 @@ struct BBWebGPUEntityState{
 	int32_t fog_mode;
 	int32_t alpha_test;
 	float alpha_ref;
-	float _pad[3];
+	int32_t water,clip_enabled,_pad;
 	struct TexState{
 		float mat[16];
 		int32_t blend,sphere_map,flags,alpha;

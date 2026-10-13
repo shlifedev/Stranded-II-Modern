@@ -55,6 +55,12 @@ def instrument(source):
     else:
         raise ValueError('Expected a six-face water capture or six legacy reflection views.')
     path.write_text(text.replace(water, marked), encoding='utf8')
+    text = path.read_text('utf8')
+    planar = 'RenderWorldPlanar cam,env_watertex,0'
+    if planar in text:
+        text = replace_once(text, planar, 'bench_begin(6):'+planar+':bench_end(6)'
+                            ':bench_reflections=bench_reflections+1')
+    path.write_text(text, encoding='utf8')
     path = source / 'includes/modern_runtime.bb'
     text = path.read_text('utf8')
     original = function(text, 'modern_focus')
@@ -157,6 +163,9 @@ def scenarios(suite):
         'island': {'scene': 'island'}, 'island_water3': {'scene': 'island', 'water': 3},
         'island_grass0': {'scene': 'island', 'grass': 0},
         'island_sky': {'scene': 'island', 'pitch': -85},
+        'coast': {'scene': 'coast', 'pitch': 5},
+        'underwater': {'scene': 'underwater'},
+        'night': {'scene': 'night'},
         'cap144': {'fps': 144}, 'sync_control': {'sync': 1},
     }
     if suite == 'smoke':
@@ -218,8 +227,10 @@ def run(folder, args):
         raise ValueError('Benchmark folder must be inside build/.')
     target = folder / 'runtime'
     config = target / 'core/modern.ini'
+    render_flags = {key: int(key in args.render.split(',')) for key in ('water','lighting','shadows','atmosphere')}
     config.write_text(f'fps=144\ndisplay=borderless\nresolution=custom\nrender_width={args.width}\n'
-                      f'render_height={args.height}\nlanguage=ko\ndiagnostics=0\n', encoding='utf8')
+                      f'render_height={args.height}\nlanguage=ko\ndiagnostics=0\n'
+                      + ''.join(f'render_{key}={value}\n' for key, value in render_flags.items()), encoding='utf8')
     cases = scenarios(args.suite)
     if args.cases:
         selected = args.cases.split(',')
@@ -239,10 +250,10 @@ def run(folder, args):
                 raise ValueError(f'Result already exists: {name}; use a new --label.')
             values = [name, *(options[key] for key in ('scene','count','water','grass','view','terrain',
                         'wind','blur','effects','fog','pitch','fps','sync')), args.warmup*1000,args.seconds*1000,
-                      int(repeat==0 and case in ('baseline','island','sky'))]
+                      int(repeat==0 and case in ('baseline','island','sky','coast','underwater','night'))]
             plan.append(','.join(map(str, values)))
             rows.append(dict(name=name, case=case, **options, width=args.width, height=args.height,
-                             warmup_seconds=args.warmup, measure_seconds=args.seconds))
+                             warmup_seconds=args.warmup, measure_seconds=args.seconds, render=render_flags))
     write_json(folder / f'{prefix}plan-{args.width}x{args.height}.json', rows)
     shutil.copy2(folder / 'metadata.json', folder / f'{prefix}metadata-{args.width}x{args.height}.json')
     log = folder / f'{prefix}run-{args.width}x{args.height}.log'
@@ -270,6 +281,9 @@ def run(folder, args):
                             ('water','grass','view','terrain','wind','blur','effects','fog'))
         if (int(meta['width']), int(meta['height']), meta['options']) != (args.width, args.height, expected):
             raise RuntimeError(f"Effective graphics settings differ from the plan: {row['name']}")
+        expected_render = ','.join(str(value) for value in render_flags.values())
+        if ('renderer' in meta or any(render_flags.values())) and meta.get('renderer') != expected_render:
+            raise RuntimeError(f"Effective renderer enhancements differ from the plan: {row['name']}")
     maps = target / 'mods/Stranded II/maps'
     write_json(folder / f'{prefix}scenes-{args.width}x{args.height}.json',
                {path.relative_to(target).as_posix(): engine.digest(path)
@@ -288,10 +302,13 @@ def main():
     parser.add_argument('--label', default='', help='Unique alphanumeric result prefix (hyphens allowed)')
     parser.add_argument('--width', type=int, default=2048)
     parser.add_argument('--height', type=int, default=1152)
+    parser.add_argument('--render', default='', help='Comma-separated enhancements: water,lighting,shadows,atmosphere')
     parser.add_argument('--repeats', type=int, default=3)
     parser.add_argument('--warmup', type=int, default=3)
     parser.add_argument('--seconds', type=int, default=8)
     args = parser.parse_args()
+    if set(filter(None, args.render.split(','))) - {'water','lighting','shadows','atmosphere'}:
+        parser.error('Unknown renderer enhancement.')
     if args.label and not re.fullmatch(r'[A-Za-z0-9-]+', args.label):
         parser.error('Labels may only contain ASCII letters, digits and hyphens.')
     if not (800<=args.width<=8192 and 600<=args.height<=8192 and 1<=args.repeats<=10

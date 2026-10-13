@@ -27,7 +27,10 @@ protected:
 
     FX_ALPHATEST=	0x2000,
     FX_CONDLIGHT=	0x4000,
-    FX_EMISSIVE=	0x8000
+    FX_EMISSIVE=	0x8000,
+    FX_WATER=		0x10000,
+    FX_WATER_BASE=0x20000,
+    FX_NOSHADOW=0x40000
   };
   enum{
     BLEND_REPLACE=	0,
@@ -71,6 +74,13 @@ protected:
   virtual void setDither( bool enable )=0;
   virtual void setAntialias( bool enable )=0;
   virtual void setTextureLodBias( float bias ){}
+  // Optional modern effects. Legacy backends keep their original behaviour.
+  virtual void setRenderEffects( bool lighting,bool atmosphere,float seconds ){}
+  virtual void setClipPlane( const float plane[4] ){}
+  virtual void captureReflectionMatrix(){}
+  virtual void setShadowLight( BBLightRep *light,const float eye_depth[4],float split,float distance ){}
+  virtual bool beginShadow( int cascade ){ return false; }
+  virtual void endShadow( int cascade ){}
   virtual void setWireframe( bool enable )=0;
   virtual void setFlippedTris( bool enable )=0;
   virtual void setAmbient( const float rgb[3] )=0;

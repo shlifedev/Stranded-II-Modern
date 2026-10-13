@@ -299,6 +299,27 @@ BBLIB bb_int_t BBCALL bbTrisRendered(){
 	return tri_count;
 }
 
+BBLIB void BBCALL bbRenderWorldPlanar( Camera *camera,Texture *texture,bb_float_t height,bb_float_t tween ){
+	debug3d();debugCamera( camera );debugTexture( texture );
+	BBCanvas *canvas=texture->getCanvas( 0 );
+	if( !canvas || (canvas->getFlags() & BBCanvas::CANVAS_TEX_CUBE) )
+		RTEX( "RenderWorldPlanar requires a 2D texture" );
+	tri_count=bbScene->getTrianglesDrawn();
+	world->renderPlanar( camera,canvas,height,tween );
+	tri_count=bbScene->getTrianglesDrawn()-tri_count;
+}
+
+BBLIB void BBCALL bbRenderEffects( bb_int_t lighting,bb_int_t atmosphere,bb_float_t seconds ){
+	debug3d();
+	bbScene->setRenderEffects( lighting!=0,atmosphere!=0,seconds );
+}
+
+BBLIB void BBCALL bbRenderWorldShadows( Camera *camera,Light *light,bb_float_t distance,bb_float_t tween ){
+	debug3d();debugCamera(camera);
+	if( light ) debugLight(light);
+	world->renderShadows(camera,light,std::isfinite(distance)?distance:0,tween);
+}
+
 BBLIB bb_float_t BBCALL bbStats3D( bb_int_t n ){
 	return stats3d[n];
 }

@@ -834,7 +834,133 @@ static void checkTerrainNormals(WebGPUContextResources &res){
     }
     bbScene=nullptr;gx_canvas=nullptr;
 }
+static void checkRemaster(WebGPUContextResources &res){
+    WebGPUCanvas target(&res,32,32,BBCanvas::CANVAS_TEX_VIDMEM);
+    WebGPUCanvas alpha(&res,1,1,BBCanvas::CANVAS_TEXTURE|BBCanvas::CANVAS_TEX_ALPHA);
+    WebGPUScene scene(&res);BBMesh *mesh=scene.createMesh(4,2,0);
+    const float normal[3]={0,0,-1},ambient[3]={0.1f,0.1f,0.1f},dark[3]={};
+    BBScene::RenderState state={};
+    state.color[0]=state.color[1]=state.color[2]=state.alpha=1;
+    state.fx=BBScene::FX_DOUBLESIDED;
+    WebGPULight light;light.type=Light::LIGHT_POINT;light.range=1;light.r=light.g=light.b=0.5f;
+    fillQuad(mesh,1,normal);
+    unsigned legacy=draw(scene,target,mesh,state,{&light},dark);
+    scene.setRenderEffects(true,false,0);
+    unsigned pixel=draw(scene,target,mesh,state,{&light},dark);
+    expect((pixel&255)>(legacy&255)+60,"per-pixel point light resolves the interior of a large triangle");
+    scene.setRenderEffects(false,false,0);
+    expect(draw(scene,target,mesh,state,{&light},dark)==legacy,"disabling enhancements restores legacy pixels");
+
+    scene.setRenderEffects(true,false,0);
+    light.type=Light::LIGHT_DISTANT;light.r=light.g=light.b=0.6f;
+    const float depth[4]={0,0,1,0};
+    auto capture=[&](int coverage,bool second){
+        gx_canvas=&target;scene.begin({&light});scene.setCanvas(32,32);
+        scene.setShadowLight(&light,depth,20,50);
+        const unsigned char rgba[4]={255,255,255,(unsigned char)coverage};alpha.uploadRGBA(rgba,1,1);
+        for(int cascade=0;cascade<2;++cascade){
+            scene.beginShadow(cascade);
+            scene.setViewMatrix(nullptr);scene.setWorldMatrix(nullptr);
+            scene.setOrthoProj(0.1f,50,-1,1,-1,1);
+            scene.setZMode(BBScene::ZMODE_NORMAL);
+            auto caster=state;caster.fx|=BBScene::FX_ALPHATEST;
+            caster.tex_states[0].canvas=&alpha;caster.tex_states[0].blend=BBScene::BLEND_MULTIPLY;
+            fillQuad(mesh,5,normal);
+            scene.setRenderState(caster);
+            if(cascade==0 || second) scene.render(mesh,0,4,0,2);
+            scene.endShadow(cascade);
+        }
+        scene.end();
+    };
+    capture(255,true);fillQuad(mesh,10,normal);
+    expectPixel("sun shadow preserves ambient",draw(scene,target,mesh,state,{&light},ambient),26,26,26);
+    fillQuad(mesh,30,normal);
+    expectPixel("far cascade shadows receivers",draw(scene,target,mesh,state,{&light},ambient),26,26,26);
+    capture(255,false);fillQuad(mesh,30,normal);
+    expectPixel("far cascade is independent of the near layer",draw(scene,target,mesh,state,{&light},ambient),179,179,179);
+    capture(96,true);fillQuad(mesh,10,normal);
+    expectPixel("transparent leaf texels cast no shadow",draw(scene,target,mesh,state,{&light},ambient),179,179,179);
+    capture(192,true);fillQuad(mesh,10,normal);
+    expectPixel("opaque leaf texels cast a shadow",draw(scene,target,mesh,state,{&light},ambient),26,26,26);
+    fillQuad(mesh,60,normal);
+    expectPixel("sun shadow ends at configured distance",draw(scene,target,mesh,state,{&light},ambient),179,179,179);
+    scene.setShadowLight(nullptr,depth,0,0);fillQuad(mesh,10,normal);
+    expectPixel("disabling sun shadows removes stale captures",draw(scene,target,mesh,state,{&light},ambient),179,179,179);
+    scene.freeMesh(mesh);gx_canvas=nullptr;
+}
+
+static void checkPlanarCapture(WebGPUContextResources &res){
+    WebGPUCanvas target(&res,32,32,BBCanvas::CANVAS_TEX_VIDMEM);
+    WebGPUCanvas reflection(&res,32,32,BBCanvas::CANVAS_TEXTURE|BBCanvas::CANVAS_TEX_RGB);
+    WebGPUScene scene(&res);BBMesh *mesh=scene.createMesh(4,2,0);
+    const float normal[3]={0,0,-1};fillQuad(mesh,0,normal);
+    bbScene=&scene;gx_canvas=&target;
+    {
+        World world;Object parent;Camera camera;Object child;
+        parent.setLocalPosition(Vector(10,0,0));
+        camera.setParent(&parent);camera.setLocalPosition(Vector(0,2,0));
+        child.setParent(&camera);child.setLocalPosition(Vector(0,1,0));
+        camera.setViewport(0,0,32,32);camera.setCanvas(&target);camera.setRange(1,100);
+        CaptureModel above(mesh),below(mesh);
+        above.setLocalPosition(Vector(10,2,6));above.setLocalScale(Vector(2,2,1));above.setColor(Vector(1,0,0));
+        below.setLocalPosition(Vector(10,-2,4));below.setColor(Vector(0,1,0));
+        const Vector before=camera.getWorldPosition(),childBefore=child.getWorldPosition();
+        world.renderPlanar(&camera,&reflection,0,1);
+        expectPixel("planar reflection retains above-water geometry",reflection.getPixel(16,26),255,0,0);
+        expectPixel("planar reflection clips submerged geometry",reflection.getPixel(16,16),0,0,0);
+        expect(camera.getWorldPosition()==before && child.getWorldPosition()==childBefore,
+               "planar capture preserves parented camera and children");
+        expect(gx_canvas==&target,"planar capture restores active canvas");
+        world.render(1);
+        expectPixel("ordinary world after reflection restores camera and clip",target.getPixel(16,16),255,0,0);
+    }
+    scene.freeMesh(mesh);bbScene=nullptr;gx_canvas=nullptr;
+}
+
+static void checkWaterCoverage(WebGPUContextResources &res){
+    struct ReadbackCanvas : WebGPUCanvas{
+        using WebGPUCanvas::WebGPUCanvas;
+        using WebGPUCanvas::readPixels;
+    } target(&res,128,128,BBCanvas::CANVAS_TEX_VIDMEM);
+    WebGPUCanvas reflection(&res,1,1,BBCanvas::CANVAS_TEXTURE|BBCanvas::CANVAS_TEX_RGB);
+    const unsigned char rgba[4]={20,100,20,255};reflection.uploadRGBA(rgba,1,1);
+    WebGPUScene scene(&res);BBMesh *mesh=scene.createMesh(4,2,0);
+    const float positions[4][3]={{-2000,0,20},{2000,0,20},{2000,0,1800},{-2000,0,1800}};
+    const float normal[3]={0,1,0},uv[2][2]={{0.5f,0.5f},{0.5f,0.5f}};
+    mesh->lock(true);
+    for(int i=0;i<4;++i) mesh->setVertex(i,positions[i],normal,uv);
+    mesh->setTriangle(0,0,2,1);mesh->setTriangle(1,0,3,2);mesh->unlock();
+    BBScene::RenderState state={};
+    state.color[0]=state.color[1]=state.color[2]=state.alpha=1;
+    state.fx=BBScene::FX_FULLBRIGHT|BBScene::FX_DOUBLESIDED|BBScene::FX_WATER;
+    state.blend=BBScene::BLEND_ALPHA;
+    state.tex_states[0].canvas=&reflection;state.tex_states[0].blend=BBScene::BLEND_MULTIPLY;
+    const float background[3]={0.6f,0.8f,1.0f};
+    Transform eye(Matrix(),Vector(0,30,0)),inverse=-eye;
+    auto render=[&](float seconds){
+        gx_canvas=&target;scene.begin({});scene.setCanvas(128,128);scene.setViewport(0,0,128,128);
+        scene.setViewMatrix((BBScene::Matrix*)&inverse);scene.setWorldMatrix(nullptr);
+        scene.setPerspProj(1,2000,-1,1,1,-1);scene.captureReflectionMatrix();
+        scene.setFogMode(BBScene::FOG_NONE);scene.setZMode(BBScene::ZMODE_NORMAL);
+        scene.clear(background,1,1,true,true);scene.setRenderEffects(false,false,seconds);
+        scene.setRenderState(state);scene.render(mesh,0,4,0,2);scene.end();
+        std::vector<unsigned char> pixels;target.readPixels(pixels);return pixels;
+    };
+    const auto first=render(0),later=render(3);
+    int changed=0,maxDelta=0;
+    for(int y=67;y<100;++y) for(int x=8;x<120;++x){
+        const int i=(y*128+x)*4;
+        if(first[i]<140) ++changed;
+        for(int c=0;c<3;++c) maxDelta=std::max(maxDelta,std::abs(int(first[i+c])-int(later[i+c])));
+    }
+    expect(changed>3000,"water coverage fixture contains a reflected surface at grazing angles");
+    std::printf("Water coverage phase delta: %d / 255\n",maxDelta);
+    expect(maxDelta<=2,"wave phase distorts reflection coordinates without flashing its opacity in bands");
+    scene.freeMesh(mesh);gx_canvas=nullptr;
+}
+
 int main(){
+    std::setvbuf(stdout,nullptr,_IONBF,0);
     checkFrustum();
     WebGPUContextResources res;
     if(!initOffscreen(res)){ std::fprintf(stderr,"No offscreen D3D12 device\n");return 2; }
@@ -846,6 +972,9 @@ int main(){
     checkWorldTransparency(res);
     checkCubeCapture(res);
     checkTerrainNormals(res);
+    checkRemaster(res);
+    checkPlanarCapture(res);
+    checkWaterCoverage(res);
     res.destroy();
     std::printf("%d rendering failures (offscreen, no window)\n",failures);
     return failures?1:0;

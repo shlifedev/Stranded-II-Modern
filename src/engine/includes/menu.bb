@@ -16,8 +16,8 @@ End Function
 
 ;### Menu Set
 Function menu_set(menu,save=1)
-	If menu>=50 And menu<=55 Then
-		If m_menu<50 Or m_menu>55 Then modern_settings_reset():loc_pending$=loc_saved$:qol_settings_reset()
+	If menu>=50 And menu<=56 Then
+		If m_menu<50 Or m_menu>56 Then modern_settings_reset():loc_pending$=loc_saved$:qol_settings_reset()
 	EndIf
 	;Save GUI Stuff @ Vars from current Menu
 	If save=1
@@ -317,7 +317,7 @@ Function menu()
 			EndIf
 			
 		;Options Input
-		Case Cmenu_set_in,Cmenu_set_gfx,Cmenu_set_sfx,Cmenu_set_inscript,55
+		Case Cmenu_set_in,Cmenu_set_gfx,Cmenu_set_sfx,Cmenu_set_inscript,55,56
 			;Buttons
 			If game_scriptkeys>0 Then
 				If gui_button(5,5,sm$(49)+" (1)") Then menu_set(Cmenu_set_in)
@@ -331,6 +331,7 @@ Function menu()
 			EndIf
 			
 			qol_options_nav()
+			remaster_options_nav()
 			If gui_button(5,(set_scry)-100,sm$(3),1,Cicon_x) Then
 				menu_set(Cmenu_main,0)
 				loc_pending$=loc_saved$
@@ -354,6 +355,7 @@ Function menu()
 			;Window
 			Select m_menu
 				Case 55:qol_options_draw()
+				Case 56:remaster_options_draw()
 				;Controls
 				Case Cmenu_set_in
 					DrawImage gfx_win,215,0

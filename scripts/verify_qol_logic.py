@@ -16,6 +16,7 @@ import tempfile
 from editions import Edition, NAMES
 from verify_qol import FIXTURE, CHECKS
 from verify_timing import function
+from remaster_fixture import settings_fixture
 
 
 DOUBLES = r'''
@@ -155,6 +156,7 @@ def main():
     body += (inc/'modern_files.bb').read_text('utf8') + '\n'
     body += (inc/'localization.bb').read_text('utf8') + '\n'
     body += declarations((inc/'modern_settings.bb').read_text('utf8'))
+    body += settings_fixture(inc)
     selected = {
         'functions.bb': ('split$', 'trimspace$'),
         'load_strings.bb': ('ss$',),

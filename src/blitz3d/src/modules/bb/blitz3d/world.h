@@ -33,6 +33,8 @@ public:
 	void capture();
 	void render( float tween );
 	void renderCubeMap( Camera *camera,BBCanvas *texture,float tween );
+	void renderPlanar( Camera *camera,BBCanvas *texture,float height,float tween );
+	void renderShadows( Camera *camera,Light *light,float distance,float tween );
 
 	bool checkLOS( Object *src,Object *dest );
 	bool hitTest( const Line &line,float radius,Object *obj,const Transform &tf,int method,Collision *curr_coll  );

@@ -2668,3 +2668,10 @@ qol.guide.grain	Körner aus einer Garbe lösen
 qol.guide.bottle	Flasche füllen
 qol.guide.clam	Muschel öffnen
 qol.guide.bark	Rinde durchsuchen
+modern.unlimited	Unbegrenzt
+render.tab	Grafikverbesserungen
+render.water	Planare Wasserreflexionen
+render.lighting	Beleuchtung pro Pixel
+render.shadows	Sonnenschatten
+render.atmosphere	Atmosphärische Schattierung
+render.help	Optionale Effekte, anfangs alle aus. Wasser behält die gewählte Reflexionsauflösung. Sonnenschatten erhöhen die GPU-Last. Änderungen wirken nach Anwenden sofort.

@@ -2667,3 +2667,10 @@ qol.guide.grain	Separate grain from a sheaf
 qol.guide.bottle	Fill a bottle
 qol.guide.clam	Open a clam
 qol.guide.bark	Search bark
+modern.unlimited	Unlimited
+render.tab	Graphics enhancements
+render.water	Planar water reflections
+render.lighting	Per-pixel lighting
+render.shadows	Sun shadows
+render.atmosphere	Atmospheric shading
+render.help	Optional effects; all start off. Water retains the selected reflection resolution. Sun shadows add GPU cost. Apply takes effect immediately.

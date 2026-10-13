@@ -48,6 +48,7 @@ Function game()
 	e_environment_update()									;Environemnt
 	
 	;Player Weapon
+	remaster_frame()
 	game_renderweapon()
 	
 	;Render

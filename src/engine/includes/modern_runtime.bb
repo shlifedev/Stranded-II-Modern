@@ -25,7 +25,7 @@ Function modern_option(key$,value$)
  Select Lower(Trim(key$))
   Case "fps"
    Select value$
-    Case "60","120","144":modern_fps=Int(value$)
+    Case "0","60","120","144":modern_fps=Int(value$)
     Default:modern_fps=144:con_add("MODERN: invalid fps; using 144")
    End Select
   Case "display"
@@ -44,11 +44,14 @@ Function modern_option(key$,value$)
    modern_diagnostics=(value$="1")
   Case "resolution"
    modern_native=(Lower(value$)="desktop")
+  Default
+   remaster_option(Lower(Trim(key$)),value$)
  End Select
 End Function
 
 Function modern_config()
  modern_dpi_aware()
+ remaster_init()
  Local stream=ReadFile(set_rootdir$+"core\modern.ini")
  Local line$,split,word$,rest$,pos
  If stream<>0 Then
@@ -198,6 +201,13 @@ End Function
 Function modern_present()
  ; All main/menu/editor/modal loops use this path; never busy-spin.
  If modern_focus() Then Return
+ If modern_fps=0 Then
+  ; Keep Flip's event pump and the normal simulation clock when uncapped.
+  modern_pace_ready=0:modern_fraction#=0.
+  Flip False
+  modern_record_frame()
+  Return
+ EndIf
  Local now=modern_walltime(),advance
  ; Discard stale deadlines after pauses or a clock discontinuity.
  If modern_next-now>100 Or now-modern_next>100 Then modern_pace_ready=0
@@ -216,7 +226,12 @@ Function modern_present()
  modern_fraction#=modern_fraction#-Float(advance)
  If now-modern_next>advance Then modern_next=now
  modern_next=modern_next+advance
+ modern_record_frame()
+End Function
+
+Function modern_record_frame()
  If modern_diagnostics Then
+  Local now=modern_walltime()
   modern_log_frames=modern_log_frames+1
   Local duration=now-modern_log_start
   If duration>=5000 Then

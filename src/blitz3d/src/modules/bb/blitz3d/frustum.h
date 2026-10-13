@@ -22,6 +22,7 @@ public:
 	};
 	Frustum();
 	Frustum( float nr,float fr,float w,float h );
+	static Frustum orthographic( float nr,float fr,float w,float h );
 	Frustum( float nr,float fr,float l,float r,float u,float d );
 	Frustum( const Frustum &f,const Transform &t );
 

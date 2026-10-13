@@ -90,17 +90,26 @@ Function bench_load(scene$,count,water,grass,view,terrain,wind,blur,effects,fog)
  settings_apply_viewrange():prepare_cache_viewranges()
  m_section=Csection_game_sp:m_menu=0:g_unpaused=1
  Local path$="maps\stress_"+count+".s2"
- If scene$="island" Then path$="maps\adventure\map02.s2"
+ If scene$<>"stress" Then path$="maps\adventure\map02.s2"
  SeedRnd 57013
  If load_map(path$,"")=0 Then RuntimeError "Stress scene did not load"
  parse_all()
  ; The island's on:load opens the diary. Close it in test state before timing.
  m_menu=0:g_unpaused=1:game_setcam()
  map_freezetime=1:map_hour=12:map_minute=0:e_environment_update_light()
+ If scene$="night" Then map_hour=0:e_environment_update_light()
  If scene$="stress" Then
   bench_x=0:bench_z=-1150:bench_y=e_tery(bench_x,bench_z)+45:bench_yaw=0
  Else
   bench_x=0:bench_z=-1200:bench_y=Max(5,e_tery(bench_x,bench_z))+45:bench_yaw=0
+ EndIf
+ If scene$="coast" Or scene$="underwater" Then
+  bench_x=0:bench_z=-Float(ter_size*Cworld_size)/2.+16.
+  While bench_z<0 And e_tery(bench_x,bench_z)<1.
+   bench_z=bench_z+8.
+  Wend
+  bench_z=bench_z-100.:bench_y=15.:bench_yaw=0
+  If scene$="underwater" Then bench_y=-3.
  EndIf
  bench_active=1:bench_camera()
  grass_x=-2147483648:grass_y=-2147483648:grass_spread()
@@ -171,6 +180,9 @@ Function bench_trial(name$,warmup,duration,screenshot)
  WriteLine stream,"options="+set_water+","+set_grass+","+set_viewrange+","+set_terrain+","+set_windsway+","+set_mb+","+set_effects+","+set_fog
  WriteLine stream,"grass_meshes="+((grass_c+1)*(grass_c+1))
  WriteLine stream,"reflection_size="+set_water_texsize
+ WriteLine stream,"time="+map_hour+","+map_minute
+ WriteLine stream,"palette="+env_col(0)+","+env_col(1)+","+env_col(2)
+ WriteLine stream,"renderer="+remaster_enabled(0)+","+remaster_enabled(1)+","+remaster_enabled(2)+","+remaster_enabled(3)
  CloseFile stream
  WriteStdout "BENCHMARK "+name$+": "+frame_index+" frames / "+finish+" ms; focus_lost="+bench_focus_lost+Chr(10)
 End Function

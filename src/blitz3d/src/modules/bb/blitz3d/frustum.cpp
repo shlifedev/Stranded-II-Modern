@@ -6,6 +6,16 @@
 Frustum::Frustum(){
 }
 
+Frustum Frustum::orthographic( float nr,float fr,float w,float h ){
+	Frustum f( nr,fr,w,h );
+	for( int i=0;i<4;++i ){
+		f.verts[i+4]=f.verts[i];
+		f.verts[i+4].z=fr;
+	}
+	f.makePlanes();
+	return f;
+}
+
 Frustum::Frustum( float nr,float fr,float w,float h ){
 	verts[VERT_TLNEAR]=Vector( w*-.5f,h*+.5f,nr );
 	verts[VERT_TRNEAR]=Vector( w*+.5f,h*+.5f,nr );

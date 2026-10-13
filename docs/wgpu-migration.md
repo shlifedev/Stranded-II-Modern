@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"767cf8c19e3bba5eceb7b2952c1547e4c496e620a351ddb63b763e1b48493fb5"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"70dd65dd2eeedaaf606a65401e88859ba6ec5240ad4855887b1f691e2b37c354"} -->
 
 # Stranded II's wgpu/WebGPU cross-platform renderer migration
 
@@ -92,6 +92,18 @@ WebGPU implementation and platform surface
 ```
 
 `BBScene`, `BBMesh` and `BBCanvas` form the boundary between game semantics and GPU execution. World enumeration, visibility and sorting remain in the shared engine; resource management, shaders and draw encoding belong to the WebGPU modules.
+
+### 2.2 Optional graphics enhancements
+
+Both editions share independent, default-off options in [remaster.bb](../src/engine/includes/remaster.bb):
+
+- Water: `RenderWorldPlanar` reflects the source camera across a horizontal plane, clips submerged geometry, and retains its aspect ratio without moving the camera or its children. The water shader uses projective sampling and procedural wave distortion. Fresnel opacity uses the mean horizontal surface, preventing wave slopes from alternating reflections into bright and dark bands at grazing angles. Reflection quality and update cadence still follow the existing water setting; qualities without reflections use only the wave shading.
+- Lighting: optional per-pixel diffuse/specular lighting and a time-dependent directional sun. Atmospheric shading adds hemispheric ambient light and per-pixel linear fog using the game's existing colours.
+- Shadows: `RenderWorldShadows` renders two 1024×1024 `Depth32Float` layers for the selected directional light. The game uses a 1000-unit range, a 30% split, overlapping cascades, texel-snapped translation, 3×3 PCF and distance fade. Alpha-tested foliage casts cutout shadows; blended effects and water do not. Ambient light remains unshadowed. No night shadow capture runs.
+
+Shader overrides specialize disabled lighting/atmosphere/shadow paths out of the pipeline. Main 3D pipelines bind the shadow depth array and comparison sampler in group 3; depth-only capture pipelines use groups 0–2 and never sample their own attachments. Each pass retains its own staged uniforms until submission. `FX_WATER` uses transparent sorting/blending even at entity alpha 1; `FX_NOSHADOW` excludes a material from shadow capture.
+
+These additions reuse existing assets. Windows checks cover the production WGSL through offscreen D3D12; Metal/browser execution still needs verification in those environments. The options do not promise a fixed rendering FPS.
 
 ## 3. Connecting the renderer to the build
 
@@ -229,8 +241,8 @@ The instance stride is **128 bytes**, with `stepMode=Instance` on the second ver
 
 | Data | C++ size | Key layout | Binding |
 | --- | --- | --- | --- |
-| `BBWebGPUFrameState` | 656 bytes | proj 0, view 64, lights 128, lights_used 640, lod_bias 644 | Group 0 / binding 0 |
-| `BBWebGPUEntityState` | 720 bytes | ambient 0, fog_color 16, fog_range 32, alpha_ref 64, texs 80 | Group 1 / binding 0 |
+| `BBWebGPUFrameState` | 928 bytes | proj 0, view 64, lights 128, clip_plane 656, reflection 672, eye 736, effects 752, shadow 768, shadow_depth 896, shadow_params 912 | Group 0 / binding 0 |
+| `BBWebGPUEntityState` | 720 bytes | ambient 0, fog_color 16, fog_range 32, alpha_ref 64, water 68, clip_enabled 72, texs 80 | Group 1 / binding 0 |
 | `BBWebGPUClearState` | 32 bytes | color 0, z 16, trailing padding | Clear pipeline group 0 / binding 0 |
 | `BBWebGPURenderState` | 64 bytes | 2D coordinates, resolution, colour and image mode | 2D group 0 / binding 0 |
 
@@ -240,10 +252,10 @@ The instance stride is **128 bytes**, with `stepMode=Instance` on the second ver
 
 ### 7.3 Dynamic offsets and arenas
 
-The 3D uniform and instance arenas are each **4 MiB**. Uniform allocation aligns offsets to 256 bytes:
+The 3D uniform and instance arenas are each **4 MiB**. Uniform allocation uses the device's minimum uniform-buffer offset alignment, at least 256 bytes:
 
 ```cpp
-size_t offset = (uniform_used + 255) & ~(size_t)255;
+size_t offset = (uniform_used + uniform_alignment - 1) & ~(uniform_alignment - 1);
 size_t extent = size > bind_size ? size : bind_size;
 if (offset + extent > uniform_capacity) {
     flushAll();
@@ -252,7 +264,7 @@ if (offset + extent > uniform_capacity) {
 memcpy(uniform_stage.data() + offset, data, size);
 ```
 
-After a 656-byte frame or full 720-byte entity, the next starting offset is 768 bytes away. That is allocation alignment, not the structure's size. A 32-byte clear payload also leaves the next allocation starting on a 256-byte boundary.
+With 256-byte alignment, a 928-byte frame advances the next allocation by 1024 bytes; a full 720-byte entity advances it by 768 bytes. These are allocation strides, not structure sizes. A 32-byte clear payload advances it by 256 bytes.
 
 Entities use `usedSize(n)=80+80*n` to update CPU staging only through the active texture stages. The GPU binding remains 720 bytes, so the capacity check includes `bind_size`. The shader uses `texs_used` to avoid reading inactive stages. `pushCached()` reuses offsets for identical state bytes; submission invalidates caches so an old arena offset cannot accidentally reference new data.
 

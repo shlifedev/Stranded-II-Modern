@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"3956fc7bc26f1ff403bb5f69ce90314c5482db98d5526a9dc902d92c9db067ba"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"39889c9be4ba0abd6426ae632ac7f22ef9fd0a862a29e9e0d90a47acc4d93c5e"} -->
 
 # Development guide
 
@@ -92,12 +92,15 @@ You can also launch directly through Python:
 
 ## Native rendering benchmark
 
+Both Windows editions expose Settings → Graphics enhancements. The independent `render_water`, `render_lighting`, `render_shadows` and `render_atmosphere` flags in each runtime's `core/modern.ini` default to `0`; applying changes updates the current scene. Water uses the existing reflection resolution and cadence. Shadows increase rendering cost. The FPS selector also offers Unlimited (`fps=0`, or `-fps 0`); 60/120/144 remain available, and display/FPS changes still require restart.
+
 On Windows, prepare the selected edition's runtime, then run the isolated benchmark. It generates and reloads seeded `.s2` stress maps with 0/256/768/1536 trees and rocks, and also tests the first adventure island. It uses the real game loop, native renderer and clock. Camera position and input are fixed; no GUI operation is needed. Existing games, saves and settings are preserved.
 
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --run
 .\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --existing build/benchmark-<name> --run --suite resolution --width 1280 --height 720 --label lowres
 .\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --existing build/benchmark-<name> --rebuild --run --cases baseline,island,objects_1536 --label optimized
+.\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --run --cases baseline,island --width 1920 --height 1080 --render water,lighting,shadows,atmosphere --label remaster
 ```
 
 The default is 2048×1152, three repeats per case, a 3-second warmup and 8-second measurement. Each trial starts a fresh process. It compares water, grass, view range, terrain, wind, motion blur, object density and sky views. `--suite smoke` selects five controls; `--cases baseline,water_3,grass_0` selects individual cases. Use a new `--label` to retain earlier results. `--edition extended` uses only that edition's resources and settings; include it when reusing its folder.
@@ -105,6 +108,8 @@ The default is 2048×1152, three repeats per case, a 3-second warmup and 8-secon
 Trials are in `build/benchmark-<name>/results.json`; `summary.json` contains each condition's median and range, with completed repeat counts. Source hashes, plans, logs, per-frame CSVs, screenshots and generated maps are stored alongside them. GPU readbacks drain work before and after each measurement. FPS includes the final drain; phase timings and p95/p99 frame intervals are host elapsed times, not GPU timestamps. Reflection time is included in water time. The `sync_control` case adds a costly readback every frame and is only a completion control.
 
 Only the test copy continues rendering without focus; minimize it and the trial is rejected. Background results measure completed rendering throughput, not foreground presentation or display scanout FPS. Compare options under the same conditions and inspect captures; this does not verify input response, camera movement or full gameplay.
+
+`--render` enables only the listed enhancements in the disposable runtime. Omit it for the original rendering path. The plan records those flags; compare matching scene, resolution and graphics settings when evaluating a 144 FPS target.
 
 ## Experimental WebGPU build
 

@@ -290,12 +290,22 @@ private:
 	WGPUShaderModule shader=0;
 	WGPUBindGroupLayout bgl_frame=0,bgl_entity=0,bgl_textures=0,bgl_clear=0;
 	WGPUPipelineLayout scene_layout=0,clear_layout=0;
+	WGPUPipelineLayout shadow_layout=0;
+	WGPUBindGroupLayout bgl_shadow=0;
+	WGPUBindGroup shadow_group=0;
+	WGPUTexture shadow_texture=0;
+	WGPUTextureView shadow_view=0,shadow_layers[2]={};
+	WGPUSampler shadow_sampler=0;
+	BBLightRep *shadow_light=0;
+	int shadow_index=-1;
+	bool casts_shadow=true;
 
 	std::map<uint32_t,WGPURenderPipeline> scene_pipelines;
 	std::map<uint32_t,WGPURenderPipeline> clear_pipelines;
 
 	WGPUBuffer uniform_buffer=0;
 	size_t uniform_capacity=0,uniform_used=0,uniform_uploaded=0;
+	size_t uniform_alignment=256;
 	std::vector<unsigned char> uniform_stage;
 	WGPUBuffer instance_buffer=0;
 	size_t instance_capacity=0,instance_used=0;
@@ -419,6 +429,13 @@ public:
 	~WebGPUScene(){
 		res->removeListener( this );
 		endPass();
+		if( shadow_group ) wgpuBindGroupRelease(shadow_group);
+		if( shadow_sampler ) wgpuSamplerRelease(shadow_sampler);
+		for( auto view:shadow_layers ) if( view ) wgpuTextureViewRelease(view);
+		if( shadow_view ) wgpuTextureViewRelease(shadow_view);
+		if( shadow_texture ) wgpuTextureRelease(shadow_texture);
+		if( shadow_layout ) wgpuPipelineLayoutRelease(shadow_layout);
+		if( bgl_shadow ) wgpuBindGroupLayoutRelease(bgl_shadow);
 
 		for( std::map<std::array<uintptr_t,16>,WGPUBindGroup>::iterator it=tex_groups.begin();it!=tex_groups.end();++it ){
 			wgpuBindGroupRelease( it->second );
@@ -463,6 +480,9 @@ public:
 
 	void ensurePipelineObjects(){
 		if( shader||!res->device ) return;
+		WGPULimits limits={};
+		if( wgpuDeviceGetLimits(res->device,&limits)==WGPUStatus_Success )
+			uniform_alignment=std::max<size_t>(256,limits.minUniformBufferOffsetAlignment);
 
 		std::string src( (const char*)DEFAULT3D_WGSL,DEFAULT3D_WGSL_SIZE );
 		WGPUShaderSourceWGSL wgsl={};
@@ -540,7 +560,38 @@ public:
 			d.label=bbStrView( "bb.3d.layout" );
 			d.bindGroupLayoutCount=3;
 			d.bindGroupLayouts=layouts;
-			scene_layout=wgpuDeviceCreatePipelineLayout( res->device,&d );
+			shadow_layout=wgpuDeviceCreatePipelineLayout( res->device,&d );
+			WGPUBindGroupLayoutEntry e[2]={};
+			e[0].binding=0;e[0].visibility=WGPUShaderStage_Fragment;
+			e[0].texture.sampleType=WGPUTextureSampleType_Depth;
+			e[0].texture.viewDimension=WGPUTextureViewDimension_2DArray;
+			e[1].binding=1;e[1].visibility=WGPUShaderStage_Fragment;
+			e[1].sampler.type=WGPUSamplerBindingType_Comparison;
+			WGPUBindGroupLayoutDescriptor b={};b.entryCount=2;b.entries=e;
+			bgl_shadow=wgpuDeviceCreateBindGroupLayout(res->device,&b);
+			WGPUBindGroupLayout main_layouts[4]={bgl_frame,bgl_entity,bgl_textures,bgl_shadow};
+			d.bindGroupLayoutCount=4;d.bindGroupLayouts=main_layouts;
+			scene_layout=wgpuDeviceCreatePipelineLayout(res->device,&d);
+			WGPUTextureDescriptor texture={};
+			texture.label=bbStrView("bb.3d.sun.shadows");
+			texture.usage=WGPUTextureUsage_RenderAttachment|WGPUTextureUsage_TextureBinding;
+			texture.dimension=WGPUTextureDimension_2D;texture.size={1024,1024,2};
+			texture.format=WGPUTextureFormat_Depth32Float;texture.mipLevelCount=1;texture.sampleCount=1;
+			shadow_texture=wgpuDeviceCreateTexture(res->device,&texture);
+			WGPUTextureViewDescriptor view={};view.dimension=WGPUTextureViewDimension_2DArray;
+			view.arrayLayerCount=2;view.mipLevelCount=1;view.aspect=WGPUTextureAspect_DepthOnly;
+			shadow_view=wgpuTextureCreateView(shadow_texture,&view);
+			view.dimension=WGPUTextureViewDimension_2D;view.arrayLayerCount=1;
+			for( int i=0;i<2;++i ){view.baseArrayLayer=i;shadow_layers[i]=wgpuTextureCreateView(shadow_texture,&view);}
+			WGPUSamplerDescriptor sampler={};sampler.compare=WGPUCompareFunction_LessEqual;
+			sampler.maxAnisotropy=1;sampler.lodMaxClamp=1;
+			sampler.minFilter=sampler.magFilter=WGPUFilterMode_Linear;
+			sampler.addressModeU=sampler.addressModeV=sampler.addressModeW=WGPUAddressMode_ClampToEdge;
+			shadow_sampler=wgpuDeviceCreateSampler(res->device,&sampler);
+			WGPUBindGroupEntry entries[2]={};entries[0].binding=0;entries[0].textureView=shadow_view;
+			entries[1].binding=1;entries[1].sampler=shadow_sampler;
+			WGPUBindGroupDescriptor group={};group.layout=bgl_shadow;group.entryCount=2;group.entries=entries;
+			shadow_group=wgpuDeviceCreateBindGroup(res->device,&group);
 		}
 		{
 			WGPUPipelineLayoutDescriptor d={};
@@ -685,12 +736,17 @@ public:
 	}
 
 	WGPURenderPipeline getScenePipeline( int blend_mode,int zmode,bool flipped_tris,bool doublesided,bool wireframe,WGPUTextureFormat format ){
+		const bool shadow_pass=shadow_index>=0;
+		const bool pixel_lighting=frame.effects[0]>0.5f;
+		const bool atmosphere=frame.effects[1]>0.5f;
+		const bool sun_shadows=frame.shadow_params[2]>0.5f;
 		uint32_t key=(uint32_t)blend_mode
 			|((uint32_t)zmode<<3)
 			|((flipped_tris?1u:0u)<<5)
 			|((doublesided?1u:0u)<<6)
 			|((wireframe?1u:0u)<<7)
-			|((uint32_t)format<<8);
+			|((uint32_t)format<<8)|((shadow_pass?1u:0u)<<24)
+			|((pixel_lighting?1u:0u)<<25)|((atmosphere?1u:0u)<<26)|((sun_shadows?1u:0u)<<27);
 		std::map<uint32_t,WGPURenderPipeline>::iterator it=scene_pipelines.find( key );
 		if( it!=scene_pipelines.end() ) return it->second;
 
@@ -762,10 +818,19 @@ public:
 		target_state.writeMask=WGPUColorWriteMask_All;
 
 		WGPUFragmentState frag={};
+		WGPUConstantEntry constants[4]={};
+		constants[0].key=bbStrView("pixel_lighting");constants[0].value=pixel_lighting;
+		constants[1].key=bbStrView("atmosphere");constants[1].value=atmosphere;
+		constants[2].key=bbStrView("sun_shadows");constants[2].value=sun_shadows;
+		constants[3].key=bbStrView("shadow_capture");constants[3].value=shadow_pass;
+		frag.constantCount=4;frag.constants=constants;
 		frag.module=shader;
 		frag.entryPoint=bbStrView( "fs_main" );
 		frag.targetCount=1;
 		frag.targets=&target_state;
+		if( shadow_pass ){
+			frag.entryPoint=bbStrView("fs_shadow");frag.targetCount=0;frag.targets=0;
+		}
 
 		WGPUDepthStencilState ds={};
 		ds.format=WGPUTextureFormat_Depth24Plus;
@@ -787,9 +852,10 @@ public:
 
 		WGPURenderPipelineDescriptor desc={};
 		desc.label=bbStrView( "bb.3d.pipeline" );
-		desc.layout=scene_layout;
+		desc.layout=shadow_pass?shadow_layout:scene_layout;
 		desc.vertex.module=shader;
 		desc.vertex.entryPoint=bbStrView( "vs_main" );
+		desc.vertex.constantCount=4;desc.vertex.constants=constants;
 		desc.vertex.bufferCount=2;
 		desc.vertex.buffers=vbl;
 		desc.primitive.topology=wireframe?WGPUPrimitiveTopology_LineList:WGPUPrimitiveTopology_TriangleList;
@@ -797,6 +863,10 @@ public:
 		desc.primitive.frontFace=flipped_tris?WGPUFrontFace_CW:WGPUFrontFace_CCW;
 		desc.primitive.cullMode=( doublesided||wireframe )?WGPUCullMode_None:WGPUCullMode_Back;
 		desc.depthStencil=&ds;
+		if( shadow_pass ){
+			ds.format=WGPUTextureFormat_Depth32Float;ds.depthWriteEnabled=WGPUOptionalBool_True;
+			ds.depthCompare=WGPUCompareFunction_LessEqual;ds.depthBias=2;ds.depthBiasSlopeScale=2;
+		}
 		desc.multisample.count=1;
 		desc.multisample.mask=0xffffffff;
 		desc.fragment=&frag;
@@ -848,7 +918,7 @@ public:
 
 	uint32_t pushUniforms( const void *data,size_t size,size_t bind_size=0 ){
 		size_t extent=size>bind_size?size:bind_size;
-		size_t offset=(uniform_used+255)&~(size_t)255;
+		size_t offset=(uniform_used+uniform_alignment-1)&~(uniform_alignment-1);
 		if( offset+extent>uniform_capacity ){
 			flushAll();
 			offset=0;
@@ -933,6 +1003,11 @@ public:
 
 	void applyViewport(){
 		if( !pass||!pass_canvas ) return;
+		if( shadow_index>=0 ){
+			wgpuRenderPassEncoderSetViewport(pass,0,0,1024,1024,0,1);
+			wgpuRenderPassEncoderSetScissorRect(pass,0,0,1024,1024);
+			return;
+		}
 		int cw=pass_canvas->getWidth(),ch=pass_canvas->getHeight();
 		int x=viewport[0],y=viewport[1],w=viewport[2],h=viewport[3];
 		if( w<=0||h<=0 ){ x=0;y=0;w=cw;h=ch; }
@@ -950,6 +1025,17 @@ public:
 
 		endPass();
 		if( !target||!res->device ) return 0;
+		if( shadow_index>=0 ){
+			res->endPass();
+			WGPURenderPassDepthStencilAttachment depth={};depth.view=shadow_layers[shadow_index];
+			depth.depthLoadOp=pending_clear_z?WGPULoadOp_Clear:WGPULoadOp_Load;
+			depth.depthStoreOp=WGPUStoreOp_Store;depth.depthClearValue=1;
+			WGPURenderPassDescriptor desc={};desc.label=bbStrView("bb.3d.shadow.pass");
+			desc.depthStencilAttachment=&depth;
+			pass=wgpuCommandEncoderBeginRenderPass(res->ensureEncoder(),&desc);
+			pass_canvas=target;pending_clear_color=pending_clear_z=false;
+			applyViewport();return pass;
+		}
 
 		WGPUTextureView view=target->targetView();
 		if( !view ) return 0;
@@ -1006,6 +1092,44 @@ public:
 
 	void setWireframe( bool enable ){
 		wireframe=enable;
+	}
+
+	void setRenderEffects( bool lighting,bool atmosphere,float seconds ){
+		frame.effects[0]=lighting?1.0f:0.0f;
+		frame.effects[1]=atmosphere?1.0f:0.0f;
+		frame.effects[2]=std::isfinite(seconds)?seconds:0.0f;
+		frame_dirty=true;
+	}
+
+	void setClipPlane( const float plane[4] ){
+		memcpy( frame.clip_plane,plane,sizeof(frame.clip_plane) );
+		frame_dirty=true;
+	}
+
+	void setShadowLight( BBLightRep *light,const float depth[4],float split,float distance ){
+		shadow_light=light;
+		memcpy(frame.shadow_depth,depth,sizeof(frame.shadow_depth));
+		frame.shadow_params[0]=split;frame.shadow_params[1]=distance;
+		frame.shadow_params[2]=light?1.0f:0.0f;frame.shadow_params[3]=-1;
+		for( size_t i=0;i<lights.size()&&i<8;++i ) if( lights[i]==light ) frame.shadow_params[3]=(float)i;
+		frame_dirty=true;
+	}
+
+	bool beginShadow( int cascade ){
+		endPass();res->endPass();shadow_index=cascade;frame.effects[3]=1;
+		pending_clear_color=false;pending_clear_z=true;frame_dirty=true;
+		return true;
+	}
+
+	void endShadow( int cascade ){
+		ensurePass();endPass();
+		bbMat4Mul(frame.proj,frame.view,frame.shadow[cascade]);
+		shadow_index=-1;frame.effects[3]=0;frame_dirty=true;
+	}
+
+	void captureReflectionMatrix(){
+		bbMat4Mul( frame.proj,frame.view,frame.reflection );
+		frame_dirty=true;
 	}
 
 	void setFlippedTris( bool enable ){
@@ -1130,6 +1254,13 @@ public:
 
 		memcpy( view_matrix,mat,sizeof(view_matrix) );
 		memcpy( frame.view,mat,sizeof(frame.view) );
+		Vector eye;
+		if( matrix ){
+			Transform transform;
+			memcpy( &transform,matrix,sizeof(transform) );
+			eye=(-transform).v;
+		}
+		frame.eye[0]=eye.x;frame.eye[1]=eye.y;frame.eye[2]=eye.z;
 		frame_dirty=true;
 
 		updateNormalMatrix();
@@ -1163,6 +1294,9 @@ public:
 	}
 
 	void setRenderState( const RenderState &rs ){
+		casts_shadow=(rs.fx&FX_NOSHADOW)==0;
+		entity.water=(rs.fx&FX_WATER)?1:((rs.fx&FX_WATER_BASE)?2:0);
+		entity.clip_enabled=zmode!=ZMODE_DISABLE;
 		int alpha_test;
 		if( rs.fx&FX_ALPHATEST && !(rs.fx&FX_VERTEXALPHA) ){
 			alpha_test=1;
@@ -1280,7 +1414,9 @@ public:
 
 		memset( frame.lights,0,sizeof(frame.lights) );
 		frame.lights_used=0;
+		frame.shadow_params[3]=-1;
 		for( unsigned long i=0;i<8&&i<lights.size();i++ ){
+			if( lights[i]==shadow_light ) frame.shadow_params[3]=(float)i;
 			memcpy( light_world[i],lights[i]->matrix,sizeof(light_world[i]) );
 			frame.lights[i].color[0]=lights[i]->r;
 			frame.lights[i].color[1]=lights[i]->g;
@@ -1338,6 +1474,8 @@ public:
 	}
 
 	void render( BBMesh *m,int first_vert,int vert_cnt,int first_tri,int tri_cnt ){
+		if( shadow_index>=0 && (!casts_shadow||entity.water||zmode==ZMODE_DISABLE||
+		    (blend_mode!=BLEND_REPLACE && !(blend_mode==BLEND_ALPHA&&entity.alpha_test))||instance.color[3]<0.99f) ) return;
 		WebGPUMesh *mesh=(WebGPUMesh*)m;
 		if( !mesh||!mesh->vertex_buffer||!mesh->index_buffer||tri_cnt<=0 ) return;
 		if( !target ) return;
@@ -1394,6 +1532,7 @@ public:
 		if( pipeline!=bound_pipeline ){
 			wgpuRenderPassEncoderSetPipeline( p,pipeline );
 			bound_pipeline=pipeline;
+			if( shadow_index<0 ) wgpuRenderPassEncoderSetBindGroup(p,3,shadow_group,0,0);
 		}
 		if( !bound_frame||bound_frame_offset!=frame_offset ){
 			wgpuRenderPassEncoderSetBindGroup( p,0,frame_group,1,&frame_offset );
@@ -1457,6 +1596,9 @@ public:
 	}
 
 	void freeLight( BBLightRep *l ){
+		if( shadow_light==l ){
+			shadow_light=0;frame.shadow_params[2]=0;frame.shadow_params[3]=-1;frame_dirty=true;
+		}
 	}
 
 	BBMesh *createMesh( int max_verts,int max_tris,int flags ){

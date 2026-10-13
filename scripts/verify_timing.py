@@ -112,12 +112,19 @@ Next
 modern_next=modern_walltime()+10000:modern_pace_ready=1
 started=modern_walltime():modern_present()
 check(modern_walltime()-started<100,"stale future deadline discarded")
+modern_fps=0:modern_next=modern_walltime()+10000:modern_pace_ready=1
+started=modern_walltime()
+For frame=1 To 1000:modern_present():Next
+check(modern_walltime()-started<100,"uncapped presentation never waits for a deadline")
+check(modern_pace_ready=0,"uncapped presentation resets the capped deadline")
+modern_fps=144:modern_present()
+check(modern_pace_ready=1,"returning from uncapped mode starts a fresh deadline")
 WriteLine report,"FAILURES "+test_failures
 CloseFile report
 End
 '''
     code = (full / 'modern_math.bb').read_text('utf8') + '\n'
-    for name in ('modern_frame', 'modern_game_time', 'modern_walltime'):
+    for name in ('modern_frame', 'modern_game_time', 'modern_walltime', 'modern_record_frame'):
         code += function(runtime, name) + '\n'
     # Globals must precede functions in Blitz; append definitions after the harness.
     code = body + '\n' + code + '\n' + pacing + '\n'
