@@ -8,6 +8,10 @@ if((S2_NATIVE_GAME OR BB_WEBGPU) AND TARGET SDL2)
     ${S2_DEP_IMGUI}/backends/imgui_impl_wgpu.cpp
     ${S2_DEP_IMGUI}/misc/cpp/imgui_stdlib.cpp
     ${S2_DEP_IMGUI}/misc/freetype/imgui_freetype.cpp)
+  if(APPLE)
+    # The WebGPU surface helper uses Cocoa and CAMetalLayer on macOS.
+    set_source_files_properties(${S2_DEP_IMGUI}/backends/imgui_impl_wgpu.cpp PROPERTIES LANGUAGE OBJCXX)
+  endif()
   set(LIBS SDL2 freetype)
   bb_end_module()
   set_target_properties(bb.debugui PROPERTIES UNITY_BUILD OFF)
