@@ -227,7 +227,7 @@ Global in_dnd_show							;Drag and Drop Show
 Global in_accelerate#						;Acceleration (Editor)
 
 Global in_getkey=-1							;Get Keycode for Action
-Dim in_keys(20)								;Keycodes for Actions
+Dim in_keys(21)								;Keycodes for Actions and developer menu
 Dim in_keyname$(262)						;Keynames
 Dim in_keyhit(41)							;Key Hit
 Dim in_keydown(41)							;Key Down

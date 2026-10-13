@@ -1,6 +1,7 @@
 #include "../../../stdutil/stdutil.h"
 #include <bb/graphics/font.h>
 #include "canvas.webgpu.h"
+#include <bb/debugui/debugui.h>
 #include <utf8.h>
 
 #include <cmath>
@@ -29,6 +30,7 @@ WebGPUCanvas::WebGPUCanvas( WebGPUContextResources *res,int f ):WebGPUCanvas( re
 }
 
 WebGPUCanvas::~WebGPUCanvas(){
+	s2DebugUiForgetCanvas(this);
 	if( res->pass_target==this ) res->endPass();
 	releaseBlitSnapshot();
 	res->notifyCanvasDestroyed( this );

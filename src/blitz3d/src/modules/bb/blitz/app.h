@@ -15,8 +15,10 @@ extern BBHook bbAppOnChange;
 void BBCALL bbStartup( const char *executable_path,const char *params );
 BBApp BBCALL bbApp();
 
-#define LOGI( fmt,... ) fprintf( stdout,fmt"\n",__VA_ARGS__ )
-#define LOGE( fmt,... ) fprintf( stderr,fmt"\n",__VA_ARGS__ )
-#define LOGD( fmt,... ) fprintf( stderr,fmt"\n",__VA_ARGS__ )
+void bbSetLogHandler(void (*handler)(int,const char*));
+void bbRuntimeLog(int level,const char *format,...);
+#define LOGI( fmt,... ) bbRuntimeLog(0,fmt,__VA_ARGS__)
+#define LOGE( fmt,... ) bbRuntimeLog(2,fmt,__VA_ARGS__)
+#define LOGD( fmt,... ) bbRuntimeLog(3,fmt,__VA_ARGS__)
 
 #endif

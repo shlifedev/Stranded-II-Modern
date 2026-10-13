@@ -3,7 +3,7 @@ from pathlib import Path
 import blitz3d_toolchain as engine
 import argparse, hashlib, json, os, shutil, subprocess, sys
 from locales import prepare, validate
-from versioning import local_info, validate_info, runtime_info
+from versioning import development_marker, local_info, validate_info, runtime_info
 from editions import Edition, NAMES, source_hashes, override_files
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -84,6 +84,7 @@ def build(args):
     try:os.replace(candidate,dest)
     except PermissionError as exc:
         raise RuntimeError(f'Compiled {candidate}; close the development game and run build again to replace {dest}') from exc
+    development_marker(RUNTIME,info['channel']=='local')
     write(RUNTIME/'core/version.json',info)
     (RUNTIME/'core/version.txt').write_text(info['display_version']+'\n',encoding='ascii',newline='\n')
     report=dict(info,exe_sha256=sha(dest),source_sha256=source_hashes(ROOT,PROFILE.name))

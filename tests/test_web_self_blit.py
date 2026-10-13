@@ -19,6 +19,10 @@ class WebSelfBlit(TestCase):
         header = (directory / 'canvas.webgpu.h').read_text('utf8')
         methods = cpp[cpp.index('void WebGPUCanvas::releaseBlitSnapshot()'):
                       cpp.index('void WebGPUCanvas::blitScaled(')]
+        if 'void WebGPUCanvas::applyAntialias(' in methods:
+            start = methods.index('void WebGPUCanvas::applyAntialias(')
+            end = methods.index('bool WebGPUCanvas::blitSelf(', start)
+            methods = methods[:start] + methods[end:]
         fields = header[header.index('\tWGPUTexture blit_texture=0;'):
                         header.index('\n\tstd::vector<unsigned char> hit_mask;')]
         fixture = (ROOT / 'tests/web_self_blit.cpp').read_text('utf8')

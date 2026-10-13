@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"6315f6ea122733b17fb1acddef19c85b3efba049aed0c288d32a8aae35c68c30"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"ef78732d93870a1767513f5d85d5303539c6b4cd6ba9a63a9873df304b27a8ad"} -->
 
 # Development guide
 
@@ -89,6 +89,14 @@ You can also launch directly through Python:
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 scripts/dev.py run -- -win -fps 120
 ```
+
+## Developer menu
+
+Both editions share a Dear ImGui menu. Assign a shortcut under **Settings → Controls → Developer menu**. Distribution defaults to `None`; a fresh local development build uses `Insert`. Right-click to clear the binding. A saved `None` or custom shortcut is retained in development builds too.
+
+Opening the menu keeps the game running and blocks game input. The Status tab's pause stays active after closing the menu. Tools include single-player cheats, an item icon grid, position/time changes, settings previews, and searchable/copyable logs. **Save** and **Revert to saved settings** are separate; changes are never saved automatically. Display mode, resolution, FPS limit and language require restarting after saving. Logs retain at most 2,048 entries / 2MiB; scrolling up stops following new messages.
+
+Shared game UI lives in `src/engine/includes/devmenu.bb`, native ImGui/SDL/WebGPU integration in `src/blitz3d/src/modules/bb/debugui/`, and browser IME integration in `src/web/debugui.js`. Windows editions, macOS, Web and Studio use the same implementation. On Windows, `python scripts/verify_engine.py --graphics --input` checks input ownership and window/context lifetimes. The `s2_debugui_check` CMake target accepts a prepared `core/locales/<code>/ui.ttf` path and checks Unicode glyphs, sliders and log following without a window. Check actual display, IME composition/paste and each platform's execution separately.
 
 ## Native rendering benchmark
 

@@ -17,7 +17,7 @@ End Function
 ;### Menu Set
 Function menu_set(menu,save=1)
 	If menu>=50 And menu<=56 Then
-		If m_menu<50 Or m_menu>56 Then modern_settings_reset():loc_pending$=loc_saved$:qol_settings_reset()
+		If dev_initialized=0 Then modern_settings_reset():loc_pending$=loc_saved$:qol_settings_reset()
 	EndIf
 	;Save GUI Stuff @ Vars from current Menu
 	If save=1
@@ -330,17 +330,15 @@ Function menu()
 			remaster_options_nav()
 			If gui_button(5,(set_scry)-100,sm$(3),1,Cicon_x) Then
 				menu_set(Cmenu_main,0)
-				loc_pending$=loc_saved$
-				modern_settings_reset():qol_settings_reset()
-				load_settings()
+				dev_revert_settings()
 				prepare_cache_viewranges()
 				set_reboot=0
 			EndIf
 			If gui_button(5,(set_scry)-50,sm$(4),1,Cicon_ok) Then
 				Local qol_restart=qol_settings_restart()
-				If modern_options_save() Then
+				menu_set(m_menu)
+				If dev_save_settings() Then
 					menu_set(Cmenu_main)
-					save_settings()
 					prepare_cache_viewranges()
 					If qol_restart Then gui_msg("[[loc:modern.restart]]")
 				Else
@@ -390,6 +388,7 @@ Function menu()
 						menu_keysetting(360,sm$(70),Ckey_quickload)
 						menu_keysetting(380,sm$(71),Ckey_quicksave)
 					EndIf
+					menu_keysetting(400,"[[loc:dev.binding]]",Ckey_devmenu)
 					
 					bmpf_txt(236,510,sm$(72)+":")
 					If in_slider(0)<1 Then in_slider(0)=1
@@ -1047,6 +1046,7 @@ Function menu_keysetting(y,name$,id)
 							over=1
 							If in_mhit(1) Then
 								in_getkey=id
+								DebugUiHotkey 0
 								play(sfx_click)
 							EndIf
 						EndIf
@@ -1056,7 +1056,15 @@ Function menu_keysetting(y,name$,id)
 		EndIf
 		;Draw
 		bmpf_txt(236,83+y,name$,over)
-		bmpf_txt(506,83+y,in_keyname$(in_keys(id)),over)
+		If id=Ckey_devmenu And in_keys(id)=0 Then
+			bmpf_txt(506,83+y,"None",over)
+		Else
+			bmpf_txt(506,83+y,in_keyname$(in_keys(id)),over)
+		EndIf
+		If id=Ckey_devmenu And over Then
+			in_ttt$="[[loc:dev.binding_help]]"
+			If in_mhit(2) Then in_keys(id)=0:in_mhit(2)=0
+		EndIf
 	Else
 		;Draw
 		bmpf_txt(236,83+y,name$,1)
@@ -1095,6 +1103,7 @@ Function menu_keysetting(y,name$,id)
 				If in_keys(i)=gotkey Then in_keys(i)=0
 				If game_scriptkey(i)=gotkey Then game_scriptkey(i)=0
 			Next
+			If in_keys(Ckey_devmenu)=gotkey Then in_keys(Ckey_devmenu)=0
 			in_keys(id)=gotkey
 			in_getkey=-1
 			play(sfx_click)
@@ -1116,6 +1125,7 @@ Function menu_keysettingscript(y,name$,id)
 							over=1
 							If in_mhit(1) Then
 								in_getkey=id
+								DebugUiHotkey 0
 								play(sfx_click)
 							EndIf
 						EndIf
@@ -1164,6 +1174,7 @@ Function menu_keysettingscript(y,name$,id)
 				If in_keys(i)=gotkey Then in_keys(i)=0
 				If game_scriptkey(i)=gotkey Then game_scriptkey(i)=0
 			Next
+			If in_keys(Ckey_devmenu)=gotkey Then in_keys(Ckey_devmenu)=0
 			game_scriptkey(id)=gotkey
 			in_getkey=-1
 			play(sfx_click)

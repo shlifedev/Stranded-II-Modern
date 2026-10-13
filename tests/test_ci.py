@@ -75,6 +75,8 @@ class CIPackagingTests(unittest.TestCase):
             self.put(self.runtime / f'core/locales/{code}.tsv', b'ui.language\tLanguage\n')
             self.put(self.runtime / f'core/locales/{code}/glyphs.dat',
                      struct.pack('<4sIII', b'FNT2', 1, 20, 19) + bytes(28))
+            self.put(self.runtime / f'core/locales/{code}/ui.ttf',b'UI font')
+            self.put(self.runtime / f'core/locales/{code}/fallback.ttf',b'Unicode fallback font')
             for style in range(7):
                 self.put(self.runtime / f'core/locales/{code}/{style}_0.bmp', b'BMfont')
         from language_pack import registry
@@ -182,7 +184,7 @@ class CIPackagingTests(unittest.TestCase):
 
     def test_release_uses_defaults_and_excludes_player_data_and_reports(self):
         self.put(self.runtime / 'mods/Stranded II/sys/controls.cfg', b'personal bindings')
-        for name in ('core/modern.ini', 'core/modern.ini.bak', 'core/modern.log',
+        for name in ('core/modern.ini', 'core/modern.ini.bak', 'core/modern.log', 'core/development.flag',
                      'preserved/private.txt', 'mods/Stranded II/saves/player.sav',
                      'mods/Stranded II/maps/custom.s2', 'mods/Stranded II/screen_00001.bmp',
                      'mods/Stranded II/sys/settings.cfg', 'core/locales/fonts-report.json',
@@ -193,6 +195,9 @@ class CIPackagingTests(unittest.TestCase):
         self.assertEqual(members['StrandedII/core/modern.ini'], b'fps=144\nlanguage=en\n')
         self.assertNotIn('StrandedII/mods/Stranded II/sys/settings.cfg', members)
         self.assertEqual(members['StrandedII/mods/Stranded II/sys/controls.cfg'], b'original controls')
+        self.assertNotIn('StrandedII/core/development.flag',members)
+        self.assertEqual(members['StrandedII/core/locales/ko/ui.ttf'],b'UI font')
+        self.assertEqual(members['StrandedII/core/locales/ko/fallback.ttf'],b'Unicode fallback font')
         self.assertEqual(members['StrandedII/licenses/LICENSE.txt'], b'original license\r\n')
         self.assert_player_entrypoint(members, 'classic')
         self.assertTrue(members['StrandedII/README.txt'].startswith(b'Stranded II\n'))

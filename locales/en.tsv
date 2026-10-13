@@ -2675,3 +2675,53 @@ render.shadows	Sun shadows
 render.atmosphere	Atmospheric shading
 render.antialias	Edge smoothing
 render.help	FXAA is the low-cost default. MSAA 4x keeps textures sharper at higher GPU cost. Neither filters text. Other effects start off. Apply takes effect immediately.
+dev.title	Developer menu
+dev.status	Status
+dev.cheats	Cheats / testing
+dev.settings	Settings
+dev.logs	Logs
+dev.paused	Paused · Resume simulation from the developer menu
+dev.pause	Pause simulation (kept when menu closes)
+dev.map	Map
+dev.player	Player
+dev.health	Health
+dev.hunger	Hunger
+dev.thirst	Thirst
+dev.exhaustion	Exhaustion
+dev.invulnerable	Toggle invulnerability / revive
+dev.needs	Reset survival needs
+dev.states	Remove all player states
+dev.build	Supply nearby construction materials
+dev.play_only	Available during single-player play.
+dev.teleport	Teleport player
+dev.read_position	Read current position
+dev.time	Date / time
+dev.read_time	Read current date / time
+dev.day	Day
+dev.hour	Hour
+dev.minute	Minute
+dev.apply_time	Set date / time (without day-growth events)
+dev.items	Give items
+dev.search	Search
+dev.count	Quantity
+dev.script	Cheat script
+dev.execute	Run script
+dev.done	Action completed.
+dev.failed	Action failed; check the player or nearby construction site.
+dev.preview	Changes preview immediately. Closing the menu does not save them.
+dev.unsaved	Unsaved changes
+dev.restart	Display, resolution, FPS limit and language changes require restarting after saving.
+dev.save	Save settings
+dev.revert	Revert to saved settings
+dev.saved	Settings saved.
+dev.reverted	Saved settings restored.
+dev.display	Display / language (restart)
+dev.width	Render width
+dev.height	Render height
+dev.level	Severity (-1: all, 0: info, 2: error, 3: debug)
+dev.follow	Follow latest messages
+dev.clear	Clear log
+dev.copy	Copy filtered log
+dev.off	Off
+dev.binding	Developer menu
+dev.binding_help	Click to assign a shortcut. Right-click to clear it to None.

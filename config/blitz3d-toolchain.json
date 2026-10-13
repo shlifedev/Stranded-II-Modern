@@ -69,6 +69,13 @@
       "url": "https://codeload.github.com/lieff/minimp3/tar.gz/afb604c06bc8beb145fecd42c0ceb5bda8795144",
       "sha256": "21672c32aaac29cf4b7e6f8e0154767080ae87faa79c682498453e5a9bc5e0d3",
       "directory": "minimp3-afb604c06bc8beb145fecd42c0ceb5bda8795144"
+    },
+    "imgui": {
+      "repository": "https://github.com/ocornut/imgui",
+      "commit": "f1cc2ae15e53a861a874c3034aae6798fde194ab",
+      "url": "https://codeload.github.com/ocornut/imgui/tar.gz/f1cc2ae15e53a861a874c3034aae6798fde194ab",
+      "sha256": "f30be7f3e2136615b1848a9afb72f6dfd8a60820ddf1c1a85997bf3b722e7cfc",
+      "directory": "imgui-f1cc2ae15e53a861a874c3034aae6798fde194ab"
     }
   },
   "llvm": {
@@ -107,5 +114,16 @@
     "sha256": "9ad895a6b039e3a8f8c22a1009f866800b840a74b50db9218d13319e215ea8a4",
     "directory": "dxc-1.8.2505.1",
     "flat": true
+  },
+  "ui_fonts": {
+    "pretendard": {
+      "repository": "https://github.com/orioncactus/pretendard",
+      "commit": "5c41199ea0024a9e0b2cb31735265056e5472d76",
+      "url": "https://raw.githubusercontent.com/orioncactus/pretendard/5c41199ea0024a9e0b2cb31735265056e5472d76/packages/pretendard/dist/public/variable/PretendardVariable.ttf",
+      "sha256": "3090ccde0442bb347aa7685d9ba8b17436a60682df6e8f92a9a670de14056e22",
+      "filename": "PretendardVariable.ttf",
+      "license": "licenses/Pretendard-OFL.txt",
+      "license_sha256": "d31ddd9f2bed32fd7e302a205cf2380ba0de6529152d239ef99cfb6f261bfc04"
+    }
   }
 }

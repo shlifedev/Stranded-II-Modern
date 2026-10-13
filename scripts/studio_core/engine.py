@@ -12,7 +12,7 @@ import web_toolchain
 from editions import override_files, INCLUDE
 from locales import prepare, validate
 from language_pack import refresh
-from versioning import local_info
+from versioning import development_marker, local_info
 
 from .project import ROOT, atomic, encode
 
@@ -65,7 +65,7 @@ def source_hashes():
 
 
 def implementation_hashes():
-    paths = [ROOT/'studio/engine/index.html',ROOT/'studio/engine/studio.js',ROOT/'studio/engine/gizmo.js',Path(__file__),
+    paths = [ROOT/'studio/engine/index.html',ROOT/'studio/engine/studio.js',ROOT/'studio/engine/gizmo.js',ROOT/'src/web/debugui.js',Path(__file__),
              ROOT/'scripts/web_build.py',ROOT/'scripts/web_toolchain.py',ROOT/'scripts/web_audio.py',
              ROOT/'config/web-toolchain.json',ROOT/'src/native/web/bridge.cpp']
     return {**{p.relative_to(ROOT).as_posix():web_build.digest(p) for p in paths}, **engine_toolchain.sources()}
@@ -85,10 +85,12 @@ def build(args):
             argv+=['-I',include]
         web_toolchain.run(argv,env=env)
     info=local_info(ROOT,'extended')
+    development_marker(RUNTIME,True)
     atomic(RUNTIME/'core/version.json',encode(info))
     atomic(RUNTIME/'core/version.txt',(info['display_version']+'\n').encode())
     # License originals accompany the generated engine/resources.
     for source,name in ((engine_toolchain.ENGINE/'WEBGPU-LICENSE.txt','WebGPU-port-MIT.txt'),(ng/'LICENSE.TXT','Blitz3D-NG.txt'),
+                        (engine_toolchain.library('imgui') / 'LICENSE.txt','Dear-ImGui.txt'),
                         (engine_toolchain.library('sdl') / 'LICENSE.txt','SDL2.txt'),
                         (engine_toolchain.library('freetype2') / 'docs/FTL.TXT','FreeType.txt'),(engine_toolchain.library('ogg') / 'COPYING','Ogg.txt'),
                         (engine_toolchain.library('vorbis') / 'COPYING','Vorbis.txt'),(engine_toolchain.library('minimp3') / 'LICENSE','minimp3.txt'),
@@ -104,10 +106,11 @@ def build(args):
     finally:web_build.override_files=original
     for name in ('index.html','studio.js','gizmo.js'):
         shutil.copy2(ROOT/'studio/engine'/name,SITE/name)
+    shutil.copy2(ROOT/'src/web/debugui.js',SITE/'debugui.js')
     (SITE/'game.html').unlink(missing_ok=True)
     report={'edition':'extended','entrypoint':ENTRY,'source_sha256':source_hashes(),
             'implementation_sha256':implementation_hashes(),
-            'files':{n:web_build.digest(SITE/n) for n in ('game.js','game.wasm','assets.js','assets.data','index.html','studio.js','gizmo.js')}}
+            'files':{n:web_build.digest(SITE/n) for n in ('game.js','game.wasm','assets.js','assets.data','index.html','studio.js','gizmo.js','debugui.js')}}
     atomic(BUILD/'build-report.json',encode(report))
     print('Built Blitz Studio engine:',SITE)
 

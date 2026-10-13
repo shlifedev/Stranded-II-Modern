@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"67a1cd48160c4b6fe6149ee3f56f256c44968abc74052fd3da588b4f2af1d779"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"d9dcdabfc3f705a010276806a099285827e8897329deaa7b54cdaa6bffdfdf92"} -->
 
 # 개발 가이드
 
@@ -89,6 +89,14 @@ Python으로 직접 실행할 수도 있습니다.
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 scripts/dev.py run -- -win -fps 120
 ```
+
+## 개발자 메뉴
+
+두 에디션이 공유하는 Dear ImGui 메뉴입니다. **설정 → 조작 → 개발자 메뉴**에서 단축키를 지정합니다. 배포본 기본값은 `None`이며, 로컬 개발 빌드만 처음에 `Insert`를 사용합니다. 우클릭으로 지정을 해제할 수 있고, 저장한 `None`과 사용자 단축키는 개발 빌드에서도 유지합니다.
+
+메뉴를 열어도 게임은 진행되며 게임 입력은 차단됩니다. 상태 탭의 일시정지는 메뉴를 닫아도 유지됩니다. 싱글 플레이 치트, 아이템 아이콘 격자, 좌표·시간 이동, 설정 미리 적용, 검색·복사 가능한 로그를 제공합니다. 설정은 **저장**과 **저장된 설정으로 되돌리기**를 구분하며 자동 저장하지 않습니다. 화면 모드·해상도·FPS 제한·언어는 저장 후 재시작이 필요합니다. 로그는 최대 2,048건 / 2MiB이며 위로 스크롤하면 최신 로그 따라가기를 멈춥니다.
+
+공유 게임 UI는 `src/engine/includes/devmenu.bb`, 네이티브 ImGui·SDL 입력·WebGPU 출력 연결은 `src/blitz3d/src/modules/bb/debugui/`, 브라우저 IME 연결은 `src/web/debugui.js`에 있습니다. Windows 두 에디션, macOS, Web 및 Studio가 같은 구현을 사용합니다. Windows에서 `python scripts/verify_engine.py --graphics --input`은 입력 소유권과 창·컨텍스트 수명을 검사합니다. `s2_debugui_check` CMake 타깃은 준비된 `core/locales/<code>/ui.ttf` 경로를 인수로 받아 유니코드 글리프·슬라이더·로그 따라가기를 창 없이 검사합니다. 실제 화면, 한글 조합·붙여넣기와 각 플랫폼 실행은 별도로 확인합니다.
 
 ## 네이티브 렌더링 벤치마크
 

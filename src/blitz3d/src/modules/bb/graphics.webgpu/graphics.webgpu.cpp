@@ -1,5 +1,6 @@
 #include "../../../stdutil/stdutil.h"
 #include "graphics.webgpu.h"
+#include <bb/debugui/debugui.h>
 #include "canvas.webgpu.h"
 
 #include <algorithm>
@@ -974,6 +975,7 @@ WebGPUGraphics::WebGPUGraphics( SDL_Window *wnd ):wnd(wnd),def_font(0),fb(0){
 }
 
 WebGPUGraphics::~WebGPUGraphics(){
+	s2DebugUiDetach(wnd);
 	bbAppOnChange.remove( onAppChange,this );
 
 	delete fb;fb=0;
@@ -1009,6 +1011,7 @@ bool WebGPUGraphics::init(){
 	res.window=wnd;
 #endif
 	if( !res.initDevice( "#canvas",drawable_width,drawable_height ) ) return false;
+	s2DebugUiAttach(wnd,res.device,res.surface_format);
 
 #ifdef BB_MACOS
 	def_font=(BBImageFont*)loadFont("/System/Library/Fonts/Monaco.ttf",12,0);
@@ -1105,6 +1108,7 @@ void WebGPUGraphics::present(){
 	wgpuRenderPassEncoderSetBindGroup( p,0,res.getBindGroup( src,filtered?res.sampler_linear:res.sampler_nearest ),1,&uoffset );
 	wgpuRenderPassEncoderSetVertexBuffer( p,0,res.vertex_buffer,voffset,6*sizeof( BBWebGPUVertex ) );
 	wgpuRenderPassEncoderDraw( p,6,1,0,0 );
+	s2DebugUiRender(p,res.surface_width,res.surface_height);
 	wgpuRenderPassEncoderEnd( p );
 	wgpuRenderPassEncoderRelease( p );
 
@@ -1293,6 +1297,7 @@ BBGraphics *WebGPUContextDriver::openGraphics( int w,int h,int d,int driver,int 
 #ifdef BB_MACOS
 	windowFlags=SDL_WINDOW_METAL;
 #endif
+	SDL_SetHint(SDL_HINT_IME_SHOW_UI,"1");
 	SDL_Window *wnd=SDL_CreateWindow( bbApp().title.c_str(),SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,w,h,windowFlags );
 	if( wnd==NULL ){
 		LOGD( "%s","failed to create window" );
@@ -1336,6 +1341,7 @@ void WebGPUContextDriver::flip( bool vwait ){
 #endif
 
 	g->present();
+	s2DebugUiRender(nullptr,0,0); // Discard UI if surface acquisition failed.
 #ifdef BB_EMSCRIPTEN
 	double now=emscripten_get_now();
 	if( now-bb_load_report_time>=1000.0 ){

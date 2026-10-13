@@ -2,6 +2,7 @@
 #include <bb/runtime/runtime.h>
 #include "debug.h"
 #include "ex.h"
+#include "app.h"
 
 static Debugger *debugger=0;
 
@@ -19,6 +20,7 @@ Debugger * BBCALL bbGetDebugger(){
 
 void BBCALL _bbDebugLog( const char *t ){
 	if( debugger ) debugger->debugLog( t );
+	bbRuntimeLog(3,"%s",t);
 }
 
 void BBCALL _bbDebugInfo( const char *e ){
@@ -29,6 +31,7 @@ void BBCALL _bbDebugInfo( const char *e ){
 }
 
 void BBCALL _bbDebugError( const char *e ){
+	bbRuntimeLog(2,"%s",e);
 	if( debugger ){
 		bbOnDebugInfo.run( (void*)e );
 		debugger->debugMsg( e,true );

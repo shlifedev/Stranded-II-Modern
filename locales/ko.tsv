@@ -2675,3 +2675,53 @@ render.shadows	태양 그림자
 render.atmosphere	대기 음영
 render.antialias	계단현상 완화
 render.help	FXAA는 기본값이며 저비용으로 윤곽을 부드럽게 합니다. MSAA 4x는 더 선명하지만 GPU 부하가 큽니다. 둘 다 글자에는 적용하지 않습니다. 다른 효과는 기본 끔이며 적용하면 즉시 반영됩니다.
+dev.title	개발자 메뉴
+dev.status	상태
+dev.cheats	치트 / 테스트
+dev.settings	설정
+dev.logs	로그
+dev.paused	일시정지 중 · 개발자 메뉴에서 일시정지를 해제하세요
+dev.pause	게임 일시정지 (메뉴를 닫아도 유지)
+dev.map	맵
+dev.player	플레이어
+dev.health	체력
+dev.hunger	허기
+dev.thirst	갈증
+dev.exhaustion	피로
+dev.invulnerable	무적 켜기 / 끄기 · 부활
+dev.needs	허기 / 갈증 / 피로 해소
+dev.states	플레이어의 모든 상태 제거
+dev.build	주변 건설 현장에 재료 지급
+dev.play_only	싱글 플레이 게임 중에 사용할 수 있습니다.
+dev.teleport	플레이어 위치 이동
+dev.read_position	현재 위치 가져오기
+dev.time	날짜 / 시간
+dev.read_time	현재 날짜 / 시간 가져오기
+dev.day	일
+dev.hour	시
+dev.minute	분
+dev.apply_time	날짜 / 시간 적용 (성장 이벤트 생략)
+dev.items	아이템 지급
+dev.search	검색
+dev.count	수량
+dev.script	치트 스크립트
+dev.execute	스크립트 실행
+dev.done	실행했습니다.
+dev.failed	실행 실패: 플레이어나 주변 건설 현장을 확인하세요.
+dev.preview	변경은 즉시 미리 적용됩니다. 메뉴를 닫아도 자동으로 저장되지 않습니다.
+dev.unsaved	저장하지 않은 변경 사항
+dev.restart	화면 모드, 해상도, FPS 제한과 언어는 저장 후 게임을 재시작해야 적용됩니다.
+dev.save	설정 저장
+dev.revert	저장된 설정으로 되돌리기
+dev.saved	설정을 저장했습니다.
+dev.reverted	저장된 설정을 복원했습니다.
+dev.display	화면 / 언어 (재시작 필요)
+dev.width	렌더링 너비
+dev.height	렌더링 높이
+dev.level	로그 수준 (-1: 전체, 0: 정보, 2: 오류, 3: 디버그)
+dev.follow	최신 로그 따라가기
+dev.clear	로그 지우기
+dev.copy	검색된 로그 복사
+dev.off	끔
+dev.binding	개발자 메뉴
+dev.binding_help	클릭해서 단축키를 지정하세요. 우클릭하면 None으로 해제됩니다.

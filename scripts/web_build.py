@@ -12,7 +12,7 @@ import sys
 from editions import source_hashes, override_files
 from locales import prepare, validate, languages
 from language_pack import refresh
-from versioning import local_info, validate_info
+from versioning import development_marker, local_info, validate_info
 import web_toolchain
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,7 +22,7 @@ SITE = BUILD / 'site'
 ENTRY = 'StrandedIIWeb.bb'
 PORT = 8765
 SITE_FILES = ('game.js', 'game.wasm', 'assets.js', 'assets.data',
-              'shell.js', 'index.html', 'defaults.json', 'version.json')
+              'shell.js', 'debugui.js', 'index.html', 'defaults.json', 'version.json')
 
 
 def read(path):
@@ -110,11 +110,13 @@ def asset_files():
     names = set(read(ROOT / 'config/game-files.json'))
     names.update(override_files(ROOT, 'classic'))
     names.update(('core/modern.ini', 'core/version.json', 'core/version.txt', 'core/locales/languages.dat'))
+    if (RUNTIME / 'core/development.flag').is_file():names.add('core/development.flag')
     for code in languages(ROOT):
         names.add(f'core/locales/{code}.tsv')
         directory = RUNTIME / 'core/locales' / code
         names.update(path.relative_to(RUNTIME).as_posix() for path in directory.glob('*.bmp'))
         names.add(f'core/locales/{code}/glyphs.dat')
+        names.update(p.relative_to(RUNTIME).as_posix() for p in directory.glob('*.ttf'))
     names.update(path.relative_to(RUNTIME).as_posix() for path in (RUNTIME / 'licenses').rglob('*') if path.is_file())
     result = []
     for name in sorted(names):
@@ -164,6 +166,7 @@ def build(args):
     info = validate_info(read(args.version_info)) if args.version_info else local_info(ROOT, 'classic')
     if info['edition'] != 'classic':
         raise ValueError('Web version belongs to another edition.')
+    development_marker(RUNTIME, info['channel'] == 'local')
     write(RUNTIME / 'core/version.json', info)
     (RUNTIME / 'core/version.txt').write_text(info['display_version'] + '\n', encoding='ascii')
     env = web_toolchain.build()
@@ -172,6 +175,7 @@ def build(args):
     runtime_licenses = [
         (engine_toolchain.ENGINE / 'WEBGPU-LICENSE.txt', 'WebGPU-port-MIT.txt'),
         (ng / 'LICENSE.TXT', 'Blitz3D-NG.txt'),
+        (engine_toolchain.library('imgui') / 'LICENSE.txt', 'Dear-ImGui.txt'),
         (engine_toolchain.library('sdl') / 'LICENSE.txt', 'SDL2.txt'),
         (engine_toolchain.library('freetype2') / 'docs/FTL.TXT', 'FreeType.txt'),
         (engine_toolchain.library('ogg') / 'COPYING', 'Ogg.txt'),
@@ -198,7 +202,7 @@ def build(args):
                       cwd=ROOT / 'src/engine', env=env)
     pack_assets(env)
     (SITE / 'game.html').unlink() # The custom index owns storage and startup.
-    for name in ('index.html', 'shell.js'):
+    for name in ('index.html', 'shell.js', 'debugui.js'):
         shutil.copy2(ROOT / 'src/web' / name, SITE / name)
     write(SITE / 'version.json', info)
     write(BUILD / 'build-report.json', dict(info, platform='web', toolchain=web_toolchain.config(),
@@ -254,7 +258,7 @@ def run(args):
 
 def implementation_hashes():
     paths = [ROOT / name for name in ('scripts/web_build.py', 'scripts/web_toolchain.py',
-             'scripts/web_audio.py', 'config/web-toolchain.json', 'src/native/web/bridge.cpp', 'src/web/shell.js', 'src/web/index.html')]
+             'scripts/web_audio.py', 'config/web-toolchain.json', 'src/native/web/bridge.cpp', 'src/web/shell.js', 'src/web/debugui.js', 'src/web/index.html')]
     return {**{path.relative_to(ROOT).as_posix(): digest(path) for path in paths}, **engine_toolchain.sources()}
 
 

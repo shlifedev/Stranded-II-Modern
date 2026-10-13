@@ -114,3 +114,13 @@ def runtime_info(runtime):
     if (runtime / 'core/version.txt').read_bytes() != (info['display_version'] + '\n').encode('ascii'):
         raise ValueError('Runtime version label does not match build metadata; rebuild first')
     return info
+
+
+def development_marker(runtime, enabled):
+    """Local runtime opt-in; distribution allowlists deliberately omit it."""
+    marker = runtime / 'core/development.flag'
+    if enabled:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text('local development runtime\n', encoding='ascii')
+    elif marker.exists():
+        marker.unlink()

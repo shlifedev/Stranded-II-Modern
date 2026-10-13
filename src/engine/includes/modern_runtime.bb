@@ -1,6 +1,7 @@
 ; Shared presentation, focus recovery and elapsed-time pacing.
 ; Windows services are compiled into the embedded Blitz runtime.
 Include "includes\modern_math.bb"
+Global dev_paused,dev_initialized,dev_strings_ready
 Global modern_fps=144,modern_borderless=1,modern_width=1280,modern_height=720
 Global modern_hwnd,modern_ui_ready,modern_previous,modern_reset=1
 Global modern_next,modern_pace_ready,modern_resume_count,modern_diagnostics
@@ -11,6 +12,7 @@ Global modern_counter_bank=CreateBank(8),modern_counter_low,modern_counter_high,
 Global modern_counter_hz#,modern_clock_ms,modern_clock_fraction#
 
 Function modern_log(message$)
+ DebugUiLog "timing",3,message$
  If modern_diagnostics=0 Then Return
  Local stream=OpenFile(modern_log_path$)
  If stream=0 Then stream=WriteFile(modern_log_path$)
@@ -201,6 +203,7 @@ End Function
 Function modern_present()
  ; All main/menu/editor/modal loops use this path; never busy-spin.
  If modern_focus() Then Return
+ dev_draw()
  If modern_fps=0 Then
   ; Keep Flip's event pump and the normal simulation clock when uncapped.
   modern_pace_ready=0:modern_fraction#=0.
@@ -230,6 +233,7 @@ Function modern_present()
 End Function
 
 Function modern_record_frame()
+ dev_record_frame()
  If modern_diagnostics Then
   Local now=modern_walltime()
   modern_log_frames=modern_log_frames+1

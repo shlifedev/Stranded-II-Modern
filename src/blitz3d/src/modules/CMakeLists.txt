@@ -235,7 +235,7 @@ if(S2_CONSOLE_ONLY)
 elseif(S2_NATIVE_GAME OR BB_EMSCRIPTEN)
   set(modules bb/blitz bb/hook bb/event bb/math bb/string bb/stdio bb/stream
       bb/system bb/filesystem bb/filesystem.posix bb/timer bb/bank bb/runtime
-      bb/stub bb/input bb/pixmap bb/graphics bb/graphics.webgpu bb/blitz3d
+      bb/stub bb/input bb/debugui bb/pixmap bb/graphics bb/graphics.webgpu bb/blitz3d
       bb/blitz3d.webgpu bb/audio bb/audio.openal bb/runtime.sdl)
 endif()
 if(BB_EMSCRIPTEN)
