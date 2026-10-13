@@ -202,10 +202,21 @@ def build_web(env):
     return output('web')
 
 
+def macos_options():
+    cfg = json.loads((ROOT / 'config/macos-toolchain.json').read_text('utf8'))
+    return ['-DCMAKE_OSX_ARCHITECTURES=arm64',
+            '-DCMAKE_OSX_DEPLOYMENT_TARGET=' + cfg['deployment_target'],
+            '-DCMAKE_OSX_SYSROOT=' + subprocess.check_output(
+                ['xcrun', '--sdk', 'macosx', '--show-sdk-path'], text=True).strip()]
+
+
 def build_compiler():
-    directory = configure('compiler-' + host(), ['-DS2_COMPILER_ONLY=ON', '-DBB_LEGACY32=ON',
+    options = ['-DS2_COMPILER_ONLY=ON', '-DBB_LEGACY32=ON',
         '-DBB_PLATFORM=' + ('win64' if host() == 'windows' else 'macos'),
-        '-DARCH=' + ('x86_64' if host() == 'windows' else 'arm64')])
+        '-DARCH=' + ('x86_64' if host() == 'windows' else 'arm64')]
+    if host() == 'macos':
+        options += macos_options()
+    directory = configure('compiler-' + host(), options)
     run(['cmake', '--build', directory, '--target', 'blitzcc', '-j', '8'], env=environment())
     return compiler()
 
@@ -222,10 +233,7 @@ def build_native(graphics=True):
         options += ['-DOPENAL_INCLUDE_DIR=' + str(openal() / 'include'),
                     '-DOPENAL_LIBRARY=' + str(openal() / 'libs/Win64/OpenAL32.lib')]
     else:
-        cfg = json.loads((ROOT / 'config/macos-toolchain.json').read_text('utf8'))
-        options += ['-DCMAKE_OSX_ARCHITECTURES=arm64',
-            '-DCMAKE_OSX_DEPLOYMENT_TARGET=' + cfg['deployment_target'],
-            '-DCMAKE_OSX_SYSROOT=' + subprocess.check_output(['xcrun', '--sdk', 'macosx', '--show-sdk-path'], text=True).strip(),
+        options += macos_options() + [
             '-DS2_MACOS_SERVICES=' + str(ROOT / 'src/native/macos/services.mm')]
     directory = configure(target, options)
     runtime = 's2' + host() if graphics else 's2console'

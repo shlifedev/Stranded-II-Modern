@@ -21,6 +21,51 @@ from editions import source_files
 from versioning import make_info
 
 
+class NativeToolchain(TestCase):
+    def test_macos_compiler_and_both_runtimes_share_the_target_and_sdk(self):
+        engine = build.engine_toolchain
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'config').mkdir()
+            (root / 'config/macos-toolchain.json').write_text(
+                json.dumps({'deployment_target': '15.0'}), encoding='utf8')
+            sdk_path = '/Applications/Xcode SDK/MacOSX.sdk'
+            with mock.patch.object(engine, 'ROOT', root), \
+                 mock.patch.object(engine, 'host', return_value='macos'), \
+                 mock.patch.object(engine, 'environment', return_value={}), \
+                 mock.patch.object(engine, 'configure', return_value=root / 'cmake') as configure, \
+                 mock.patch.object(engine, 'run'), \
+                 mock.patch.object(engine, 'dawn', return_value=root / 'dawn'), \
+                 mock.patch.object(engine.subprocess, 'check_output', return_value=sdk_path + '\n'):
+                engine.build_compiler()
+                engine.build_native(graphics=False)
+                engine.build_native(graphics=True)
+            self.assertEqual([call.args[0] for call in configure.call_args_list],
+                             ['compiler-macos', 'macos-console', 'macos-game'])
+            for call in configure.call_args_list:
+                options = call.args[1]
+                self.assertIn('-DCMAKE_OSX_DEPLOYMENT_TARGET=15.0', options)
+                self.assertIn('-DCMAKE_OSX_SYSROOT=' + sdk_path, options)
+                self.assertIn('-DCMAKE_OSX_ARCHITECTURES=arm64', options)
+
+    def test_windows_builds_do_not_query_or_use_the_apple_sdk(self):
+        engine = build.engine_toolchain
+        with mock.patch.object(engine, 'host', return_value='windows'), \
+             mock.patch.object(engine, 'environment', return_value={}), \
+             mock.patch.object(engine, 'configure', return_value=ROOT / 'build/cmake') as configure, \
+             mock.patch.object(engine, 'run'), \
+             mock.patch.object(engine, 'dawn', return_value=ROOT / 'build/dawn'), \
+             mock.patch.object(engine, 'openal', return_value=ROOT / 'build/openal'), \
+             mock.patch.object(engine.subprocess, 'check_output', side_effect=AssertionError('Apple SDK queried')):
+            engine.build_compiler()
+            engine.build_native(graphics=False)
+            engine.build_native(graphics=True)
+        self.assertEqual([call.args[0] for call in configure.call_args_list],
+                         ['compiler-windows', 'windows-console', 'windows-game'])
+        for call in configure.call_args_list:
+            self.assertFalse(any(option.startswith('-DCMAKE_OSX_') for option in call.args[1]))
+
+
 class ResourceBoundaries(TestCase):
     def test_platform_include_graphs_remain_separate(self):
         native = source_files(ROOT, 'classic', 'macos')

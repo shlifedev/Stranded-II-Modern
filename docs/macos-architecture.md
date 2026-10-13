@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"d25ba0815678430de024ab49843430a7b93d8e7fe339b5bec8a47b36cb7b49b6"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"66f920675e340ec8b013df0b2a6f19f0caf5721aa890b64f1d6363b1611e644b"} -->
 
 # How the macOS version works
 
@@ -22,6 +22,8 @@ flowchart LR
 ```
 
 The compiler lives in the shared [embedded Blitz3D source](../src/blitz3d/). [Pinned external dependencies](../config/blitz3d-toolchain.json) are prepared separately without overwriting local engine edits. LLVM generates ARM64 machine code; Apple’s linker produces a native **Mach-O** executable ahead of time (**AOT**).
+
+The compiler and both game and console runtimes use the same minimum OS version from the [macOS configuration](../config/macos-toolchain.json) and the SDK selected by `xcrun`. Matching target identifiers preserves the 32-bit numeric ABI and SDK library lookup.
 
 Dawn and the game runtime are statically linked into the executable. Game resources and language packs are also bundled, so playing requires no browser, Python, Homebrew, Wine, or Rosetta. Python handles resource preparation, build orchestration, and verification during development.
 

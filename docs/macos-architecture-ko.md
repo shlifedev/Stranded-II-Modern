@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"c2bbe0903e6c006576473e169bc7d63d5f28d1cf94dd2c449670ae287723bce5"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"453c08550a7eeda7e312a9325a54e133870a614a4545259e5d3ed5dd117da3e1"} -->
 
 # macOS 구현 원리
 
@@ -22,6 +22,8 @@ flowchart LR
 ```
 
 컴파일러는 공통 [내장 Blitz3D 소스](../src/blitz3d/)에서 관리합니다. [버전을 고정한 외부 의존성](../config/blitz3d-toolchain.json)은 별도로 준비하므로 엔진 수정 내용을 덮어쓰지 않습니다. LLVM이 ARM64 기계어를 생성하고 Apple 링커가 실행 전에 네이티브 **Mach-O** 실행 파일을 만드는 **AOT 방식**입니다.
+
+컴파일러와 게임·콘솔 런타임은 [macOS 설정](../config/macos-toolchain.json)의 동일한 최소 OS 버전과 `xcrun`이 선택한 SDK로 빌드합니다. 타겟 식별자를 일치시켜 32비트 숫자 ABI와 SDK 라이브러리 검색을 유지합니다.
 
 Dawn과 게임 런타임은 실행 파일에 정적으로 연결합니다. 게임 리소스·언어팩도 앱에 포함하므로 플레이에 브라우저, Python, Homebrew, Wine 또는 Rosetta가 필요하지 않습니다. Python은 개발 과정에서 리소스 준비·빌드 실행·검증을 담당합니다.
 
