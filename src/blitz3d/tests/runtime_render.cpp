@@ -240,12 +240,12 @@ static void checkBatchedRendering(WebGPUContextResources &res){
     expectPixel("CopyRect before next camera",copy.getPixel(8,16),255,0,0);
     expectPixel("next camera uniforms",second.getPixel(8,16),0,0,255);
 
-    // Rewriting a used range does require submission. Pixel checks catch
-    // mistakenly allowing the newer vertices/indices to affect older draws.
+    // Rewriting a used range gets another buffer version without submission.
+    // Pixels must retain each draw's original vertices and indices.
     beginTarget(scene,target);drawRegion(scene,mesh,0,4,0,0xff0000);
     before=scene.submit_marker;
     fillRegion(mesh,0,0,0,1);drawRegion(scene,mesh,0,4,0,0x00ff00);
-    expect(scene.submit_marker>before,"overlapping vertex update preserves earlier draw");
+    expect(scene.submit_marker==before,"overlapping vertex update avoids submission");
     scene.end();
     expectPixel("old vertex positions",target.getPixel(8,16),255,0,0);
     expectPixel("new vertex positions",target.getPixel(24,16),0,255,0);
@@ -255,7 +255,7 @@ static void checkBatchedRendering(WebGPUContextResources &res){
     before=scene.submit_marker;
     mesh->lock(false);mesh->setTriangle(0,4,6,5);mesh->setTriangle(1,4,7,6);mesh->unlock();
     drawRegion(scene,mesh,0,8,0,0x00ff00);
-    expect(scene.submit_marker>before,"overlapping index update preserves earlier draw");
+    expect(scene.submit_marker==before,"overlapping index update avoids submission");
     scene.end();
     expectPixel("old triangle indices",target.getPixel(8,16),255,0,0);
     expectPixel("new triangle indices",target.getPixel(24,16),0,255,0);
@@ -280,6 +280,74 @@ static void checkBatchedRendering(WebGPUContextResources &res){
     expect(scene.submit_marker>before,"uniform arena overflow submits safely");
     scene.end();expectPixel("last draw after arena overflow",target.getPixel(8,16),255,0,0);
     scene.freeMesh(mesh);gx_canvas=nullptr;
+}
+static void checkMeshVersions(WebGPUContextResources &res){
+    size_t initialBytes=mesh_version_bytes;
+    struct ReadbackCanvas : WebGPUCanvas{
+        using WebGPUCanvas::WebGPUCanvas;
+        using WebGPUCanvas::readPixels;
+    } target(&res,32,32,BBCanvas::CANVAS_TEX_VIDMEM);
+    WebGPUScene scene(&res);
+    auto mesh=static_cast<WebGPUMesh*>(scene.createMesh(4,2,0));
+    // More edits than the pool can hold must submit safely. Later frames
+    // reuse those versions, including poses from before the last submission.
+    for(int cycle=0;cycle<3;++cycle){
+        beginTarget(scene,target);unsigned marker=scene.submit_marker;
+        for(int i=0;i<32;++i){
+            fillRegion(mesh,0,0,-1+i/16.0f,-1+(i+1)/16.0f);
+            unsigned color=((i+cycle)&1)?0xff0000:0x00ff00;
+            drawRegion(scene,mesh,0,4,0,color);
+        }
+        scene.end();
+        expect(scene.submit_marker>marker,"mesh version limit submits safely");
+        expect(mesh->versions.size()==MAX_MESH_VERSIONS,"mesh versions stay bounded and are reused");
+        std::vector<unsigned char> rgba;target.readPixels(rgba);
+        bool pixels=true;
+        for(int i=0;i<32;++i){
+            auto p=rgba.data()+(16*32+i)*4;
+            bool red=((i+cycle)&1)!=0;
+            pixels&=p[0]==(red?255:0) && p[1]==(red?0:255) && p[2]==0;
+        }
+        expect(pixels,"every queued mesh pose survives recycling and overflow");
+    }
+    scene.freeMesh(mesh);
+    expect(mesh_version_bytes==initialBytes,"mesh destruction releases version budget");
+
+    // A partial index update must copy the unchanged high-index vertices
+    // into its new buffers, including the 32-bit index path.
+    mesh=static_cast<WebGPUMesh*>(scene.createMesh(65540,2,0));
+    fillRegion(mesh,0,0,-1,0);fillRegion(mesh,65536,0,0,1);
+    beginTarget(scene,target);drawRegion(scene,mesh,0,65540,0,0xff0000);
+    unsigned marker=scene.submit_marker;
+    mesh->lock(false);mesh->setTriangle(0,65536,65538,65537);mesh->setTriangle(1,65536,65539,65538);mesh->unlock();
+    drawRegion(scene,mesh,0,65540,0,0x00ff00);scene.end();
+    expect(scene.submit_marker==marker,"32-bit index mutation avoids submission");
+    expectPixel("old 32-bit indices",target.getPixel(8,16),255,0,0);
+    expectPixel("new indices retain untouched high vertices",target.getPixel(24,16),0,255,0);
+    scene.freeMesh(mesh);
+
+    mesh=static_cast<WebGPUMesh*>(scene.createMesh(4,2,0));
+    beginTarget(scene,target);fillRegion(mesh,0,0,-1,0);drawRegion(scene,mesh,0,4,0,0xff0000);
+    marker=scene.submit_marker;
+    // Substitute only budget accounting to exercise the exhausted-budget
+    // path without allocating 32 MiB just for this fallback test.
+    size_t previousBytes=mesh_version_bytes;mesh_version_bytes=MAX_MESH_VERSION_BYTES;
+    fillRegion(mesh,0,0,0,1);drawRegion(scene,mesh,0,4,0,0x0000ff);
+    mesh_version_bytes=previousBytes;scene.end();
+    expect(scene.submit_marker>marker && mesh->versions.size()==1,"exhausted shared budget falls back to submission");
+    expectPixel("budget fallback old pose",target.getPixel(8,16),255,0,0);
+    expectPixel("budget fallback new pose",target.getPixel(24,16),0,0,255);
+
+    beginTarget(scene,target);scene.setWireframe(true);
+    fillRegion(mesh,0,0,-1,0);drawRegion(scene,mesh,0,4,0,0xff0000);
+    marker=scene.submit_marker;
+    fillRegion(mesh,0,0,0,1);drawRegion(scene,mesh,0,4,0,0x00ff00);scene.end();
+    expect(scene.submit_marker>marker,"wireframe preserves its separate index-cache hazard path");
+    expectPixel("wireframe old diagonal",target.getPixel(7,15),255,0,0);
+    expectPixel("wireframe new diagonal",target.getPixel(23,15),0,255,0);
+    scene.setWireframe(false);scene.freeMesh(mesh);
+    expect(mesh_version_bytes==initialBytes,"all temporary mesh versions are released");
+    gx_canvas=nullptr;
 }
 static void setInstance(WebGPUScene &scene,float scale,float x){
     BBScene::Matrix world={};
@@ -354,7 +422,7 @@ static void checkInstancing(WebGPUContextResources &res){
     fillRegion(mesh,0,0,-1,0);drawRegion(scene,mesh,0,4,0,0xff0000);
     unsigned marker=scene.submit_marker;
     fillRegion(mesh,0,0,0,1);drawRegion(scene,mesh,0,4,0,0xff0000);scene.end();
-    expect(scene.submit_marker>marker,"mesh mutation submits pending instances");
+    expect(scene.submit_marker==marker,"mesh mutation preserves pending instances without submission");
     expectPixel("instance before mesh mutation",target.getPixel(8,16),255,0,0);
     expectPixel("instance after mesh mutation",target.getPixel(24,16),255,0,0);
 
@@ -607,6 +675,7 @@ int main(){
     if(!initOffscreen(res)){ std::fprintf(stderr,"No offscreen D3D12 device\n");return 2; }
     checkRendering(res);
     checkBatchedRendering(res);
+    checkMeshVersions(res);
     checkInstancing(res);
     checkTransparentInstances(res);
     checkWorldTransparency(res);

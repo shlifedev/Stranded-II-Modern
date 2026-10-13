@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"c69b5c6f60abf9c599d0e5e57d56e8d9bb940f001988bce5bacb53177b127a5d"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"ff43fdb24cfb23bb870793fcb85e969063ba1edfd745afeeada5e63baa4d1243"} -->
 
 # Development guide
 
@@ -15,6 +15,8 @@ You need Windows 10/11 x64 with a Direct3D 12 GPU, Python 3.12 or later, and [re
 Install Visual Studio’s MSVC x64 C++ build tools, Windows SDK, CMake/Ninja tools and DIA SDK. `build` compiles the editable Blitz3D engine in `src/blitz3d/` with LLVM and links the game as a native x64 executable. Rendering uses Dawn/D3D12 and audio uses OpenAL Soft. Unicode input, IME and Windows services are linked into the runtime; `QolInput.dll` is no longer required. Runtime DLLs and their licenses are copied beside each edition’s EXE.
 
 Native runtimes use the speed-optimized `Release` configuration (`/O2` on MSVC), retaining strict floating-point behavior. WebGPU combines mesh edits until drawing and batches camera/presentation commands while preserving buffer-update and draw order. Copies sharing a mesh and material use instanced draws with individual colours and fade values. Transparent copies are merged only when consecutive, preserving depth order. Mesh visibility reuses the camera's frustum planes, and transparent sorting computes each model's distance once per camera; reflection frequency, grass density and graphics settings are unchanged.
+
+Dynamic mesh updates preserve GPU buffers used by earlier draws and upload new data into another version, reducing intermediate submissions. Versions are reused after submission, with extra buffer capacity capped at 32 MiB overall and 16 versions per mesh. Reaching either limit or using the wireframe index cache retains the existing submission path.
 
 Water reflections use `RenderWorldCube camera,texture[,tween]` to capture all six directions consecutively. With the default tween of `1` and no camera children, object lists and transforms are prepared once; otherwise, preparation runs for each direction. Each view retains visibility, distance fade and transparency sorting, and preparation is never reused between calls. Set the camera viewport to `(0,0,texture width,texture height)` before calling.
 

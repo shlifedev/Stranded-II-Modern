@@ -20,6 +20,12 @@ static const float rtod=1/dtor;
 
 class WebGPUScene;
 
+// Extra mesh versions are retained for reuse, with a shared memory bound.
+// Queue writes after a submission are ordered after its earlier draws.
+static size_t mesh_version_bytes=0;
+static const size_t MAX_MESH_VERSION_BYTES=32u*1024u*1024u;
+static const size_t MAX_MESH_VERSIONS=16;
+
 
 static void bbMat4Identity( float m[16] ){
 	memset( m,0,16*sizeof(float) );
@@ -114,6 +120,13 @@ public:
 
 	WGPUBuffer vertex_buffer=0,index_buffer=0;
 	bool index16=false;
+	struct BufferVersion{
+		WGPUBuffer vertices=0,indices=0;
+		unsigned used_marker=0;
+	};
+	std::vector<BufferVersion> versions;
+	size_t active_version=0;
+	int uploaded_v1=0,uploaded_t1=0;
 
 	unsigned drawn_marker=0;
 	int drawn_v0=0,drawn_v1=0,drawn_t0=0,drawn_t1=0;
@@ -127,6 +140,9 @@ public:
 	~WebGPUMesh();
 
 	WGPUBuffer wireBuffer();
+	BufferVersion createVersion();
+	size_t versionBytes()const;
+	bool renameBuffers();
 
 	bool lock( bool all ){
 		if( !verts ){
@@ -1457,25 +1473,68 @@ WebGPUMesh::WebGPUMesh( WebGPUScene *scene,int mv,int mt,int f ):
 scene(scene),max_verts(mv>0?mv:1),max_tris(mt>0?mt:1),flags(f){
 	dirty_v0=max_verts;
 	dirty_t0=max_tris;
+	index16=max_verts<=65536;
+	versions.push_back( createVersion() );
+	vertex_buffer=versions[0].vertices;
+	index_buffer=versions[0].indices;
+}
 
+size_t WebGPUMesh::versionBytes()const{
+	size_t indices=index16?(((size_t)max_tris*3*sizeof(uint16_t)+3)&~(size_t)3):
+	                       (size_t)max_tris*3*sizeof(unsigned int);
+	return (size_t)max_verts*sizeof(BBWebGPU3DVertex)+indices;
+}
+
+WebGPUMesh::BufferVersion WebGPUMesh::createVersion(){
+	BufferVersion version;
 	WGPUBufferDescriptor vd={};
 	vd.label=bbStrView( "bb.3d.mesh.verts" );
 	vd.usage=WGPUBufferUsage_Vertex|WGPUBufferUsage_CopyDst;
 	vd.size=(uint64_t)max_verts*sizeof( BBWebGPU3DVertex );
-	vertex_buffer=wgpuDeviceCreateBuffer( scene->res->device,&vd );
+	version.vertices=wgpuDeviceCreateBuffer( scene->res->device,&vd );
 
 	WGPUBufferDescriptor id={};
 	id.label=bbStrView( "bb.3d.mesh.indices" );
 	id.usage=WGPUBufferUsage_Index|WGPUBufferUsage_CopyDst;
-	index16=max_verts<=65536;
 	id.size=index16?(((uint64_t)max_tris*3*sizeof( uint16_t )+3)&~(uint64_t)3):(uint64_t)max_tris*3*sizeof( unsigned int );
-	index_buffer=wgpuDeviceCreateBuffer( scene->res->device,&id );
+	version.indices=wgpuDeviceCreateBuffer( scene->res->device,&id );
+	return version;
+}
+
+bool WebGPUMesh::renameBuffers(){
+	versions[active_version].used_marker=scene->submit_marker;
+	size_t next=0;
+	for( ;next<versions.size();++next ){
+		if( next!=active_version && versions[next].used_marker!=scene->submit_marker ) break;
+	}
+	if( next==versions.size() ){
+		size_t bytes=versionBytes();
+		if( versions.size()>=MAX_MESH_VERSIONS || bytes>MAX_MESH_VERSION_BYTES-mesh_version_bytes ) return false;
+		versions.push_back( createVersion() );
+		mesh_version_bytes+=bytes;
+	}
+	// Pending instances still refer to the old buffers. Encode them before
+	// changing handles, but keep their commands in the current submission.
+	scene->flushPendingDraw();
+	active_version=next;
+	vertex_buffer=versions[next].vertices;
+	index_buffer=versions[next].indices;
+	drawn_marker=0;
+	// A recycled version can contain an older pose. Copy the complete live
+	// prefix, including vertices/indices untouched by this particular edit.
+	dirty_v0=dirty_t0=0;
+	dirty_v1=uploaded_v1;
+	dirty_t1=uploaded_t1;
+	return true;
 }
 
 WebGPUMesh::~WebGPUMesh(){
 	++g_mesh_generation;
-	if( vertex_buffer ){ wgpuBufferRelease( vertex_buffer );vertex_buffer=0; }
-	if( index_buffer ){ wgpuBufferRelease( index_buffer );index_buffer=0; }
+	mesh_version_bytes-=(versions.size()-1)*versionBytes();
+	for( const BufferVersion &version:versions ){
+		if( version.vertices ) wgpuBufferRelease( version.vertices );
+		if( version.indices ) wgpuBufferRelease( version.indices );
+	}
 	if( wire_buffer ){ wgpuBufferRelease( wire_buffer );wire_buffer=0; }
 	delete[] verts;
 	delete[] tris;
@@ -1523,13 +1582,18 @@ void WebGPUMesh::upload(){
 	bool verts_dirty=dirty_v1>dirty_v0;
 	bool tris_dirty=dirty_t1>dirty_t0;
 	if( !verts_dirty&&!tris_dirty ) return;
+	uploaded_v1=std::max(uploaded_v1,dirty_v1);
+	uploaded_t1=std::max(uploaded_t1,dirty_t1);
 
-	// Updating unused ranges cannot affect queued draws. Overwriting data they
-	// reference must still submit first, so animation/reflection order is kept.
+	// Unused ranges can be updated in place. Used ranges get another buffer
+	// version so animated copies and reflection views do not force a submit.
 	bool vertex_overlap=verts_dirty&&dirty_v0<drawn_v1&&dirty_v1>drawn_v0;
 	bool index_overlap=tris_dirty&&dirty_t0<drawn_t1&&dirty_t1>drawn_t0;
 	if( drawn_marker==scene->submit_marker&&(vertex_overlap||index_overlap) ){
-		scene->flushAll();
+		// Wire indices have a separate cache; preserve its existing hazard path.
+		if( wire_buffer || !renameBuffers() ) scene->flushAll();
+		verts_dirty=dirty_v1>dirty_v0;
+		tris_dirty=dirty_t1>dirty_t0;
 	}
 
 	if( verts_dirty ){
