@@ -41,6 +41,8 @@ endif()
 
 # TODO: make this toggleable
 if(MSVC)
+  # Keep UTF-8 source and string literals independent of the Windows code page.
+  add_compile_options(/utf-8)
   set(BB_STATIC true)
   set(BB_SHARED false)
 else()
