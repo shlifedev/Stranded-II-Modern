@@ -1,4 +1,4 @@
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase, mock
@@ -78,6 +78,47 @@ class Credentials(TestCase):
         self.assertNotIn('private-value', str(error.exception))
         self.assertEqual(calls[-1][1], 'delete-keychain')
         self.assertFalse(Path(calls[-1][-1]).parent.exists())
+
+    def test_keychain_search_list_lifecycle(self):
+        for previous in ([], ['/Users/runner/Library/Keychains/login.keychain-db',
+                               '/Users/runner/Other Keys/custom.keychain-db']):
+            for failure in (None, 'signing', 'registration', 'restoration'):
+                with self.subTest(previous=previous, failure=failure):
+                    values = {name: 'private-value' for name in signing.SECRET_NAMES}
+                    values.update(APPLE_TEAM_ID=TEAM, APPLE_CERTIFICATE=base64.b64encode(b'certificate').decode())
+                    search_list, calls = previous.copy(), []
+                    def run(command, **kwargs):
+                        calls.append(command)
+                        output, code = '', 0
+                        if command[1] == 'create-keychain':
+                            Path(command[-1]).touch()
+                        elif command[1] == 'find-identity':
+                            output = '1) ' + 'A' * 40 + f' "Developer ID Application: Example ({TEAM})"'
+                        elif command[1] == 'list-keychains':
+                            if '-s' not in command:
+                                output = '\n'.join(json.dumps(name) for name in search_list)
+                            else:
+                                requested = command[5:]
+                                if failure == 'restoration' and requested == previous:
+                                    code = 1
+                                else:
+                                    search_list[:] = requested
+                                    if failure == 'registration' and requested != previous:
+                                        code = 1
+                        elif command[1] == 'delete-keychain' and command[-1] in search_list:
+                            search_list.remove(command[-1])
+                        return subprocess.CompletedProcess(command, code, stdout=output, stderr='private-value')
+                    error = RuntimeError if failure == 'signing' else ValueError
+                    expectation = self.assertRaises(error) if failure else nullcontext()
+                    with mock.patch.dict(signing.os.environ, values, clear=True), \
+                         mock.patch.object(signing.subprocess, 'run', side_effect=run), expectation:
+                        with signing.credentials() as (keychain, identity, team):
+                            self.assertEqual(search_list, [keychain, *previous])
+                            if failure == 'signing':
+                                raise RuntimeError('fixture codesign failed')
+                    self.assertEqual(search_list, previous)
+                    self.assertEqual(calls[-1][1], 'delete-keychain')
+                    self.assertFalse(Path(calls[-1][-1]).parent.exists())
 
 
 class Distribution(TestCase):
