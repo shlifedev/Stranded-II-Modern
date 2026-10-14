@@ -1,4 +1,4 @@
-"""Package a verified, locally signed Mac preview. Does not publish anything."""
+"""Package a verified Mac preview or signed and notarized distribution. Does not publish."""
 from pathlib import Path
 import argparse
 import json
@@ -10,6 +10,7 @@ import tempfile
 import zipfile
 
 import macos_build as build
+from macos_signing import sign_and_notarize
 from macos_validation import fingerprint, tree_records, validate_app, verified_build
 from versioning import validate_info
 
@@ -70,9 +71,28 @@ core 검사 통과는 화면 검증을 뜻하지 않습니다. 최소 OS·다른
 }
 
 
-def summary(report, verification):
+def guides(notarized):
+    if not notarized:
+        return GUIDES
+    result = dict(GUIDES)
+    result['en'] = result['en'].replace(
+        'then double-click it. This test build is locally signed and is not notarized.\n'
+        'macOS may require approval in System Settings > Privacy & Security to open it.\n'
+        "Apple's instructions: https://support.apple.com/102445",
+        'then double-click it. This build is signed with Developer ID and notarized by\n'
+        'Apple, with the notarization ticket attached to the app.')
+    result['ko'] = result['ko'].replace(
+        '옮겨 더블클릭하세요. 로컬 서명한 테스트판이며 공증하지 않았습니다.\n'
+        'macOS가 실행을 차단하면 시스템 설정 > 개인정보 보호 및 보안에서 실행을\n'
+        '허용해야 할 수 있습니다. Apple 안내: https://support.apple.com/102445',
+        '옮겨 더블클릭하세요. Developer ID로 서명하고 Apple 공증을 받은 빌드이며,\n'
+        '공증 티켓이 앱에 첨부되어 있습니다.')
+    return result
+
+
+def summary(report, verification, app=None):
     # Allowlist public metadata. Local dependency paths and fixture logs stay local.
-    app = verification['app']
+    app = verification['app'] if app is None else app
     game = verification['game']
     if isinstance(game, dict):
         game = {key: game[key] for key in ('checks_passed', 'synthetic_time', 'app_bundle')}
@@ -82,7 +102,10 @@ def summary(report, verification):
         'source_fingerprint': fingerprint({'engine': report['source_sha256'],
                                            'implementation': report['implementation_sha256']}),
         'platform': 'macos-arm64', 'minimum_macos': app['minimum_macos'],
-        'app_sha256': app['app_sha256'], 'signing': 'local ad hoc', 'notarized': False,
+        'app_sha256': app['app_sha256'], 'signing': app['signature'],
+        'notarized': app['notarized'], 'team_id': app.get('team_id'),
+        'hardened_runtime': app.get('hardened_runtime', False),
+        'secure_timestamp': app.get('secure_timestamp', False),
         'build_environment': report.get('environment', {}), 'suite': verification['suite'],
         'checks': {'abi': verification['abi'], 'app_structure_and_signature': 'pass',
                    'metal_render_and_readback': verification['metal_render_and_readback'],
@@ -110,27 +133,40 @@ def write_archive(path, stage):
     return records
 
 
-def package():
+def package(notarize=False):
     build.macos_toolchain.require_host()
     report, verification = verified_build()
+    if report['channel'] != 'local' and not notarize:
+        raise ValueError('Release packages require --notarize and Apple signing secrets.')
     app = Path(report['app'])
-    public = summary(report, verification)
-    public['build_id'] = fingerprint({'summary': public, 'guides': GUIDES,
-                                      'packager': build.digest(Path(__file__))})[:16]
     directory = build.BUILD / 'release'
     directory.mkdir(parents=True, exist_ok=True)
-    if report['channel'] == 'local':
-        filename = f'StrandedII-{report["version"]}-macos-arm64-preview-{public["build_id"]}.zip'
-    else:
-        from release import macos_archive_name
-        filename = macos_archive_name(report)
-    destination = directory / filename
     with tempfile.TemporaryDirectory(prefix='package-', dir=build.BUILD) as temporary:
         temporary = Path(temporary)
         stage = temporary / 'stage'
         stage.mkdir()
-        shutil.copytree(app, stage / app.name)
-        for language, text in GUIDES.items():
+        staged_app = stage / app.name
+        shutil.copytree(app, staged_app)
+        package_report = build.read(app.parent / 'package-report.json')
+        if validate_app(staged_app, package_report) != verification['app']:
+            raise ValueError('Distribution copy differs from the verified app.')
+        if notarize:
+            package_report = sign_and_notarize(staged_app, package_report)
+        final_facts = validate_app(staged_app, package_report)
+        public = summary(report, verification, final_facts)
+        if notarize:
+            public['notarization'] = package_report['notarization']
+            public['checks']['stapled_ticket_and_gatekeeper'] = 'pass'
+        instructions = guides(notarize)
+        public['build_id'] = fingerprint({'summary': public, 'guides': instructions,
+                                          'packager': build.digest(Path(__file__))})[:16]
+        if report['channel'] == 'local':
+            filename = f'StrandedII-{report["version"]}-macos-arm64-preview-{public["build_id"]}.zip'
+        else:
+            from release import macos_archive_name
+            filename = macos_archive_name(report)
+        destination = directory / filename
+        for language, text in instructions.items():
             (stage / f'README-{language}.txt').write_text(text, encoding='utf8', newline='\n')
         build.write(stage / 'verification-summary.json', public)
         candidate = temporary / filename
@@ -139,8 +175,8 @@ def package():
         subprocess.run(['ditto', '-x', '-k', str(candidate), str(extracted)], check=True)
         if tree_records(extracted) != records:
             raise ValueError('Native ZIP round-trip changed file contents or permissions.')
-        extracted_facts = validate_app(extracted / app.name, build.read(app.parent / 'package-report.json'))
-        if extracted_facts != verification['app']:
+        extracted_facts = validate_app(extracted / app.name, package_report)
+        if extracted_facts != final_facts:
             raise ValueError('Extracted native app differs from the verified app.')
         # Recheck the originals after the ZIP round-trip to detect concurrent changes.
         if verified_build() != (report, verification):
@@ -159,17 +195,19 @@ def package():
     build.write(build.BUILD / 'distribution-report.json', {
         'zip': str(destination), 'sha256': checksum, 'build_id': public['build_id'],
         'suite': verification['suite'], 'zip_round_trip': 'pass',
-        'extracted_app_signature_and_permissions': 'pass', 'personal_data_included': False})
-    print('Test ZIP:', destination)
+        'extracted_app_signature_and_permissions': 'pass', 'personal_data_included': False,
+        'signing': public['signing'], 'notarized': public['notarized']})
+    print('Distribution ZIP:', destination)
     print('SHA-256:', checksum)
     return destination
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.parse_args()
+    parser.add_argument('--notarize', action='store_true', help='Use Apple secrets to sign and notarize (required for releases)')
+    args = parser.parse_args()
     try:
-        package()
+        package(args.notarize)
     except (ValueError, OSError, KeyError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f'Error: {exc}\n')
 

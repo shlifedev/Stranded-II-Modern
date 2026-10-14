@@ -200,8 +200,6 @@ def asset_payload():
 
 def package_app(executable, parent=None):
     payload = asset_payload()
-    if parent is None and (RUNTIME / 'core/development.flag').is_file():
-        payload['core/development.flag'] = (RUNTIME / 'core/development.flag').read_bytes()
     version = validate_info(json.loads(payload['core/version.json']))['version'].split('-')[0]
     hashes = {name: hashlib.sha256(data).hexdigest() for name, data in payload.items()}
     fingerprint = hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest()
