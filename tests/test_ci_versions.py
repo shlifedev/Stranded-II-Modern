@@ -123,7 +123,7 @@ class PublicationTests(unittest.TestCase):
         path.with_suffix('.zip.sha256').write_text(f'{checksum}  {path.name}\n', encoding='utf8')
         return path
 
-    def make_mac_package(self, info, metadata=None, execute=True, cpu=0x100000c):
+    def make_mac_package(self, info, metadata=None, execute=True, cpu=0x100000c, signing=None, ticket=True):
         import plistlib
         import stat
         import struct
@@ -139,6 +139,8 @@ class PublicationTests(unittest.TestCase):
                 'CFBundleVersion': numeric, 'CFBundleShortVersionString': numeric,
                 'LSMinimumSystemVersion': '15.0'}),
         }
+        if ticket:
+            contents['Contents/CodeResources'] = b'fixture notarization ticket'
         directories = {p.as_posix() for name in contents for p in Path(name).parents if p != Path('.')}
         records = {name: {'type': 'directory', 'mode': 0o755} for name in directories}
         for name, data in contents.items():
@@ -148,7 +150,12 @@ class PublicationTests(unittest.TestCase):
                    'app_sha256': hashlib.sha256(json.dumps(records, sort_keys=True).encode()).hexdigest(),
                    'platform': 'macos-arm64', 'minimum_macos': '15.0', 'personal_data_included': False,
                    'suite': 'core', 'checks': {'app_structure_and_signature': 'pass',
+                    'stapled_ticket_and_gatekeeper': 'pass',
                     'abi': {'bytes_equal_to_blitz_1_118': 613, 'type_reuse': 'pass'}}}
+        summary.update(signing='Developer ID Application', notarized=True, team_id='TEAM123456',
+                       hardened_runtime=True, secure_timestamp=True,
+                       notarization={'id': '12345678-1234-1234-1234-123456789abc', 'status': 'Accepted'})
+        summary.update(signing or {})
         path = self.directory / release.macos_archive_name(info)
         members = {prefix: (b'', stat.S_IFDIR | 0o755),
                    'verification-summary.json': (json.dumps(summary).encode(), stat.S_IFREG | 0o644),
@@ -283,6 +290,22 @@ class PublicationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'publish a new version'):
             release.publish('owner/repo', self.directory, self.info, include_macos=True)
         self.assertEqual(commands, self.commands)
+
+    def test_unsigned_or_unnotarized_mac_cannot_publish(self):
+        for change in ({'signing': 'local ad hoc'}, {'notarized': False}, {'team_id': None},
+                       {'hardened_runtime': False}, {'secure_timestamp': False},
+                       {'notarization': {'status': 'Invalid'}}, {'notarization': {'status': 'Accepted'}},
+                       {'checks': {}}):
+            with self.subTest(change=change):
+                self.make_mac_package(self.info, signing=change)
+                with self.assertRaisesRegex(ValueError, 'accepted, stapled notarization'):
+                    release.publish('owner/repo', self.directory, self.info, include_macos=True)
+                self.assertFalse(self.commands)
+                self.assertFalse(self.tags)
+        self.make_mac_package(self.info, ticket=False)
+        with self.assertRaisesRegex(ValueError, 'accepted, stapled notarization'):
+            release.publish('owner/repo', self.directory, self.info, include_macos=True)
+        self.assertFalse(self.tags)
 
     def test_extended_mac_publication_is_rejected(self):
         info = make_info('0.1.0', 'main', COMMIT, edition='extended')

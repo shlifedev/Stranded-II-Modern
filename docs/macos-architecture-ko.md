@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"453c08550a7eeda7e312a9325a54e133870a614a4545259e5d3ed5dd117da3e1"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"318e693cf8e51b94843c894d4fe468e881c7d3008ca1b9d7de6f87e5c5047256"} -->
 
 # macOS 구현 원리
 
@@ -101,7 +101,7 @@ macOS 런타임은 **정수·실수를 32비트로 유지하고, 내부 포인�
 
 ## 6. 현재 지원 범위와 검증 방법
 
-현재 대상은 **Apple Silicon, macOS 15.0 이상, 기본판**입니다. 포함하는 Dawn 라이브러리에 맞춰 최소 OS를 지정합니다. Intel Mac·네이티브 Extended·네이티브 동영상 재생·원시 TCP/UDP는 지원하지 않습니다. 앱은 임시 로컬 서명이며 Apple 공증은 하지 않습니다.
+현재 대상은 **Apple Silicon, macOS 15.0 이상, 기본판**입니다. 포함하는 Dawn 라이브러리에 맞춰 최소 OS를 지정합니다. Intel Mac·네이티브 Extended·네이티브 동영상 재생·원시 TCP/UDP는 지원하지 않습니다. 로컬 앱과 수동 CI 미리보기는 임시 서명입니다. 출시 ZIP은 검증된 앱의 복사본을 Developer ID로 서명하고 Apple 공증·티켓 첨부를 마친 뒤 생성합니다. 압축 해제한 앱도 서명·티켓·Gatekeeper 검사를 통과해야 합니다. 자세한 절차는 [개발 가이드](development-ko.md#실험용-macos-네이티브-빌드)를 참고하세요.
 
 | 검사 | 확인하는 범위 |
 | --- | --- |

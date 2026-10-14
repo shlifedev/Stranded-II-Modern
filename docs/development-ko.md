@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"4d1b4c09d21430f3ae1d8debcec8fa9b83eba56632df65f6ae61e5dc707be69b"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"c987a5d850acb4865a6b70054c9ccad60d4a54150867b32b5820eedec2851fb9"} -->
 
 # 개발 가이드
 
@@ -198,11 +198,13 @@ python3 -m venv .venv
 
 `check --platform macos --suite core`는 화면을 열지 않고 원본 Blitz3D 1.118 결과 613바이트, Type 메모리 재사용, 앱 리소스·서명·실행 권한, ARM64·최소 OS와 시스템 라이브러리 의존성을 검사합니다. `--suite full`이 기본값이며 실제 Metal 렌더링·픽셀 읽기, 공통 메뉴·인트로·섬, 한국어 글꼴, 오디오 디코딩, 저장·백업·재불러오기, Cocoa 문자열 왕복, 새 프로필 설치와 리소스 갱신 시 데이터 보존을 추가로 검사합니다. `--suite`는 Mac 검사에만 사용할 수 있습니다. 최신 결과는 `build/macos/verification.json`, 검사별 결과는 `verification-core.json`·`verification-full.json`에 기록합니다. 게임 시간은 가상으로 진행하므로 실제 FPS·소리·IME 조합 입력·포커스·전체 화면·캠페인 검증을 대신하지 않습니다.
 
-`macos_package.py`는 최신 성공 검사와 현재 소스·도구·실행 파일·앱이 일치할 때만 ZIP과 `.zip.sha256`을 만듭니다. 로컬 빌드는 `build/macos/release/StrandedII-<version>-macos-arm64-preview-<build-id>.zip`, 출시 빌드는 `StrandedII-<display_version>-macos-arm64.zip`입니다. 출시 버전은 `build --platform macos --version-info build/ci/version.json`으로 전달하며 현재 커밋과 일치해야 합니다. 앱 번들 버전에는 숫자 부분을, 게임과 검증 요약에는 전체 버전 정보를 기록합니다. ZIP에는 앱, 영어·한국어 실행 안내, 로컬 경로를 제외한 검증 요약을 넣으며 개인 설정·세이브를 제외합니다. 압축 해제 후 내용·권한·서명을 재검사합니다. `core`만 수행한 패키지는 그래픽 검사를 `not_run`으로 명시합니다. 결과 경로는 `build/macos/distribution-report.json`에 기록합니다.
+`macos_package.py`는 최신 성공 검사와 현재 소스·도구·실행 파일·앱이 일치할 때만 ZIP과 `.zip.sha256`을 만듭니다. 로컬 빌드는 `build/macos/release/StrandedII-<version>-macos-arm64-preview-<build-id>.zip`, 출시 빌드는 `StrandedII-<display_version>-macos-arm64.zip`입니다. 출시 버전은 `build --platform macos --version-info build/ci/version.json`으로 전달하며 현재 커밋과 일치해야 합니다. 출시 ZIP은 `macos_package.py --notarize`로만 생성할 수 있습니다. 앱 번들 버전에는 숫자 부분을, 게임과 검증 요약에는 전체 버전 정보를 기록합니다. ZIP에는 앱, 영어·한국어 실행 안내, 로컬 경로를 제외한 검증 요약을 넣으며 개인 설정·세이브를 제외합니다. 검증된 앱의 복사본에 배포 서명을 적용하고, 공증 티켓을 붙인 최종 앱의 해시를 기록합니다. 압축 해제 후 내용·권한·서명과 공증 티켓·Gatekeeper 승인을 재검사합니다. `core`만 수행한 패키지는 그래픽 검사를 `not_run`으로 명시합니다. 결과 경로는 `build/macos/distribution-report.json`에 기록합니다.
 
-[Mac CI](../.github/workflows/macos.yml)는 수동 미리보기와 데스크톱 출시 워크플로의 재사용 빌드를 지원합니다. `macos-15` ARM64에서 고정 의존성을 검증해 `deps/ci-macos/`에 풀고 준비 → 빌드 → `core` 검사 → ZIP 생성을 실행합니다. 출시 빌드는 Windows와 동일한 버전 아티팩트와 소스 커밋을 사용합니다. ZIP·체크섬과 보고서는 Actions 아티팩트로 14일 보관합니다. 수동 Mac 실행만으로는 릴리스를 게시하지 않으며, 실제 게시는 아래 데스크톱 출시 절차에서 담당합니다.
+[Mac CI](../.github/workflows/macos.yml)는 수동 미리보기와 데스크톱 출시 워크플로의 재사용 빌드를 지원합니다. `macos-15` ARM64에서 고정 의존성을 검증해 `deps/ci-macos/`에 풀고 준비 → 빌드 → `core` 검사 → ZIP 생성을 실행합니다. 출시 빌드는 Windows와 동일한 버전 아티팩트와 소스 커밋을 사용하며, Developer ID 서명 → Apple 공증 승인 → 티켓 첨부 → ZIP 재검증을 완료해야 아티팩트를 업로드합니다. ZIP·체크섬과 보고서는 Actions 아티팩트로 14일 보관합니다. 수동 Mac 실행만으로는 릴리스를 게시하지 않으며, 실제 게시는 아래 데스크톱 출시 절차에서 담당합니다.
 
-테스트 ZIP은 별도 Apple Silicon Mac, 특히 macOS 15에서 압축 해제·실행·재실행·앱 교체 후 데이터 보존을 확인하세요. 한글 조합 입력, 전체 화면·앱 전환 후 입력 복귀, 배경음·효과음, 30분 플레이 후 저장·종료·재불러오기는 수동 검사 대상이며 자동 통과로 표시하지 않습니다. 앱은 로컬 임시 서명으로 공증하지 않았습니다. 네이티브 동영상·원시 TCP/UDP, Intel과 네이티브 Extended는 지원하지 않습니다. 정식 배포 서명·공증은 별도 단계입니다.
+출시용 저장소 Secrets는 `APPLE_CERTIFICATE`(Developer ID Application 인증서·개인 키가 든 P12의 Base64), `APPLE_CERTIFICATE_PASSWORD`(P12 암호), `APPLE_ID`, `APPLE_PASSWORD`(앱 전용 암호), `APPLE_TEAM_ID`입니다. 데스크톱 워크플로가 Mac 재사용 워크플로에 명시적으로 전달합니다. 로컬에서 `--notarize`를 검사할 때도 같은 환경 변수를 사용합니다. 인증서와 공증 자격 증명은 임시 키체인에 보관하고 종료 시 삭제합니다. 서명은 Hardened Runtime과 보안 타임스탬프를 사용하며 팀 ID를 확인합니다. 공증은 최대 20분 기다리고 `Accepted`가 아니거나 티켓·Gatekeeper 검사가 실패하면 중단합니다. 결과·Apple 로그는 `build/macos/notarization-*.json`에 남습니다. 절차는 [Apple 공증 안내](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow)를 따릅니다.
+
+테스트 ZIP은 별도 Apple Silicon Mac, 특히 macOS 15에서 압축 해제·실행·재실행·앱 교체 후 데이터 보존을 확인하세요. 한글 조합 입력, 전체 화면·앱 전환 후 입력 복귀, 배경음·효과음, 30분 플레이 후 저장·종료·재불러오기는 수동 검사 대상이며 자동 통과로 표시하지 않습니다. 기본 로컬 빌드와 수동 CI 미리보기는 임시 서명이며 공증하지 않습니다. 네이티브 동영상·원시 TCP/UDP, Intel과 네이티브 Extended는 지원하지 않습니다.
 
 ## Extended 제작 앱
 
@@ -386,7 +388,7 @@ msg "[[loc:quest.island1.arrival]]";
 
 공개 릴리스 제목과 설명은 영어로 작성합니다.
 
-Windows CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행합니다. 출시 단계는 `scripts/ci.py release --include-macos`로 두 플랫폼의 버전·커밋·체크섬을 검증한 뒤 게시합니다. Mac ZIP은 앱 파일 해시·실행 권한·ARM64 형식·네이티브 검사 결과도 확인하며, Mac 파일이 없는 기존 공개 릴리스에 나중에 덧붙이지 않습니다. Windows `check`와 Mac `core`는 비그래픽 검사이며 실제 화면, 렌더링 FPS, 앱 전환과 전체 플레이 검증을 대신하지 않습니다. 로컬 검사와 별도로 실제 GitHub Actions 실행도 확인해야 합니다.
+Windows CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행합니다. 출시 단계는 `scripts/ci.py release --include-macos`로 두 플랫폼의 버전·커밋·체크섬을 검증한 뒤 게시합니다. Mac ZIP은 앱 파일 해시·실행 권한·ARM64 형식·네이티브 검사 결과와 서명·공증·티켓 검사 기록도 확인하며, Mac 파일이 없는 기존 공개 릴리스에 나중에 덧붙이지 않습니다. Windows `check`와 Mac `core`는 비그래픽 검사이며 실제 화면, 렌더링 FPS, 앱 전환과 전체 플레이 검증을 대신하지 않습니다. 로컬 검사와 별도로 실제 GitHub Actions 실행도 확인해야 합니다.
 
 원본 사이트에 반복 다운로드 트래픽을 발생시키지 않도록 게임 리소스·컴파일러·글꼴은 같은 저장소의 의존성용 Release에 한 번 보관합니다. 이 빌드 입력에는 해당 Release와 Actions 캐시만 사용합니다. 파일이 없으면 준비 방법을 안내하고 실패하며, 해당 입력을 원본 사이트에서 자동 다운로드하지 않습니다.
 

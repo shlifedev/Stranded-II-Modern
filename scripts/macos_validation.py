@@ -9,6 +9,7 @@ import stat
 import subprocess
 
 import macos_build as build
+from macos_signing import verify_signature
 from editions import source_hashes
 from versioning import validate_info
 
@@ -19,7 +20,7 @@ def fingerprint(value):
 
 def verifier_hashes():
     paths = [build.ROOT / name for name in (
-        'scripts/verify_macos.py', 'scripts/macos_validation.py', 'scripts/verify_timing.py',
+        'scripts/verify_macos.py', 'scripts/macos_validation.py', 'scripts/macos_signing.py', 'scripts/verify_timing.py',
         'tests/web_semantics.bb', 'tests/web_compatibility.bb')]
     paths += list((build.ROOT / 'tests').glob('macos_*.bb'))
     paths.append(build.ROOT / 'tests/macos_abi.golden.hex')
@@ -68,6 +69,8 @@ def validate_app(app, package_report):
     expected_files = {f'Contents/Resources/game/{name}' for name in payload}
     expected_files.update(('Contents/Info.plist', 'Contents/MacOS/StrandedII',
                            'Contents/Resources/native-assets.json', 'Contents/_CodeSignature/CodeResources'))
+    if package_report.get('notarized') is True:
+        expected_files.add('Contents/CodeResources')
     expected_dirs = {p.as_posix() for name in expected_files for p in Path(name).parents if p != Path('.')}
     if set(records) != expected_files | expected_dirs:
         raise ValueError('Native app contains missing or unexpected files/directories.')
@@ -92,7 +95,7 @@ def validate_app(app, package_report):
             info.get('LSMinimumSystemVersion') != cfg['deployment_target'] or
             info.get('CFBundleVersion') != version or info.get('CFBundleShortVersionString') != version):
         raise ValueError('Native app metadata differs from its build configuration.')
-    subprocess.run(['codesign', '--verify', '--deep', '--strict', str(app)], check=True)
+    signature = verify_signature(app, package_report.get('team_id'), package_report.get('notarized', False))
     architecture = subprocess.check_output(['xcrun', 'lipo', '-archs', str(executable)], text=True).strip()
     if architecture != cfg['architecture']:
         raise ValueError(f'Unexpected native architecture: {architecture}')
@@ -107,7 +110,7 @@ def validate_app(app, package_report):
     return {'status': 'pass', 'app_sha256': fingerprint(records),
             'signed_executable_sha256': build.digest(executable), 'architecture': architecture,
             'minimum_macos': cfg['deployment_target'], 'linked_libraries': libraries,
-            'signature': 'local ad hoc', 'personal_data_included': False}
+            **signature, 'personal_data_included': False}
 
 
 def check_built_app(report):

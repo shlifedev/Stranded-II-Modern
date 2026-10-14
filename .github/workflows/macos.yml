@@ -8,6 +8,17 @@ on:
         description: Version artifact from the release coordinator; empty for a local preview
         type: string
         default: ''
+    secrets:
+      APPLE_CERTIFICATE:
+        required: true
+      APPLE_CERTIFICATE_PASSWORD:
+        required: true
+      APPLE_ID:
+        required: true
+      APPLE_PASSWORD:
+        required: true
+      APPLE_TEAM_ID:
+        required: true
 
 permissions:
   contents: read
@@ -119,8 +130,19 @@ jobs:
       - name: Check native ABI and app package without graphics
         run: python scripts/dev.py check --platform macos --suite core
 
-      - name: Package native ZIP and verify extraction
+      - name: Package local preview ZIP and verify extraction
+        if: inputs.version_artifact == ''
         run: python scripts/macos_package.py
+
+      - name: Sign, notarize, and verify release ZIP
+        if: inputs.version_artifact != ''
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: python scripts/macos_package.py --notarize
 
       - name: Upload native ZIP and checksum
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -146,5 +168,6 @@ jobs:
             build/macos/verification-*/abi.log
             build/macos/verification-*/lifetime.log
             build/macos/distribution-report.json
+            build/macos/notarization-*.json
           if-no-files-found: ignore
           retention-days: 14
