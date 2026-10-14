@@ -2725,3 +2725,113 @@ dev.copy	Copy filtered log
 dev.off	Off
 dev.binding	Developer menu
 dev.binding_help	Click to assign a shortcut. Right-click to clear it to None.
+dev.profiler	Profiler
+dev.profiler.start	Start recording
+dev.profiler.stop	Stop recording
+dev.profiler.clear	Clear recording
+dev.profiler.copy	Copy analysis
+dev.profiler.latest	Follow latest frame
+dev.profiler.help	Recording continues with the menu closed. Stop to inspect a frame; recording does not pause the game. Up to 2,048 frames are retained.
+dev.profiler.empty	Start recording, then play and reopen this tab.
+dev.profiler.backend	Renderer
+dev.profiler.statistics	Average / p95 / maximum
+dev.profiler.invalid	This frame is excluded from statistics because focus or an interrupted frame boundary invalidated it.
+dev.profiler.scope	Scope
+dev.profiler.average	Mean ms
+dev.profiler.p95	p95 ms
+dev.profiler.maximum	Max ms
+dev.profiler.total	Total ms
+dev.profiler.self	Self ms
+dev.profiler.gpu_ms	GPU ms
+dev.profiler.passes	Passes
+dev.profiler.draws	Draw calls
+dev.profiler.instances	Instances
+dev.profiler.triangles	Triangles
+dev.profiler.gpu_sum	GPU render-pass sum
+dev.profiler.gpu_help	GPU times measure render passes only, excluding transfers and gaps. CPU and GPU overlap; do not add them. Presentation and ImGui share a pass. Draw counts include clear and fullscreen draws.
+dev.profiler.pending	Waiting for asynchronous GPU results
+dev.profiler.ready	Measurement complete
+dev.profiler.skipped	GPU sample skipped: readback buffers busy or presentation interrupted
+dev.profiler.partial	Partial GPU result: pass limit reached
+dev.profiler.failed	GPU measurement failed
+dev.profiler.unsupported	GPU timestamp-query is unavailable on this device
+dev.profiler.device_lost	GPU device detached; pending measurements discarded
+dev.profiler.gpu_init_failed	GPU measurement buffers could not be initialized
+dev.profiler.cpu.game	Game frame
+dev.profiler.cpu.physics	World update / collisions
+dev.profiler.cpu.objects	Object update / visibility
+dev.profiler.cpu.grass	Grass placement
+dev.profiler.cpu.shadows	Shadow preparation / encoding
+dev.profiler.cpu.water	Water update (includes captures)
+dev.profiler.cpu.reflection	Reflection preparation / encoding
+dev.profiler.cpu.main	Scene preparation / encoding
+dev.profiler.cpu.post	Post-render game updates
+dev.profiler.cpu.hud	HUD
+dev.profiler.cpu.ui	ImGui construction
+dev.profiler.cpu.pace	FPS limiter wait
+dev.profiler.cpu.flip	Submit / present / events
+dev.profiler.gpu.scene	Scene
+dev.profiler.gpu.near	Near sun shadows
+dev.profiler.gpu.far	Far sun shadows
+dev.profiler.gpu.reflection	Reflections
+dev.profiler.gpu.2d	2D / post-processing
+dev.profiler.gpu.present	Presentation / ImGui
+dev.profiler.gpu.mips	Mipmaps
+dev.profiler.cpu_help	CPU values are host elapsed times, including driver waits. Total includes child scopes; self excludes them.
+dev.benchmark.tab	Performance test
+dev.benchmark.intro	Open an isolated test scene from the main menu. Objects, units and individual ground items can be mixed.
+dev.benchmark.enter	Enter test scene
+dev.benchmark.exit	Return to main menu
+dev.benchmark.temporary	Test settings are temporary. Exiting restores graphics, FPS limit and profiler recording.
+dev.benchmark.requested	Requested
+dev.benchmark.actual	Created
+dev.benchmark.failed	Failed / over limit
+dev.benchmark.progress	Trial
+dev.benchmark.generating	Preparing scene…
+dev.benchmark.warmup	Warm-up (3 seconds)
+dev.benchmark.measuring	Measuring (8 seconds), then waiting for GPU completion
+dev.benchmark.cancel	Cancel
+dev.benchmark.cancelled	Cancelled; completed results are retained.
+dev.benchmark.catalog	Add types
+dev.benchmark.category	Category (1 / 2 / 3)
+dev.benchmark.categories	1: map objects · 2: units (animals, NPCs, vehicles) · 3: individual ground items
+dev.benchmark.groups	Spawn groups
+dev.benchmark.spacing	Spacing
+dev.benchmark.height	Height offset
+dev.benchmark.layout	Layout (0: grid / 1: random)
+dev.benchmark.seed	Fixed seed
+dev.benchmark.layout_help	Up to 10,000 models. Append preserves existing positions. Regenerate applies edited spacing, height and seed to the whole layout.
+dev.benchmark.append	Append to requested count
+dev.benchmark.regenerate	Regenerate same layout
+dev.benchmark.delete_group	Delete selected models
+dev.benchmark.delete_all	Delete all models
+dev.benchmark.remove_group	Remove selected group
+dev.benchmark.effects	Graphics / simulation
+dev.benchmark.reflection	Reflections
+dev.benchmark.ai	Unit AI
+dev.benchmark.animation	Unit animation
+dev.benchmark.reflection_help	0: OFF · 1: original six-view capture · 2: planar reflection. Quality 0–3 performs no capture.
+dev.benchmark.camera	Camera (0 / 1 / 2)
+dev.benchmark.camera_help	0: front · 1: coast · 2: sky
+dev.benchmark.fps_limit	FPS limit (0: unlimited)
+dev.benchmark.lighting_help	Shadows also enable directional lighting. The effective lighting state is included in results.
+dev.benchmark.comparison	Measurement / automatic comparison
+dev.benchmark.comparison_help	Automatic: baseline and 0 / 0.5 / 2x counts, then each selected effect separately; 3s warm-up + 8s measurement, three repetitions with alternating order.
+dev.benchmark.measure	Measure current scene
+dev.benchmark.automatic	Run automatic comparison
+dev.benchmark.baseline	Baseline (1x)
+dev.benchmark.manual	Current scene
+dev.benchmark.csv	Export CSV
+dev.benchmark.json	Export JSON
+dev.benchmark.copy	Copy results
+dev.benchmark.metric_help	Frame ms is host frame time. Completed FPS includes asynchronous GPU drain; it is not monitor refresh FPS. CPU and GPU overlap. GPU averages include ready/partial samples; coverage is shown separately. Draw counts are per frame.
+dev.benchmark.trial	Trial / repetition
+dev.benchmark.fps	Completed FPS
+dev.benchmark.delta	From baseline
+dev.benchmark.valid	Valid
+dev.benchmark.details	CPU / GPU details
+dev.benchmark.median	Repetition median
+dev.benchmark.focus_lost	Focus lost or minimized; this trial is invalid.
+dev.benchmark.invalid_frame	Interrupted frame; this trial is invalid.
+dev.benchmark.gpu_completion_failed	GPU completion failed; throughput unavailable.
+dev.benchmark.gpu_completion_unavailable	GPU completion unavailable; throughput unavailable.

@@ -2725,3 +2725,113 @@ dev.copy	검색된 로그 복사
 dev.off	끔
 dev.binding	개발자 메뉴
 dev.binding_help	클릭해서 단축키를 지정하세요. 우클릭하면 None으로 해제됩니다.
+dev.profiler	프로파일러
+dev.profiler.start	기록 시작
+dev.profiler.stop	기록 정지
+dev.profiler.clear	기록 초기화
+dev.profiler.copy	분석 결과 복사
+dev.profiler.latest	최신 프레임 따라가기
+dev.profiler.help	메뉴를 닫아도 기록을 계속합니다. 기록을 정지하고 프레임을 선택해 분석할 수 있으며 게임은 계속 진행됩니다. 최근 2,048프레임을 보관합니다.
+dev.profiler.empty	기록을 시작한 뒤 플레이하고 이 탭을 다시 열어 주세요.
+dev.profiler.backend	렌더러
+dev.profiler.statistics	평균 / p95 / 최댓값
+dev.profiler.invalid	포커스 상실 또는 중단된 프레임 경계로 이 프레임은 통계에서 제외됩니다.
+dev.profiler.scope	구간
+dev.profiler.average	평균 ms
+dev.profiler.p95	p95 시간 ms
+dev.profiler.maximum	최대 ms
+dev.profiler.total	전체 ms
+dev.profiler.self	자체 ms
+dev.profiler.gpu_ms	GPU 시간 ms
+dev.profiler.passes	패스 수
+dev.profiler.draws	그리기 호출
+dev.profiler.instances	인스턴스 수
+dev.profiler.triangles	삼각형 수
+dev.profiler.gpu_sum	GPU 렌더 패스 합계
+dev.profiler.gpu_help	GPU 시간은 전송·대기를 제외한 렌더 패스 시간입니다. CPU와 GPU는 겹쳐 실행되므로 더하지 마세요. 화면 전송과 ImGui는 같은 패스로 표시됩니다. 그리기 수에는 화면 지우기와 전체 화면 그리기도 포함됩니다.
+dev.profiler.pending	비동기 GPU 결과 대기 중
+dev.profiler.ready	측정 완료
+dev.profiler.skipped	GPU 측정 생략: 읽기 버퍼 사용 중 또는 화면 표시 중단
+dev.profiler.partial	일부 GPU 결과: 패스 수 제한 도달
+dev.profiler.failed	GPU 측정 실패
+dev.profiler.unsupported	이 장치에서 GPU timestamp-query를 사용할 수 없습니다.
+dev.profiler.device_lost	GPU 장치 연결이 해제되어 대기 중인 측정을 폐기했습니다.
+dev.profiler.gpu_init_failed	GPU 측정 버퍼를 초기화하지 못했습니다.
+dev.profiler.cpu.game	게임 프레임
+dev.profiler.cpu.physics	월드 갱신 / 충돌
+dev.profiler.cpu.objects	오브젝트 갱신 / 가시성
+dev.profiler.cpu.grass	풀 배치
+dev.profiler.cpu.shadows	그림자 준비 / 명령 생성
+dev.profiler.cpu.water	물 갱신 (캡처 포함)
+dev.profiler.cpu.reflection	반사 준비 / 명령 생성
+dev.profiler.cpu.main	장면 준비 / 명령 생성
+dev.profiler.cpu.post	렌더링 후 게임 갱신
+dev.profiler.cpu.hud	게임 HUD
+dev.profiler.cpu.ui	ImGui 화면 구성
+dev.profiler.cpu.pace	FPS 제한 대기
+dev.profiler.cpu.flip	제출 / 화면 표시 / 이벤트
+dev.profiler.gpu.scene	본 화면
+dev.profiler.gpu.near	근거리 태양 그림자
+dev.profiler.gpu.far	원거리 태양 그림자
+dev.profiler.gpu.reflection	반사
+dev.profiler.gpu.2d	2D / 후처리
+dev.profiler.gpu.present	화면 전송 / ImGui
+dev.profiler.gpu.mips	밉맵
+dev.profiler.cpu_help	CPU 값은 드라이버 대기를 포함한 실제 경과 시간입니다. 전체는 하위 구간을 포함하고 자체는 하위 구간을 제외합니다.
+dev.benchmark.tab	성능 테스트
+dev.benchmark.intro	메인 메뉴에서 독립된 테스트 장면을 엽니다. 오브젝트·유닛·바닥 아이템을 섞어서 생성할 수 있습니다.
+dev.benchmark.enter	테스트 장면 열기
+dev.benchmark.exit	메인 메뉴로 돌아가기
+dev.benchmark.temporary	테스트 설정은 임시입니다. 종료하면 그래픽·FPS 제한·프로파일러 기록 상태를 복원합니다.
+dev.benchmark.requested	요청
+dev.benchmark.actual	실제 생성
+dev.benchmark.failed	실패 / 한도 초과
+dev.benchmark.progress	비교 진행
+dev.benchmark.generating	장면 준비 중…
+dev.benchmark.warmup	준비 (3초)
+dev.benchmark.measuring	측정 (8초) 후 GPU 완료 대기
+dev.benchmark.cancel	취소
+dev.benchmark.cancelled	취소했습니다. 완료된 결과는 유지됩니다.
+dev.benchmark.catalog	생성 종류 추가
+dev.benchmark.category	종류 (1 / 2 / 3)
+dev.benchmark.categories	1: 맵 오브젝트 · 2: 유닛 (동물·NPC·탈것) · 3: 개별 바닥 아이템
+dev.benchmark.groups	생성 목록
+dev.benchmark.spacing	간격
+dev.benchmark.height	높이 조정
+dev.benchmark.layout	배치 (0: 격자 / 1: 무작위)
+dev.benchmark.seed	고정 시드
+dev.benchmark.layout_help	최대 10,000개 모델. 추가 생성은 기존 위치를 유지합니다. 재생성하면 수정한 간격·높이·시드를 전체 배치에 적용합니다.
+dev.benchmark.append	요청 수량까지 추가 생성
+dev.benchmark.regenerate	같은 배치 재생성
+dev.benchmark.delete_group	선택 그룹 모델 삭제
+dev.benchmark.delete_all	전체 모델 삭제
+dev.benchmark.remove_group	선택 그룹 제거
+dev.benchmark.effects	그래픽 / 시뮬레이션
+dev.benchmark.reflection	반사
+dev.benchmark.ai	유닛 AI
+dev.benchmark.animation	유닛 애니메이션
+dev.benchmark.reflection_help	0: OFF · 1: 기존 6방향 캡처 · 2: 평면 반사. 물 품질 0~3에서는 캡처하지 않습니다.
+dev.benchmark.camera	카메라 (0 / 1 / 2)
+dev.benchmark.camera_help	0: 정면 · 1: 해안 · 2: 하늘
+dev.benchmark.fps_limit	FPS 제한 (0: 무제한)
+dev.benchmark.lighting_help	그림자를 켜면 방향 조명도 활성화됩니다. 결과에 실제 조명 상태를 함께 기록합니다.
+dev.benchmark.comparison	측정 / 자동 비교
+dev.benchmark.comparison_help	자동: 기준과 수량 0 / 0.5 / 2배, 선택한 효과를 하나씩 비교합니다. 준비 3초 + 측정 8초를 순서를 교차하여 3회 반복합니다.
+dev.benchmark.measure	현재 장면 측정
+dev.benchmark.automatic	자동 비교 시작
+dev.benchmark.baseline	기준 (1배)
+dev.benchmark.manual	현재 장면
+dev.benchmark.csv	CSV 내보내기
+dev.benchmark.json	JSON 내보내기
+dev.benchmark.copy	결과 복사
+dev.benchmark.metric_help	프레임 ms는 호스트 프레임 시간입니다. 완료 FPS는 비동기 GPU 완료 대기를 포함한 처리량이며 모니터 표시 FPS가 아닙니다. CPU와 GPU는 겹칩니다. GPU 평균은 완료·부분 결과 기준이며 비율을 따로 표시합니다. 그리기 수는 프레임당 평균입니다.
+dev.benchmark.trial	조건 / 반복
+dev.benchmark.fps	완료 FPS
+dev.benchmark.delta	기준 대비
+dev.benchmark.valid	유효
+dev.benchmark.details	CPU / GPU 상세
+dev.benchmark.median	반복 중앙값
+dev.benchmark.focus_lost	포커스 상실·최소화로 이번 측정이 무효 처리되었습니다.
+dev.benchmark.invalid_frame	프레임이 중단되어 이번 측정이 무효 처리되었습니다.
+dev.benchmark.gpu_completion_failed	GPU 완료 확인에 실패하여 처리량을 제공할 수 없습니다.
+dev.benchmark.gpu_completion_unavailable	GPU 완료 확인을 지원하지 않아 처리량을 제공할 수 없습니다.

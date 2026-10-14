@@ -1,7 +1,7 @@
 ; Shared presentation, focus recovery and elapsed-time pacing.
 ; Windows services are compiled into the embedded Blitz runtime.
 Include "includes\modern_math.bb"
-Global dev_paused,dev_initialized,dev_strings_ready
+Global dev_paused,dev_initialized,dev_strings_ready,bench_active
 Global modern_fps=144,modern_borderless=1,modern_width=1280,modern_height=720
 Global modern_hwnd,modern_ui_ready,modern_previous,modern_reset=1
 Global modern_next,modern_pace_ready,modern_resume_count,modern_diagnostics
@@ -158,6 +158,8 @@ End Function
 Function modern_focus()
  If modern_hwnd=0 Then Return 0
  If modern_win_foreground()=modern_hwnd And modern_win_iconic(modern_hwnd)=0 Then Return 0
+ dev_profile_invalidate()
+ bench_focus_lost()
  modern_clock()
  Local paused=modern_walltime()
  ShowPointer()
@@ -203,11 +205,15 @@ End Function
 Function modern_present()
  ; All main/menu/editor/modal loops use this path; never busy-spin.
  If modern_focus() Then Return
+ dev_profile_begin(10)
  dev_draw()
+ dev_profile_end(10)
  If modern_fps=0 Then
   ; Keep Flip's event pump and the normal simulation clock when uncapped.
   modern_pace_ready=0:modern_fraction#=0.
+  dev_profile_begin(12)
   Flip False
+  dev_profile_end(12)
   modern_record_frame()
   Return
  EndIf
@@ -217,13 +223,17 @@ Function modern_present()
  If modern_pace_ready=0 Then
   modern_next=now:modern_fraction#=0.:modern_pace_ready=1
  EndIf
+ dev_profile_begin(11)
  While modern_next-now>0
   ; Blitz Delay polls timeGetTime, which CE redirects to coarse GetTickCount.
   ; Native Sleep waits in real time; Flip below still pumps window messages.
   modern_sleep(1)
   now=modern_walltime()
  Wend
+ dev_profile_end(11)
+ dev_profile_begin(12)
  Flip False
+ dev_profile_end(12)
  modern_fraction#=modern_fraction#+1000./Float(modern_fps)
  advance=Floor(modern_fraction#)
  modern_fraction#=modern_fraction#-Float(advance)
@@ -234,6 +244,7 @@ End Function
 
 Function modern_record_frame()
  dev_record_frame()
+ dev_profile_frame()
  If modern_diagnostics Then
   Local now=modern_walltime()
   modern_log_frames=modern_log_frames+1

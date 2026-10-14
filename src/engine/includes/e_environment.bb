@@ -498,7 +498,7 @@ End Function
 ;### Update Water
 Function e_environment_update_water(forced=0)
 	remaster_frame()
- remaster_shadow_frame()
+ DebugUiProfileBegin 4:remaster_shadow_frame():DebugUiProfileEnd 4
 	;Scroll Water Textures
 	env_seascr#=(env_seascr#+0.0003*f#) Mod 128
 	PositionTexture gfx_water,env_seascr#,env_seascr#
@@ -622,7 +622,7 @@ Function e_environment_update_water(forced=0)
 		EndIf
 		
 		;Cubemap Stuff?
-		If set_water_texsize>0
+		If set_water_texsize>0 And (bench_active=0 Or bench_reflection<>0)
 			;Update Time?
 			If ((ms-set_water_updatet)>=set_water_updaterate) Or forced=1 Then
 				set_water_updatet=ms
@@ -644,9 +644,9 @@ Function e_environment_update_water(forced=0)
 					
 					;Choose the optional planar reflection or the original six-view capture.
 					If remaster_enabled(Cremaster_water) Then
-						RenderWorldPlanar cam,env_watertex,0
+						DebugUiProfileBegin 6:RenderWorldPlanar cam,env_watertex,0:DebugUiProfileEnd 6
 					Else
-						RenderWorldCube env_watercam,env_watertex
+						DebugUiProfileBegin 6:RenderWorldCube env_watercam,env_watertex:DebugUiProfileEnd 6
 					EndIf
 
 					;Assign

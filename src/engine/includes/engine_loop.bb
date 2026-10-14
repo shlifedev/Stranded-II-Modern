@@ -22,6 +22,9 @@ While Not m_performquit
 
 			game_mp()
 
+		Case Csection_benchmark
+			bench_frame()
+
 		Case Csection_editor
 
 			editor()

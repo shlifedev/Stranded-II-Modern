@@ -48,8 +48,8 @@ def instrument(source):
     # the active capture as a whole, including the optional planar path.
     for call in ('RenderWorldCube env_watercam,env_watertex',
                  'RenderWorldPlanar cam,env_watertex,0'):
-        marked = replace_once(marked, '\t' + call + '\n',
-            f'\tprofile("start:reflection"):{call}:profile("stop:reflection")\n')
+        marked = replace_once(marked, call,
+            f'profile("start:reflection"):{call}:profile("stop:reflection")')
     environment.write_text(text.replace(water, marked), encoding='utf8')
     timing = source / 'includes/modern_runtime.bb'
     text = timing.read_text('utf8')

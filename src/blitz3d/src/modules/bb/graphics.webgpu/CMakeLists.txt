@@ -4,7 +4,7 @@ if((BB_EMSCRIPTEN OR S2_NATIVE_GAME) AND TARGET SDL2)
 
   bb_start_module(graphics.webgpu)
   set(DEPENDS_ON bb.graphics bb.debugui)
-  set(SOURCES graphics.webgpu.cpp graphics.webgpu.h canvas.webgpu.cpp canvas.webgpu.h ${CMAKE_CURRENT_BINARY_DIR}/default.wgsl.h)
+  set(SOURCES graphics.webgpu.cpp graphics.webgpu.h profiler_gpu.cpp profiler_gpu.h canvas.webgpu.cpp canvas.webgpu.h ${CMAKE_CURRENT_BINARY_DIR}/default.wgsl.h)
   set(LIBS SDL2)
   if(BB_MACOS)
     set(SYSTEM_LIBS webgpu_dawn "-framework Metal" "-framework QuartzCore" "-framework IOSurface" "-framework Foundation")

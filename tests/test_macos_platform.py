@@ -179,6 +179,19 @@ class AppValidation(TestCase):
     def test_unchanged_app_passes(self):
         self.assertEqual(self.check_app()['status'], 'pass')
 
+    def test_local_developer_menu_marker_is_verified(self):
+        payload = dict(self.payload, **{'core/development.flag': b'local development runtime\n'})
+        marker = self.app / 'Contents/Resources/game/core/development.flag'
+        marker.write_bytes(payload['core/development.flag'])
+        hashes = {name: hashlib.sha256(data).hexdigest() for name, data in payload.items()}
+        self.report['asset_sha256'] = hashes
+        build.write(self.app / 'Contents/Resources/native-assets.json',
+                    {'fingerprint': validation.fingerprint(hashes), 'files': list(payload)})
+        self.assertEqual(self.check_app()['status'], 'pass')
+        marker.write_bytes(b'changed marker')
+        with self.assertRaisesRegex(ValueError, 'resource changed'):
+            self.check_app()
+
     def test_changed_executable_rejected(self):
         self.executable.write_bytes(b'changed')
         with self.assertRaisesRegex(ValueError, 'executable changed'):

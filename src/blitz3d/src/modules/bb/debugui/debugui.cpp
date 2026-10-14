@@ -1,4 +1,6 @@
 #include "debugui.h"
+#include "profiler.h"
+#include "benchmark.h"
 #include <bb/blitz/app.h>
 #include "imgui.h"
 #include <bb/graphics/canvas.h>
@@ -129,7 +131,9 @@ bool s2DebugUiEvent(const SDL_Event &event){
   }else if(event.type==SDL_MOUSEWHEEL && event.wheel.y)key=event.wheel.y>0?261:262;
   if(hotkey!=0 && key==hotkey){setVisible(!visible);return true;}
   if(context){ImGui::SetCurrentContext(context);ImGui_ImplSDL2_ProcessEvent(&event);}
-  if(event.type==SDL_WINDOWEVENT && event.window.event==SDL_WINDOWEVENT_FOCUS_LOST){s2DebugUiResetInput();}
+  if(event.type==SDL_WINDOWEVENT && (event.window.event==SDL_WINDOWEVENT_FOCUS_LOST || event.window.event==SDL_WINDOWEVENT_MINIMIZED)){
+    s2DebugUiResetInput();s2prof::recorder().invalidate();s2bench::invalidate("focus_lost");
+  }
   return visible && (event.type==SDL_KEYDOWN || event.type==SDL_KEYUP || event.type==SDL_TEXTINPUT || event.type==SDL_TEXTEDITING || event.type==SDL_MOUSEMOTION || event.type==SDL_MOUSEWHEEL || event.type==SDL_MOUSEBUTTONDOWN || event.type==SDL_MOUSEBUTTONUP);
 }
 void s2DebugUiRender(WGPURenderPassEncoder pass,int width,int height){
@@ -138,11 +142,22 @@ void s2DebugUiRender(WGPURenderPassEncoder pass,int width,int height){
   auto *data=ImGui::GetDrawData();
   if(data && data->DisplaySize.x>0 && data->DisplaySize.y>0){
     data->FramebufferScale=ImVec2(float(width)/data->DisplaySize.x,float(height)/data->DisplaySize.y);
-    if(pass)ImGui_ImplWGPU_RenderDrawData(data,pass);
+    if(pass){
+      ImGui_ImplWGPU_RenderDrawData(data,pass);
+      if(s2prof::recorder().active())for(auto *commands:data->CmdLists)for(const auto &cmd:commands->CmdBuffer){
+        if(cmd.UserCallback || !cmd.ElemCount)continue;
+        float x0=(cmd.ClipRect.x-data->DisplayPos.x)*data->FramebufferScale.x;
+        float y0=(cmd.ClipRect.y-data->DisplayPos.y)*data->FramebufferScale.y;
+        float x1=(cmd.ClipRect.z-data->DisplayPos.x)*data->FramebufferScale.x;
+        float y1=(cmd.ClipRect.w-data->DisplayPos.y)*data->FramebufferScale.y;
+        if(std::min(x1,float(width))>std::max(x0,0.0f) && std::min(y1,float(height))>std::max(y0,0.0f))s2prof::draw(s2prof::Present,cmd.ElemCount/3);
+      }
+    }
   }
   drawReady=false;
 }
 #ifdef BB_EMSCRIPTEN
+extern "C" EMSCRIPTEN_KEEPALIVE void s2BenchmarkFocusLost(){s2prof::recorder().invalidate();s2bench::invalidate("focus_lost");}
 extern "C" EMSCRIPTEN_KEEPALIVE void s2DebugUiCommit(const char *text){if(context && visible){ImGui::SetCurrentContext(context);ImGui::GetIO().AddInputCharactersUTF8(text);}}
 #endif
 bb_int_t BBCALL bbDebugUiOpen(bb_int_t value){if(value>=0)setVisible(value!=0);return visible;}
@@ -225,3 +240,6 @@ bb_int_t BBCALL bbDebugUiItem(BBStr *label,BBCanvas *canvas){
   ImGui::PopID();return clicked;
 }
 void BBCALL bbDebugUiItemsEnd(){if(building && items){ImGui::EndTable();items=false;}}
+
+bb_int_t BBCALL bbDebugUiListBegin(bb_float_t height){if(!building)return 0;ImGui::BeginChild("benchmark-catalog",ImVec2(0,height),ImGuiChildFlags_Borders);return 1;}
+void BBCALL bbDebugUiListEnd(){if(building)ImGui::EndChild();}

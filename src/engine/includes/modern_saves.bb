@@ -97,6 +97,7 @@ Function modern_queue_save(mode)
 End Function
 
 Function modern_process_saves()
+ If bench_active Then Return
  If in_quicksave=0 Or modern_saving Then Return
  Local request.Tin_quicksave,mode,path$,skills,items,vars,diary,states,locks,count
  request=First Tin_quicksave

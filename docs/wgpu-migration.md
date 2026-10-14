@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"fec40feb1e319f63efb48429fd9ad4a850ad1fcdb528a36f600cbc4da35eaee8"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"608ee71e669a765a52f06aea6d2aaeafe015a514276afb41cc6a3fdca55a96ba"} -->
 
 # Stranded II's wgpu/WebGPU cross-platform renderer migration
 
@@ -560,9 +560,21 @@ Native `Flip` uses `Fifo` for vsync requests; otherwise it uses the supported `I
 
 The game's [modern_runtime.bb](../src/engine/includes/modern_runtime.bb) manages full-frame elapsed time, the 100ms cap, fractional accumulation, focus pause and pacing through `modern_frame()` and `modern_present()`. `modern_present()` ultimately calls `Flip False`. GPU command-batching changes must preserve this game-time contract. Measure CPU encoding time, GPU execution time and actually displayed FPS separately.
 
+### 18.1 Optional CPU and GPU profiling
+
+The developer-menu profiler defaults to OFF for each session and uses the shared frame boundary in `modern_present()`. CPU total/self elapsed times use the native SDL performance clock or web `emscripten_get_now()`. GPU purpose tags distinguish the main scene, two shadow stages, reflection, 2D/post-processing, presentation+ImGui and mipmaps. Statistics count actual draws after batching.
+
+Device creation optionally requests standard `timestamp-query` and retries without that feature on failure. Supported devices attach beginning/end queries through `WGPUPassTimestampWrites` on existing `WGPURenderPassDescriptor` values. Instrumentation does not split passes. The final existing submission includes query resolve/copy, followed by `mapAsync` readback without waiting for GPU completion. Recording OFF allocates no new query/readback slots.
+
+Four slots per device each retain up to 512 passes for a frame. When every slot is busy, that frame is skipped; exceeding the pass limit produces a partial measurement. Callbacks retain shared ownership of their slot and match results through monotonic frame IDs. Stale results after clearing or history replacement are ignored; callbacks after device detach cannot revive measurements. Unsupported devices retain CPU/draw statistics.
+
+GPU sums cover render-pass durations, excluding transfers, waits and gaps between passes. CPU and GPU work overlap; their sum does not represent frame cost. See the [development guide](development.md#cpu-and-gpu-profiler) for usage and verification targets.
+
+The performance test collector observes completed CPU frames before ring eviction and routes late GPU samples by frame ID. Warm-up and measurement boundaries use asynchronous `wgpuQueueOnSubmittedWorkDone` fences on the existing queue; no synchronous readback is inserted into the game loop. Completed FPS includes the final drain. Cancellation/device loss invalidates callback tickets, and trial storage remains independent of the profiler display history. See [Performance test scene](development.md#performance-test-scene).
+
 ## 19. Verification paths and this document's verification scope
 
-These are existing repository verification paths. **This documentation task inspected sources and checked document structure, links and language synchronization; it did not run new game builds, GPU tests, browser tests or Mac tests.** The existence of a test must be distinguished from a passing execution in the current environment.
+These are existing repository verification paths. Distinguish the existence of a test from a passing execution on the corresponding platform; consult each verification report for actual results.
 
 | Path | What it checks | What the result alone cannot establish |
 | --- | --- | --- |

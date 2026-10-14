@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"d0d0e18f4163100eb7e970bd45909db493de2db32f87545fd8ed6b9f5e3d9d1f"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"c8a8da2b35b2345d644d9f36fee1af0b7a27924fc72053c217f6fd24c2fc25bb"} -->
 
 # Development guide
 
@@ -97,6 +97,28 @@ Both editions share a Dear ImGui menu. Assign a shortcut under **Settings → Co
 Opening the menu keeps the game running and blocks game input. The Status tab's pause stays active after closing the menu. Tools include single-player cheats, an item icon grid, position/time changes, settings previews, and searchable/copyable logs. **Save** and **Revert to saved settings** are separate; changes are never saved automatically. Display mode, resolution, FPS limit and language require restarting after saving. Logs retain at most 2,048 entries / 2MiB; scrolling up stops following new messages.
 
 Shared game UI lives in `src/engine/includes/devmenu.bb`, native ImGui/SDL/WebGPU integration in `src/blitz3d/src/modules/bb/debugui/`, and browser IME integration in `src/web/debugui.js`. Windows editions, macOS, Web and Studio use the same implementation. On Windows, `python scripts/verify_engine.py --graphics --input` checks input ownership and window/context lifetimes. The `s2_debugui_check` CMake target accepts a prepared `core/locales/<code>/ui.ttf` path and checks Unicode glyphs, sliders and log following without a window. Check actual display, IME composition/paste and each platform's execution separately.
+
+### CPU and GPU profiler
+
+Choose **Profiler → Start recording**, then close the menu and play. Recording defaults to OFF for each session and continues with the menu closed. **Stop recording** stops measurement while the game continues. The latest 2,048 completed frames are retained. Click the graph to select a frame; use **Follow latest frame**, **Clear history**, or **Copy analysis** as needed. Settings and scene-state changes mark graph boundaries and separate statistics.
+
+- CPU values are host elapsed times for game, physics, objects, grass, shadows, water, reflection, main rendering, subsequent updates, HUD, ImGui, FPS-limit waits and Flip. They include driver waits. **Total** includes child scopes; **Self** excludes them. Average, p95 and maximum use valid frames from the selected settings segment. Frames that lose focus are excluded from statistics.
+- On devices supporting `timestamp-query`, GPU values measure existing render passes for the main scene, near/far sun shadows, reflections, 2D/post-processing, presentation+ImGui and mipmaps. Delayed asynchronous results show pending; a full readback ring shows skipped; exceeding the pass limit shows partial. Unsupported devices retain CPU measurements and actual draw, triangle and instance statistics.
+- GPU sums include render-pass durations, excluding transfers, gaps between passes and display scanout. CPU and GPU work overlap; do not add them. Displayed FPS is calculated from frame-boundary intervals. Recording itself has a cost; compare OFF/ON with the same scene and settings.
+
+Implementation lives in `debugui/profiler*` and `graphics.webgpu/profiler_gpu*`. Windows `python scripts/verify_engine.py --render` and macOS `python scripts/dev.py check --platform macos --suite full` run `s2_profiler_check` (nesting, history and statistics) and `s2_profiler_gpu_check` (actual GPU timestamps, draws, OFF/ON pixels, asynchronous lifetime and unsupported fallback). `s2_profiler_ui_check <ui.ttf> <catalog.tsv> <output.ppm>` checks layout with synthetic data; it is not an actual FPS test. The asset-free browser fixture is `tests/web_profiler.bb`. Build/check both Windows editions for shared changes and verify Metal and browser paths separately.
+
+### Performance test scene
+
+Open **Performance test → Enter test scene** in the developer menu. Entry is available only from the main menu. Exiting returns there and restores graphics, FPS limit and profiler recording. Test preferences are not saved.
+
+- Search registered map objects, units (animals/NPCs/vehicles) and items by name/ID and add them to the list. Items are individual ground models. Set each type's count, spacing, height and grid/fixed-seed random layout. Append preserves existing positions; regeneration, selected/all model deletion and generation cancellation are available. Processing is limited to 32 models/about 4ms per frame; loading a single model can take longer. The total limit is 10,000, with requested, created and failed/over-limit counts. The default preset has 768 trees and rocks.
+- Unit AI and animation each default to OFF. Adjust shadows, lighting, atmosphere, grass, wind, view, water quality, AA and front/coast/sky cameras. Reflections distinguish OFF/original six-view/planar; water quality 0–3 performs no capture. Shadows also enable directional lighting. Resolution is displayed only.
+- Manual measurement uses 3s warm-up and 8s recording. Automatic comparison repeats current placement at 0/0.5/1/2x counts and each selected effect separately three times, reversing the middle repetition's order. Integer counts are rounded down per type; requests over 10,000 are reported and capped. Each condition regenerates the same starting positions. Measurement shows only progress/cancellation. Focus loss, minimization or a hidden browser tab cancels/invalidates the current trial while retaining completed comparisons.
+- Results include mean/p95/max frame ms, repetition median, baseline delta in ms/%, CPU total/self, GPU scopes and support/partial/skip coverage, plus draws/triangles/instances per frame. **Completed FPS** measures throughput after draining prior GPU work and includes asynchronous GPU completion at the end; it is not monitor display FPS. Do not add CPU and GPU times. Without timestamp support, GPU times are unavailable while completed throughput, CPU and draw statistics remain available.
+- Copy results or export CSV/JSON. Native exports go to `core/benchmarks/`; browsers download the files. Existing reports are not overwritten. Aggregation is independent of the 2,048-frame display history and late GPU results retain their original trial ownership.
+
+The shared scene is `includes/dev_benchmark.bb`; aggregation and asynchronous completion are in `debugui/benchmark*`. `s2_benchmark_check` covers long intervals, late GPU results, cancellation and statistics. The macOS `full` suite's `tests/benchmark_scene.bb` checks actual rendering, mixed creation, independent simulation, restoration and export. `tests/web_profiler.bb` is an asset-free fixture for actual browser completion/cancellation and timestamp support/fallback.
 
 ## Native rendering benchmark
 

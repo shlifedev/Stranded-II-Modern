@@ -1,3 +1,6 @@
+#ifdef BB_WEBGPU
+#include <bb/debugui/profiler.h>
+#endif
 
 #include <bb/graphics/graphics.h>
 #include "std.h"
@@ -369,6 +372,9 @@ void World::render( float tween ){
 }
 
 void World::renderCubeMap( Camera *camera,BBCanvas *texture,float tween ){
+#ifdef BB_WEBGPU
+	s2prof::RenderGroup profileGroup(s2prof::Reflections);
+#endif
 	// This call owns all six views: no script can mutate the scene between
 	// them. Keep the prepared scene local to this capture, never across frames.
 	static const float angles[6][2]={ {0,90},{0,0},{0,-90},{0,180},{-90,0},{90,0} };
@@ -392,6 +398,9 @@ void World::renderCubeMap( Camera *camera,BBCanvas *texture,float tween ){
 }
 
 void World::renderPlanar( Camera *camera,BBCanvas *texture,float height,float tween ){
+#ifdef BB_WEBGPU
+	s2prof::RenderGroup profileGroup(s2prof::Reflections);
+#endif
 	// A dedicated capture renders only this view, without moving the caller's
 	// camera or its children. Keep the source camera's projection/aspect ratio.
 	prepareRender( tween );

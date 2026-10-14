@@ -1,3 +1,4 @@
+#include <bb/debugui/profiler.h>
 #include "../../../stdutil/stdutil.h"
 #include <bb/graphics/font.h>
 #include "canvas.webgpu.h"
@@ -517,13 +518,16 @@ void WebGPUCanvas::draw2d( WGPUPrimitiveTopology topology,bool blend,WGPUTexture
 	bool strip=( topology==WGPUPrimitiveTopology_LineStrip||topology==WGPUPrimitiveTopology_TriangleStrip );
 	if( !changed&&!strip&&res->pending_draw&&res->pending_first+res->pending_count==first ){
 		res->pending_count+=(uint32_t)nverts;
+		if(topology==WGPUPrimitiveTopology_TriangleList)res->pending_triangles+=(uint32_t)nverts/3;
 	}else{
 		res->flushPendingDraw();
 		res->pending_first=first;
 		res->pending_count=(uint32_t)nverts;
+		res->pending_triangles=topology==WGPUPrimitiveTopology_TriangleList?(uint32_t)nverts/3:0;
 		res->pending_draw=!strip;
 		if( strip ){
 			wgpuRenderPassEncoderDraw( pass,(uint32_t)nverts,1,first,0 );
+			s2prof::draw(s2prof::TwoD,topology==WGPUPrimitiveTopology_TriangleStrip?std::max(0,nverts-2):0);
 		}
 	}
 
@@ -799,11 +803,13 @@ void WebGPUCanvas::applyAntialias(){
 	att.loadOp=WGPULoadOp_Load;att.storeOp=WGPUStoreOp_Store;
 	WGPURenderPassDescriptor desc={};
 	desc.label=bbStrView("bb.fxaa");desc.colorAttachmentCount=1;desc.colorAttachments=&att;
+	res->profilePass(desc,s2prof::TwoD);
 	WGPURenderPassEncoder pass=wgpuCommandEncoderBeginRenderPass(res->encoder,&desc);
 	wgpuRenderPassEncoderSetPipeline(pass,res->getPipeline(WGPUPrimitiveTopology_TriangleList,false,format()));
 	wgpuRenderPassEncoderSetBindGroup(pass,0,res->getBindGroup(blit_view,res->sampler_linear),1,&uoffset);
 	wgpuRenderPassEncoderSetVertexBuffer(pass,0,res->vertex_buffer,voffset,sizeof(verts));
 	wgpuRenderPassEncoderDraw(pass,6,1,0,0);
+	s2prof::draw(s2prof::TwoD,2);
 	wgpuRenderPassEncoderEnd(pass);wgpuRenderPassEncoderRelease(pass);
 	pixmap_stale=true;gpu_written=true;hit_valid=false;
 }

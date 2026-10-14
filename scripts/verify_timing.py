@@ -48,6 +48,12 @@ Function modern_focus()
 End Function
 Function modern_log(message$)
 End Function
+Function dev_profile_begin(scope)
+End Function
+Function dev_profile_end(scope)
+End Function
+Function dev_profile_frame()
+End Function
 Function dev_draw()
  ; No GUI is constructed in this clock-only harness.
 End Function

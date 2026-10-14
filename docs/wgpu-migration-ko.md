@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"71d0a98adadb854a950337652aa78ca489345f4647d3e48fff39807413d3bf34"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"6616a0598b5d8f4fffdb558ce157daf6be8454252f2df97e13a96c67449e9857"} -->
 
 # Stranded II의 wgpu/WebGPU 크로스플랫폼 렌더러 마이그레이션
 
@@ -562,9 +562,21 @@ presentation은 완성된 장면과 UI에 FXAA를 다시 적용하지 않습니�
 
 게임의 [modern_runtime.bb](../src/engine/includes/modern_runtime.bb)는 `modern_frame()`과 `modern_present()`에서 전체 프레임 elapsed time, 100ms cap, fractional accumulation, focus pause와 frame pacing을 관리합니다. `modern_present()`는 최종적으로 `Flip False`를 호출합니다. GPU command batching을 변경해도 이 게임 시간 계약을 변경하지 않아야 합니다. CPU encode 시간, GPU 실행 시간, 화면에 실제 표시되는 FPS는 구분해서 측정합니다.
 
+### 18.1 선택형 CPU·GPU 프로파일링
+
+개발 메뉴의 프로파일러는 세션 기본 OFF이며 `modern_present()`의 공통 프레임 경계를 사용합니다. CPU는 네이티브 SDL 성능 시계, 웹은 `emscripten_get_now()`로 전체·자체 경과 시간을 기록합니다. GPU 목적 태그는 본 화면·그림자 두 단계·반사·2D/후처리·presentation+ImGui·밉맵을 구분하며, 통계는 batching 후 실제 그리기 명령을 셉니다.
+
+장치 생성에서 표준 `timestamp-query`를 선택적으로 요청하며 실패하면 해당 feature 없이 재시도합니다. 지원 장치에서는 기존 `WGPURenderPassDescriptor`의 `WGPUPassTimestampWrites`에 시작·종료 query를 지정합니다. 계측을 위해 패스를 분할하지 않습니다. 최종 기존 제출에 query resolve/copy를 포함한 뒤 `mapAsync`로 읽으며 GPU 완료를 기다리지 않습니다. 측정을 끄면 query/readback 슬롯을 새로 할당하지 않습니다.
+
+장치별 슬롯 4개가 각 프레임의 최대 512패스를 보관합니다. 슬롯이 모두 사용 중이면 해당 프레임은 건너뛰고 패스 한도 초과는 부분 측정으로 남깁니다. 콜백은 슬롯의 공유 소유권을 유지하고 단조 프레임 ID로 결과를 연결합니다. 초기화·이력 교체 후 오래된 결과는 무시하며 장치 분리 뒤 콜백은 측정값을 되살리지 않습니다. 미지원 장치에서도 CPU·그리기 통계는 남습니다.
+
+GPU 합계는 렌더 패스 시간이며 전송·대기·패스 사이 공백을 포함하지 않습니다. CPU와 GPU가 겹쳐 실행되므로 합산해 프레임 비용으로 해석하지 않습니다. 사용법과 검증 타깃은 [개발 가이드](development-ko.md#cpugpu-프로파일러)를 참고하세요.
+
+성능 테스트 집계기는 표시 이력에서 사라지기 전에 완료 CPU 프레임을 받고 늦은 GPU 결과를 프레임 ID로 연결합니다. 준비와 측정 경계는 기존 큐의 비동기 `wgpuQueueOnSubmittedWorkDone`으로 확인하며 게임 루프에 동기 읽기를 넣지 않습니다. 완료 FPS에는 마지막 GPU 완료 대기를 포함합니다. 취소·장치 해제는 콜백 티켓을 무효화하며 비교 결과는 프로파일러 표시 이력과 별도로 유지합니다. [성능 테스트 장면](development-ko.md#성능-테스트-장면)을 참고하세요.
+
 ## 19. 검증 방법과 현재 문서의 검증 범위
 
-아래는 저장소에 있는 검증 경로입니다. **이 문서 작성 작업에서는 소스를 읽고 문서 구조·링크·언어 동기화를 검사했으며, 게임 빌드나 GPU·브라우저·Mac 테스트를 새로 실행하지 않았습니다.** 시험이 존재한다는 사실과 현재 환경에서 통과했다는 사실을 구분합니다.
+아래는 저장소에 있는 검증 경로입니다. 시험이 존재한다는 사실과 해당 환경에서 통과했다는 사실을 구분하며 실제 실행 결과는 각 검증 보고서에서 확인합니다.
 
 | 경로 | 검사하는 것 | 이 결과만으로 확인할 수 없는 것 |
 | --- | --- | --- |

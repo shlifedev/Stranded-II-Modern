@@ -8,6 +8,9 @@ function s2InstallDebugUi(module, canvas, onOpen) {
     padding:'0', border:'0', resize:'none', zIndex:'20', display:'none'});
   document.body.append(input);
   let open = false, composing = false, confirmed = '';
+  const invalidate = () => module._s2BenchmarkFocusLost?.();
+  window.addEventListener('blur', invalidate);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) invalidate(); });
   function commit(text) {
     if (!open || !text) return;
     module.ccall('s2DebugUiCommit', null, ['string'], [text]);

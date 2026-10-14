@@ -56,6 +56,10 @@ def check_render(output):
                env=engine.environment())
     engine.install_windows_runtime(directory)
     execute(directory / 's2_render_check.exe', output, 'render', timeout=180)
+    engine.run(['cmake', '--build', directory, '--target', 's2_profiler_check',
+                's2_profiler_gpu_check', 's2_benchmark_check', '-j', '8'], env=engine.environment())
+    for name in ('s2_profiler_check', 's2_profiler_gpu_check', 's2_benchmark_check'):
+        execute(directory / (name + '.exe'), output, name)
     return 'D3D12 materials, transparency, instancing, mesh versions, terrain normals, planar/cube capture, stable water coverage, per-pixel lighting, budgeted noon brightness, alpha-tested cascaded shadows and scene FXAA with sharp HUD passed (no window)'
 
 

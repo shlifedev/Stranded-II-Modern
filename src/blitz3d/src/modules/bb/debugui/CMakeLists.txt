@@ -1,7 +1,7 @@
 if((S2_NATIVE_GAME OR BB_WEBGPU) AND TARGET SDL2)
   bb_start_module(debugui)
   set(DEPENDS_ON bb.blitz bb.graphics)
-  set(SOURCES debugui.cpp debugui.h
+  set(SOURCES debugui.cpp debugui.h profiler.cpp profiler.h profiler_model.h benchmark.cpp benchmark.h benchmark_model.h
     ${S2_DEP_IMGUI}/imgui.cpp ${S2_DEP_IMGUI}/imgui_draw.cpp
     ${S2_DEP_IMGUI}/imgui_tables.cpp ${S2_DEP_IMGUI}/imgui_widgets.cpp
     ${S2_DEP_IMGUI}/backends/imgui_impl_sdl2.cpp

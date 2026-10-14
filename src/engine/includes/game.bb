@@ -1,6 +1,7 @@
 ;############################################ GAME
 
 Function game()
+ DebugUiProfileBegin 0
 	
 	;Unpaused?
 	g_unpaused=(m_menu=0) Or (m_menu>=Cmenu_if_movie)
@@ -8,7 +9,7 @@ Function game()
 	;Input
 	If dev_paused Then g_unpaused=0
 	getinput(g_unpaused)
-	If dev_paused Then dev_render_paused():Return
+	If dev_paused Then dev_render_paused():DebugUiProfileEnd 0:Return
 	If m_menu=0 Then
 		MoveMouse set_scrx/2,set_scry/2				;Ingame Mouse Reset
 	ElseIf m_menu=Cmenu_if_movie Then
@@ -22,9 +23,11 @@ Function game()
 	
 	;Update World
 	ct=MilliSecs()
+ DebugUiProfileBegin 1
 	col_player_prepare()
 	UpdateWorld(f#)
 	col_player_finish()
+ DebugUiProfileEnd 1
 	If set_debug_rt Then
 		set_debug_rt_updateworld$=(MilliSecs()-ct)+" ms Update"
 	EndIf
@@ -41,13 +44,13 @@ Function game()
 
 	;The camera follows the resolved position, before next-frame movement.
 	game_setcam()
-	grass_spread()
+	DebugUiProfileBegin 3:grass_spread():DebugUiProfileEnd 3
 
 	;Update Objects / Units / Infos / Timer / Parse Scripts
-	cull()
+	DebugUiProfileBegin 2:cull():DebugUiProfileEnd 2
 	
 	;Environment Stuff (Pre Render)
-	e_environment_update_water()							;Water
+	DebugUiProfileBegin 5:e_environment_update_water():DebugUiProfileEnd 5							;Water
 	e_environment_update()									;Environemnt
 	
 	;Player Weapon
@@ -56,7 +59,7 @@ Function game()
 	
 	;Render
 	set_debug_rt_render=MilliSecs()
-	RenderWorld()											;Render
+	DebugUiProfileBegin 7:RenderWorld():DebugUiProfileEnd 7											;Render
 	set_debug_rt_render=MilliSecs()-set_debug_rt_render
 	If KeyHit(59) Then screenshot()							;F1 -> Screenshot
 
@@ -64,6 +67,7 @@ Function game()
 	ct=MilliSecs()
 	
 	;Environment Stuff (Post Render)
+ DebugUiProfileBegin 8
 	mb_update()												;Motion Blur
 	e_environment_water2dfx()								;Water 2D FX (Dive)
 	focus_update()											;Focus (Process etc)
@@ -71,8 +75,9 @@ Function game()
 	sfx_update()											;SFX
 	up_update()												;Unitpaths
 	
+ DebugUiProfileEnd 8
 	;Interface
-	interface()
+	DebugUiProfileBegin 9:interface():DebugUiProfileEnd 9
 	
 	;Normal Game Input
 	If m_menu=0 Then
@@ -117,4 +122,5 @@ Function game()
 		set_debug_rt_poststuff$=(MilliSecs()-ct)+" ms Poststuff"
 	EndIf
 	
+ DebugUiProfileEnd 0
 End Function

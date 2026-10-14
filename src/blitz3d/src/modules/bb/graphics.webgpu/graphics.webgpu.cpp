@@ -1,3 +1,5 @@
+#include <bb/debugui/profiler.h>
+#include <bb/debugui/benchmark.h>
 #include "../../../stdutil/stdutil.h"
 #include "graphics.webgpu.h"
 #include <bb/debugui/debugui.h>
@@ -272,6 +274,8 @@ bool WebGPUContextResources::initDevice( const char *canvas_selector,int width,i
 	BBDeviceRequest dreq;
 	WGPUDeviceDescriptor ddesc={};
 	ddesc.label=bbStrView( "bb.device" );
+	WGPUFeatureName timestampFeature=WGPUFeatureName_TimestampQuery;
+	if(wgpuAdapterHasFeature(adapter,timestampFeature)){ddesc.requiredFeatureCount=1;ddesc.requiredFeatures=&timestampFeature;}
 	ddesc.defaultQueue.label=bbStrView( "bb.queue" );
 	ddesc.deviceLostCallbackInfo.mode=BB_WGPU_CALLBACK_MODE;
 	ddesc.deviceLostCallbackInfo.callback=bbDeviceLost;
@@ -282,8 +286,20 @@ bool WebGPUContextResources::initDevice( const char *canvas_selector,int width,i
 	dcb.userdata1=&dreq;
 	wgpuAdapterRequestDevice( adapter,&ddesc,dcb );
 	bbWebGPUWait( this,&dreq.done );
+	if(!dreq.device && ddesc.requiredFeatureCount){
+		ddesc.requiredFeatureCount=0;ddesc.requiredFeatures=nullptr;dreq.done=false;
+		wgpuAdapterRequestDevice(adapter,&ddesc,dcb);bbWebGPUWait(this,&dreq.done);
+	}
 	if( !dreq.device ) return false;
 	device=dreq.device;
+	profiler=std::make_unique<WebGPUProfiler>(device);
+#ifdef BB_EMSCRIPTEN
+	s2prof::backend("browser WebGPU");
+#elif defined(BB_MACOS)
+	s2prof::backend("Dawn / Metal");
+#else
+	s2prof::backend("Dawn / D3D12");
+#endif
 
 	queue=wgpuDeviceGetQueue( device );
 
@@ -560,10 +576,12 @@ void WebGPUContextResources::generateMips( WGPUTexture tex,int levels ){
 		pdesc.colorAttachmentCount=1;
 		pdesc.colorAttachments=&att;
 
+		profilePass(pdesc,s2prof::Mips);
 		WGPURenderPassEncoder pass=wgpuCommandEncoderBeginRenderPass( enc,&pdesc );
 		wgpuRenderPassEncoderSetPipeline( pass,mip_pipeline );
 		wgpuRenderPassEncoderSetBindGroup( pass,0,group,0,0 );
 		wgpuRenderPassEncoderDraw( pass,3,1,0,0 );
+		s2prof::draw(s2prof::Mips,1);
 		wgpuRenderPassEncoderEnd( pass );
 		wgpuRenderPassEncoderRelease( pass );
 
@@ -644,6 +662,7 @@ WGPURenderPassEncoder WebGPUContextResources::ensurePass( WebGPUCanvas *target )
 	desc.colorAttachmentCount=1;
 	desc.colorAttachments=&att;
 
+	profilePass(desc,s2prof::TwoD);
 	pass=wgpuCommandEncoderBeginRenderPass( encoder,&desc );
 	pass_target=target;
 	return pass;
@@ -661,6 +680,7 @@ void WebGPUContextResources::resetPassState(){
 void WebGPUContextResources::flushPendingDraw(){
 	if( pending_draw&&pass ){
 		wgpuRenderPassEncoderDraw( pass,pending_count,1,pending_first,0 );
+		s2prof::draw(s2prof::TwoD,pending_triangles);
 	}
 	pending_draw=false;
 }
@@ -683,6 +703,7 @@ void WebGPUContextResources::flush(){
 	for( size_t i=0;i<listeners.size();++i ){
 		if( listeners[i].pre_flush ) listeners[i].pre_flush( listeners[i].ctx );
 	}
+	if(profile_finish && profiler)profiler->resolve(profiler->needsResolve()?ensureEncoder():encoder);
 	WGPUCommandBuffer buffers[2];
 	int nbuffers=0;
 	if( mip_encoder ){
@@ -705,6 +726,9 @@ void WebGPUContextResources::flush(){
 		wgpuQueueSubmit( queue,nbuffers,buffers );
 		for( int i=0;i<nbuffers;i++ ) wgpuCommandBufferRelease( buffers[i] );
 	}
+	if(profile_finish && profiler)profiler->submitted();
+	if(profile_finish)s2bench::submitted(queue);
+	profile_finish=false;
 	vertex_used=0;
 	uniform_used=0;
 	last_state_valid=false;
@@ -794,11 +818,13 @@ bool WebGPUContextResources::seedMultisample( WebGPUCanvas *source,WGPUTextureVi
 	att.loadOp=WGPULoadOp_Clear;att.storeOp=WGPUStoreOp_Store;
 	WGPURenderPassDescriptor desc={};
 	desc.label=bbStrView("bb.msaa.seed");desc.colorAttachmentCount=1;desc.colorAttachments=&att;
+	profilePass(desc,s2prof::TwoD);
 	WGPURenderPassEncoder p=wgpuCommandEncoderBeginRenderPass(ensureEncoder(),&desc);
 	wgpuRenderPassEncoderSetPipeline(p,getPipeline(WGPUPrimitiveTopology_TriangleList,false,source->format(),samples));
 	wgpuRenderPassEncoderSetBindGroup(p,0,getBindGroup(src,sampler_nearest),1,&uoffset);
 	wgpuRenderPassEncoderSetVertexBuffer(p,0,vertex_buffer,voffset,sizeof(verts));
 	wgpuRenderPassEncoderDraw(p,6,1,0,0);
+	s2prof::draw(s2prof::TwoD,2);
 	wgpuRenderPassEncoderEnd(p);wgpuRenderPassEncoderRelease(p);
 	return true;
 }
@@ -915,6 +941,8 @@ uint32_t WebGPUContextResources::pushUniformsCached( const BBWebGPURenderState &
 }
 
 void WebGPUContextResources::destroy(){
+	s2bench::detach(queue);
+	profiler.reset();
 	endPass();
 	if( mip_encoder ){ wgpuCommandEncoderRelease( mip_encoder );mip_encoder=0; }
 	if( encoder ){ wgpuCommandEncoderRelease( encoder );encoder=0; }
@@ -1049,10 +1077,10 @@ void WebGPUGraphics::present(){
 #endif
 
 	WGPUTextureView src=fb->sampleView();
-	if( !src ){ res.flush();return; }
+	if( !src ){ res.finishProfile();return; }
 
 	WGPUTextureView dst=res.acquireSurfaceView();
-	if( !dst ){ res.flush();return; }
+	if( !dst ){ res.finishProfile();return; }
 
 	// Reserve both arenas before taking either offset; an overflow resets both.
 	if( ((res.vertex_used+15)&~(size_t)15)+6*sizeof(BBWebGPUVertex)>res.vertex_capacity ||
@@ -1099,6 +1127,7 @@ void WebGPUGraphics::present(){
 	desc.colorAttachmentCount=1;
 	desc.colorAttachments=&att;
 
+	res.profilePass(desc,s2prof::Present);
 	WGPURenderPassEncoder p=wgpuCommandEncoderBeginRenderPass( res.encoder,&desc );
 	wgpuRenderPassEncoderSetPipeline( p,res.getPipeline( WGPUPrimitiveTopology_TriangleList,false,res.surface_format ) );
     bool filtered=false;
@@ -1108,11 +1137,12 @@ void WebGPUGraphics::present(){
 	wgpuRenderPassEncoderSetBindGroup( p,0,res.getBindGroup( src,filtered?res.sampler_linear:res.sampler_nearest ),1,&uoffset );
 	wgpuRenderPassEncoderSetVertexBuffer( p,0,res.vertex_buffer,voffset,6*sizeof( BBWebGPUVertex ) );
 	wgpuRenderPassEncoderDraw( p,6,1,0,0 );
+	s2prof::draw(s2prof::Present,2);
 	s2DebugUiRender(p,res.surface_width,res.surface_height);
 	wgpuRenderPassEncoderEnd( p );
 	wgpuRenderPassEncoderRelease( p );
 
-	res.flush();
+	res.finishProfile();
 #ifndef BB_EMSCRIPTEN
 	wgpuSurfacePresent(res.surface);
 #endif

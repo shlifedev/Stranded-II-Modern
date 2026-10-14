@@ -43,7 +43,7 @@ End Function
 Function modern_win_foreground()
  ; Let the original loading screen and main menu render before a user gesture.
  ; Gameplay still pauses without capture; browser focus is required in both.
- If m_section=Csection_menu Then Return Int(web_service("focus","menu"))
+ If m_section=Csection_menu Or m_section=Csection_benchmark Then Return Int(web_service("focus","menu"))
  Return Int(web_service("focus","play"))
 End Function
 

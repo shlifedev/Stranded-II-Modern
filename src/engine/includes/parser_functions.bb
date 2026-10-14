@@ -225,6 +225,7 @@ End Function
 
 ;### Add a Parse Task
 Function parse_task(class,id,event$,info$,script$)
+ If bench_active Then Return
 	;Add Parse Task
 	Tpt.Tpt=New Tpt
 	Tpt\class=class
@@ -237,6 +238,7 @@ End Function
 
 ;### Parse All
 Function parse_all()
+ If bench_active Then Return
 	;Parse All Parse Tasks
 	For Tpt.Tpt=Each Tpt
 		If set_debug=1 Then con_add("PARSE: "+p_env_event$+ " @ "+p_env_class+","+p_env_id+" "+p_env_info$,Cbmpf_yellow)

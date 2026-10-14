@@ -93,7 +93,7 @@ def check_game(compiler, output):
     marker = 'WriteLine compat_report,"FAILURES "+compat_failures'
     if scenario.count(marker) != 1:
         raise ValueError('The shared full-engine fixture footer changed.')
-    scenario = scenario.replace(marker, (ROOT / 'tests/macos_game.bb').read_text('utf8') + '\n' + marker)
+    scenario = scenario.replace(marker, (ROOT / 'tests/macos_game.bb').read_text('utf8') + '\n' + (ROOT / 'tests/benchmark_scene.bb').read_text('utf8') + '\n' + marker)
     (source / 'includes/engine_loop.bb').write_text(scenario, encoding='utf8')
     executable = runtime / 'NativeCompatibility'
     build.compile_source(compiler, source / 'StrandedIIMac.bb', executable, 's2macos', cwd=source)
@@ -157,6 +157,13 @@ def main(suite='full'):
             build.compile_source(compiler, ROOT / 'tests/macos_graphics.bb', graphics, 's2macos', cwd=output)
             execute(graphics, output, output / 'graphics.log')
             results['metal_render_and_readback'] = 'pass'
+            import blitz3d_toolchain as engine
+            directory = engine.BUILD / 'macos-game/cmake'
+            engine.run(['cmake', '--build', directory, '--target', 's2_profiler_check',
+                        's2_profiler_gpu_check', 's2_benchmark_check', '-j', '8'], env=engine.environment())
+            for name in ('s2_profiler_check', 's2_profiler_gpu_check', 's2_benchmark_check'):
+                execute(directory / name, output, output / (name + '.log'))
+            results['profiler'] = 'CPU recorder and actual Metal timestamp/readback checks passed'
             results['bundle_storage'] = check_bundle(compiler, output)
             results['game'] = check_game(compiler, output)
         if (current_build() != report or results['verifier_sha256'] != verifier_hashes() or

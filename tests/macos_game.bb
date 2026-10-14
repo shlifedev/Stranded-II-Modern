@@ -17,6 +17,37 @@ For nativeFrame=1 To 180
  modern_present()
 Next
 compat_check(SaveBuffer(BackBuffer(),set_rootdir$+"native-island.bmp"),"native island screenshot")
+; Real host time, identical island loop and completed GPU work. This reports
+; fixture throughput/measurement overhead, not foreground display FPS.
+Local profile_saved_fps=modern_fps,profile_pixel,profile_start,profile_duration,profile_text$
+Local profile_report=WriteFile(set_rootdir$+"native-profiler.txt")
+modern_fps=0
+DebugUiOpen 0
+For profile_trial=0 To 5
+ DebugUiProfileRecording profile_trial Mod 2
+ DebugUiProfileBoundary()
+ profile_pixel=ReadPixel(0,0,BackBuffer())
+ profile_start=modern_walltime()
+ For profile_frame=1 To 60
+  compat_clock=compat_clock+20
+  game()
+  modern_present()
+ Next
+ profile_pixel=ReadPixel(0,0,BackBuffer())
+ profile_duration=modern_walltime()-profile_start
+ WriteLine profile_report,"TRIAL "+profile_trial+" recording="+(profile_trial Mod 2)+" completed_ms="+profile_duration+" frames=60"
+Next
+DebugUiProfileRecording 0
+compat_clock=compat_clock+20:game():modern_present()
+; The newest frame's asynchronous map callback may still be pending. Pump
+; presentation events in this fixture with capture stopped before inspecting it.
+For profile_frame=1 To 8:Flip False:Next
+profile_text=DebugUiProfileSnapshot()
+compat_check(Instr(profile_text,"frame_ms=")>0 And Instr(profile_text,"total_ms=")>0,"native profiler records while overlay is closed")
+compat_check(Instr(profile_text,"GPU=ready")>0 Or Instr(profile_text,"GPU=unsupported")>0,"native profiler resolves GPU results or reports unsupported")
+WriteLine profile_report,profile_text
+CloseFile profile_report
+modern_fps=profile_saved_fps
 compat_check(save_map("saves\NATIVE-CHECK.sav","sav","")=1,"native checked save replacement")
 compat_check(modern_save_valid("saves\NATIVE-CHECK.sav"),"native saved file preflight")
 Local nativeX#=EntityX(g_cplayer\h),nativeY#=EntityY(g_cplayer\h),nativeZ#=EntityZ(g_cplayer\h)

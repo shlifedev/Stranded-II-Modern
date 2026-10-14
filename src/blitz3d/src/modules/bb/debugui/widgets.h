@@ -5,7 +5,8 @@
 #include <string>
 
 namespace s2debugui {
-inline void loadFonts(const std::string &path){
+inline void loadFonts(std::string path){
+  std::replace(path.begin(),path.end(),'\\','/');
   auto &io=ImGui::GetIO();io.Fonts->Clear();
   ImFontConfig latin;latin.SizePixels=17.0f;latin.PixelSnapH=false;
   io.FontDefault=io.Fonts->AddFontDefaultVector(&latin); // Scalable ProggyClean family.

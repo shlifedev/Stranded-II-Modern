@@ -36,7 +36,7 @@ Function cull()
 							RotateEntity h,EntityPitch(h),EntityYaw(h),Sin(angle#)*Dobject_swaypower#(TCobject\typ)
 						EndIf
 					EndIf
-					If Dobject_active(TCobject\typ)=1 Then
+					If Dobject_active(TCobject\typ)=1 And bench_active=0 Then
 						update_object_behaviour()
 					EndIf
 				;Hide by Alpha for Collision at short Distance and not in View
@@ -75,7 +75,7 @@ Function cull()
 							RotateEntity h,EntityPitch(h),EntityYaw(h),Sin(angle#)*Dobject_swaypower#(TCobject\typ)
 						EndIf
 					EndIf
-					If Dobject_active(TCobject\typ)=1 Then
+					If Dobject_active(TCobject\typ)=1 And bench_active=0 Then
 						update_object_behaviour()
 					EndIf
 				;Only show Collision Thingy for Collision at short Distance and not in View
@@ -112,10 +112,10 @@ Function cull()
 				Else
 					cv=cv+1
 					ShowEntity TCunit\h
-					If g_unpaused Then update_unit()
+					If g_unpaused And (bench_active=0 Or bench_ai) Then update_unit()
 				EndIf
 			Else
-				If g_unpaused Then update_unit()
+				If g_unpaused And bench_active=0 Then update_unit()
 			EndIf
 		Next
 	Else
@@ -140,6 +140,7 @@ Function cull()
 		set_debug_rt_units$=(MilliSecs()-ct)+" ms Units ("+cv+"/"+c+")"
 	EndIf
 	
+	If bench_active Then Return
 	;Info
 	If m_section<>Csection_editor Then
 		;Update Infos (Game)

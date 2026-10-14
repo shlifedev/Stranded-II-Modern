@@ -1,3 +1,4 @@
+#include <bb/debugui/profiler.h>
 
 
 #include "../../../stdutil/stdutil.h"
@@ -298,6 +299,7 @@ private:
 	WGPUSampler shadow_sampler=0;
 	BBLightRep *shadow_light=0;
 	int shadow_index=-1;
+	int profile_group=s2prof::Scene;
 	bool casts_shadow=true;
 
 	std::map<uint32_t,WGPURenderPipeline> scene_pipelines;
@@ -960,6 +962,7 @@ public:
 		if( !pending_instances ) return;
 		wgpuRenderPassEncoderDrawIndexed( pass,(uint32_t)pending_index_count,pending_instances,
 		                                 (uint32_t)pending_index_first,pending_base_vertex,pending_first_instance );
+		s2prof::draw(profile_group,wireframe?0:uint64_t(pending_index_count/3)*pending_instances,pending_instances);
 		pending_instances=0;
 	}
 
@@ -1058,6 +1061,8 @@ public:
 			depth.depthStoreOp=WGPUStoreOp_Store;depth.depthClearValue=1;
 			WGPURenderPassDescriptor desc={};desc.label=bbStrView("bb.3d.shadow.pass");
 			desc.depthStencilAttachment=&depth;
+			profile_group=shadow_index==0?s2prof::ShadowNear:s2prof::ShadowFar;
+			res->profilePass(desc,profile_group);
 			pass=wgpuCommandEncoderBeginRenderPass(res->ensureEncoder(),&desc);
 			pass_canvas=target;pending_clear_color=pending_clear_z=false;
 			applyViewport();return pass;
@@ -1098,6 +1103,8 @@ public:
 		desc.colorAttachments=&att;
 		desc.depthStencilAttachment=&datt;
 
+		profile_group=s2prof::renderGroup();
+		res->profilePass(desc,profile_group);
 		pass=wgpuCommandEncoderBeginRenderPass( enc,&desc );
 		pass_canvas=target;
 		pending_clear_color=false;
@@ -1511,6 +1518,7 @@ public:
 		wgpuRenderPassEncoderSetPipeline( p,getClearPipeline( clear_argb,clear_z,target->format() ) );
 		wgpuRenderPassEncoderSetBindGroup( p,0,clear_group,1,&offset );
 		wgpuRenderPassEncoderDraw( p,3,1,0,0 );
+		s2prof::draw(profile_group,1);
 
 		bound_pipeline=0;
 		bound_frame=false;
@@ -1612,6 +1620,7 @@ public:
 			++pending_instances;
 		}else{
 			wgpuRenderPassEncoderDrawIndexed( p,(uint32_t)index_count,1,(uint32_t)index_first,first_vert,first_instance );
+			s2prof::draw(profile_group,wireframe?0:index_count/3);
 		}
 
 		if( mesh->drawn_marker!=submit_marker ){

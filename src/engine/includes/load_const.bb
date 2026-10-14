@@ -29,6 +29,7 @@ Const Cpeakblur#=0.97						;Peak Motion Blur
 Const Csection_menu=0						;Menu
 Const Csection_game_sp=1					;Game SP
 Const Csection_game_mp=2					;Game MP
+Const Csection_benchmark=4
 Const Csection_editor=3						;Editor
 
 

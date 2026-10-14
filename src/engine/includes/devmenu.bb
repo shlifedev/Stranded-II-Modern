@@ -1,5 +1,6 @@
+Include "includes\dev_benchmark.bb"
 ; Shared Dear ImGui developer tools. Draws at presentation; actions run before world updates.
-Global dev_epoch,dev_generation=-1
+Global dev_epoch,dev_generation=-1,dev_profile_labels_ready
 Global dev_frames,dev_frame_start,dev_fps#,dev_status$
 Global dev_item_search$,dev_item_count=1,dev_script$,dev_log_search$,dev_log_level=-1,dev_log_follow=1
 Global dev_x#,dev_y#,dev_z#,dev_day=1,dev_hour,dev_minute
@@ -160,6 +161,8 @@ Function dev_input()
  If dev_generation<>DebugUiGeneration() Then
   dev_generation=DebugUiGeneration():flushinput():dev_clear_input():qol_search_close()
  EndIf
+ bench_input()
+ If bench_active Then Return
  dev_apply_preview()
  dev_actions()
 End Function
@@ -412,6 +415,11 @@ Function dev_draw()
  If dev_initialized=0 Then Return
  If dev_paused Then bmpf_txt(5,20,"[[loc:dev.paused]]",Cbmpf_yellow)
  If DebugUiFrame(dev_label("title")+" · "+in_keyname$(in_keys(Ckey_devmenu)),set_rootdir$+"core\locales\"+loc_language$+"\ui.ttf")=0 Then Return
+ If bench_active<>0 And bench_run<>0 Then
+  If DebugUiTab(bench_label("tab")) Then bench_ui():DebugUiTabEnd()
+  DebugUiFinish():Return
+ EndIf
+ If DebugUiTab(bench_label("tab")) Then dev_profile_labels():bench_labels():bench_ui():DebugUiTabEnd()
  If DebugUiTab(dev_label("status")) Then
   DebugUiText "FPS: "+Int(dev_fps)+" / "+modern_fps
   DebugUiText dev_label("map")+": "+ko_localize(map_name$)+" ("+map_path$+")"
@@ -428,8 +436,11 @@ Function dev_draw()
   EndIf
   DebugUiTabEnd()
  EndIf
+ If DebugUiTab(dev_label("profiler")) Then dev_profile_labels():DebugUiProfiler():DebugUiTabEnd()
  If DebugUiTab(dev_label("cheats")) Then dev_cheats_ui():DebugUiTabEnd()
- If DebugUiTab(dev_label("settings")) Then dev_settings_ui():DebugUiTabEnd()
+ If bench_active=0 Then
+  If DebugUiTab(dev_label("settings")) Then dev_settings_ui():DebugUiTabEnd()
+ EndIf
  If DebugUiTab(dev_label("logs")) Then
   dev_log_search$=DebugUiInput(dev_label("search"),dev_log_search$)
   dev_log_level=DebugUiInt(dev_label("level"),dev_log_level,-1,3)
@@ -454,8 +465,88 @@ Function dev_render_paused()
  g_unpaused=0
  game_setcam()
  remaster_frame()
- RenderWorld()
- interface()
+ DebugUiProfileBegin 7:RenderWorld():DebugUiProfileEnd 7
+ DebugUiProfileBegin 9:interface():DebugUiProfileEnd 9
  game_input_menu()
  endinput(0,0,0)
+End Function
+
+; The presentation boundary also covers menus, editors and modal loops.
+Function dev_profile_begin(scope)
+ DebugUiProfileBegin scope
+End Function
+Function dev_profile_end(scope)
+ DebugUiProfileEnd scope
+End Function
+Function dev_profile_invalidate()
+ DebugUiProfileInvalidate()
+End Function
+Function dev_profile_frame()
+ If DebugUiProfileActive() Then
+  Local budget#=0.
+  If modern_fps>0 Then budget=1000./Float(modern_fps)
+  Local context$="edition="+Cedition$+" resolution="+set_scrx+"x"+set_scry+" fps_limit="+modern_fps
+  context=context+" water="+remaster_enabled(0)+" lighting="+remaster_enabled(1)+" shadows="+remaster_enabled(2)+" atmosphere="+remaster_enabled(3)+" antialias="+remaster_enabled(4)
+  context=context+" water_quality="+set_water+" grass="+set_grass+" view_range="+set_viewrange+" section="+m_section+" menu="+m_menu+" paused="+dev_paused
+  If bench_active Then context=context+" "+bench_context()+" trial="+bench_trial_index+" phase="+bench_run
+  DebugUiProfileContext context,budget
+ EndIf
+ DebugUiProfileBoundary()
+End Function
+
+Function dev_profile_labels()
+ If dev_profile_labels_ready Then Return
+ dev_profile_labels_ready=1
+ DebugUiProfileLabel "start",dev_label("profiler.start")
+ DebugUiProfileLabel "stop",dev_label("profiler.stop")
+ DebugUiProfileLabel "clear",dev_label("profiler.clear")
+ DebugUiProfileLabel "copy",dev_label("profiler.copy")
+ DebugUiProfileLabel "latest",dev_label("profiler.latest")
+ DebugUiProfileLabel "cpu_help",dev_label("profiler.cpu_help")
+ DebugUiProfileLabel "help",dev_label("profiler.help")
+ DebugUiProfileLabel "empty",dev_label("profiler.empty")
+ DebugUiProfileLabel "backend",dev_label("profiler.backend")
+ DebugUiProfileLabel "statistics",dev_label("profiler.statistics")
+ DebugUiProfileLabel "invalid",dev_label("profiler.invalid")
+ DebugUiProfileLabel "scope",dev_label("profiler.scope")
+ DebugUiProfileLabel "average",dev_label("profiler.average")
+ DebugUiProfileLabel "p95",dev_label("profiler.p95")
+ DebugUiProfileLabel "maximum",dev_label("profiler.maximum")
+ DebugUiProfileLabel "total",dev_label("profiler.total")
+ DebugUiProfileLabel "self",dev_label("profiler.self")
+ DebugUiProfileLabel "gpu_ms",dev_label("profiler.gpu_ms")
+ DebugUiProfileLabel "passes",dev_label("profiler.passes")
+ DebugUiProfileLabel "draws",dev_label("profiler.draws")
+ DebugUiProfileLabel "instances",dev_label("profiler.instances")
+ DebugUiProfileLabel "triangles",dev_label("profiler.triangles")
+ DebugUiProfileLabel "gpu_sum",dev_label("profiler.gpu_sum")
+ DebugUiProfileLabel "gpu_help",dev_label("profiler.gpu_help")
+ DebugUiProfileLabel "pending",dev_label("profiler.pending")
+ DebugUiProfileLabel "ready",dev_label("profiler.ready")
+ DebugUiProfileLabel "skipped",dev_label("profiler.skipped")
+ DebugUiProfileLabel "partial",dev_label("profiler.partial")
+ DebugUiProfileLabel "failed",dev_label("profiler.failed")
+ DebugUiProfileLabel "unsupported",dev_label("profiler.unsupported")
+ DebugUiProfileLabel "device_lost",dev_label("profiler.device_lost")
+ DebugUiProfileLabel "gpu_init_failed",dev_label("profiler.gpu_init_failed")
+ DebugUiProfileLabel "cpu.game",dev_label("profiler.cpu.game")
+ DebugUiProfileLabel "cpu.physics",dev_label("profiler.cpu.physics")
+ DebugUiProfileLabel "cpu.objects",dev_label("profiler.cpu.objects")
+ DebugUiProfileLabel "cpu.grass",dev_label("profiler.cpu.grass")
+ DebugUiProfileLabel "cpu.shadows",dev_label("profiler.cpu.shadows")
+ DebugUiProfileLabel "cpu.water",dev_label("profiler.cpu.water")
+ DebugUiProfileLabel "cpu.reflection",dev_label("profiler.cpu.reflection")
+ DebugUiProfileLabel "cpu.main",dev_label("profiler.cpu.main")
+ DebugUiProfileLabel "cpu.post",dev_label("profiler.cpu.post")
+ DebugUiProfileLabel "cpu.hud",dev_label("profiler.cpu.hud")
+ DebugUiProfileLabel "cpu.ui",dev_label("profiler.cpu.ui")
+ DebugUiProfileLabel "cpu.pace",dev_label("profiler.cpu.pace")
+ DebugUiProfileLabel "cpu.flip",dev_label("profiler.cpu.flip")
+ DebugUiProfileLabel "gpu.scene",dev_label("profiler.gpu.scene")
+ DebugUiProfileLabel "gpu.near",dev_label("profiler.gpu.near")
+ DebugUiProfileLabel "gpu.far",dev_label("profiler.gpu.far")
+ DebugUiProfileLabel "gpu.reflection",dev_label("profiler.gpu.reflection")
+ DebugUiProfileLabel "gpu.2d",dev_label("profiler.gpu.2d")
+ DebugUiProfileLabel "gpu.present",dev_label("profiler.gpu.present")
+ DebugUiProfileLabel "gpu.mips",dev_label("profiler.gpu.mips")
 End Function

@@ -20,9 +20,10 @@ def fingerprint(value):
 def verifier_hashes():
     paths = [build.ROOT / name for name in (
         'scripts/verify_macos.py', 'scripts/macos_validation.py', 'scripts/verify_timing.py',
-        'tests/web_semantics.bb', 'tests/web_compatibility.bb')]
+        'tests/web_semantics.bb', 'tests/web_compatibility.bb', 'tests/benchmark_scene.bb')]
     paths += list((build.ROOT / 'tests').glob('macos_*.bb'))
     paths.append(build.ROOT / 'tests/macos_abi.golden.hex')
+    paths += [build.ROOT / 'src/blitz3d/tests' / name for name in ('profiler_model.cpp', 'profiler_gpu.cpp', 'benchmark_model.cpp')]
     return {p.relative_to(build.ROOT).as_posix(): build.digest(p) for p in sorted(paths)}
 
 
@@ -63,7 +64,12 @@ def tree_records(root):
 
 def validate_app(app, package_report):
     records = tree_records(app)
-    payload = build.asset_payload()
+    payload = dict(build.asset_payload())
+    # Local apps include the opt-in used by the developer menu. Distribution
+    # apps and all other unexpected files retain the strict resource boundary.
+    if ('core/development.flag' in package_report.get('asset_sha256', {}) and
+            validate_info(json.loads(payload['core/version.json']))['channel'] == 'local'):
+        payload['core/development.flag'] = b'local development runtime\n'
     hashes = {name: hashlib.sha256(data).hexdigest() for name, data in payload.items()}
     expected_files = {f'Contents/Resources/game/{name}' for name in payload}
     expected_files.update(('Contents/Info.plist', 'Contents/MacOS/StrandedII',

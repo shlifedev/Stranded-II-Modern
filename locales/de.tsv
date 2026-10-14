@@ -2726,3 +2726,113 @@ dev.copy	Gefiltertes Protokoll kopieren
 dev.off	Aus
 dev.binding	Entwicklermenü
 dev.binding_help	Zum Belegen anklicken. Rechtsklick setzt die Belegung auf None.
+dev.profiler	Profiler
+dev.profiler.start	Aufzeichnung starten
+dev.profiler.stop	Aufzeichnung stoppen
+dev.profiler.clear	Aufzeichnung löschen
+dev.profiler.copy	Analyse kopieren
+dev.profiler.latest	Neuestem Frame folgen
+dev.profiler.help	Die Aufzeichnung läuft bei geschlossenem Menü weiter. Zum Untersuchen eines Frames stoppen; das Spiel läuft weiter. Bis zu 2.048 Frames bleiben erhalten.
+dev.profiler.empty	Aufzeichnung starten, spielen und diesen Tab erneut öffnen.
+dev.profiler.backend	Renderer
+dev.profiler.statistics	Durchschnitt / p95 / Maximum
+dev.profiler.invalid	Dieser Frame wird wegen Fokusverlust oder einer unterbrochenen Frame-Grenze nicht statistisch ausgewertet.
+dev.profiler.scope	Bereich
+dev.profiler.average	Mittel ms
+dev.profiler.p95	p95 ms
+dev.profiler.maximum	Max. ms
+dev.profiler.total	Gesamt ms
+dev.profiler.self	Eigenzeit ms
+dev.profiler.gpu_ms	GPU ms
+dev.profiler.passes	Pässe
+dev.profiler.draws	Draw-Aufrufe
+dev.profiler.instances	Instanzen
+dev.profiler.triangles	Dreiecke
+dev.profiler.gpu_sum	Summe der GPU-Renderpässe
+dev.profiler.gpu_help	GPU-Zeiten messen nur Renderpässe, ohne Transfers und Lücken. CPU und GPU überlappen; Zeiten nicht addieren. Präsentation und ImGui teilen einen Pass. Draw-Zahlen enthalten Lösch- und Vollbildaufrufe.
+dev.profiler.pending	Asynchrone GPU-Ergebnisse ausstehend
+dev.profiler.ready	Messung abgeschlossen
+dev.profiler.skipped	GPU-Messung übersprungen: Lesepuffer belegt oder Präsentation unterbrochen
+dev.profiler.partial	Teilweises GPU-Ergebnis: Pass-Limit erreicht
+dev.profiler.failed	GPU-Messung fehlgeschlagen
+dev.profiler.unsupported	GPU timestamp-query ist auf diesem Gerät nicht verfügbar.
+dev.profiler.device_lost	GPU-Gerät getrennt; ausstehende Messungen verworfen.
+dev.profiler.gpu_init_failed	GPU-Messpuffer konnten nicht initialisiert werden.
+dev.profiler.cpu.game	Spiel-Frame
+dev.profiler.cpu.physics	Weltaktualisierung / Kollisionen
+dev.profiler.cpu.objects	Objektaktualisierung / Sichtbarkeit
+dev.profiler.cpu.grass	Grasplatzierung
+dev.profiler.cpu.shadows	Schattenvorbereitung / Befehle
+dev.profiler.cpu.water	Wasseraktualisierung (mit Aufnahmen)
+dev.profiler.cpu.reflection	Reflexionsvorbereitung / Befehle
+dev.profiler.cpu.main	Szenenvorbereitung / Befehle
+dev.profiler.cpu.post	Spielaktualisierung nach Rendering
+dev.profiler.cpu.hud	HUD
+dev.profiler.cpu.ui	ImGui-Aufbau
+dev.profiler.cpu.pace	Warten auf FPS-Limit
+dev.profiler.cpu.flip	Submit / Präsentation / Ereignisse
+dev.profiler.gpu.scene	Szene
+dev.profiler.gpu.near	Nahe Sonnenschatten
+dev.profiler.gpu.far	Ferne Sonnenschatten
+dev.profiler.gpu.reflection	Reflexionen
+dev.profiler.gpu.2d	2D / Nachbearbeitung
+dev.profiler.gpu.present	Präsentation / ImGui
+dev.profiler.gpu.mips	Mipmaps
+dev.profiler.cpu_help	CPU-Werte sind verstrichene Host-Zeiten einschließlich Treiberwartezeiten. Gesamt enthält untergeordnete Bereiche, Eigenzeit nicht.
+dev.benchmark.tab	Leistungstest
+dev.benchmark.intro	Eine separate Testszene vom Hauptmenü öffnen. Objekte, Einheiten und einzelne Bodenitems können gemischt werden.
+dev.benchmark.enter	Testszene öffnen
+dev.benchmark.exit	Zum Hauptmenü
+dev.benchmark.temporary	Testoptionen sind vorübergehend. Beim Verlassen werden Grafik, FPS-Limit und Aufzeichnung wiederhergestellt.
+dev.benchmark.requested	Angefordert
+dev.benchmark.actual	Erstellt
+dev.benchmark.failed	Fehler / über Limit
+dev.benchmark.progress	Durchlauf
+dev.benchmark.generating	Szene vorbereiten…
+dev.benchmark.warmup	Aufwärmen (3 Sekunden)
+dev.benchmark.measuring	Messung (8 Sekunden), danach GPU-Abschluss abwarten
+dev.benchmark.cancel	Abbrechen
+dev.benchmark.cancelled	Abgebrochen; abgeschlossene Ergebnisse bleiben erhalten.
+dev.benchmark.catalog	Typen hinzufügen
+dev.benchmark.category	Kategorie (1 / 2 / 3)
+dev.benchmark.categories	1: Kartenobjekte · 2: Einheiten (Tiere, NPCs, Fahrzeuge) · 3: einzelne Bodenitems
+dev.benchmark.groups	Erstellungsgruppen
+dev.benchmark.spacing	Abstand
+dev.benchmark.height	Höhenversatz
+dev.benchmark.layout	Anordnung (0: Raster / 1: Zufall)
+dev.benchmark.seed	Fester Seed
+dev.benchmark.layout_help	Bis zu 10.000 Modelle. Ergänzen behält Positionen. Neu erzeugen wendet Abstand, Höhe und Seed auf alle an.
+dev.benchmark.append	Bis zur Zielanzahl ergänzen
+dev.benchmark.regenerate	Gleiche Anordnung neu erzeugen
+dev.benchmark.delete_group	Gewählte Modelle löschen
+dev.benchmark.delete_all	Alle Modelle löschen
+dev.benchmark.remove_group	Gewählte Gruppe entfernen
+dev.benchmark.effects	Grafik / Simulation
+dev.benchmark.reflection	Reflexionen
+dev.benchmark.ai	Einheiten-KI
+dev.benchmark.animation	Einheitenanimation
+dev.benchmark.reflection_help	0: AUS · 1: originale Sechsansichten-Aufnahme · 2: planare Reflexion. Qualität 0–3 ohne Aufnahme.
+dev.benchmark.camera	Kamera (0 / 1 / 2)
+dev.benchmark.camera_help	0: vorne · 1: Küste · 2: Himmel
+dev.benchmark.fps_limit	FPS-Limit (0: unbegrenzt)
+dev.benchmark.lighting_help	Schatten aktivieren auch gerichtetes Licht. Der effektive Lichtzustand steht im Ergebnis.
+dev.benchmark.comparison	Messung / automatischer Vergleich
+dev.benchmark.comparison_help	Automatisch: Referenz und 0 / 0,5 / 2x Anzahl, dann gewählte Effekte einzeln; 3s Aufwärmen + 8s Messung, drei Wiederholungen mit wechselnder Reihenfolge.
+dev.benchmark.measure	Aktuelle Szene messen
+dev.benchmark.automatic	Automatischen Vergleich starten
+dev.benchmark.baseline	Referenz (1x)
+dev.benchmark.manual	Aktuelle Szene
+dev.benchmark.csv	CSV exportieren
+dev.benchmark.json	JSON exportieren
+dev.benchmark.copy	Ergebnisse kopieren
+dev.benchmark.metric_help	Frame-ms sind Host-Framezeiten. Abgeschlossene FPS umfassen die asynchrone GPU-Leerung, nicht die Monitorrate. CPU und GPU überlappen. GPU-Mittelwerte aus vollständigen/teilweisen Proben; Abdeckung separat. Zeichenzahlen pro Frame.
+dev.benchmark.trial	Durchlauf / Wiederholung
+dev.benchmark.fps	Abgeschlossene FPS
+dev.benchmark.delta	Zur Referenz
+dev.benchmark.valid	Gültig
+dev.benchmark.details	CPU / GPU Details
+dev.benchmark.median	Wiederholungsmedian
+dev.benchmark.focus_lost	Fokus verloren oder minimiert; dieser Durchlauf ist ungültig.
+dev.benchmark.invalid_frame	Unterbrochener Frame; Durchlauf ungültig.
+dev.benchmark.gpu_completion_failed	GPU-Abschluss fehlgeschlagen; Durchsatz nicht verfügbar.
+dev.benchmark.gpu_completion_unavailable	GPU-Abschluss nicht verfügbar; Durchsatz nicht verfügbar.

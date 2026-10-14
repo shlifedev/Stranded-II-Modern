@@ -9,6 +9,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include "profiler_gpu.h"
 
 #ifdef BB_EMSCRIPTEN
 #include <emscripten.h>
@@ -65,6 +66,8 @@ struct WebGPUContextResources{
 #endif
 	WGPUAdapter adapter=0;
 	WGPUDevice device=0;
+	std::unique_ptr<WebGPUProfiler> profiler;
+	bool profile_finish=false;
 	WGPUQueue queue=0;
 	WGPUSurface surface=0;
 	bool antialias=false;
@@ -111,7 +114,7 @@ struct WebGPUContextResources{
 	int bound_scissor[4]={};
 	bool bound_scissor_valid=false;
 	bool pending_draw=false;
-	uint32_t pending_first=0,pending_count=0;
+	uint32_t pending_first=0,pending_count=0,pending_triangles=0;
 
 	BBWebGPURenderState last_state;
 	uint32_t last_state_offset=0;
@@ -141,6 +144,8 @@ struct WebGPUContextResources{
 	WGPURenderPassEncoder ensurePass( WebGPUCanvas *target );
 	void endPass();
 	void flush();
+	void profilePass(WGPURenderPassDescriptor &desc,int group){if(profiler)profiler->pass(desc,group);}
+	void finishProfile(){profile_finish=true;flush();}
 
 	WGPURenderPipeline getPipeline( WGPUPrimitiveTopology topology,bool blend,WGPUTextureFormat format,int samples=1 );
 	bool seedMultisample( WebGPUCanvas *source,WGPUTextureView target,int samples );
