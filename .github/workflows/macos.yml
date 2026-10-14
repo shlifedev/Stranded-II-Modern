@@ -2,6 +2,11 @@ name: macOS build
 
 on:
   workflow_dispatch:
+    inputs:
+      notarize:
+        description: Sign with Developer ID and notarize the test ZIP (no Release publication)
+        type: boolean
+        default: true
   workflow_call:
     inputs:
       version_artifact:
@@ -63,6 +68,10 @@ jobs:
           brew install cmake ninja ffmpeg zstd
           python -m pip install -r requirements.txt
 
+      - name: Select preview version
+        if: inputs.version_artifact == ''
+        run: python scripts/ci.py version
+
       - name: Check platform and packaging boundaries
         run: |
           python -m unittest discover -s tests -p 'test_macos*.py'
@@ -119,23 +128,18 @@ jobs:
           FONT_INPUT: ${{ steps.deps.outputs.font }}
         run: python scripts/dev.py setup --platform macos --game "$GAME_INPUT" --font "$FONT_INPUT"
 
-      - name: Build native preview
-        if: inputs.version_artifact == ''
-        run: python scripts/dev.py build --platform macos
-
-      - name: Build native release app
-        if: inputs.version_artifact != ''
+      - name: Build native app
         run: python scripts/dev.py build --platform macos --version-info build/ci/version.json
 
       - name: Check native ABI and app package without graphics
         run: python scripts/dev.py check --platform macos --suite core
 
       - name: Package local preview ZIP and verify extraction
-        if: inputs.version_artifact == ''
+        if: inputs.version_artifact == '' && !inputs.notarize
         run: python scripts/macos_package.py
 
-      - name: Sign, notarize, and verify release ZIP
-        if: inputs.version_artifact != ''
+      - name: Sign, notarize, and verify ZIP
+        if: inputs.version_artifact != '' || inputs.notarize
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -161,6 +165,7 @@ jobs:
           name: macos-reports
           overwrite: true
           path: |
+            build/ci/version.json
             build/macos/setup-report.json
             build/macos/build-report.json
             build/macos/audio-report.json

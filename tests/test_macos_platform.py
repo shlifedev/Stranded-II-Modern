@@ -180,18 +180,21 @@ class AppValidation(TestCase):
     def test_unchanged_app_passes(self):
         self.assertEqual(self.check_app()['status'], 'pass')
 
-    def test_local_developer_menu_marker_is_verified(self):
-        payload = dict(self.payload, **{'core/development.flag': b'local development runtime\n'})
-        marker = self.app / 'Contents/Resources/game/core/development.flag'
-        marker.write_bytes(payload['core/development.flag'])
-        hashes = {name: hashlib.sha256(data).hexdigest() for name, data in payload.items()}
-        self.report['asset_sha256'] = hashes
-        build.write(self.app / 'Contents/Resources/native-assets.json',
-                    {'fingerprint': validation.fingerprint(hashes), 'files': list(payload)})
-        self.assertEqual(self.check_app()['status'], 'pass')
-        marker.write_bytes(b'changed marker')
-        with self.assertRaisesRegex(ValueError, 'resource changed'):
-            self.check_app()
+    def test_local_app_excludes_development_marker_and_passes_validation(self):
+        runtime = self.root / 'runtime'
+        marker = runtime / 'core/development.flag'
+        marker.parent.mkdir(parents=True)
+        marker.write_bytes(b'local development runtime\n')
+        with mock.patch.multiple(build, BUILD=self.root / 'build', RUNTIME=runtime):
+            app = build.package_app(self.executable)
+        signature = app / 'Contents/_CodeSignature/CodeResources'
+        signature.parent.mkdir()
+        signature.write_bytes(b'fake signature')
+        report = build.read(app.parent / 'package-report.json')
+        self.assertEqual(validation.validate_app(app, report)['status'], 'pass')
+        self.assertFalse((app / 'Contents/Resources/game/core/development.flag').exists())
+        self.assertNotIn('core/development.flag', report['asset_sha256'])
+        self.assertEqual(marker.read_bytes(), b'local development runtime\n')
 
     def test_changed_executable_rejected(self):
         self.executable.write_bytes(b'changed')

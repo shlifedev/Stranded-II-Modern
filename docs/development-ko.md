@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"d37e64288e82b7cf78099dd712341db469304ed39fd9c0ffecd91a49df9cac63"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"bda803364674be4e751288d96f4b8cba159d1c58dd9e8baafed185e950510ecc"} -->
 
 # 개발 가이드
 
@@ -97,28 +97,6 @@ Python으로 직접 실행할 수도 있습니다.
 메뉴를 열어도 게임은 진행되며 게임 입력은 차단됩니다. 상태 탭의 일시정지는 메뉴를 닫아도 유지됩니다. 싱글 플레이 치트, 아이템 아이콘 격자, 좌표·시간 이동, 설정 미리 적용, 검색·복사 가능한 로그를 제공합니다. 설정은 **저장**과 **저장된 설정으로 되돌리기**를 구분하며 자동 저장하지 않습니다. 화면 모드·해상도·FPS 제한·언어는 저장 후 재시작이 필요합니다. 로그는 최대 2,048건 / 2MiB이며 위로 스크롤하면 최신 로그 따라가기를 멈춥니다.
 
 공유 게임 UI는 `src/engine/includes/devmenu.bb`, 네이티브 ImGui·SDL 입력·WebGPU 출력 연결은 `src/blitz3d/src/modules/bb/debugui/`, 브라우저 IME 연결은 `src/web/debugui.js`에 있습니다. Windows 두 에디션, macOS, Web 및 Studio가 같은 구현을 사용합니다. Windows에서 `python scripts/verify_engine.py --graphics --input`은 입력 소유권과 창·컨텍스트 수명을 검사합니다. `s2_debugui_check` CMake 타깃은 준비된 `core/locales/<code>/ui.ttf` 경로를 인수로 받아 유니코드 글리프·슬라이더·로그 따라가기를 창 없이 검사합니다. 실제 화면, 한글 조합·붙여넣기와 각 플랫폼 실행은 별도로 확인합니다.
-
-### CPU·GPU 프로파일러
-
-**프로파일러 → 기록 시작**을 누른 뒤 메뉴를 닫고 플레이합니다. 기록은 세션 기본 OFF이며 메뉴를 닫아도 계속됩니다. **기록 정지**는 측정만 멈추고 게임은 진행합니다. 최근 완료 프레임 2,048개를 보관하며 그래프를 클릭해 프레임을 선택하고 **최신 프레임 따라가기**, **기록 초기화**, **분석 결과 복사**를 사용할 수 있습니다. 설정·장면 상태가 바뀌면 그래프에 경계를 표시하고 통계를 구분합니다.
-
-- CPU는 게임·물리·오브젝트·풀·그림자·물·반사·본 화면·후속 갱신·HUD·ImGui·FPS 제한 대기·Flip의 실제 경과 시간입니다. 드라이버 대기를 포함하며 **전체**는 하위 구간 포함, **자체**는 하위 구간 제외입니다. 평균·p95·최댓값은 선택한 설정 구간의 유효 프레임을 사용합니다. 포커스를 잃은 프레임은 통계에서 제외합니다.
-- GPU는 `timestamp-query` 지원 장치에서 본 화면·근/원거리 태양 그림자·반사·2D/후처리·화면 전송+ImGui·밉맵의 기존 렌더 패스를 측정합니다. 비동기 결과가 늦으면 대기 중, 읽기 버퍼가 차면 건너뜀, 패스 한도를 넘으면 부분 측정으로 표시합니다. 미지원 장치에서도 CPU와 실제 그리기 호출·삼각형·인스턴스 통계는 유지합니다.
-- GPU 합계는 렌더 패스 시간만 포함하며 전송·패스 사이 공백·화면 주사 시간은 제외합니다. CPU와 GPU는 겹쳐 실행되므로 더하지 않습니다. 화면의 FPS는 프레임 경계 간격에서 계산한 값입니다. 기록 자체에도 비용이 있으므로 같은 장면·설정에서 OFF/ON을 비교합니다.
-
-구현은 `debugui/profiler*`와 `graphics.webgpu/profiler_gpu*`에 있습니다. Windows의 `python scripts/verify_engine.py --render`와 macOS의 `python scripts/dev.py check --platform macos --suite full`은 `s2_profiler_check`(중첩·이력·통계)와 `s2_profiler_gpu_check`(실제 GPU timestamp·그리기·OFF/ON 픽셀·비동기 수명·미지원 경로)를 실행합니다. `s2_profiler_ui_check <ui.ttf> <catalog.tsv> <output.ppm>`은 합성 데이터로 화면 배치를 확인하며 실제 FPS 시험은 아닙니다. 브라우저용 자산 없는 fixture는 `tests/web_profiler.bb`입니다. 공유 Windows 변경은 두 에디션을 빌드·check하고 Metal·브라우저 경로는 각각 확인합니다.
-
-### 성능 테스트 장면
-
-개발자 메뉴의 **성능 테스트 → 테스트 장면 열기**로 진입합니다. 메인 메뉴에서만 열 수 있으며, 종료하면 메인 메뉴로 돌아가 그래픽·FPS 제한·프로파일러 기록 상태를 복원합니다. 테스트 설정은 저장하지 않습니다.
-
-- 등록된 맵 오브젝트·유닛(동물/NPC/탈것)·아이템을 이름/ID로 검색해 목록에 추가합니다. 아이템은 바닥의 개별 모델입니다. 종류별 수량·간격·높이·격자/고정 시드 무작위 배치를 지정합니다. 추가 생성은 기존 위치를 유지하며, 재생성·선택 그룹/전체 삭제와 생성 취소를 제공합니다. 프레임마다 최대 32개/약 4ms씩 처리하며 단일 모델 로딩은 더 걸릴 수 있습니다. 총 한도는 10,000개이고 요청·생성·실패/초과 수를 표시합니다. 기본 배치는 나무·바위 768개입니다.
-- 유닛 AI와 애니메이션은 각각 기본 OFF입니다. 그림자·조명·대기·풀·바람·시야·물 품질·AA, 정면/해안/하늘 카메라를 조절합니다. 반사는 OFF/기존 6방향/평면을 구분하며 물 품질 0~3은 캡처하지 않습니다. 그림자 ON은 방향 조명도 켭니다. 해상도는 현재 값만 표시합니다.
-- 수동 측정은 준비 3초와 측정 8초입니다. 자동 비교는 현재 생성된 배치의 0/0.5/1/2배 및 선택한 효과를 하나씩 바꾸어 3회 반복하고 중간 반복의 순서를 뒤집습니다. 정수 수량은 종류별로 내림하며 10,000개를 넘는 요청은 표시하고 제한합니다. 각 조건은 같은 시작 위치에서 재생성합니다. 측정 중에는 진행·취소만 표시하며 포커스 상실·최소화·브라우저 탭 숨김은 현재 측정을 취소/무효 처리합니다. 완료된 비교 결과는 유지합니다.
-- 결과는 평균/p95/최대 프레임 ms, 반복 중앙값, 기준 대비 ms/%, CPU 전체/자체, GPU 구간 및 지원·부분·건너뜀 비율과 프레임당 그리기/삼각형/인스턴스 수입니다. **완료 FPS**는 시작 전 GPU 작업을 비운 뒤 측정 끝의 비동기 GPU 완료까지 포함한 처리량이며 모니터 표시 FPS가 아닙니다. CPU+GPU를 합산하지 않습니다. GPU timestamp 미지원 시 시간은 미제공으로 표시하지만 완료 처리량과 CPU/그리기 통계는 유지합니다.
-- 결과 복사와 CSV/JSON 내보내기를 제공합니다. 네이티브는 `core/benchmarks/`, 브라우저는 다운로드를 사용합니다. 기존 결과 파일을 덮어쓰지 않습니다. 집계는 2,048프레임 표시 이력과 독립적이며 늦은 GPU 결과도 원래 비교에 연결됩니다.
-
-공유 장면은 `includes/dev_benchmark.bb`, 집계와 비동기 완료는 `debugui/benchmark*`에 있습니다. `s2_benchmark_check`는 긴 구간·늦은 GPU 결과·취소·통계를 검사하고 macOS `full`의 `tests/benchmark_scene.bb`는 실제 렌더링·혼합 생성·독립 시뮬레이션·복원·내보내기를 확인합니다. `tests/web_profiler.bb`는 실제 브라우저 완료/취소와 timestamp 지원/미지원 경로를 확인하는 자산 없는 fixture입니다.
 
 ## 네이티브 렌더링 벤치마크
 
@@ -220,11 +198,13 @@ python3 -m venv .venv
 
 `check --platform macos --suite core`는 화면을 열지 않고 원본 Blitz3D 1.118 결과 613바이트, Type 메모리 재사용, 앱 리소스·서명·실행 권한, ARM64·최소 OS와 시스템 라이브러리 의존성을 검사합니다. `--suite full`이 기본값이며 실제 Metal 렌더링·픽셀 읽기, 공통 메뉴·인트로·섬, 한국어 글꼴, 오디오 디코딩, 저장·백업·재불러오기, Cocoa 문자열 왕복, 새 프로필 설치와 리소스 갱신 시 데이터 보존을 추가로 검사합니다. `--suite`는 Mac 검사에만 사용할 수 있습니다. 최신 결과는 `build/macos/verification.json`, 검사별 결과는 `verification-core.json`·`verification-full.json`에 기록합니다. 게임 시간은 가상으로 진행하므로 실제 FPS·소리·IME 조합 입력·포커스·전체 화면·캠페인 검증을 대신하지 않습니다.
 
-`macos_package.py`는 최신 성공 검사와 현재 소스·도구·실행 파일·앱이 일치할 때만 ZIP과 `.zip.sha256`을 만듭니다. 로컬 빌드는 `build/macos/release/StrandedII-<version>-macos-arm64-preview-<build-id>.zip`, 출시 빌드는 `StrandedII-<display_version>-macos-arm64.zip`입니다. 출시 버전은 `build --platform macos --version-info build/ci/version.json`으로 전달하며 현재 커밋과 일치해야 합니다. 앱 번들 버전에는 숫자 부분을, 게임과 검증 요약에는 전체 버전 정보를 기록합니다. ZIP에는 앱, 영어·한국어 실행 안내, 로컬 경로를 제외한 검증 요약을 넣으며 개인 설정·세이브를 제외합니다. 압축 해제 후 내용·권한·서명을 재검사합니다. `core`만 수행한 패키지는 그래픽 검사를 `not_run`으로 명시합니다. 결과 경로는 `build/macos/distribution-report.json`에 기록합니다.
+`macos_package.py`는 최신 성공 검사와 현재 소스·도구·실행 파일·앱이 일치할 때만 ZIP과 `.zip.sha256`을 만듭니다. 로컬 빌드는 `build/macos/release/StrandedII-<version>-macos-arm64-preview-<build-id>.zip`, 출시 빌드는 `StrandedII-<display_version>-macos-arm64.zip`입니다. 출시 버전은 `build --platform macos --version-info build/ci/version.json`으로 전달하며 현재 커밋과 일치해야 합니다. 출시 ZIP은 `macos_package.py --notarize`로만 생성할 수 있습니다. 앱 번들 버전에는 숫자 부분을, 게임과 검증 요약에는 전체 버전 정보를 기록합니다. ZIP에는 앱, 영어·한국어 실행 안내, 로컬 경로를 제외한 검증 요약을 넣으며 개인 설정·세이브를 제외합니다. 검증된 앱의 복사본에 배포 서명을 적용하고, 공증 티켓을 붙인 최종 앱의 해시를 기록합니다. 압축 해제 후 내용·권한·서명과 공증 티켓·Gatekeeper 승인을 재검사합니다. `core`만 수행한 패키지는 그래픽 검사를 `not_run`으로 명시합니다. 결과 경로는 `build/macos/distribution-report.json`에 기록합니다.
 
-[Mac CI](../.github/workflows/macos.yml)는 수동 미리보기와 데스크톱 출시 워크플로의 재사용 빌드를 지원합니다. `macos-15` ARM64에서 고정 의존성을 검증해 `deps/ci-macos/`에 풀고 준비 → 빌드 → `core` 검사 → ZIP 생성을 실행합니다. 출시 빌드는 Windows와 동일한 버전 아티팩트와 소스 커밋을 사용합니다. ZIP·체크섬과 보고서는 Actions 아티팩트로 14일 보관합니다. 수동 Mac 실행만으로는 릴리스를 게시하지 않으며, 실제 게시는 아래 데스크톱 출시 절차에서 담당합니다.
+[Mac CI](../.github/workflows/macos.yml)는 수동 테스트와 데스크톱 출시 워크플로의 재사용 빌드를 지원합니다. `macos-15` ARM64에서 고정 의존성을 검증해 `deps/ci-macos/`에 풀고 준비 → 빌드 → `core` 검사 → ZIP 생성을 실행합니다. **Actions → macOS build → Run workflow**에서 테스트할 브랜치를 선택하세요. 기본값인 `notarize=true`는 Developer ID 서명 → Apple 공증 승인 → 티켓 첨부 → ZIP 재검증까지 실행합니다. `false`는 임시 서명한 미리보기 ZIP만 만듭니다. 수동 실행은 Windows 미리보기와 같은 `ci.py version`으로 `-local` 버전을 생성하며, Release·태그를 만들거나 출시 번호를 소모하지 않습니다. 출시 빌드는 Windows의 버전 아티팩트와 소스 커밋을 사용하고 항상 서명·공증합니다. ZIP·체크섬과 보고서는 Actions 아티팩트로 14일 보관하며, 실제 게시는 아래 데스크톱 출시 절차에서 담당합니다.
 
-테스트 ZIP은 별도 Apple Silicon Mac, 특히 macOS 15에서 압축 해제·실행·재실행·앱 교체 후 데이터 보존을 확인하세요. 한글 조합 입력, 전체 화면·앱 전환 후 입력 복귀, 배경음·효과음, 30분 플레이 후 저장·종료·재불러오기는 수동 검사 대상이며 자동 통과로 표시하지 않습니다. 앱은 로컬 임시 서명으로 공증하지 않았습니다. 네이티브 동영상·원시 TCP/UDP, Intel과 네이티브 Extended는 지원하지 않습니다. 정식 배포 서명·공증은 별도 단계입니다.
+출시용 저장소 Secrets는 `APPLE_CERTIFICATE`(Developer ID Application 인증서·개인 키가 든 P12의 Base64), `APPLE_CERTIFICATE_PASSWORD`(P12 암호), `APPLE_ID`, `APPLE_PASSWORD`(앱 전용 암호), `APPLE_TEAM_ID`입니다. 데스크톱 워크플로가 Mac 재사용 워크플로에 명시적으로 전달합니다. 로컬에서 `--notarize`를 검사할 때도 같은 환경 변수를 사용합니다. 인증서와 공증 자격 증명은 임시 키체인에 보관합니다. 서명 중에는 이 키체인을 사용자 검색 목록에 추가하고, 성공·실패와 관계없이 종료 시 기존 목록을 복원한 뒤 임시 키체인을 삭제합니다. 서명은 Hardened Runtime과 보안 타임스탬프를 사용하며 팀 ID를 확인합니다. 공증은 최대 20분 기다리고 `Accepted`가 아니거나 티켓·Gatekeeper 검사가 실패하면 중단합니다. 결과·Apple 로그는 `build/macos/notarization-*.json`에 남습니다. 절차는 [Apple 공증 안내](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow)를 따릅니다.
+
+테스트 ZIP은 별도 Apple Silicon Mac, 특히 macOS 15에서 압축 해제·실행·재실행·앱 교체 후 데이터 보존을 확인하세요. 한글 조합 입력, 전체 화면·앱 전환 후 입력 복귀, 배경음·효과음, 30분 플레이 후 저장·종료·재불러오기는 수동 검사 대상이며 자동 통과로 표시하지 않습니다. 기본 로컬 빌드와 `notarize=false`인 수동 CI는 임시 서명이며 공증하지 않습니다. 개발 메뉴용 `development.flag`는 로컬 개발 실행 폴더에만 유지하고 앱·ZIP에서는 제외합니다. 네이티브 동영상·원시 TCP/UDP, Intel과 네이티브 Extended는 지원하지 않습니다.
 
 ## Extended 제작 앱
 
@@ -408,7 +388,7 @@ msg "[[loc:quest.island1.arrival]]";
 
 공개 릴리스 제목과 설명은 영어로 작성합니다.
 
-Windows CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행합니다. 출시 단계는 `scripts/ci.py release --include-macos`로 두 플랫폼의 버전·커밋·체크섬을 검증한 뒤 게시합니다. Mac ZIP은 앱 파일 해시·실행 권한·ARM64 형식·네이티브 검사 결과도 확인하며, Mac 파일이 없는 기존 공개 릴리스에 나중에 덧붙이지 않습니다. Windows `check`와 Mac `core`는 비그래픽 검사이며 실제 화면, 렌더링 FPS, 앱 전환과 전체 플레이 검증을 대신하지 않습니다. 로컬 검사와 별도로 실제 GitHub Actions 실행도 확인해야 합니다.
+Windows CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행합니다. 출시 단계는 `scripts/ci.py release --include-macos`로 두 플랫폼의 버전·커밋·체크섬을 검증한 뒤 게시합니다. Mac ZIP은 앱 파일 해시·실행 권한·ARM64 형식·네이티브 검사 결과와 서명·공증·티켓 검사 기록도 확인하며, Mac 파일이 없는 기존 공개 릴리스에 나중에 덧붙이지 않습니다. Windows `check`와 Mac `core`는 비그래픽 검사이며 실제 화면, 렌더링 FPS, 앱 전환과 전체 플레이 검증을 대신하지 않습니다. 로컬 검사와 별도로 실제 GitHub Actions 실행도 확인해야 합니다.
 
 원본 사이트에 반복 다운로드 트래픽을 발생시키지 않도록 게임 리소스·컴파일러·글꼴은 같은 저장소의 의존성용 Release에 한 번 보관합니다. 이 빌드 입력에는 해당 Release와 Actions 캐시만 사용합니다. 파일이 없으면 준비 방법을 안내하고 실패하며, 해당 입력을 원본 사이트에서 자동 다운로드하지 않습니다.
 
