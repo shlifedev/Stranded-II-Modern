@@ -7,6 +7,7 @@ import os
 import plistlib
 import re
 import secrets
+import shlex
 import subprocess
 import tempfile
 
@@ -33,12 +34,14 @@ def credentials():
     if not re.fullmatch(r'[A-Z0-9]{10}', values['APPLE_TEAM_ID']):
         raise ValueError('Invalid APPLE_TEAM_ID.')
     certificate = base64.b64decode(values['APPLE_CERTIFICATE'], validate=True)
+    previous_keychains = shlex.split(private_run(['security', 'list-keychains', '-d', 'user']))
     with tempfile.TemporaryDirectory(prefix='stranded-signing-') as directory:
         keychain = str(Path(directory) / 'signing.keychain-db')
         p12 = Path(directory) / 'certificate.p12'
         p12.write_bytes(certificate)
         p12.chmod(0o600)
         password = secrets.token_urlsafe(32)
+        search_list_changed = False
         try:
             private_run(['security', 'create-keychain', '-p', password, keychain])
             private_run(['security', 'set-keychain-settings', '-lut', '3600', keychain])
@@ -48,6 +51,8 @@ def credentials():
             p12.unlink()
             private_run(['security', 'set-key-partition-list', '-S', 'apple-tool:,apple:,codesign:',
                          '-s', '-k', password, keychain])
+            search_list_changed = True
+            private_run(['security', 'list-keychains', '-d', 'user', '-s', keychain, *previous_keychains])
             identities = private_run(['security', 'find-identity', '-v', '-p', 'codesigning', keychain])
             matches = re.findall(r'\b([0-9A-F]{40}) "Developer ID Application: [^"\n]+ \(' +
                                  re.escape(values['APPLE_TEAM_ID']) + r'\)"', identities)
@@ -58,8 +63,12 @@ def credentials():
                          '--password', values['APPLE_PASSWORD'], '--team-id', values['APPLE_TEAM_ID']])
             yield keychain, matches[0], values['APPLE_TEAM_ID']
         finally:
-            if Path(keychain).exists():
-                private_run(['security', 'delete-keychain', keychain])
+            try:
+                if search_list_changed:
+                    private_run(['security', 'list-keychains', '-d', 'user', '-s', *previous_keychains])
+            finally:
+                if Path(keychain).exists():
+                    private_run(['security', 'delete-keychain', keychain])
 
 
 def verify_signature(app, team_id=None, notarized=False):
