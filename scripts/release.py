@@ -161,6 +161,15 @@ def validate_macos_package(directory, info):
                 plist.get('LSMinimumSystemVersion') != summary.get('minimum_macos')):
             raise ValueError('Mac ZIP version/commit/app does not match the selected build')
         checks = summary.get('checks', {})
+        notarization = summary.get('notarization', {})
+        if (summary.get('signing') != 'Developer ID Application' or summary.get('notarized') is not True or
+                summary.get('hardened_runtime') is not True or summary.get('secure_timestamp') is not True or
+                not re.fullmatch(r'[A-Z0-9]{10}', summary.get('team_id') or '') or
+                notarization.get('status') != 'Accepted' or
+                not re.fullmatch(r'[0-9a-fA-F-]{36}', notarization.get('id') or '') or
+                checks.get('stapled_ticket_and_gatekeeper') != 'pass' or
+                'Contents/CodeResources' not in records):
+            raise ValueError('Mac release requires Developer ID signing and accepted, stapled notarization')
         if (summary.get('suite') not in ('core', 'full') or
                 checks.get('app_structure_and_signature') != 'pass' or
                 checks.get('abi') != {'bytes_equal_to_blitz_1_118': 613, 'type_reuse': 'pass'}):
@@ -242,7 +251,7 @@ def publish(repo, directory, info, include_macos=False):
     notes = directory / 'release-notes.txt'
     recorded = dict(info, zip_sha256=artifacts[archive_name(info)], artifacts=artifacts)
     mac_note = ('\nmacOS: Experimental native build for Apple Silicon, targeting macOS 15.0 or later. '
-                'Ad hoc signed and not notarized. See README-en.txt in the ZIP for launch instructions '
+                'Developer ID signed and notarized by Apple, with a stapled ticket. See README-en.txt for launch instructions '
                 'and verification coverage.\n'
                 if include_macos else '')
     notes.write_text('<!-- stranded-ii-build: ' + json.dumps(recorded, separators=(',', ':')) + ' -->\n' + mac_note,

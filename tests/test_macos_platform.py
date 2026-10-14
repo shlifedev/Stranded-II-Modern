@@ -159,7 +159,8 @@ class AppValidation(TestCase):
         for patcher in (mock.patch.object(build, 'ROOT', self.root),
                         mock.patch.object(build, 'asset_payload', return_value=self.payload),
                         mock.patch.object(build.macos_toolchain, 'config', return_value=self.cfg),
-                        mock.patch.object(validation.subprocess, 'run'),
+                        mock.patch.object(validation.subprocess, 'run', return_value=
+                                          subprocess.CompletedProcess([], 0, stdout=b'', stderr='Signature=adhoc\n')),
                         mock.patch.object(validation.subprocess, 'check_output', side_effect=self.tool_output)):
             patcher.start()
             self.addCleanup(patcher.stop)
@@ -178,6 +179,22 @@ class AppValidation(TestCase):
 
     def test_unchanged_app_passes(self):
         self.assertEqual(self.check_app()['status'], 'pass')
+
+    def test_local_app_excludes_development_marker_and_passes_validation(self):
+        runtime = self.root / 'runtime'
+        marker = runtime / 'core/development.flag'
+        marker.parent.mkdir(parents=True)
+        marker.write_bytes(b'local development runtime\n')
+        with mock.patch.multiple(build, BUILD=self.root / 'build', RUNTIME=runtime):
+            app = build.package_app(self.executable)
+        signature = app / 'Contents/_CodeSignature/CodeResources'
+        signature.parent.mkdir()
+        signature.write_bytes(b'fake signature')
+        report = build.read(app.parent / 'package-report.json')
+        self.assertEqual(validation.validate_app(app, report)['status'], 'pass')
+        self.assertFalse((app / 'Contents/Resources/game/core/development.flag').exists())
+        self.assertNotIn('core/development.flag', report['asset_sha256'])
+        self.assertEqual(marker.read_bytes(), b'local development runtime\n')
 
     def test_changed_executable_rejected(self):
         self.executable.write_bytes(b'changed')
@@ -218,6 +235,17 @@ class AppValidation(TestCase):
         validation.subprocess.run.side_effect = subprocess.CalledProcessError(1, 'codesign')
         with self.assertRaises(subprocess.CalledProcessError):
             self.check_app()
+
+    def test_stapled_ticket_is_allowed_only_for_notarized_app(self):
+        (self.app / 'Contents/CodeResources').write_bytes(b'fixture ticket')
+        with self.assertRaisesRegex(ValueError, 'unexpected'):
+            self.check_app()
+        self.report.update(notarized=True, team_id='TEAM123456')
+        with mock.patch.object(validation, 'verify_signature', return_value={'signature': 'Developer ID Application'}):
+            self.assertEqual(self.check_app()['status'], 'pass')
+            (self.app / 'Contents/CodeResources').unlink()
+            with self.assertRaisesRegex(ValueError, 'unexpected'):
+                self.check_app()
 
 
 class VerificationGates(TestCase):
