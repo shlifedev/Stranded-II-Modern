@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"608ee71e669a765a52f06aea6d2aaeafe015a514276afb41cc6a3fdca55a96ba"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"097ff94b0c5704a04692cbf38230a43fa5689c2497b783d4a9660840caa6e5c5"} -->
 
 # Stranded II's wgpu/WebGPU cross-platform renderer migration
 
@@ -479,6 +479,8 @@ CPU frustum tests remain in the shared [frustum implementation](../src/blitz3d/s
 ## 14. Preserving 2D UI, font and image semantics
 
 `graphics.webgpu` implements `BBCanvas` screens, images and textures as `WebGPUCanvas`. A 2D position/UV vertex occupies **16 bytes** and render state occupies **64 bytes**. CPU staging accumulates vertices/uniforms; consecutive draws sharing pipeline, bind group, scissor and buffer are merged. Strip topologies use separate draws to avoid unintended connections between adjacent strips.
+
+Image copies such as `DrawImage` and `DrawImageRect` put scaled destination coordinates in the vertices and keep the uniform position/size transform at identity. Consecutive glyphs from the same bitmap font page can therefore share a draw even when their positions or sizes differ. Texture, mask, copy mode or scissor changes split the batch; call order and `CopyRect` snapshot, upload and buffer submission boundaries are preserved. The shared `s2_profiler_gpu_check` checks draw counts and pixel equality on actual Metal/D3D12 devices.
 
 ### 14.1 Bitmap images and colour keys
 

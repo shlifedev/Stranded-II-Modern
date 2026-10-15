@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"6616a0598b5d8f4fffdb558ce157daf6be8454252f2df97e13a96c67449e9857"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"01f54a2aed6fac110e63d612fb8cfb5c670c558a5380b190c56a5ae67885c82a"} -->
 
 # Stranded II의 wgpu/WebGPU 크로스플랫폼 렌더러 마이그레이션
 
@@ -481,6 +481,8 @@ CPU frustum 검사는 공통 [frustum 구현](../src/blitz3d/src/modules/bb/blit
 ## 14. 2D UI·글꼴·이미지의 기존 의미 보존
 
 `graphics.webgpu`는 `BBCanvas`의 화면·이미지·texture를 `WebGPUCanvas`로 구현합니다. 2D 정점은 position/UV의 **16 byte**, render state는 **64 byte**입니다. 정점과 uniform을 CPU staging에 모으고 pipeline·bind group·scissor·buffer가 같은 연속 draw를 합칩니다. strip topology는 별도로 draw하여 인접 strip 사이에 의도하지 않은 연결이 생기지 않게 합니다.
+
+`DrawImage`·`DrawImageRect` 등의 이미지 복사는 확대·축소를 적용한 목적지 좌표를 정점에 넣고, uniform의 위치·크기는 단위 변환으로 유지합니다. 따라서 같은 bitmap 글꼴 페이지에서 위치나 크기가 다른 글자를 연속으로 그려도 하나의 draw로 합칠 수 있습니다. texture·mask·복사 방식·scissor가 달라지면 묶음을 나누며, 호출 순서와 `CopyRect` 스냅샷·업로드·버퍼 제출 경계는 유지합니다. 공용 `s2_profiler_gpu_check`는 실제 Metal/D3D12에서 호출 수와 픽셀 동일성을 검사합니다.
 
 ### 14.1 bitmap 이미지와 color key
 
