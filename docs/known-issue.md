@@ -1,10 +1,10 @@
-<!-- dev-docs-ai-translation: {"document":"docs/known-issue.md","language":"en","syncedHash":"32c70cce7a043c52ffe69a4406683917b2a0455dfe96ef75a617ab29b66ab718"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/known-issue.md","language":"en","syncedHash":"1f3d5fa27e20442c34f5e7f82583cde983ce472b1bb5bd32f9a5c406e2c025a0"} -->
 
 # Known issues
 
 [English](known-issue.md) · [한국어](known-issue-ko.md)
 
-[Development guide](development.md)
+[Development guide](development.md) · [Stability and performance audit](stability-audit.md)
 
 The following issues remain unfixed as of 2026-10-15. They are in the game code shared by Stranded II and Extended. Verification used isolated game-function fixtures in the macOS ARM64 / Metal build of Stranded II; manual mouse interaction, Windows, and Extended execution were not verified.
 

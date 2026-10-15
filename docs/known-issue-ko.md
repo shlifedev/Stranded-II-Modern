@@ -1,10 +1,10 @@
-<!-- dev-docs-ai-translation: {"document":"docs/known-issue.md","language":"ko","syncedHash":"8ea5bbc60e4af1ef30ba179de91a3bc4b261e6ec9a07437ea71b1928090d3cbe"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/known-issue.md","language":"ko","syncedHash":"82ad27555fd7600a4b6fc8f833b17d201949cf2257ce1955c32b52f9fe300e58"} -->
 
 # 알려진 문제
 
 [English](known-issue.md) · [한국어](known-issue-ko.md)
 
-[개발 가이드](development-ko.md)
+[개발 가이드](development-ko.md) · [안정성·성능 조사](stability-audit-ko.md)
 
 2026-10-15 기준 아래 문제는 미수정 상태입니다. Stranded II와 Extended가 공유하는 게임 코드에 있습니다. Stranded II의 macOS ARM64 / Metal 빌드에서 사용자 데이터와 분리된 게임 함수 테스트로 확인했으며, 수동 마우스 조작과 Windows·Extended 실행은 검증하지 않았습니다.
 
