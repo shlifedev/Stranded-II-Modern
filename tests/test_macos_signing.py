@@ -19,6 +19,43 @@ DETAILS = ('CodeDirectory v=20500 size=500 flags=0x10000(runtime)\n'
            'TeamIdentifier=TEAM123456\nTimestamp=Oct 14, 2026 at 1:00 PM\n')
 
 
+class StaplerRetries(TestCase):
+    def test_observed_cloudkit_disconnect_retries_the_same_ticket_operation(self):
+        for action in ('staple', 'validate'):
+            command = ['xcrun', 'stapler', action, 'fixture.app']
+            failure = subprocess.CalledProcessError(68, command, stderr=(
+                'error is Error Domain=NSURLErrorDomain Code=-1005 "The network connection was lost."\n'
+                "CloudKit's response is inconsistent with expections: (null)\n"
+                f'The {action} action failed! Error 68.'))
+            success = subprocess.CompletedProcess(command, 0, stdout='Ticket check passed.\n', stderr='')
+            with self.subTest(action=action), mock.patch.object(signing.subprocess, 'run',
+                    side_effect=[failure, success]) as run, mock.patch.object(signing.time, 'sleep') as sleep:
+                signing.stapler(action, Path('fixture.app'))
+                self.assertEqual(run.call_count, 2)
+                self.assertTrue(all(call.args[0] == command for call in run.call_args_list))
+                sleep.assert_called_once_with(5)
+
+    def test_persistent_network_failure_stops_after_four_attempts(self):
+        failure = subprocess.CalledProcessError(68, 'stapler', stderr='Error Domain=NSURLErrorDomain Code=-1005')
+        with mock.patch.object(signing.subprocess, 'run', side_effect=failure) as run, \
+             mock.patch.object(signing.time, 'sleep') as sleep:
+            with self.assertRaises(subprocess.CalledProcessError):
+                signing.stapler('validate', Path('fixture.dmg'))
+        self.assertEqual(run.call_count, 4)
+        self.assertEqual(sleep.call_args_list, [mock.call(5), mock.call(15), mock.call(30)])
+
+    def test_invalid_missing_or_untrusted_tickets_fail_without_retry(self):
+        for output in ('The validate action failed! Error 65.', 'The validate action failed! Error 68.',
+                       'Error Domain=NSURLErrorDomain Code=-1202 "Certificate is not trusted."'):
+            with self.subTest(output=output), mock.patch.object(signing.subprocess, 'run',
+                    side_effect=subprocess.CalledProcessError(65, 'stapler', stderr=output)) as run, \
+                 mock.patch.object(signing.time, 'sleep') as sleep:
+                with self.assertRaises(subprocess.CalledProcessError):
+                    signing.stapler('validate', Path('fixture.app'))
+                run.assert_called_once()
+                sleep.assert_not_called()
+
+
 class SignatureValidation(TestCase):
     def verify(self, details=DETAILS, entitlements=None, notarized=False):
         def run(command, **kwargs):

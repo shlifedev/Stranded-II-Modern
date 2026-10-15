@@ -10,11 +10,15 @@ import secrets
 import shlex
 import subprocess
 import tempfile
+import time
 
 import macos_build as build
 
 SECRET_NAMES = ('APPLE_CERTIFICATE', 'APPLE_CERTIFICATE_PASSWORD', 'APPLE_ID',
                 'APPLE_PASSWORD', 'APPLE_TEAM_ID')
+STAPLER_RETRY_DELAYS = (5, 15, 30)
+TRANSIENT_NETWORK_ERROR = re.compile(
+    r'\b(?:NSURLErrorDomain|kCFErrorDomainCFNetwork) Code=-(?:1001|1003|1004|1005|1006|1009)\b')
 
 
 def private_run(command):
@@ -71,6 +75,26 @@ def credentials():
                     private_run(['security', 'delete-keychain', keychain])
 
 
+def stapler(action, path):
+    """Retry only transient Apple ticket-service network failures, never invalid tickets."""
+    command = ['xcrun', 'stapler', action, str(path)]
+    for attempt in range(len(STAPLER_RETRY_DELAYS) + 1):
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, check=True)
+            if isinstance(result.stdout, str) and result.stdout:
+                print(result.stdout, end='', flush=True)
+            return
+        except subprocess.CalledProcessError as exc:
+            output = (exc.stdout or '') + '\n' + (exc.stderr or '')
+            if attempt == len(STAPLER_RETRY_DELAYS) or not TRANSIENT_NETWORK_ERROR.search(output):
+                print(output, flush=True)
+                raise
+            delay = STAPLER_RETRY_DELAYS[attempt]
+            print(f'Apple ticket-service network failure; retrying stapler {action} '
+                  f'in {delay}s (attempt {attempt + 2}/{len(STAPLER_RETRY_DELAYS) + 1}).', flush=True)
+            time.sleep(delay)
+
+
 def verify_signature(app, team_id=None, notarized=False):
     subprocess.run(['codesign', '--verify', '--deep', '--strict', str(app)], check=True)
     details = subprocess.run(['codesign', '--display', '--verbose=4', str(app)],
@@ -91,7 +115,7 @@ def verify_signature(app, team_id=None, notarized=False):
     if entitlements.strip() and plistlib.loads(entitlements).get('com.apple.security.get-task-allow'):
         raise ValueError('Distribution app must not allow debugger attachment.')
     if notarized:
-        subprocess.run(['xcrun', 'stapler', 'validate', str(app)], check=True)
+        stapler('validate', app)
         subprocess.run(['spctl', '--assess', '--type', 'execute', '--verbose=2', str(app)], check=True)
     return {'signature': 'Developer ID Application', 'team_id': team_id,
             'hardened_runtime': True, 'secure_timestamp': True, 'notarized': notarized}
@@ -122,7 +146,7 @@ def verify_dmg_signature(path, team_id):
             '\nAuthority=Developer ID Application:' not in details or
             not re.search(r'^Timestamp=.+$', details, re.M)):
         raise ValueError('Expected a Developer ID signed DMG with matching team and secure timestamp.')
-    subprocess.run(['xcrun', 'stapler', 'validate', str(path)], check=True)
+    stapler('validate', path)
     subprocess.run(['spctl', '--assess', '--type', 'open', '--context',
                     'context:primary-signature', '--verbose=2', str(path)], check=True)
 
@@ -132,7 +156,7 @@ def sign_and_notarize_dmg(path):
         subprocess.run(['codesign', '--force', '--sign', identity, '--keychain', keychain,
                         '--timestamp', str(path)], check=True)
         record = notarize_artifact(path, keychain, 'notarization-dmg')
-        subprocess.run(['xcrun', 'stapler', 'staple', str(path)], check=True)
+        stapler('staple', path)
         verify_dmg_signature(path, team)
     return record
 
@@ -147,7 +171,7 @@ def sign_and_notarize(app, package_report):
             archive = Path(directory) / 'submission.zip'
             subprocess.run(['ditto', '-c', '-k', '--keepParent', str(app), str(archive)], check=True)
             record = notarize_artifact(archive, keychain)
-        subprocess.run(['xcrun', 'stapler', 'staple', str(app)], check=True)
+        stapler('staple', app)
         verify_signature(app, team, notarized=True)
     return dict(package_report, signing='Developer ID Application', team_id=team, notarized=True,
                 notarization=record, signed_executable_sha256=build.digest(app / 'Contents/MacOS/StrandedII'))
