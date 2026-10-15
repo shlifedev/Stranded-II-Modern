@@ -10,19 +10,22 @@ const {createRequire}=require('node:module');
 
 test('desktop shell serves isolated assets, persists drafts and uses the JSON core',async t=>{
   const temp=fs.mkdtempSync(path.join(os.tmpdir(),'studio-shell-'));
-  const handlers={},events={},appEvents={};let browser,loaded;
+  const handlers={},events={},appEvents={},windowEvents={};let browser,loaded,closed=false;
   const ready=new Promise(resolve=>loaded=resolve);
   class Window {
     constructor(){browser=this;this.webContents={setWindowOpenHandler(){},on(){},session:{setPermissionRequestHandler(){}}};}
     setMenuBarVisibility(){}
+    on(name,fn){windowEvents[name]=fn;}
+    close(){closed=true;}
     async loadURL(url){this.url=url;loaded();}
   }
-  const electron={BrowserWindow:Window,ipcMain:{handle:(name,fn)=>handlers[name]=fn,on:(name,fn)=>events[name]=fn},dialog:{},
+  const opened=[];
+  const electron={BrowserWindow:Window,ipcMain:{handle:(name,fn)=>handlers[name]=fn,on:(name,fn)=>events[name]=fn},dialog:{},shell:{openPath:async name=>{opened.push(name);return '';}},
     app:{whenReady:()=>Promise.resolve(),getPath:()=>temp,on:(name,fn)=>appEvents[name]=fn,quit(){throw new Error('Shell startup failed');}}};
   const filename=path.join(__dirname,'../electron/main.cjs'),realRequire=createRequire(filename);
   const context=vm.createContext({require:name=>name==='electron'?electron:realRequire(name),__dirname:path.dirname(filename),process,console,URL,Buffer});
   vm.runInContext(fs.readFileSync(filename,'utf8'),context,{filename});
-  t.after(()=>{appEvents['before-quit']?.();fs.rmSync(temp,{recursive:true,force:true});});
+  t.after(()=>{appEvents['will-quit']?.();fs.rmSync(temp,{recursive:true,force:true});});
   await ready;
   const event={sender:browser.webContents,senderFrame:{url:browser.url}};
   const response=await fetch(browser.url);
@@ -51,4 +54,38 @@ test('desktop shell serves isolated assets, persists drafts and uses the JSON co
   assert.equal(saved['studio.draft'],'unsaved script');
   events['studio:storage'](event,'get','studio.draft');
   assert.equal(event.returnValue.value,'unsaved script');
+  events['studio:storage'](event,'keys','studio.');
+  assert.deepEqual([...event.returnValue.value],['studio.draft']);
+  assert.equal((await handlers['studio:environment'](event)).projects,path.join(temp,'Stranded II Studio','Projects'));
+  await handlers['studio:open-folder'](event,project);assert.deepEqual(opened,[project]);
+  await assert.rejects(()=>handlers['studio:open-folder'](event,'relative'),/existing project/);
+  const revision=await handlers['studio:request'](event,{command:'revision',project});
+  assert.match(revision.result.projectHash,/^[a-f0-9]{64}$/);
+  const connected=await handlers['studio:request'](event,{command:'connect',project,base});
+  assert.equal(connected.ok,true);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(project,'project.json'))).format,'stranded-studio/3');
+  const legacy=path.join(temp,'legacy');
+  const call=async request=>{
+    const response=await handlers['studio:request'](event,{project:legacy,...request});
+    assert.equal(response.ok,true,JSON.stringify(response));return response.result;
+  };
+  await call({command:'init',base,formatVersion:1});
+  const original=fs.readFileSync(path.join(legacy,'project.json'),'utf8');
+  const review=await call({command:'migrate'});
+  assert.equal(review.dryRun,true);
+  assert.equal(fs.readFileSync(path.join(legacy,'project.json'),'utf8'),original);
+  const converted=await call({command:'migrate',dryRun:false,expectProjectHash:review.projectHash});
+  assert.equal(JSON.parse(fs.readFileSync(path.join(legacy,'project.json'))).format,'stranded-studio/3');
+  assert.equal((await call({command:'migrations'})).backups[0].id,converted.backup);
+  assert.equal((await call({command:'restore-migration',backup:converted.backup})).dryRun,true);
+  await call({command:'restore-migration',backup:converted.backup,dryRun:false});
+  assert.equal(fs.readFileSync(path.join(legacy,'project.json'),'utf8'),original);
+  await call({command:'apply',project,operations:{op:'map.create',name:'island',size:16}});
+  const edit=await call({command:'apply',project,map:'island',operations:{op:'entity.add',map:'island',kind:'item',type:1}});
+  assert.equal(edit.pendingSave,true);assert.equal(edit.snapshot.map.entities.length,2);
+  let prevented=false;windowEvents.close({preventDefault(){prevented=true;}});
+  assert.equal(prevented,true);assert.equal(closed,false);
+  for(let n=0;n<100&&!closed;n++)await new Promise(resolve=>setTimeout(resolve,5));
+  assert.equal(closed,true);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(project,'maps/island/map.json'))).entities.length,2);
 });

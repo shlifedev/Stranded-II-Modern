@@ -58,7 +58,7 @@ def preview(project, map_name, since=None):
         previous = json.loads(cached)
         if previous['map'] != map_name:
             raise ValueError('Preview token belongs to a different map')
-    resources = hashlib.sha256(encode({'files':script_resources(project), **{k:project.data[k] for k in ('assets','locales')}})).hexdigest()
+    resources = hashlib.sha256(encode({'files':script_resources(project), 'assets':project.asset_versions(), 'locales':project.data['locales']})).hexdigest()
     raw = project.map_bytes(map_name)
     model = EditableMap(raw)
     available = previous['available'] if previous else [f'{r.kind}/{r.identifier}' for r in project.catalog()]

@@ -1,7 +1,6 @@
-"""Transactional project commands shared by the CLI and desktop application.
+"""Shared commands and legacy v1 storage; v2 authoring lives in file_project.
 
-project.json is the authoring source. Imported maps/assets are immutable,
-content-addressed files. Export builds native resources without touching the base.
+Export builds native resources without touching the base runtime.
 """
 from contextlib import contextmanager
 from copy import deepcopy
@@ -99,6 +98,20 @@ def locked(root):
 
 
 class Project:
+    def __new__(cls, directory):
+        if cls is Project:
+            root = Path(directory).resolve()
+            if (root/'.studio/file-transaction.json').exists():
+                from .file_store import recover
+                with locked(root): recover(root)
+            path = root/'project.json'
+            if path.is_file():
+                from .file_store import read_json, FORMATS
+                if read_json(path.read_bytes(), 'project.json').get('format') in FORMATS:
+                    from .file_project import FileProject
+                    return object.__new__(FileProject)
+        return object.__new__(cls)
+
     def __init__(self, directory):
         self.root = Path(directory).resolve()
         self.path = self.root / 'project.json'
@@ -107,10 +120,20 @@ class Project:
         self.load()
 
     @classmethod
-    def create(cls, directory, base, name='Extended project'):
+    def create(cls, directory, base, name='Extended project', version=3):
+        if version in (2,3):
+            from .file_project import FileProject
+            return FileProject.create(directory, base, name, version)
+        if version != 1:
+            raise ValueError('Unsupported project format version')
         root, base = Path(directory).resolve(), Path(base).resolve()
-        if root.exists() and any(root.iterdir()):
-            raise ValueError('Choose a new or empty project directory')
+        if root.exists():
+            reserved = {'project.json', 'sources', 'scripts', '.studio'}
+            collisions = [p.name for p in root.iterdir() if p.name.casefold() in reserved]
+            if collisions:
+                raise ValueError('Studio paths already exist; open the project or choose another folder: '+', '.join(collisions))
+        from .workspace import ignore_file
+        ignore = ignore_file(root)  # Check existing files before creating anything.
         if root == base or root.is_relative_to(base) or base.is_relative_to(root):
             raise ValueError('The authoring project and base runtime must be separate directories')
         if not (base / MOD / 'sys').is_dir():
@@ -124,16 +147,21 @@ class Project:
                 'base': base_path,
                 'files': {}, 'maps': {}, 'assets': {}, 'locales': {}}
         atomic(root / 'project.json', encode(data))
-        atomic(root / '.gitignore', b'.studio/\nexport/\n')
+        atomic(root / '.gitignore', ignore)
         return cls(root)
 
     def load(self):
-        self.data = json.loads(self.path.read_text('utf8'))
+        self._manifest_bytes = self.path.read_bytes()
+        self.data = json.loads(self._manifest_bytes)
         if self.data.get('format') != FORMAT or self.data.get('edition') != 'extended':
             raise ValueError('Not a supported Extended Studio project')
-        self.base = (self.root / self.data['base']).resolve()
+        local = safe(self.root, '.studio/local.json')
+        settings = json.loads(local.read_text('utf8')) if local.is_file() else {}
+        if not isinstance(settings, dict) or ('base' in settings and (not isinstance(settings['base'], str) or not settings['base'])):
+            raise ValueError('Invalid local resource connection; reconnect the base in Studio')
+        self.base = (self.root / settings.get('base', self.data['base'])).resolve()
         if not (self.base / MOD / 'sys').is_dir():
-            raise ValueError(f'Base runtime is missing: {self.base}. Prepare the runtime or update project.json base.')
+            raise ValueError(f'Base runtime is missing: {self.base}. Reconnect the base in Studio or use connect --base PATH.')
         for relative in self.data['files']:
             resource_path(relative)
         for relative, stored in self.data['assets'].items():
@@ -256,6 +284,9 @@ class Project:
         if not isinstance(operation, dict) or not isinstance(operation.get('op'), str):
             raise ValueError('Each operation must be an object with a string op')
         op = operation.get('op')
+        if op == 'draft.apply':
+            from .workspace import apply_draft
+            return apply_draft(self, operation)
         if op.startswith('script.'):
             return scripts.perform(self, operation)
         if op == 'template.create':
@@ -353,6 +384,8 @@ class Project:
     def commit(self, before, history):
         if self.data == before:
             return
+        if self.path.read_bytes() != self._manifest_bytes:
+            raise ValueError('Project changed during editing; reload before saving')
         self.data['revision'] = before['revision'] + 1
         history['head'] = digest(encode(self.data))
         for relative, data in self._blobs.items():
@@ -361,11 +394,19 @@ class Project:
         # existing atomic-file/history-head contract. Blob sources are immutable.
         scripts.commit_files(self, before, history)
 
-    def apply(self, operations, expected=None, dry_run=False):
+    def project_hash(self):
+        return digest(encode({'data': self.data, 'scripts': scripts.version(self.script_files), 'base': str(self.base)}))
+
+    def check_hash(self, expected):
+        if expected is not None and expected != self.project_hash():
+            raise ValueError('Project content changed; reload before editing or testing')
+
+    def apply(self, operations, expected=None, dry_run=False, expected_hash=None):
         if not isinstance(operations, list) or not operations or len(operations) > 1000:
             raise ValueError('Provide 1–1000 operations in an array')
         with locked(self.root):
             self.load()
+            self.check_hash(expected_hash)
             if expected is not None and expected != self.data['revision']:
                 raise ValueError(f'Revision conflict: expected {expected}, current {self.data["revision"]}; reload before editing')
             before, history = deepcopy(self.data), self.history()
@@ -384,9 +425,10 @@ class Project:
             finally:
                 self.load()
 
-    def undo(self, redo=False, expected=None):
+    def undo(self, redo=False, expected=None, expected_hash=None):
         with locked(self.root):
             self.load()
+            self.check_hash(expected_hash)
             if expected is not None and expected != self.data['revision']:
                 raise ValueError('Revision conflict; reload before undo/redo')
             before, history = deepcopy(self.data), self.history()
@@ -410,25 +452,43 @@ class Project:
 
     def validate(self):
         issues = []
-        def error(code, message, location):
-            issues.append({'severity': 'error', 'code': code, 'message': message, 'location': location})
+        def inline(text, target):
+            if scripts.binding(self, target):
+                return
+            for issue in scripts.analyze(text, json.dumps(target))['diagnostics']:
+                issue.pop('path', None)
+                issues.append({**issue, 'target':target, 'field':'script'})
+        def error(code, message, location, target=None, field=None):
+            issues.append({'severity': 'error', 'code': code, 'message': message, 'location': location,
+                           **({'target': target} if target else {}), **({'field': field} if field else {})})
         catalog = self.catalog()
         indices = {}
         for record in catalog:
             key = record.kind, str(record.identifier)
             if key in indices:
-                error('duplicate-id', f'Duplicate {record.kind} ID {record.identifier}', record.path)
+                error('duplicate-id', f'Duplicate {record.kind} ID {record.identifier}', record.path,
+                      {'scope':'definition','kind':record.kind,'id':record.identifier})
             indices[key] = record
         translations = self.translations('en')
+        original_records = {}
         for record in catalog:
             props, location = record.properties, f'{record.kind}/{record.identifier}'
+            target = {'scope':'definition','kind':record.kind,'id':record.identifier}
             changed = record.path in self.data['files']
             # Report the project's edits; legacy scripts and optional assets are
             # retained verbatim rather than reinterpreted by a second game engine.
             if not changed:
                 continue
+            if record.path not in original_records:
+                base_path = safe(self.base, record.path)
+                originals = content.records(record.path, base_path.read_text('utf8')) if base_path.is_file() else []
+                original_records[record.path] = {(r.kind,r.identifier):r for r in originals}
+            original = original_records[record.path].get((record.kind,record.identifier))
+            text = props.get('script', [''])[0]
+            if text != (original.properties.get('script', [''])[0] if original else ''):
+                inline(text, target)
             if record.kind != 'recipe' and not 1 <= record.identifier <= self.limits()[record.kind]:
-                error('id-limit', 'Definition exceeds the current game limit', location)
+                error('id-limit', 'Definition exceeds the current game limit', location, target)
             for field in ('model','icon'):
                 for value in props.get(field, []):
                     relative = MOD+value.replace('\\','/')
@@ -437,42 +497,50 @@ class Project:
                     except ValueError:
                         exists = False
                     if not exists:
-                        error('missing-asset', f'{field}: {value}', location)
-            for field, target in (('req','item'),('gen','item'),('objectid','object'),('unitid','unit'),('buildingsite','object'),('atobject','object')):
+                        error('missing-asset', f'{field}: {value}', location, target, field)
+            for field, reference_kind in (('req','item'),('gen','item'),('objectid','object'),('unitid','unit'),('buildingsite','object'),('atobject','object')):
                 if record.kind not in ('recipe','building'):
                     continue
                 for value in props.get(field, []):
                     bits = value.split(',')
-                    if (target, bits[0].strip()) not in indices:
-                        error('missing-reference', f'{field} references unknown {target} {bits[0]}', location)
+                    if (reference_kind, bits[0].strip()) not in indices:
+                        error('missing-reference', f'{field} references unknown {reference_kind} {bits[0]}', location, target, field)
                     if len(bits)>1:
                         try:
                             if int(bits[1]) < 1: raise ValueError()
                         except ValueError:
-                            error('invalid-count', f'{field} requires a positive quantity', location)
+                            error('invalid-count', f'{field} requires a positive quantity', location, target, field)
             if record.kind == 'recipe' and (len(props.get('req', [])) < 2 or not props.get('gen')):
-                error('recipe-shape', 'A combination requires at least two req properties and one gen property', location)
+                error('recipe-shape', 'A combination requires at least two req properties and one gen property', location, target, 'req')
             if record.kind == 'building' and not (props.get('objectid') or props.get('unitid')):
-                error('building-target', 'A building must refer to an object or unit', location)
+                error('building-target', 'A building must refer to an object or unit', location, target, 'objectid')
             for value in [v for values in props.values() for v in values]:
                 for key in LOC.findall(value):
                     if key not in translations:
-                        error('missing-translation', f'English fallback is missing: {key}', location)
+                        error('missing-translation', f'English fallback is missing: {key}', location, target)
         for name in self.data['maps']:
             try:
                 model = EditableMap(self.map_bytes(name))
+                summary = model.summary()
+                edits = self.data['maps'][name]['edits']
+                if any(e['op'] == 'map.script' for e in edits):
+                    inline(summary['script'], {'scope':'map','map':name})
+                script_edits = {(e['kind'],e['id']) for e in edits if e['op'] == 'entity.script'}
                 seen = set()
-                for entity in model.entities:
+                for entity in summary['entities']:
                     identity = entity['kind'], entity['id']
+                    target = {'scope':'entity','map':name,'kind':entity['kind'],'id':entity['id']}
+                    if identity in script_edits:
+                        inline(entity.get('script',''), target)
                     if identity in seen:
-                        error('duplicate-entity', f'Duplicate entity: {identity}', name)
+                        error('duplicate-entity', f'Duplicate entity: {identity}', name, target)
                     seen.add(identity)
                     if (entity['kind'], str(entity['type'])) not in indices:
-                        error('missing-definition', f'{entity["kind"]} type {entity["type"]} does not exist', name)
+                        error('missing-definition', f'{entity["kind"]} type {entity["type"]} does not exist', name, target)
                 if not any(e['kind']=='info' and e['type']==1 for e in model.entities):
-                    error('player-start', 'A playable map needs a player start (info type 1)', name)
+                    error('player-start', 'A playable map needs a player start (info type 1)', name, {'scope':'map','map':name})
             except (ValueError, KeyError) as exc:
-                error('invalid-map', str(exc), name)
+                error('invalid-map', str(exc), name, {'scope':'map','map':name})
         issues.extend(scripts.workspace(self)['diagnostics'])
         return issues
 
@@ -480,14 +548,17 @@ class Project:
         # Map edits and their revision counter do not change content images.
         return digest(encode({'base': str(self.base), 'files': self.data['files'], 'assets': self.data['assets']}))
 
+    def asset_versions(self):
+        return self.data['assets']
+
     def snapshot(self, map_name=None):
         if map_name and map_name not in self.data['maps']:
             map_name = next(iter(self.data['maps']), None)
         history = self.history()
         base_maps = sorted(p.relative_to(self.base).as_posix() for p in (self.base/MOD/'maps').rglob('*.s2')
                            if 'editor' not in p.relative_to(self.base/MOD/'maps').parts)
-        return {'name': self.data['name'], 'project': str(self.root), 'base': str(self.base),
-                'revision': self.data['revision'], 'thumbnailVersion': self.thumbnail_version(),
+        return {'format': self.data['format'], 'name': self.data['name'], 'project': str(self.root), 'base': str(self.base),
+                'revision': self.data['revision'], 'projectHash': self.project_hash(), 'thumbnailVersion': self.thumbnail_version(),
                 'scripts': scripts.workspace(self),
                 'maps': list(self.data['maps']), 'activeMap': map_name,
                 'catalog': self.public_catalog(), 'baseMaps': base_maps,
@@ -529,11 +600,12 @@ class Project:
             raise ValueError('Scripts changed during export; retry to a new empty directory')
         return {'directory': str(destination), **report}
 
-    def preview(self, map_name, engine_base=None, since=None, expected_revision=None, expected_scripts=None):
+    def preview(self, map_name, engine_base=None, since=None, expected_revision=None, expected_scripts=None, expected_hash=None):
         """Only explicit project resources cross into the isolated WASM filesystem."""
         from .preview import preview
         with locked(self.root):
             self.load()
+            self.check_hash(expected_hash)
             if expected_revision is not None and expected_revision != self.data['revision']:
                 raise ValueError('Project changed before test start; retry')
             if expected_scripts is not None and expected_scripts != scripts.version(self.script_files):
@@ -544,6 +616,8 @@ class Project:
             if any(i['severity'] == 'error' for i in issues):
                 raise ValueError('Preview blocked by validation errors: '+json.dumps(issues, ensure_ascii=False))
             result = preview(self, map_name, since)
+            if self.path.read_bytes() != self._manifest_bytes:
+                raise ValueError('Project changed while preparing the test; retry')
             if scripts.scan(self) != self._script_originals:
                 raise ValueError('Scripts changed while preparing the test; retry')
             return result

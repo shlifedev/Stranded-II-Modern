@@ -5,26 +5,31 @@ export type Thumbnail = {version:string;additionalResults:number;revision?:numbe
   {status:'unavailable';reason:string}
 );
 export type Entity = {kind:Kind;id:number;type:number;x:number;z:number;y?:number;yaw:number;pitch?:number;health?:number;health_max?:number;count?:number;vars?:string;script:string};
-export type Diagnostic = {severity:string;code:string;message:string;location:string;path?:string;line?:number;column?:number};
+export type Diagnostic = {severity:string;code:string;message:string;location:string;path?:string;line?:number;column?:number;target?:AuthoringTarget;field?:string};
 export type ScriptTarget={scope:'map';map:string}|{scope:'entity';map:string;kind:Kind;id:number}|{scope:'definition';kind:Kind;id:number|string};
+export type AuthoringTarget=ScriptTarget|{scope:'file';path:string};
+export type Reference={label:string;target:AuthoringTarget;field?:string;line?:number};
+export type Conflict={key:string;target:AuthoringTarget;conflicts:{field:string;base?:unknown;current?:unknown;draft?:unknown;message?:string}[]};
 export type ScriptFile={path:string;hash:string;runtimePath:string;events:{name:string;line:number}[];references:{path:string;line:number;column:number;value:string}[]};
 export type ScriptWorkspaceInfo={version:string;files:ScriptFile[];bindings:{target:ScriptTarget;path:string}[];diagnostics:Diagnostic[];matches:{path:string;line:number;text:string}[]};
 export type ScriptSources={map:string;files:{path:string;lines:string[];hash:string}[];bindings:{target:ScriptTarget;path:string}[];entities:{class:number;id:number;kind:Kind;type:number}[]};
-export type Snapshot = {name:string;project:string;base:string;revision:number;thumbnailVersion:string;scripts:ScriptWorkspaceInfo;maps:string[];activeMap:string|null;catalog:RecordInfo[];baseMaps:string[];assets:string[];canUndo:boolean;canRedo:boolean;
+export type Snapshot = {format:string;name:string;project:string;base:string;revision:number;projectHash:string;thumbnailVersion:string;scripts:ScriptWorkspaceInfo;maps:string[];activeMap:string|null;catalog:RecordInfo[];baseMaps:string[];assets:string[];canUndo:boolean;canRedo:boolean;pendingSave?:boolean;saveError?:string|null;
   map:{size:number;worldSize:number;entities:Entity[];script:string;attachments:string[]}|null;diagnostics:Diagnostic[]};
 export type Operation = Record<string,unknown> & {op:string};
 export type Preview = {files:Record<string,string>;map:string;revision:number;mode:'full'|'delta';token:string;baseToken?:string;available:string[];resourcesPending:boolean;resourcesRequired:boolean;patch?:string;restorePose?:number[];scriptsVersion?:string;resourcesVersion?:string;sources?:ScriptSources};
 declare global {
   interface Window {studio:{
-    storage:{getItem:(key:string)=>string|null;setItem:(key:string,value:string)=>void;removeItem:(key:string)=>void};
-    request:(value:Record<string,unknown>)=>Promise<{ok:boolean;result:unknown;error?:{message:string}}>;
+    storage:{getItem:(key:string)=>string|null;setItem:(key:string,value:string)=>void;removeItem:(key:string)=>void;keys:(prefix:string)=>string[]};
+    request:(value:Record<string,unknown>)=>Promise<{ok:boolean;result:unknown;error?:{message:string;details?:Conflict}}>;
     choose:(options:{directory?:boolean;map?:boolean;title?:string})=>Promise<string|null>;
-    environment:()=>Promise<{root:string;base:string;engineReady:boolean}>;
+    environment:()=>Promise<{root:string;base:string;projects:string;engineReady:boolean}>;
+    openFolder:(path:string)=>Promise<void>;
   }}
 }
+export class StudioError extends Error {constructor(message:string,public details?:Conflict){super(message);}}
 export async function request<T>(value:Record<string,unknown>):Promise<T>{
   const response=await window.studio.request(value);
-  if(!response.ok)throw new Error(response.error?.message||'Studio request failed');
+  if(!response.ok)throw new StudioError(response.error?.message||'Studio request failed',response.error?.details);
   return response.result as T;
 }
 export const labels:Record<Kind,string>={object:'오브젝트',unit:'유닛',item:'아이템',info:'맵 정보',building:'건축',recipe:'레시피'};

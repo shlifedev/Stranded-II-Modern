@@ -17,7 +17,7 @@ class StudioLauncher(TestCase):
     def setUp(self):
         directory = TemporaryDirectory(prefix='studio launcher ')
         self.addCleanup(directory.cleanup)
-        self.root = Path(directory.name)
+        self.root = Path(directory.name).resolve()
         patch = mock.patch.object(studio_launch, 'ROOT', self.root)
         patch.start()
         self.addCleanup(patch.stop)

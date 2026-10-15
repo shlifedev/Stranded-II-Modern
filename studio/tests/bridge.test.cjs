@@ -12,11 +12,13 @@ function viewport(){
   const canvas={focus(){},setPointerCapture(){},width:1280,height:800,style:{},addEventListener:(name,fn)=>canvasListeners[name]=fn,
     getBoundingClientRect:()=>({left:20,top:30,width:640,height:400})};
   const document={hidden:false,activeElement:null,pointerLockElement:null,
+    body:{append(){}},createElement:()=>({style:{},setAttribute(){},addEventListener(){},focus(){}}),addEventListener(){},
     exitPointerLock(){this.pointerLockElement=null;},getElementById:id=>id==='canvas'?canvas:id==='gizmo'?overlay:{style:{}}};
   const parent={postMessage:value=>messages.push(value)};
-  const context=vm.createContext({document,parent,location:{origin,reload(){throw new Error('Unexpected automatic reload');}},window:{addEventListener:(name,fn)=>listeners[name]=fn},
+  const context=vm.createContext({document,parent,location:{origin,reload(){throw new Error('Unexpected automatic reload');}},window:{addEventListener:(name,fn)=>{const previous=listeners[name];listeners[name]=(...args)=>{previous?.(...args);fn(...args);};}},
     console,performance,Uint8Array,atob,innerWidth:640,innerHeight:400,navigator:{},WebAssembly});
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../engine/gizmo.js'),'utf8'),context);
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'../../src/web/debugui.js'),'utf8'),context);
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../engine/studio.js'),'utf8'),context);
   context.Module.FS={mkdirTree(){},writeFile:(name,data)=>writes.push({name,data}),cwd:()=>'/game'};
   const send=(value,sender=parent,from=origin)=>listeners.message({source:sender,origin:from,data:{source:'studio-ui',...value}});

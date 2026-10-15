@@ -6,8 +6,9 @@ function storage(action,key,value){
   return result.value;
 }
 contextBridge.exposeInMainWorld('studio', {
-  storage: {getItem:key=>storage('get',key),setItem:(key,value)=>storage('set',key,value),removeItem:key=>storage('remove',key)},
+  storage: {getItem:key=>storage('get',key),setItem:(key,value)=>storage('set',key,value),removeItem:key=>storage('remove',key),keys:prefix=>storage('keys',prefix)},
   request: request => ipcRenderer.invoke('studio:request', request),
   choose: options => ipcRenderer.invoke('studio:choose', options),
-  environment: () => ipcRenderer.invoke('studio:environment')
+  environment: () => ipcRenderer.invoke('studio:environment'),
+  openFolder: path => ipcRenderer.invoke('studio:open-folder',path)
 });

@@ -1,5 +1,5 @@
 'use strict';
-const {app, BrowserWindow, ipcMain, dialog} = require('electron');
+const {app, BrowserWindow, ipcMain, dialog, shell} = require('electron');
 const {spawn} = require('node:child_process');
 const readline = require('node:readline');
 const http = require('node:http');
@@ -8,8 +8,23 @@ const path = require('node:path');
 const {root, python} = require('./python.cjs');
 let window, backend, server, sequence = 0, origin;
 let saved = {}, storagePath;
+let closing = false, closeAllowed = false;
 const pending = new Map();
-const allowed = new Set(['schema','commands','revision','init','inspect','catalog','thumbnail','scripts','templates','apply','validate','export','undo','redo','preview']);
+const allowed = new Set(['schema','commands','revision','init','connect','migrate','migrations','restore-migration','inspect','catalog','thumbnail','scripts','templates','references','assets','apply','flush','validate','export','undo','redo','preview']);
+
+async function finishClose(quit) {
+  if (closing) return;
+  closing = true;
+  try {
+    const result = await request({command:'flush'});
+    if (!result.ok) throw new Error(result.error?.message || '저장을 완료하지 못했습니다.');
+    closeAllowed = true;
+    if (quit) app.quit(); else window.close();
+  } catch (error) {
+    closing = false;
+    dialog.showErrorBox('프로젝트 저장을 완료하지 못했습니다',String(error.message)+'\n복구 기록을 보존했습니다. 문제를 해결한 뒤 다시 저장하세요.');
+  }
+}
 
 function startBackend() {
   backend = spawn(python(), ['-X','utf8',path.join(root,'scripts/studio.py'),'serve'], {cwd:root, stdio:['pipe','pipe','pipe']});
@@ -70,6 +85,7 @@ app.whenReady().then(async () => {
       trusted(event);
       if(typeof key!=='string'||!key.startsWith('studio.'))throw new Error('Invalid storage key');
       if(action==='get'){event.returnValue={ok:true,value:saved[key]??null};return;}
+      if(action==='keys'){event.returnValue={ok:true,value:Object.keys(saved).filter(k=>k.startsWith(key))};return;}
       if(action==='remove')delete saved[key];
       else if(action==='set'&&typeof value==='string')saved[key]=value;
       else throw new Error('Invalid storage action');
@@ -79,10 +95,15 @@ app.whenReady().then(async () => {
     }catch(error){event.returnValue={ok:false,error:error.message};}
   });
   startBackend(); await startServer();
-  ipcMain.handle('studio:request',(event,value) => {trusted(event);return request(value);});
+  ipcMain.handle('studio:request',(event,value) => {trusted(event);if(closing)throw new Error('Studio is finishing pending saves');return request(value);});
   ipcMain.handle('studio:environment',event => {
     trusted(event);
-    return {root, base:path.join(root,'build/studio/runtime'), engineReady:fs.existsSync(path.join(root,'build/studio/engine/game.wasm'))};
+    return {root, base:path.join(root,'build/studio/runtime'), projects:path.join(app.getPath('documents'),'Stranded II Studio','Projects'), engineReady:fs.existsSync(path.join(root,'build/studio/engine/game.wasm'))};
+  });
+  ipcMain.handle('studio:open-folder',async (event,directory) => {
+    trusted(event);
+    if(typeof directory!=='string'||!path.isAbsolute(directory)||!fs.statSync(directory).isDirectory())throw new Error('Choose an existing project folder');
+    const error=await shell.openPath(directory);if(error)throw new Error(error);
   });
   ipcMain.handle('studio:choose',async (event,options={}) => {
     trusted(event);
@@ -94,6 +115,7 @@ app.whenReady().then(async () => {
   window = new BrowserWindow({width:1500,height:960,minWidth:1050,minHeight:680,backgroundColor:'#171c22',title:'Stranded II Studio',
     webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true}});
   window.setMenuBarVisibility(false);
+  window.on('close',event=>{if(!closeAllowed){event.preventDefault();void finishClose(false);}});
   window.webContents.setWindowOpenHandler(() => ({action:'deny'}));
   window.webContents.on('will-navigate',(event,url) => {if (!url.startsWith(origin+'/')) event.preventDefault();});
   window.webContents.session.setPermissionRequestHandler((contents,permission,callback,details) => {
@@ -102,4 +124,5 @@ app.whenReady().then(async () => {
   await window.loadURL(origin);
 }).catch(error => {console.error(error);app.quit();});
 app.on('window-all-closed',() => app.quit());
-app.on('before-quit',() => {backend?.stdin.end();server?.close();});
+app.on('before-quit',event => {if(!closeAllowed&&backend){event.preventDefault();void finishClose(true);}});
+app.on('will-quit',() => {backend?.stdin.end();server?.close();});

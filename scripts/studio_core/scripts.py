@@ -90,6 +90,12 @@ def binding(project, target):
     return project.data.get('scriptBindings', {}).get(target_key(target))
 
 
+def source_bindings(project):
+    if project.data['format'] in ('stranded-studio/2','stranded-studio/3'):
+        return {target_key(target):meta['script']['path'] for _,meta,target in project.targets() if meta.get('script')}
+    return project.data.get('scriptBindings', {})
+
+
 def write(project, path, text, expected):
     from .project import digest
     path = path_name(path); text = clean(text)
@@ -110,6 +116,10 @@ def write(project, path, text, expected):
 
 def perform(project, operation):
     op = operation['op']
+    # Templates also call this service directly; v2 stores bindings beside each
+    # target rather than in the legacy in-memory manifest.
+    if project.data['format'] in ('stranded-studio/2','stranded-studio/3') and op != 'script.write':
+        return project.perform(operation)
     if op == 'script.write':
         if 'expectedHash' not in operation: raise ValueError('script.write requires expectedHash (null for a new file)')
         return write(project, operation['path'], operation['text'], operation['expectedHash'])
@@ -261,7 +271,7 @@ def source_map(project, map_name):
     records=[]; model=EditableMap(project.map_bytes(map_name))
     for path,text in project.script_files.items():
         records.append({'path':path,'lines':text.splitlines(),'hash':digest(text.encode('utf8'))})
-    return {'files':records,'bindings':[{'target':json.loads(k),'path':p} for k,p in project.data.get('scriptBindings',{}).items()],
+    return {'files':records,'bindings':[{'target':json.loads(k),'path':p} for k,p in source_bindings(project).items()],
             'map':map_name,'entities':[{'class':CLASSES[e['kind']],'id':e['id'],'kind':e['kind'],'type':e['type']} for e in model.entities]}
 
 

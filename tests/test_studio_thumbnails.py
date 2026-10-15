@@ -34,7 +34,7 @@ class Thumbnails(TestCase):
         self.save_image('gfx/second.png', Image.new('RGBA', (12, 20), (0, 255, 0, 123)))
         sheet = Image.new('RGB', (320, 320), (255, 0, 255)); sheet.paste((1, 2, 3), (256, 32, 288, 64)); sheet.putpixel((256, 32), (255, 0, 255))
         self.save_image('sys/gfx/icons.bmp', sheet)
-        self.project = Project.create(self.root / 'project', self.base)
+        self.project = Project.create(self.root / 'project', self.base, version=1)
 
     def save_image(self, name, image):
         path = self.base / MOD / name; path.parent.mkdir(parents=True, exist_ok=True); image.save(path)

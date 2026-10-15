@@ -133,7 +133,7 @@ class Projects(TestCase):
         for name,value in files.items():
             path=self.base/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text(value,encoding='utf8')
         self.original={str(p.relative_to(self.base)):p.read_bytes() for p in self.base.rglob('*') if p.is_file()}
-        self.project=Project.create(self.root/'project',self.base)
+        self.project=Project.create(self.root/'project',self.base,version=1)
 
     def tearDown(self):
         self.assertEqual(self.original,{str(p.relative_to(self.base)):p.read_bytes() for p in self.base.rglob('*') if p.is_file()})

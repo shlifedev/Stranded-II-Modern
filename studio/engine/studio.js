@@ -369,7 +369,7 @@ window.addEventListener('keydown',event=>{
   if(event.code==='Escape'&&tool==='place'){event.preventDefault();tool='select';placement=null;dragging=false;send('cancel-placement');return;}
   if(drag)return;
   let shortcut;
-  if(event.ctrlKey||event.metaKey){if(event.code==='KeyZ')shortcut=event.shiftKey?'redo':'undo';if(event.code==='KeyD')shortcut='duplicate';}
+  if(event.ctrlKey||event.metaKey){if(event.code==='KeyZ')shortcut=event.shiftKey?'redo':'undo';if(event.code==='KeyD')shortcut='duplicate';if(event.code==='KeyS')shortcut='save';}
   if(event.code==='Delete')shortcut='delete';
   if(shortcut){event.preventDefault();send('shortcut',{key:shortcut});return;}
   keys.add(event.code);if(['KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','Space'].includes(event.code))event.preventDefault();

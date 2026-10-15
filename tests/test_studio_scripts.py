@@ -20,7 +20,7 @@ class ScriptWorkspace(TestCase):
         for name,text in {'items.inf':'id=1\nname=Wood\nid=2\nname=Stone\n','units.inf':'id=1\nname=Visitor\n',
                           'objects.inf':'id=1\nname=Hut\n','infos.inf':'id=1\nname=Start\n'}.items():
             (sysdir/name).write_text(text,encoding='utf8')
-        self.p=Project.create(self.root/'project',self.base)
+        self.p=Project.create(self.root/'project',self.base,version=1)
         self.p.apply([{'op':'map.create','name':'island','size':16}])
         self.path='scripts/maps/island.s2s';self.target={'scope':'map','map':'island'}
 
