@@ -21,7 +21,7 @@ def fingerprint(value):
 def verifier_hashes():
     paths = [build.ROOT / name for name in (
         'scripts/verify_macos.py', 'scripts/macos_validation.py', 'scripts/macos_signing.py', 'scripts/verify_timing.py',
-        'tests/web_semantics.bb', 'tests/web_compatibility.bb', 'tests/save_menu.bb')]
+        'tests/web_semantics.bb', 'tests/web_compatibility.bb', 'tests/save_menu.bb', 'tests/dev_cheats.bb')]
     paths += list((build.ROOT / 'tests').glob('macos_*.bb'))
     paths.append(build.ROOT / 'tests/macos_abi.golden.hex')
     return {p.relative_to(build.ROOT).as_posix(): build.digest(p) for p in sorted(paths)}

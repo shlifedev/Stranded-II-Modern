@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"ce88981c71372c71622af440d7dec3b39f5f0ff6df69993ce1228e302263e250"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"e2e93e134c59b3282adfdbda6e92fb7c65fb0bd2b4cee9e6c675abbeb1fe0335"} -->
 
 # Development guide
 
@@ -94,7 +94,17 @@ You can also launch directly through Python:
 
 Both editions share a Dear ImGui menu. Assign a shortcut under **Settings → Controls → Developer menu**. Distribution defaults to `None`; a fresh local development build uses `Insert`. Right-click to clear the binding. A saved `None` or custom shortcut is retained in development builds too.
 
-Opening the menu keeps the game running and blocks game input. The Status tab's pause stays active after closing the menu. Tools include single-player cheats, an item icon grid, position/time changes, settings previews, and searchable/copyable logs. **Save** and **Revert to saved settings** are separate; changes are never saved automatically. Display mode, resolution, FPS limit and language require restarting after saving. Logs retain at most 2,048 entries / 2MiB; scrolling up stops following new messages.
+Opening the menu keeps the game running and blocks game input. The Status tab's pause stays active after closing the menu. Cheats are available only in single-player play.
+
+| Tab | Tools |
+| --- | --- |
+| Cheats / testing | View/toggle invulnerability, heal/revive, reset needs, independently lock hunger/thirst/exhaustion, 0.25–4× walking/swimming speed, edit values, run scripts |
+| Give items | Search by name/ID, choose a quantity and click an icon to receive it, repair carried items, supply nearby construction materials |
+| World | Remember/return to a position, move above terrain, enter coordinates, freeze the day/night clock, set morning/noon/evening/midnight or a custom date/time |
+
+Needs, speed and clock modifiers and the remembered position reset on map changes/loads and are never written to settings. Invulnerability uses the existing player state and is included in saves. Healing, item grants, repairs, position and time changes also appear in subsequent saves. Removing all states also removes invulnerability and beneficial effects. Dismount before teleporting. Clock freeze stops only the day/night clock; setting time does not replay growth or time events.
+
+Settings have separate **Save** and **Revert to saved settings** actions and are never saved automatically. Display mode, resolution, FPS limit and language require restarting after saving. Searchable/copyable logs retain at most 2,048 entries / 2MiB; scrolling up stops following new messages. Each tab scrolls independently; the tab bar scrolls when the window is narrow.
 
 Shared game UI lives in `src/engine/includes/devmenu.bb`, native ImGui/SDL/WebGPU integration in `src/blitz3d/src/modules/bb/debugui/`, and browser IME integration in `src/web/debugui.js`. Windows editions, macOS, Web and Studio use the same implementation. On Windows, `python scripts/verify_engine.py --graphics --input` checks input ownership and window/context lifetimes. The `s2_debugui_check` CMake target accepts a prepared `core/locales/<code>/ui.ttf` path and checks Unicode glyphs, sliders and log following without a window. Check actual display, IME composition/paste and each platform's execution separately.
 

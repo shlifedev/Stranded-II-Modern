@@ -58,7 +58,7 @@ int main(int argc,char **argv){
     for(int i=0;i<3;++i){
       bbDebugUiOpen(1);bbDebugUiFrame(new BBStr("Profiler"),new BBStr(argv[1]));
       if(bbDebugUiTab(new BBStr(title))){bbDebugUiProfiler();bbDebugUiTabEnd();}bbDebugUiFinish();
-      ImGui::SetWindowSize("Profiler",ImVec2(width,height));
+      ImGui::SetWindowSize("Profiler###developer-menu",ImVec2(width,height));
       target.setClsColor(0xff101010);target.cls();s2DebugUiRender(res.ensurePass(&target),1024,1000);res.flush();
     }
     std::vector<unsigned char> pixels;target.readPixels(pixels);

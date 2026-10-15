@@ -2836,3 +2836,31 @@ dev.benchmark.focus_lost	Fokus verloren oder minimiert; dieser Durchlauf ist ung
 dev.benchmark.invalid_frame	Unterbrochener Frame; Durchlauf ungültig.
 dev.benchmark.gpu_completion_failed	GPU-Abschluss fehlgeschlagen; Durchsatz nicht verfügbar.
 dev.benchmark.gpu_completion_unavailable	GPU-Abschluss nicht verfügbar; Durchsatz nicht verfügbar.
+dev.world	Welt
+dev.quick_actions	Schnellaktionen
+dev.god_mode	Unverwundbarkeit
+dev.heal	Heilen / Wiederbeleben
+dev.session	Temporäre Cheats
+dev.session_help	Bedürfnisse, Tempo und Uhr werden beim Laden zurückgesetzt. Beim Schließen bleiben sie aktiv.
+dev.lock_hunger	Kein Hunger
+dev.lock_thirst	Kein Durst
+dev.lock_exhaustion	Keine Erschöpfung
+dev.speed	Tempo beim Gehen / Schwimmen
+dev.reset_modifiers	Bedürfnisse / Tempo / Uhr zurücksetzen
+dev.values	Spielerwerte bearbeiten
+dev.states_help	Entfernt alle Zustände, auch Unverwundbarkeit und positive Effekte.
+dev.teleport_help	Vor dem Teleportieren absteigen. Die gemerkte Position gilt nur auf dieser Karte.
+dev.remember	Position merken
+dev.return	Zur gemerkten Position
+dev.surface	Über das Gelände versetzen
+dev.coordinates	Genaue Koordinaten
+dev.freeze_time	Tag- / Nachtuhr anhalten
+dev.time_help	Die Simulation läuft weiter; Laden löst die Uhrsperre. Zeitvorgaben überspringen Wachstum und Zeitereignisse.
+dev.morning	Morgen
+dev.noon	Mittag
+dev.evening	Abend
+dev.midnight	Mitternacht
+dev.custom_time	Datum / Uhrzeit eingeben
+dev.repair	Getragene Gegenstände reparieren
+dev.items_help	Nach Name oder ID suchen, Menge wählen und zum Erhalten auf einen Gegenstand klicken.
+dev.no_items	Keine passenden Gegenstände.

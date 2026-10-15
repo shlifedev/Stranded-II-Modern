@@ -1039,6 +1039,12 @@ End Function
 
 ;### Exhaust
 Function game_exhaust(hunger#,thirst#,exhaustion#)
+ If dev_player() And TCunit=g_cplayer Then
+  If dev_lock_hunger Then hunger=0
+  If dev_lock_thirst Then thirst=0
+  If dev_lock_exhaustion Then exhaustion=0
+  dev_survival()
+ EndIf
 	TCunit\hunger#=TCunit\hunger#+hunger#
 	TCunit\thirst#=TCunit\thirst#+thirst#
 	TCunit\exhaustion#=TCunit\exhaustion#+exhaustion#
