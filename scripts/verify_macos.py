@@ -94,6 +94,10 @@ def check_game(compiler, output):
     if scenario.count(marker) != 1:
         raise ValueError('The shared full-engine fixture footer changed.')
     scenario = scenario.replace(marker, (ROOT / 'tests/macos_game.bb').read_text('utf8') + '\n' + (ROOT / 'tests/benchmark_scene.bb').read_text('utf8') + '\n' + marker)
+    if scenario.count('; SAVE_MENU_CHECKS') != 1:
+        raise ValueError('The native save menu fixture marker changed.')
+    scenario = scenario.replace('; SAVE_MENU_CHECKS',
+        (ROOT / 'tests/save_menu.bb').read_text('utf8').replace('preview_check(', 'compat_check('))
     (source / 'includes/engine_loop.bb').write_text(scenario, encoding='utf8')
     executable = runtime / 'NativeCompatibility'
     build.compile_source(compiler, source / 'StrandedIIMac.bb', executable, 's2macos', cwd=source)

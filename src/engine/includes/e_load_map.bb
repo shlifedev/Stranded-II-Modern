@@ -683,6 +683,7 @@ Function load_savegames(loadfirst=1)
 	;Loadfirst
 	If loadfirst Then
 		If map_image<>0 Then FreeImage map_image
+		map_image=0
 		For Tsg.Tsg=Each Tsg
 			load_map_header("saves\"+Tsg\name$+".sav")
 			in_opt(0)=1
@@ -737,6 +738,7 @@ Function load_maps(loadfirst=1,mponly=0)
 	;Loadfirst
 	If loadfirst Then
 		If map_image<>0 Then FreeImage map_image
+		map_image=0
 		For Tsg.Tsg=Each Tsg
 			load_map_header("maps\"+Tsg\name$+".s2")
 			in_opt(0)=1

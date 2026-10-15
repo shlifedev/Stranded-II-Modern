@@ -48,6 +48,7 @@ compat_check(Instr(profile_text,"GPU=ready")>0 Or Instr(profile_text,"GPU=unsupp
 WriteLine profile_report,profile_text
 CloseFile profile_report
 modern_fps=profile_saved_fps
+; SAVE_MENU_CHECKS
 compat_check(save_map("saves\NATIVE-CHECK.sav","sav","")=1,"native checked save replacement")
 compat_check(modern_save_valid("saves\NATIVE-CHECK.sav"),"native saved file preflight")
 Local nativeX#=EntityX(g_cplayer\h),nativeY#=EntityY(g_cplayer\h),nativeZ#=EntityZ(g_cplayer\h)

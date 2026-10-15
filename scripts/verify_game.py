@@ -64,6 +64,7 @@ Next
 smoke_check(load_map("maps\adventure\map01.s2",""),"load official adventure")
 parse_all()
 g_cplayer\health#=42.
+; SAVE_MENU_CHECKS
 smoke_check(save_map("saves\roundtrip.sav","sav",""),"serialize actual game")
 smoke_check(modern_save_valid("saves\roundtrip.sav"),"actual save passes preflight")
 g_cplayer\health#=7.
@@ -101,6 +102,10 @@ e_clear()
 EndGraphics()
 End
 '''
+    if text.count('; SAVE_MENU_CHECKS') != 1:
+        raise ValueError('The save menu fixture marker changed.')
+    text = text.replace('; SAVE_MENU_CHECKS',
+                        (root/'tests/save_menu.bb').read_text('utf8').replace('preview_check(', 'smoke_check('))
     entry.write_bytes(text.replace('\n','\r\n').encode('utf8'))
     exe = runtime/'SaveSmoke.exe'
     print('Isolated runtime:', runtime, flush=True)
@@ -120,6 +125,7 @@ End
         assert Map(data).write({}) == data, path
     (out/'report.json').write_text(json.dumps({'display':display, 'resolution':resolution,
         'actual_game_save_load':'pass',
+        'save_and_map_menu_previews':'pass',
         'backups':'pass','rolling_autosaves':'pass','quicksave_load':'pass',
         'resolved_player_pose':'pass','collision_history_reset':'pass',
         'continue_selection':'pass','visual_ui_and_cheat_engine':'not tested by this harness'},indent=2)+'\n',encoding='utf8')
