@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"442547b2c44beb48f879d50a993b3b6edf3db1837040b1305e510a103c992076"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"a72523857229bd19f2d0276afee082524c5bdd9c83e52a34d22e0918f5f2c010"} -->
 
 # macOS 구현 원리
 
@@ -101,7 +101,7 @@ macOS 런타임은 **정수·실수를 32비트로 유지하고, 내부 포인�
 
 ## 6. 현재 지원 범위와 검증 방법
 
-현재 대상은 **Apple Silicon, macOS 15.0 이상, 기본판**입니다. 포함하는 Dawn 라이브러리에 맞춰 최소 OS를 지정합니다. Intel Mac·네이티브 Extended·네이티브 동영상 재생·원시 TCP/UDP는 지원하지 않습니다. 기본 로컬 앱과 `notarize=false`인 수동 CI는 임시 서명입니다. 수동 CI는 기본값인 `notarize=true`에서 출시 ZIP과 동일하게 검증된 앱의 복사본을 Developer ID로 서명하고 Apple 공증·티켓 첨부를 마친 뒤 ZIP을 생성합니다. 압축 해제한 앱도 서명·티켓·Gatekeeper 검사를 통과해야 합니다. 수동 CI는 결과를 아티팩트로만 보관하고 Release를 게시하지 않습니다. 자세한 절차는 [개발 가이드](development-ko.md#실험용-macos-네이티브-빌드)를 참고하세요.
+현재 대상은 **Apple Silicon, macOS 15.0 이상, 기본판**입니다. 포함하는 Dawn 라이브러리에 맞춰 최소 OS를 지정합니다. Intel Mac·네이티브 Extended·네이티브 동영상 재생·원시 TCP/UDP는 지원하지 않습니다. 기본 로컬 앱과 `notarize=false`인 수동 CI는 임시 서명입니다. 배포는 드래그 설치용 Applications 바로가기가 있는 압축된 읽기 전용 DMG를 사용합니다. 수동 CI의 기본값인 `notarize=true`는 검증된 앱 복사본을 서명·공증하고 티켓을 붙인 뒤 최종 DMG도 서명·공증하고 티켓을 붙입니다. 둘 다 티켓·Gatekeeper 검사를 통과해야 합니다. 패키징은 마운트한 내용의 일치를 확인하고 설치용으로 복사한 앱을 검사합니다. 수동 CI는 아티팩트만 보관하며 데스크톱 워크플로가 macOS 실행기에서 양쪽 배포판을 확인한 뒤 게시합니다. [개발 가이드](development-ko.md#실험용-macos-네이티브-빌드)를 참고하세요.
 
 | 검사 | 확인하는 범위 |
 | --- | --- |

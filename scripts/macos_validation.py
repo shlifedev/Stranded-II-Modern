@@ -1,4 +1,4 @@
-"""Read-only gates shared by native verification and test ZIP packaging."""
+"""Read-only gates shared by native verification and DMG packaging."""
 from pathlib import Path
 import hashlib
 import json

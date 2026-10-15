@@ -1,17 +1,15 @@
 """Package a verified Mac preview or signed and notarized distribution. Does not publish."""
 from pathlib import Path
 import argparse
-import json
 import os
 import shutil
-import stat
 import subprocess
 import tempfile
-import zipfile
 
 import macos_build as build
-from macos_signing import sign_and_notarize
-from macos_validation import fingerprint, tree_records, validate_app, verified_build
+import macos_dmg as dmg
+from macos_signing import sign_and_notarize, sign_and_notarize_dmg, verify_dmg_signature
+from macos_validation import fingerprint, validate_app, verified_build
 from versioning import validate_info
 
 GUIDES = {
@@ -20,7 +18,7 @@ GUIDES = {
 Requires Apple Silicon and targets macOS 15.0 or later. No browser, Python,
 Homebrew, or separate game download is required to play.
 
-Extract the entire ZIP, move Stranded II.app to Applications or another folder,
+Open the DMG, drag Stranded II.app onto Applications, eject the disk image,
 then double-click it. This test build is locally signed and is not notarized.
 macOS may require approval in System Settings > Privacy & Security to open it.
 Apple's instructions: https://support.apple.com/102445
@@ -47,8 +45,8 @@ loading, Korean input, app switching, fullscreen, music/effects, and progression
 Apple Silicon용이며 macOS 15.0 이상을 대상으로 합니다. 플레이에 브라우저,
 Python, Homebrew 또는 별도 게임 리소스 다운로드가 필요하지 않습니다.
 
-ZIP 전체를 압축 해제하고 Stranded II.app을 응용 프로그램 또는 원하는 폴더로
-옮겨 더블클릭하세요. 로컬 서명한 테스트판이며 공증하지 않았습니다.
+DMG를 열고 Stranded II.app을 Applications 바로가기로 드래그하세요.
+복사가 끝나면 DMG를 꺼내고 설치한 앱을 실행하세요. 로컬 서명한 테스트판이며 공증하지 않았습니다.
 macOS가 실행을 차단하면 시스템 설정 > 개인정보 보호 및 보안에서 실행을
 허용해야 할 수 있습니다. Apple 안내: https://support.apple.com/102445
 
@@ -82,10 +80,10 @@ def guides(notarized):
         'then double-click it. This build is signed with Developer ID and notarized by\n'
         'Apple, with the notarization ticket attached to the app.')
     result['ko'] = result['ko'].replace(
-        '옮겨 더블클릭하세요. 로컬 서명한 테스트판이며 공증하지 않았습니다.\n'
+        '복사가 끝나면 DMG를 꺼내고 설치한 앱을 실행하세요. 로컬 서명한 테스트판이며 공증하지 않았습니다.\n'
         'macOS가 실행을 차단하면 시스템 설정 > 개인정보 보호 및 보안에서 실행을\n'
         '허용해야 할 수 있습니다. Apple 안내: https://support.apple.com/102445',
-        '옮겨 더블클릭하세요. Developer ID로 서명하고 Apple 공증을 받은 빌드이며,\n'
+        '복사가 끝나면 DMG를 꺼내고 설치한 앱을 실행하세요. Developer ID로 서명하고 Apple 공증을 받은 빌드이며,\n'
         '공증 티켓이 앱에 첨부되어 있습니다.')
     return result
 
@@ -117,22 +115,6 @@ def summary(report, verification, app=None):
     }
 
 
-def write_archive(path, stage):
-    """Stable ZIP metadata with Unix execute permissions preserved."""
-    records = tree_records(stage)
-    with zipfile.ZipFile(path, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
-        for name, record in records.items():
-            directory = record['type'] == 'directory'
-            info = zipfile.ZipInfo(name + ('/' if directory else ''), date_time=(2000, 1, 1, 0, 0, 0))
-            info.create_system = 3
-            info.external_attr = ((stat.S_IFDIR if directory else stat.S_IFREG) | record['mode']) << 16
-            if directory:
-                info.external_attr |= 0x10
-            archive.writestr(info, b'' if directory else (stage / name).read_bytes(),
-                             compress_type=zipfile.ZIP_DEFLATED, compresslevel=6)
-    return records
-
-
 def package(notarize=False):
     build.macos_toolchain.require_host()
     report, verification = verified_build()
@@ -159,9 +141,10 @@ def package(notarize=False):
             public['checks']['stapled_ticket_and_gatekeeper'] = 'pass'
         instructions = guides(notarize)
         public['build_id'] = fingerprint({'summary': public, 'guides': instructions,
-                                          'packager': build.digest(Path(__file__))})[:16]
+                                          'packager': build.digest(Path(__file__)),
+                                          'dmg': build.digest(Path(dmg.__file__))})[:16]
         if report['channel'] == 'local':
-            filename = f'StrandedII-{report["version"]}-macos-arm64-preview-{public["build_id"]}.zip'
+            filename = f'StrandedII-{report["version"]}-macos-arm64-preview-{public["build_id"]}.dmg'
         else:
             from release import macos_archive_name
             filename = macos_archive_name(report)
@@ -169,35 +152,45 @@ def package(notarize=False):
         for language, text in instructions.items():
             (stage / f'README-{language}.txt').write_text(text, encoding='utf8', newline='\n')
         build.write(stage / 'verification-summary.json', public)
+        (stage / 'Applications').symlink_to('/Applications')
         candidate = temporary / filename
-        records = write_archive(candidate, stage)
-        extracted = temporary / '압축 해제 Test'
-        subprocess.run(['ditto', '-x', '-k', str(candidate), str(extracted)], check=True)
-        if tree_records(extracted) != records:
-            raise ValueError('Native ZIP round-trip changed file contents or permissions.')
-        extracted_facts = validate_app(extracted / app.name, package_report)
-        if extracted_facts != final_facts:
-            raise ValueError('Extracted native app differs from the verified app.')
-        # Recheck the originals after the ZIP round-trip to detect concurrent changes.
+        records = dmg.write_image(candidate, stage)
+        dmg_notarization = sign_and_notarize_dmg(candidate) if notarize else None
+        with dmg.mounted_image(candidate) as mounted:
+            if dmg.payload_records(mounted) != records:
+                raise ValueError('Native DMG round-trip changed file contents or permissions.')
+            installed = temporary / '복사 Test' / app.name
+            subprocess.run(['ditto', str(mounted / app.name), str(installed)], check=True)
+            if validate_app(installed, package_report) != final_facts:
+                raise ValueError('Copied native app differs from the verified app.')
+        # Recheck the originals after the DMG round-trip to detect concurrent changes.
         if verified_build() != (report, verification):
             raise ValueError('Native build or verification changed during packaging.')
-        checksum = build.digest(candidate)
-        if destination.exists():
-            if destination.is_symlink() or build.digest(destination) != checksum:
-                raise ValueError(f'Preserving an existing, different ZIP: {destination}')
+        if destination.exists() or destination.is_symlink():
+            if destination.is_symlink() or not destination.is_file():
+                raise ValueError(f'Preserving an existing, different DMG: {destination}')
+            # DMG filesystem UUIDs/timestamps need not be byte-reproducible.
+            with dmg.mounted_image(destination) as mounted:
+                if dmg.payload_records(mounted) != records:
+                    raise ValueError(f'Preserving an existing, different DMG: {destination}')
+            if notarize:
+                verify_dmg_signature(destination, public['team_id'])
         else:
             os.replace(candidate, destination)
-    checksum_file = destination.with_suffix('.zip.sha256')
+        checksum = build.digest(destination)
+    checksum_file = destination.with_suffix('.dmg.sha256')
     expected = f'{checksum}  {destination.name}\n'
-    if checksum_file.exists() and (checksum_file.is_symlink() or checksum_file.read_text('ascii') != expected):
+    if (checksum_file.exists() or checksum_file.is_symlink()) and (
+            checksum_file.is_symlink() or checksum_file.read_text('ascii') != expected):
         raise ValueError(f'Preserving a modified checksum: {checksum_file}')
     checksum_file.write_text(expected, encoding='ascii')
     build.write(build.BUILD / 'distribution-report.json', {
-        'zip': str(destination), 'sha256': checksum, 'build_id': public['build_id'],
-        'suite': verification['suite'], 'zip_round_trip': 'pass',
-        'extracted_app_signature_and_permissions': 'pass', 'personal_data_included': False,
-        'signing': public['signing'], 'notarized': public['notarized']})
-    print('Distribution ZIP:', destination)
+        'dmg': str(destination), 'sha256': checksum, 'build_id': public['build_id'],
+        'suite': verification['suite'], 'dmg_round_trip': 'pass',
+        'copied_app_signature_and_permissions': 'pass', 'personal_data_included': False,
+        'signing': public['signing'], 'notarized': public['notarized'],
+        'dmg_notarization': dmg_notarization})
+    print('Distribution DMG:', destination)
     print('SHA-256:', checksum)
     return destination
 

@@ -97,6 +97,46 @@ def verify_signature(app, team_id=None, notarized=False):
             'hardened_runtime': True, 'secure_timestamp': True, 'notarized': notarized}
 
 
+def notarize_artifact(path, keychain, report_name='notarization'):
+    print('Submitting distribution to Apple notarization (up to 20 minutes).', flush=True)
+    auth = ['--keychain-profile', 'stranded-distribution', '--keychain', keychain]
+    result = json.loads(private_run(['xcrun', 'notarytool', 'submit', str(path),
+                                    *auth, '--wait', '--timeout', '20m', '--output-format', 'json']))
+    record = {key: result.get(key) for key in ('id', 'status')}
+    build.write(build.BUILD / f'{report_name}-report.json', record)
+    if not isinstance(record['id'], str) or not re.fullmatch(r'[0-9a-fA-F-]{36}', record['id']):
+        raise ValueError('Notarization did not return a submission ID.')
+    log = json.loads(private_run(['xcrun', 'notarytool', 'log', record['id'], *auth]))
+    build.write(build.BUILD / f'{report_name}-log.json', log)
+    if record['status'] != 'Accepted':
+        raise ValueError(f'Notarization was not accepted: {record["status"]}; see {report_name}-log.json.')
+    return record
+
+
+def verify_dmg_signature(path, team_id):
+    subprocess.run(['codesign', '--verify', '--strict', str(path)], check=True)
+    details = subprocess.run(['codesign', '--display', '--verbose=4', str(path)],
+                             capture_output=True, text=True, check=True).stderr
+    if (not re.fullmatch(r'[A-Z0-9]{10}', team_id or '') or
+            f'TeamIdentifier={team_id}\n' not in details or
+            '\nAuthority=Developer ID Application:' not in details or
+            not re.search(r'^Timestamp=.+$', details, re.M)):
+        raise ValueError('Expected a Developer ID signed DMG with matching team and secure timestamp.')
+    subprocess.run(['xcrun', 'stapler', 'validate', str(path)], check=True)
+    subprocess.run(['spctl', '--assess', '--type', 'open', '--context',
+                    'context:primary-signature', '--verbose=2', str(path)], check=True)
+
+
+def sign_and_notarize_dmg(path):
+    with credentials() as (keychain, identity, team):
+        subprocess.run(['codesign', '--force', '--sign', identity, '--keychain', keychain,
+                        '--timestamp', str(path)], check=True)
+        record = notarize_artifact(path, keychain, 'notarization-dmg')
+        subprocess.run(['xcrun', 'stapler', 'staple', str(path)], check=True)
+        verify_dmg_signature(path, team)
+    return record
+
+
 def sign_and_notarize(app, package_report):
     with credentials() as (keychain, identity, team):
         print('Signing distribution app with Developer ID.', flush=True)
@@ -106,18 +146,7 @@ def sign_and_notarize(app, package_report):
         with tempfile.TemporaryDirectory(prefix='notary-') as directory:
             archive = Path(directory) / 'submission.zip'
             subprocess.run(['ditto', '-c', '-k', '--keepParent', str(app), str(archive)], check=True)
-            print('Submitting app to Apple notarization (up to 20 minutes).', flush=True)
-            auth = ['--keychain-profile', 'stranded-distribution', '--keychain', keychain]
-            result = json.loads(private_run(['xcrun', 'notarytool', 'submit', str(archive),
-                                            *auth, '--wait', '--timeout', '20m', '--output-format', 'json']))
-            record = {key: result.get(key) for key in ('id', 'status')}
-            build.write(build.BUILD / 'notarization-report.json', record)
-            if not isinstance(record['id'], str) or not re.fullmatch(r'[0-9a-fA-F-]{36}', record['id']):
-                raise ValueError('Notarization did not return a submission ID.')
-            log = json.loads(private_run(['xcrun', 'notarytool', 'log', record['id'], *auth]))
-            build.write(build.BUILD / 'notarization-log.json', log)
-            if record['status'] != 'Accepted':
-                raise ValueError(f'Notarization was not accepted: {record["status"]}; see notarization-log.json.')
+            record = notarize_artifact(archive, keychain)
         subprocess.run(['xcrun', 'stapler', 'staple', str(app)], check=True)
         verify_signature(app, team, notarized=True)
     return dict(package_report, signing='Developer ID Application', team_id=team, notarized=True,
