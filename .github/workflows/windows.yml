@@ -192,8 +192,11 @@ jobs:
     if: >-
       (github.event_name == 'push' && github.ref == 'refs/heads/main' ||
        github.event_name == 'workflow_dispatch' && inputs.publish)
-    runs-on: windows-2022
-    timeout-minutes: 5
+    runs-on: macos-15
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
     permissions:
       contents: write
     steps:
@@ -225,5 +228,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          python -X utf8 scripts/ci.py release --repo "$env:GH_REPO" --include-macos
-          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }
+          python -X utf8 scripts/ci.py release --repo "$GH_REPO" --include-macos

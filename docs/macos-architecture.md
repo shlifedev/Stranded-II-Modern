@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"70e2fb79508de63464f150c0ae6dcfdb0e9ce09f6cea2b20a039c78cbbffe1fa"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"bc7040803640d61c448a63e9f3cf17ced2ba00b2db6752a6b3ef9f5910371f01"} -->
 
 # How the macOS version works
 
@@ -101,7 +101,7 @@ When the resource fingerprint changes, the app refreshes packaged resources whil
 
 ## 6. Current support and verification
 
-The current target is **Apple Silicon, macOS 15.0 or later, and the base game**. The minimum OS matches the bundled Dawn library. Intel Macs, native Extended, native movie playback, and raw TCP/UDP are unsupported. Default local apps and manual CI with `notarize=false` use ad hoc signing. Manual CI defaults to `notarize=true` and follows the release ZIP process: copy the verified app, sign it with Developer ID, complete Apple notarization and stapling, then create the ZIP. The extracted app must also pass signature, ticket, and Gatekeeper checks. Manual CI stores artifacts without publishing a Release. See the [development guide](development.md#experimental-native-macos-build) for the procedure.
+The current target is **Apple Silicon, macOS 15.0 or later, and the base game**. The minimum OS matches the bundled Dawn library. Intel Macs, native Extended, native movie playback, and raw TCP/UDP are unsupported. Default local apps and manual CI with `notarize=false` use ad hoc signing. Distribution uses a compressed, read-only DMG with an Applications shortcut for drag installation. Manual CI defaults to `notarize=true`: sign/notarize/staple the verified app copy, then sign/notarize/staple the final DMG. Both artifacts must pass ticket and Gatekeeper checks. Packaging compares the mounted payload and validates an installation copy of the app. Manual CI stores artifacts without publishing a Release; the desktop workflow publishes after checking both platforms on a macOS runner. See the [development guide](development.md#experimental-native-macos-build).
 
 | Check | What it covers |
 | --- | --- |

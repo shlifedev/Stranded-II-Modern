@@ -1,15 +1,17 @@
 """GitHub release allocation and resumable draft publication through GitHub CLI."""
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from editions import Edition
 import hashlib
 import json
 import re
 import plistlib
-import stat
 import struct
 import subprocess
 import zipfile
 from versioning import TAG, git, make_info, parse_base, read_base, select_version, validate_info
+from macos_dmg import mounted_image, payload_records
+from macos_signing import verify_signature, verify_dmg_signature
+from macos_validation import tree_records, fingerprint
 
 MARKER = re.compile(r'<!-- stranded-ii-build: (.+?) -->')
 
@@ -19,7 +21,7 @@ def recorded_assets(previous, info):
     assets = previous.get('artifacts')
     if assets is None:
         assets = {archive_name(info): previous.get('zip_sha256')}
-    pattern = re.compile(rf"StrandedII-{re.escape(info['display_version'])}-[a-z0-9-]+\.zip")
+    pattern = re.compile(rf"StrandedII-{re.escape(info['display_version'])}-[a-z0-9-]+\.(?:zip|dmg)")
     if (not isinstance(assets, dict) or archive_name(info) not in assets or
             any(not pattern.fullmatch(name) for name in assets) or
             any(not isinstance(value, str) or not re.fullmatch(r'[0-9a-f]{64}', value) for value in assets.values())):
@@ -107,48 +109,26 @@ def archive_name(info):
 def macos_archive_name(info):
     if info.get('edition', 'classic') != 'classic':
         raise ValueError('Native Mac releases only support Stranded II.')
-    return f"StrandedII-{info['display_version']}-macos-arm64.zip"
+    return f"StrandedII-{info['display_version']}-macos-arm64.dmg"
 
 
 def validate_macos_package(directory, info):
-    """Validate the Mac artifact on the Windows release coordinator without extracting it."""
+    """Mount and validate the final Mac artifact on a macOS release coordinator."""
     path = directory / macos_archive_name(info)
     checksum = hashlib.sha256(path.read_bytes()).hexdigest()
-    if path.with_suffix('.zip.sha256').read_text('utf8') != f'{checksum}  {path.name}\n':
-        raise ValueError('Mac ZIP checksum file disagrees with the archive')
-    prefix = 'Stranded II.app/'
-    with zipfile.ZipFile(path) as archive:
-        records, seen = {}, set()
-        for entry in archive.infolist():
-            name = entry.filename
-            relative = PurePosixPath(name)
-            key = name.rstrip('/').casefold()
-            if (key in seen or relative.is_absolute() or '..' in relative.parts or
-                    '\\' in name or ':' in name or name.startswith('/') or
-                    name.rstrip('/') != relative.as_posix()):
-                raise ValueError('Unsafe or duplicate Mac ZIP member')
-            seen.add(key)
-            mode = entry.external_attr >> 16
-            directory_entry = entry.is_dir()
-            if not (stat.S_ISDIR(mode) if directory_entry else stat.S_ISREG(mode)):
-                raise ValueError('Mac ZIP member is not a regular file/directory')
-            if name == prefix:
-                continue
-            if not name.startswith(prefix):
-                if name not in ('README-en.txt', 'README-ko.txt', 'verification-summary.json') or directory_entry:
-                    raise ValueError('Unexpected file outside the Mac app')
-                continue
-            record = {'mode': stat.S_IMODE(mode), 'type': 'directory' if directory_entry else 'file'}
-            if not directory_entry:
-                record['sha256'] = hashlib.sha256(archive.read(entry)).hexdigest()
-            records[name[len(prefix):].rstrip('/')] = record
-        summary = json.loads(archive.read('verification-summary.json'))
-        app_hash = hashlib.sha256(json.dumps(records, sort_keys=True).encode('utf8')).hexdigest()
-        core = prefix + 'Contents/Resources/game/core/'
-        version = validate_info(json.loads(archive.read(core + 'version.json')))
-        label = archive.read(core + 'version.txt')
-        plist = plistlib.loads(archive.read(prefix + 'Contents/Info.plist'))
-        executable = archive.read(prefix + 'Contents/MacOS/StrandedII')
+    if path.with_suffix('.dmg.sha256').read_text('utf8') != f'{checksum}  {path.name}\n':
+        raise ValueError('Mac DMG checksum file disagrees with the image')
+    with mounted_image(path) as mounted:
+        payload_records(mounted)
+        app = mounted / 'Stranded II.app'
+        records = tree_records(app)
+        summary = json.loads((mounted / 'verification-summary.json').read_text('utf8'))
+        app_hash = fingerprint(records)
+        core = app / 'Contents/Resources/game/core'
+        version = validate_info(json.loads((core / 'version.json').read_text('utf8')))
+        label = (core / 'version.txt').read_bytes()
+        plist = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
+        executable = (app / 'Contents/MacOS/StrandedII').read_bytes()
         numeric_version = info['version'].split('-')[0]
         if (validate_info(summary.get('version_info', {})) != info or version != info or
                 summary.get('version') != info['version'] or summary.get('source_commit') != info['commit'] or
@@ -159,7 +139,7 @@ def validate_macos_package(directory, info):
                 plist.get('CFBundleVersion') != numeric_version or
                 plist.get('CFBundleShortVersionString') != numeric_version or
                 plist.get('LSMinimumSystemVersion') != summary.get('minimum_macos')):
-            raise ValueError('Mac ZIP version/commit/app does not match the selected build')
+            raise ValueError('Mac DMG version/commit/app does not match the selected build')
         checks = summary.get('checks', {})
         notarization = summary.get('notarization', {})
         if (summary.get('signing') != 'Developer ID Application' or summary.get('notarized') is not True or
@@ -173,11 +153,13 @@ def validate_macos_package(directory, info):
         if (summary.get('suite') not in ('core', 'full') or
                 checks.get('app_structure_and_signature') != 'pass' or
                 checks.get('abi') != {'bytes_equal_to_blitz_1_118': 613, 'type_reuse': 'pass'}):
-            raise ValueError('Mac ZIP is missing successful native checks')
+            raise ValueError('Mac DMG is missing successful native checks')
         if (len(executable) < 32 or struct.unpack_from('<II', executable) != (0xfeedfacf, 0x100000c) or
                 records['Contents/MacOS/StrandedII']['mode'] & 0o111 != 0o111 or
                 'Contents/_CodeSignature/CodeResources' not in records):
-            raise ValueError('Mac ZIP must contain a signed executable ARM64 app')
+            raise ValueError('Mac DMG must contain a signed executable ARM64 app')
+        verify_signature(app, summary['team_id'], notarized=True)
+        verify_dmg_signature(path, summary['team_id'])
     return path, checksum
 
 
@@ -230,8 +212,10 @@ def publish(repo, directory, info, include_macos=False):
         if not existing['draft']:
             # A published artifact is immutable, including on re-runs.
             check_published(existing, info)
-            if include_macos and macos_archive_name(info) not in recorded_assets(previous, info):
-                raise ValueError('Published release has no Mac artifact; publish a new version instead')
+            if include_macos:
+                mac_names = {macos_archive_name(info), str(Path(macos_archive_name(info)).with_suffix('.zip'))}
+                if not mac_names.intersection(recorded_assets(previous, info)):
+                    raise ValueError('Published release has no Mac artifact; publish a new version instead')
             print('Already published:', info['tag'])
             return
     # Drafts freeze both the asset set and hashes. Do not replace a different
@@ -251,7 +235,8 @@ def publish(repo, directory, info, include_macos=False):
     notes = directory / 'release-notes.txt'
     recorded = dict(info, zip_sha256=artifacts[archive_name(info)], artifacts=artifacts)
     mac_note = ('\nmacOS: Experimental native build for Apple Silicon, targeting macOS 15.0 or later. '
-                'Developer ID signed and notarized by Apple, with a stapled ticket. See README-en.txt for launch instructions '
+                'Open the DMG and drag Stranded II.app to Applications. '
+                'Developer ID signed and notarized by Apple, with stapled tickets. See README-en.txt for launch instructions '
                 'and verification coverage.\n'
                 if include_macos else '')
     notes.write_text('<!-- stranded-ii-build: ' + json.dumps(recorded, separators=(',', ':')) + ' -->\n' + mac_note,
@@ -263,7 +248,7 @@ def publish(repo, directory, info, include_macos=False):
            '--title', info['display_version'], '--generate-notes', '--notes-file', str(notes),
            '--prerelease=' + str(info['channel'] == 'dev').lower(), '--latest=false')
     # Only drafts may replace assets, so interruption halfway through upload is recoverable.
-    uploads = [str(p) for path, _ in packages for p in (path, path.with_suffix('.zip.sha256'))]
+    uploads = [str(p) for path, _ in packages for p in (path, path.with_suffix(path.suffix + '.sha256'))]
     gh('release', 'upload', info['tag'], *uploads, '--repo', repo, '--clobber')
     latest = info['edition'] == 'classic' and info['channel'] == 'main' and not any(
         not r['draft'] and not r['prerelease'] and TAG.fullmatch(r['tag_name']) and

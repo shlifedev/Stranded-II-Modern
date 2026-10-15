@@ -6,10 +6,8 @@ import copy
 import hashlib
 import json
 import plistlib
-import stat
 import subprocess
 import sys
-import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
@@ -278,28 +276,7 @@ class VerificationGates(TestCase):
                     validation.verified_build()
 
 
-class ArchiveAndSuites(TestCase):
-    def test_zip_is_repeatable_and_preserves_execute_permissions(self):
-        with TemporaryDirectory() as directory:
-            root = Path(directory)
-            stage = root / 'stage'
-            executable = stage / 'Stranded II.app/Contents/MacOS/StrandedII'
-            executable.parent.mkdir(parents=True)
-            executable.write_bytes(b'fixture')
-            executable.chmod(0o755)
-            (stage / 'README-ko.txt').write_text('한글 안내\n', encoding='utf8')
-            a, b = root / 'a.zip', root / 'b.zip'
-            expected = package.write_archive(a, stage)
-            package.write_archive(b, stage)
-            self.assertEqual(a.read_bytes(), b.read_bytes())
-            with zipfile.ZipFile(a) as archive:
-                mode = archive.getinfo('Stranded II.app/Contents/MacOS/StrandedII').external_attr >> 16
-                self.assertEqual(stat.S_IMODE(mode), 0o755)
-            if sys.platform == 'darwin':
-                extracted = root / '압축 해제'
-                subprocess.run(['ditto', '-x', '-k', str(a), str(extracted)], check=True)
-                self.assertEqual(validation.tree_records(extracted), expected)
-
+class Suites(TestCase):
     def test_core_never_starts_graphical_checks(self):
         with TemporaryDirectory() as directory:
             report = {key: {} for key in ('source_sha256', 'implementation_sha256', 'executable_sha256')}

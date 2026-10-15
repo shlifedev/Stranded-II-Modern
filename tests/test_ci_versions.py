@@ -1,8 +1,11 @@
 """Exercise release ordering, immutable retries and publication failure recovery."""
 from pathlib import Path
+from contextlib import contextmanager
 from unittest.mock import patch
 import hashlib
 import json
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -107,6 +110,16 @@ class PublicationTests(unittest.TestCase):
         patch.object(release, 'remote_tag', side_effect=lambda repo, tag: self.tags.get(tag)).start()
         patch.object(release, 'api', side_effect=self.api).start()
         patch.object(release, 'gh', side_effect=self.gh).start()
+        self.mac_records = {}
+        @contextmanager
+        def mount(path):
+            yield path.with_suffix('.mounted')
+        patch.object(release, 'mounted_image', side_effect=mount).start()
+        patch.object(release, 'payload_records').start()
+        # Model Unix modes independently of the host running the coordinator tests.
+        patch.object(release, 'tree_records', side_effect=lambda app: self.mac_records[app]).start()
+        patch.object(release, 'verify_signature').start()
+        patch.object(release, 'verify_dmg_signature').start()
 
     def make_package(self, info):
         from editions import Edition
@@ -125,10 +138,8 @@ class PublicationTests(unittest.TestCase):
 
     def make_mac_package(self, info, metadata=None, execute=True, cpu=0x100000c, signing=None, ticket=True):
         import plistlib
-        import stat
         import struct
         metadata = metadata or info
-        prefix = 'Stranded II.app/'
         numeric = metadata['version'].split('-')[0]
         contents = {
             'Contents/MacOS/StrandedII': struct.pack('<II', 0xfeedfacf, cpu) + bytes(24),
@@ -157,22 +168,21 @@ class PublicationTests(unittest.TestCase):
                        notarization={'id': '12345678-1234-1234-1234-123456789abc', 'status': 'Accepted'})
         summary.update(signing or {})
         path = self.directory / release.macos_archive_name(info)
-        members = {prefix: (b'', stat.S_IFDIR | 0o755),
-                   'verification-summary.json': (json.dumps(summary).encode(), stat.S_IFREG | 0o644),
-                   'README-en.txt': (b'instructions', stat.S_IFREG | 0o644),
-                   'README-ko.txt': (b'instructions', stat.S_IFREG | 0o644)}
-        for name, record in records.items():
-            is_dir = record['type'] == 'directory'
-            members[prefix + name + ('/' if is_dir else '')] = (
-                b'' if is_dir else contents[name], (stat.S_IFDIR if is_dir else stat.S_IFREG) | record['mode'])
-        with zipfile.ZipFile(path, 'w') as archive:
-            for name, (data, mode) in sorted(members.items()):
-                entry = zipfile.ZipInfo(name)
-                entry.create_system = 3
-                entry.external_attr = mode << 16
-                archive.writestr(entry, data)
+        mounted = path.with_suffix('.mounted')
+        if mounted.exists():
+            shutil.rmtree(mounted)
+        app = mounted / 'Stranded II.app'
+        for name, data in contents.items():
+            target = app / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        self.mac_records[app] = records
+        (mounted / 'verification-summary.json').write_text(json.dumps(summary), encoding='utf8')
+        for language in ('en', 'ko'):
+            (mounted / f'README-{language}.txt').write_text('instructions', encoding='utf8')
+        path.write_bytes(b'fixture DMG\n' + json.dumps({'summary': summary, 'files': records}, sort_keys=True).encode())
         checksum = hashlib.sha256(path.read_bytes()).hexdigest()
-        path.with_suffix('.zip.sha256').write_text(f'{checksum}  {path.name}\n', encoding='utf8')
+        path.with_suffix('.dmg.sha256').write_text(f'{checksum}  {path.name}\n', encoding='utf8')
         return path
 
     def api(self, repo, path, payload):
@@ -269,6 +279,35 @@ class PublicationTests(unittest.TestCase):
             release.publish('owner/repo', self.directory, self.info, include_macos=True)
         self.assertFalse(self.commands)
         self.assertFalse(self.tags)
+
+    def test_mac_dmg_checksum_and_native_signature_failures_prevent_publication(self):
+        mac = self.make_mac_package(self.info)
+        mac.write_bytes(mac.read_bytes() + b'tampered')
+        with self.assertRaisesRegex(ValueError, 'checksum'):
+            release.publish('owner/repo', self.directory, self.info, include_macos=True)
+        self.assertFalse(self.tags)
+        self.make_mac_package(self.info)
+        for verifier in ('verify_signature', 'verify_dmg_signature'):
+            with self.subTest(verifier=verifier), patch.object(release, verifier,
+                    side_effect=subprocess.CalledProcessError(1, 'codesign')):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    release.publish('owner/repo', self.directory, self.info, include_macos=True)
+                self.assertFalse(self.tags)
+
+    def test_old_published_mac_zip_is_kept_without_adding_a_dmg(self):
+        self.make_mac_package(self.info)
+        release.publish('owner/repo', self.directory, self.info, include_macos=True)
+        entry = self.history[0]
+        previous = release.saved_info(entry)
+        name = release.macos_archive_name(self.info)
+        legacy = str(Path(name).with_suffix('.zip'))
+        previous['artifacts'][legacy] = previous['artifacts'].pop(name)
+        entry['body'] = '<!-- stranded-ii-build: ' + json.dumps(previous) + ' -->'
+        for asset in entry['assets']:
+            asset['name'] = asset['name'].replace(name, legacy)
+        commands = self.commands.copy()
+        release.publish('owner/repo', self.directory, self.info, include_macos=True)
+        self.assertEqual(self.commands, commands)
 
     def test_mac_from_another_commit_cannot_publish(self):
         self.make_mac_package(self.info, metadata=dict(self.info, commit=OLDER))

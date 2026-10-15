@@ -51,6 +51,22 @@ class SignatureValidation(TestCase):
                 with self.assertRaises(subprocess.CalledProcessError):
                     signing.verify_signature(Path('fixture.app'), TEAM, notarized=True)
 
+    def test_dmg_requires_developer_id_timestamp_and_attached_ticket(self):
+        for details in (DETAILS, DETAILS.replace(TEAM, 'OTHER12345'),
+                        DETAILS.replace('Timestamp=', 'Signed Time='), 'Signature=adhoc\n'):
+            calls = []
+            def run(command, **kwargs):
+                calls.append(command)
+                return subprocess.CompletedProcess(command, 0, stdout=b'', stderr=details)
+            with self.subTest(details=details), mock.patch.object(signing.subprocess, 'run', side_effect=run):
+                if details == DETAILS:
+                    signing.verify_dmg_signature(Path('fixture.dmg'), TEAM)
+                    self.assertEqual(calls[-1][1:4], ['--assess', '--type', 'open'])
+                    self.assertTrue(any('stapler' in command for command in calls))
+                else:
+                    with self.assertRaisesRegex(ValueError, 'Developer ID signed DMG'):
+                        signing.verify_dmg_signature(Path('fixture.dmg'), TEAM)
+
 
 class Credentials(TestCase):
     def test_missing_secrets_do_not_create_a_keychain(self):
@@ -132,6 +148,10 @@ class Distribution(TestCase):
         self.assertIn('not notarized', package.guides(False)['en'])
         self.assertNotIn('not notarized', package.guides(True)['en'])
         self.assertIn('공증 티켓', package.guides(True)['ko'])
+        for instructions in package.guides(True).values():
+            self.assertIn('DMG', instructions)
+            self.assertIn('Applications', instructions)
+            self.assertNotIn('ZIP', instructions)
 
     def test_rejected_submission_cannot_be_stapled(self):
         @contextmanager
@@ -148,6 +168,30 @@ class Distribution(TestCase):
                 signing.sign_and_notarize(Path('fixture.app'), {})
             self.assertFalse(any('stapler' in call.args[0] for call in run.call_args_list))
             self.assertEqual(build.read(Path(directory) / 'notarization-report.json')['status'], 'Invalid')
+
+    def test_dmg_notarization_uses_final_image_and_staples_only_after_acceptance(self):
+        @contextmanager
+        def credentials():
+            yield 'keychain', 'identity', TEAM
+        for status in ('Accepted', 'Invalid'):
+            with self.subTest(status=status), TemporaryDirectory() as directory, \
+                 mock.patch.object(build, 'BUILD', Path(directory)), \
+                 mock.patch.object(signing, 'credentials', credentials), \
+                 mock.patch.object(signing, 'private_run', return_value=json.dumps({
+                     'id': '12345678-1234-1234-1234-123456789abc', 'status': status})) as private, \
+                 mock.patch.object(signing, 'verify_dmg_signature') as verify, \
+                 mock.patch.object(signing.subprocess, 'run') as run:
+                image = Path(directory) / 'test.dmg'
+                if status == 'Accepted':
+                    self.assertEqual(signing.sign_and_notarize_dmg(image)['status'], status)
+                    verify.assert_called_once_with(image, TEAM)
+                    self.assertTrue(any('staple' in call.args[0] for call in run.call_args_list))
+                else:
+                    with self.assertRaisesRegex(ValueError, 'not accepted'):
+                        signing.sign_and_notarize_dmg(image)
+                    verify.assert_not_called()
+                    self.assertFalse(any('staple' in call.args[0] for call in run.call_args_list))
+                self.assertEqual(private.call_args_list[0].args[0][3], str(image))
 
 
 if __name__ == '__main__':
