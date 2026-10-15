@@ -2835,3 +2835,31 @@ dev.benchmark.focus_lost	포커스 상실·최소화로 이번 측정이 무효 
 dev.benchmark.invalid_frame	프레임이 중단되어 이번 측정이 무효 처리되었습니다.
 dev.benchmark.gpu_completion_failed	GPU 완료 확인에 실패하여 처리량을 제공할 수 없습니다.
 dev.benchmark.gpu_completion_unavailable	GPU 완료 확인을 지원하지 않아 처리량을 제공할 수 없습니다.
+dev.world	월드
+dev.quick_actions	빠른 실행
+dev.god_mode	무적
+dev.heal	완전 회복 / 부활
+dev.session	현재 맵의 지속형 치트
+dev.session_help	생존 수치·속도·시간 옵션은 맵을 불러오면 초기화됩니다. 메뉴를 닫아도 유지됩니다.
+dev.lock_hunger	배고픔 고정
+dev.lock_thirst	갈증 고정
+dev.lock_exhaustion	피로 고정
+dev.speed	걷기 / 수영 속도 배율
+dev.reset_modifiers	생존 수치 / 속도 / 시간 옵션 초기화
+dev.values	플레이어 수치 편집
+dev.states_help	무적과 유익한 효과를 포함한 모든 상태를 제거합니다.
+dev.teleport_help	탑승 중에는 먼저 내리세요. 기억한 위치는 현재 맵에서만 사용할 수 있습니다.
+dev.remember	현재 위치 기억
+dev.return	기억한 위치로 복귀
+dev.surface	지표면 위로 탈출
+dev.coordinates	좌표 직접 입력
+dev.freeze_time	낮 / 밤 시간 고정
+dev.time_help	시간 고정 중에도 게임은 진행되며 불러오기 시 고정이 해제됩니다. 시간 변경은 성장·시간 이벤트를 건너뜁니다.
+dev.morning	아침
+dev.noon	정오
+dev.evening	저녁
+dev.midnight	자정
+dev.custom_time	날짜 / 시간 직접 입력
+dev.repair	소지품 내구도 복구
+dev.items_help	이름이나 ID로 검색하고 수량을 정한 뒤 아이템을 클릭하면 지급됩니다.
+dev.no_items	검색 결과가 없습니다.

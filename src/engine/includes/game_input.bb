@@ -5,6 +5,7 @@ Function game_input_normal()
 	TCunit.Tunit=g_cplayer
 	If Handle(TCunit)=0 Then RuntimeError("Missing Player Data (game_input_normal)")
 	h=TCunit\h
+ dev_survival()
 	
 	;Hurt
 	If in_gt5000go Then
@@ -91,6 +92,8 @@ Function game_input_normal()
 							Next
 						EndIf
 						
+      If dev_player() Then speed#=speed#*dev_speed#
+
 						;2 Directional Movement - Speed Decrease
 						m_lr=0
 						m_fb=0

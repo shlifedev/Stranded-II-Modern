@@ -93,6 +93,7 @@ def check_game(compiler, output):
     marker = 'WriteLine compat_report,"FAILURES "+compat_failures'
     if scenario.count(marker) != 1:
         raise ValueError('The shared full-engine fixture footer changed.')
+    scenario = scenario.replace(marker, (ROOT / 'tests/dev_cheats.bb').read_text('utf8').replace('cheat_check(', 'compat_check(') + '\n' + marker)
     scenario = scenario.replace(marker, (ROOT / 'tests/macos_game.bb').read_text('utf8') + '\n' + (ROOT / 'tests/benchmark_scene.bb').read_text('utf8') + '\n' + marker)
     if scenario.count('; SAVE_MENU_CHECKS') != 1:
         raise ValueError('The native save menu fixture marker changed.')

@@ -5,6 +5,10 @@ Global dev_frames,dev_frame_start,dev_fps#,dev_status$
 Global dev_item_search$,dev_item_count=1,dev_script$,dev_log_search$,dev_log_level=-1,dev_log_follow=1
 Global dev_x#,dev_y#,dev_z#,dev_day=1,dev_hour,dev_minute
 Global dev_refresh,dev_saved_name$,dev_saved_language$
+; Session modifiers never become map flags or saved player states.
+Global dev_lock_hunger,dev_lock_thirst,dev_lock_exhaustion,dev_freeze_time,dev_speed#=1.
+Global dev_bookmark,dev_bookmark_x#,dev_bookmark_y#,dev_bookmark_z#
+Const Cdev_heal=10,Cdev_repair=11,Cdev_bookmark=12,Cdev_return=13,Cdev_surface=14,Cdev_reset=15
 Global dev_saved_hotkey
 Dim dev_settings_paths$(3),dev_settings_exists(3)
 Dim dev_saved#(23),dev_saved_keys(41),dev_saved_qol(4),dev_saved_render(4)
@@ -31,7 +35,59 @@ End Function
 
 Function dev_world_reset()
  dev_epoch=dev_epoch+1:dev_paused=0
+ dev_reset_modifiers():dev_bookmark=0:dev_status$=""
+ dev_x=0:dev_y=0:dev_z=0:dev_day=1:dev_hour=0:dev_minute=0
  For task.TdevAction=Each TdevAction:Delete task:Next
+End Function
+
+Function dev_reset_modifiers()
+ dev_lock_hunger=0:dev_lock_thirst=0:dev_lock_exhaustion=0:dev_freeze_time=0:dev_speed=1.
+End Function
+
+Function dev_survival()
+ If dev_player()=0 Then Return
+ If dev_lock_hunger Then g_cplayer\hunger=0
+ If dev_lock_thirst Then g_cplayer\thirst=0
+ If dev_lock_exhaustion Then g_cplayer\exhaustion=0
+End Function
+
+Function cheat_heal()
+ If dev_player()=0 Then Return False
+ g_player_dead=0
+ If g_cplayer\health_max<=0 Then g_cplayer\health_max=Dunit_health(g_cplayer\typ)
+ g_cplayer\health=g_cplayer\health_max
+ EntityType g_cplayer\h,Dunit_col(g_cplayer\typ)
+ EntityPickMode g_cplayer\mh,2,1
+ Return cheat_needs()
+End Function
+
+Function cheat_repair()
+ If dev_player()=0 Then Return False
+ Local repaired=0
+ For item.Titem=Each Titem
+  If item\parent_class=Cclass_unit And item\parent_id=g_player Then
+   item\health=Ditem_health(item\typ):repaired=1
+  EndIf
+ Next
+ Return repaired
+End Function
+
+Function cheat_teleport(x#,y#,z#)
+ If dev_player()=0 Or g_drive<>0 Then Return False
+ PositionEntity g_cplayer\h,x,y,z
+ g_cplayer\phy_jump=0:g_cplayer\phy_fall=gt:g_cplayer\phy_ft=gt:g_cplayer\phy_fally=y
+ in_tpforce=0
+ ResetEntity g_cplayer\h:col_player_reset():game_setcam()
+ Return True
+End Function
+
+Function cheat_time(day,hour,minute)
+ If dev_player()=0 Or day<1 Or hour<0 Or hour>23 Or minute<0 Or minute>59 Then Return False
+ map_day=day:map_hour=hour:map_minute=minute
+ ; Do not replay skipped time events or a day of growth.
+ map_lday=day:map_lhour=hour:map_lminute=minute:map_timeupdate=0:in_tgametime=gt
+ e_environment_update_light()
+ Return True
 End Function
 
 ; Same helpers serve the original cheat menu and the overlay.
@@ -127,14 +183,23 @@ Function dev_actions()
     Case 4:result=cheat_item(a,b)
     Case 5:result=cheat_build()
     Case 6:result=cheat_script(text$)
-    Case 7
-     PositionEntity g_cplayer\h,x,y,z
-     ResetEntity g_cplayer\h:col_player_reset():game_setcam()
-    Case 8
-     map_day=a:map_hour=b:map_minute=c
-     ; Move time without generating a day of growth or replaying time events.
-     map_lday=map_day:map_lhour=map_hour:map_lminute=map_minute
-     e_environment_update_light()
+    Case 7:result=cheat_teleport(x,y,z)
+    Case 8:result=cheat_time(a,b,c)
+    Case Cdev_heal:result=cheat_heal()
+    Case Cdev_repair:result=cheat_repair()
+    Case Cdev_bookmark
+     dev_bookmark_x=EntityX(g_cplayer\h):dev_bookmark_y=EntityY(g_cplayer\h):dev_bookmark_z=EntityZ(g_cplayer\h):dev_bookmark=1
+    Case Cdev_return
+     result=False
+     If dev_bookmark Then result=cheat_teleport(dev_bookmark_x,dev_bookmark_y,dev_bookmark_z)
+    Case Cdev_surface
+     result=False
+     If ter Then
+      x=EntityX(g_cplayer\h):z=EntityZ(g_cplayer\h)
+      y=TerrainY(ter,x,0,z)+Dunit_colyr(g_cplayer\typ)+5.
+      result=cheat_teleport(x,y,z)
+     EndIf
+    Case Cdev_reset:dev_reset_modifiers()
     Case 9
      g_cplayer\health=x:g_cplayer\hunger=y:g_cplayer\thirst=z
      g_cplayer\exhaustion=Float(a):con_unit(g_player):unit_values()
@@ -165,6 +230,7 @@ Function dev_input()
  If bench_active Then Return
  dev_apply_preview()
  dev_actions()
+ dev_survival()
 End Function
 
 Function dev_capture_settings()
@@ -279,6 +345,7 @@ Function dev_float#(label$,value#,minimum#,maximum#)
 End Function
 
 Function dev_settings_ui()
+ dev_feedback()
  DebugUiText dev_label("preview")
  If dev_settings_dirty() Then DebugUiText dev_label("unsaved")
  If dev_restart() Then DebugUiText dev_label("restart")
@@ -356,16 +423,29 @@ Function dev_settings_ui()
 End Function
 
 Function dev_cheats_ui()
- Local active=dev_player()
+ dev_feedback()
+ Local active=dev_player(),invulnerable=0
  If active=0 Then DebugUiText dev_label("play_only")
  DebugUiDisabled active=0
- If DebugUiButton(dev_label("invulnerable")) Then dev_queue(1)
+ DebugUiHeading dev_label("quick_actions")
+ If active Then invulnerable=(get_state(Cstate_invulnerability,Cclass_unit,g_player)<>0)
+ invulnerable=DebugUiCheck(dev_label("god_mode"),invulnerable)
+ If DebugUiChanged() Then dev_queue(1)
+ If DebugUiButton(dev_label("heal")) Then dev_queue(Cdev_heal)
  DebugUiSameLine()
  If DebugUiButton(dev_label("needs")) Then dev_queue(2)
- If DebugUiButton(dev_label("states")) Then dev_queue(3)
- DebugUiSameLine()
- If DebugUiButton(dev_label("build")) Then dev_queue(5)
- If active Then
+ If DebugUiSection(dev_label("states")) Then
+  DebugUiHint dev_label("states_help")
+  If DebugUiButton(dev_label("states")) Then dev_queue(3)
+ EndIf
+ DebugUiHeading dev_label("session")
+ DebugUiHint dev_label("session_help")
+ dev_lock_hunger=DebugUiCheck(dev_label("lock_hunger"),dev_lock_hunger)
+ dev_lock_thirst=DebugUiCheck(dev_label("lock_thirst"),dev_lock_thirst)
+ dev_lock_exhaustion=DebugUiCheck(dev_label("lock_exhaustion"),dev_lock_exhaustion)
+ dev_speed=DebugUiFloat(dev_label("speed"),dev_speed,0.25,4.)
+ If DebugUiButton(dev_label("reset_modifiers")) Then dev_queue(Cdev_reset)
+ If DebugUiSection(dev_label("values")) And active Then
   Local health#=g_cplayer\health,hunger#=g_cplayer\hunger,thirst#=g_cplayer\thirst,exhaustion#=g_cplayer\exhaustion,changed=0
   health=DebugUiFloat(dev_label("health"),health,0.,g_cplayer\health_max):changed=changed Or DebugUiChanged()
   hunger=DebugUiFloat(dev_label("hunger"),hunger,0.,Dunit_store(g_cplayer\typ)):changed=changed Or DebugUiChanged()
@@ -373,42 +453,84 @@ Function dev_cheats_ui()
   exhaustion=DebugUiFloat(dev_label("exhaustion"),exhaustion,0.,Dunit_store(g_cplayer\typ)):changed=changed Or DebugUiChanged()
   If changed Then dev_queue(9,Int(exhaustion),0,0,health,hunger,thirst)
  EndIf
- If DebugUiSection(dev_label("teleport")) Then
+ If DebugUiSection(dev_label("script")) Then
+  dev_script$=DebugUiInput(dev_label("script"),dev_script$,1)
+  If DebugUiButton(dev_label("execute")) Then dev_queue(6,0,0,0,0,0,0,dev_script$)
+ EndIf
+ DebugUiDisabledEnd()
+End Function
+
+Function dev_world_ui()
+ dev_feedback()
+ Local active=dev_player()
+ If active=0 Then DebugUiText dev_label("play_only")
+ DebugUiDisabled active=0
+ DebugUiHeading dev_label("teleport")
+ DebugUiHint dev_label("teleport_help")
+ If DebugUiButton(dev_label("remember")) Then dev_queue(Cdev_bookmark)
+ DebugUiSameLine():DebugUiDisabled dev_bookmark=0
+ If DebugUiButton(dev_label("return")) Then dev_queue(Cdev_return)
+ DebugUiDisabledEnd()
+ If dev_bookmark Then DebugUiHint "XYZ: "+Int(dev_bookmark_x)+", "+Int(dev_bookmark_y)+", "+Int(dev_bookmark_z)
+ If DebugUiButton(dev_label("surface")) Then dev_queue(Cdev_surface)
+ If DebugUiSection(dev_label("coordinates")) Then
   If DebugUiButton(dev_label("read_position")) And active Then dev_x=EntityX(g_cplayer\h):dev_y=EntityY(g_cplayer\h):dev_z=EntityZ(g_cplayer\h)
   dev_x=DebugUiFloat("X",dev_x,-1000000.,1000000.)
   dev_y=DebugUiFloat("Y",dev_y,-1000000.,1000000.)
   dev_z=DebugUiFloat("Z",dev_z,-1000000.,1000000.)
   If DebugUiButton(dev_label("teleport")) Then dev_queue(7,0,0,0,dev_x,dev_y,dev_z)
  EndIf
- If DebugUiSection(dev_label("time")) Then
+ DebugUiHeading dev_label("time")
+ dev_freeze_time=DebugUiCheck(dev_label("freeze_time"),dev_freeze_time)
+ DebugUiHint dev_label("time_help")
+ If DebugUiButton(dev_label("morning")) Then dev_queue(8,map_day,7)
+ DebugUiSameLine():If DebugUiButton(dev_label("noon")) Then dev_queue(8,map_day,12)
+ DebugUiSameLine():If DebugUiButton(dev_label("evening")) Then dev_queue(8,map_day,18)
+ DebugUiSameLine():If DebugUiButton(dev_label("midnight")) Then dev_queue(8,map_day,0)
+ If DebugUiSection(dev_label("custom_time")) Then
   If DebugUiButton(dev_label("read_time")) Then dev_day=map_day:dev_hour=map_hour:dev_minute=map_minute
   dev_day=DebugUiInt(dev_label("day"),dev_day,1,1000000)
   dev_hour=DebugUiInt(dev_label("hour"),dev_hour,0,23)
   dev_minute=DebugUiInt(dev_label("minute"),dev_minute,0,59)
   If DebugUiButton(dev_label("apply_time")) Then dev_queue(8,dev_day,dev_hour,dev_minute)
  EndIf
- If DebugUiSection(dev_label("items")) Then
-  dev_item_search$=DebugUiInput(dev_label("search"),dev_item_search$)
-  dev_item_count=DebugUiInt(dev_label("count"),dev_item_count,1,10000)
+ DebugUiDisabledEnd()
+End Function
+
+Function dev_items_ui()
+ dev_feedback()
+ Local active=dev_player(),matches=0
+ If active=0 Then DebugUiText dev_label("play_only")
+ DebugUiDisabled active=0
+ If DebugUiButton(dev_label("build")) Then dev_queue(5)
+ If DebugUiButton(dev_label("repair")) Then dev_queue(Cdev_repair)
+ DebugUiHeading dev_label("items")
+ DebugUiHint dev_label("items_help")
+ dev_item_search$=DebugUiInput(dev_label("search"),dev_item_search$)
+ dev_item_count=DebugUiInt(dev_label("count"),dev_item_count,1,10000)
+ If DebugUiListBegin(0.) Then
   If DebugUiItemsBegin() Then
-  For i=0 To Citem_count
-   If Ditem_name$(i)<>"" Then
-    Local name$=ko_localize(Ditem_name$(i))
-    If dev_item_search$="" Or Instr(Lower(name$+" "+i),Lower(dev_item_search$)) Then
-     Local icon=Ditem_iconh(i)
-     If icon=0 Then icon=gfx_defaulticon
-     If DebugUiItem(name$+" ("+i+")##item"+i,ImageBuffer(icon)) Then dev_queue(4,i,dev_item_count)
+   For i=0 To Citem_count
+    If Ditem_name$(i)<>"" Then
+     Local name$=ko_localize(Ditem_name$(i))
+     If dev_item_search$="" Or Instr(Lower(name$+" "+i),Lower(dev_item_search$)) Then
+      matches=matches+1
+      Local icon=Ditem_iconh(i)
+      If icon=0 Then icon=gfx_defaulticon
+      If DebugUiItem(name$+" ("+i+")##item"+i,ImageBuffer(icon)) Then dev_queue(4,i,dev_item_count)
+     EndIf
     EndIf
-   EndIf
-  Next
-  DebugUiItemsEnd()
+   Next
+   DebugUiItemsEnd()
   EndIf
- EndIf
- If DebugUiSection(dev_label("script")) Then
-  dev_script$=DebugUiInput(dev_label("script"),dev_script$,1)
-  If DebugUiButton(dev_label("execute")) Then dev_queue(6,0,0,0,0,0,0,dev_script$)
+  If matches=0 Then DebugUiHint dev_label("no_items")
+  DebugUiListEnd()
  EndIf
  DebugUiDisabledEnd()
+End Function
+
+Function dev_feedback()
+ If dev_status$<>"" Then DebugUiHint dev_status$
 End Function
 
 Function dev_draw()
@@ -419,8 +541,8 @@ Function dev_draw()
   If DebugUiTab(bench_label("tab")) Then bench_ui():DebugUiTabEnd()
   DebugUiFinish():Return
  EndIf
- If DebugUiTab(bench_label("tab")) Then dev_profile_labels():bench_labels():bench_ui():DebugUiTabEnd()
  If DebugUiTab(dev_label("status")) Then
+  dev_feedback()
   DebugUiText "FPS: "+Int(dev_fps)+" / "+modern_fps
   DebugUiText dev_label("map")+": "+ko_localize(map_name$)+" ("+map_path$+")"
   DebugUiText dev_label("time")+": "+map_day+" / "+map_hour+":"+map_minute
@@ -436,12 +558,14 @@ Function dev_draw()
   EndIf
   DebugUiTabEnd()
  EndIf
- If DebugUiTab(dev_label("profiler")) Then dev_profile_labels():DebugUiProfiler():DebugUiTabEnd()
  If DebugUiTab(dev_label("cheats")) Then dev_cheats_ui():DebugUiTabEnd()
+ If DebugUiTab(dev_label("items")) Then dev_items_ui():DebugUiTabEnd()
+ If DebugUiTab(dev_label("world")) Then dev_world_ui():DebugUiTabEnd()
  If bench_active=0 Then
   If DebugUiTab(dev_label("settings")) Then dev_settings_ui():DebugUiTabEnd()
  EndIf
  If DebugUiTab(dev_label("logs")) Then
+  dev_feedback()
   dev_log_search$=DebugUiInput(dev_label("search"),dev_log_search$)
   dev_log_level=DebugUiInt(dev_label("level"),dev_log_level,-1,3)
   dev_log_follow=DebugUiCheck(dev_label("follow"),dev_log_follow)
@@ -451,7 +575,8 @@ Function dev_draw()
   dev_log_follow=DebugUiLogs(dev_log_search$,dev_log_level,dev_log_follow)
   DebugUiTabEnd()
  EndIf
- DebugUiText dev_status$
+ If DebugUiTab(dev_label("profiler")) Then dev_profile_labels():DebugUiProfiler():DebugUiTabEnd()
+ If DebugUiTab(bench_label("tab")) Then dev_profile_labels():bench_labels():bench_ui():DebugUiTabEnd()
  DebugUiFinish()
 End Function
 

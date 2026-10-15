@@ -36,6 +36,9 @@ def main():
     sequence.write_text(sequence.read_text('utf8').replace('Select Tseq\\event$',
         'compat_event(Tseq\\event$,Tseq\\t)\n\t\t\tSelect Tseq\\event$'), encoding='utf8')
     scenario = (ROOT / 'tests/web_compatibility.bb').read_text('utf8')
+    scenario = scenario.replace('WriteLine compat_report,"FAILURES "+compat_failures',
+        (ROOT / 'tests/dev_cheats.bb').read_text('utf8').replace('cheat_check(', 'compat_check(') +
+        '\nWriteLine compat_report,"FAILURES "+compat_failures')
     audio = [target.removeprefix('/game/mods/Stranded II/') for path, target in asset_files()
              if path.suffix.lower() == '.wav' and not supported_wav(path)]
     audio += [f'sfx/speech/intro_{part}.ogg' for part in 'abcd']
@@ -77,7 +80,8 @@ def main():
     (output / 'report.json').write_text(json.dumps({'windows_reference': 'pass' if passed else 'fail',
         'browser': 'not run', 'report': report,
         'audio_inputs': 'web-prepared PCM plus original Ogg speech',
-        'scenario_sha256': digest(ROOT / 'tests/web_compatibility.bb')}, indent=2) + '\n', encoding='utf8')
+        'scenario_sha256': digest(ROOT / 'tests/web_compatibility.bb'),
+        'cheats_sha256': digest(ROOT / 'tests/dev_cheats.bb')}, indent=2) + '\n', encoding='utf8')
     print(report)
     print('Reference report:', output / 'report.json')
     print('Browser comparison:', 'http://127.0.0.1:8765/checks/')

@@ -17,6 +17,29 @@ For nativeFrame=1 To 180
  modern_present()
 Next
 compat_check(SaveBuffer(BackBuffer(),set_rootdir$+"native-island.bmp"),"native island screenshot")
+; Exercise the actual ImGui layout at the fixture's 800x600 resolution, without OS input.
+DebugUiOpen 1
+For cheatPreview=0 To 2
+ Local cheatTab$=dev_label("cheats")
+ If cheatPreview=1 Then cheatTab$=dev_label("items")
+ If cheatPreview=2 Then cheatTab$=dev_label("world")
+ For cheatFrame=1 To 4
+  RenderWorld()
+  Local cheatFrameReady=DebugUiFrame(dev_label("title"),set_rootdir$+"core\locales\ko\ui.ttf")
+  compat_check(cheatFrameReady,"native developer frame "+cheatPreview)
+  If cheatFrameReady Then
+   If DebugUiTab(cheatTab$) Then
+    If cheatPreview=0 Then dev_cheats_ui()
+    If cheatPreview=1 Then dev_items_ui()
+    If cheatPreview=2 Then dev_world_ui()
+    DebugUiTabEnd()
+   EndIf
+   DebugUiFinish()
+  EndIf
+  Flip False
+ Next
+Next
+DebugUiOpen 0
 ; Real host time, identical island loop and completed GPU work. This reports
 ; fixture throughput/measurement overhead, not foreground display FPS.
 Local profile_saved_fps=modern_fps,profile_pixel,profile_start,profile_duration,profile_text$

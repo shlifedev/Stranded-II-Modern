@@ -2835,3 +2835,31 @@ dev.benchmark.focus_lost	Focus lost or minimized; this trial is invalid.
 dev.benchmark.invalid_frame	Interrupted frame; this trial is invalid.
 dev.benchmark.gpu_completion_failed	GPU completion failed; throughput unavailable.
 dev.benchmark.gpu_completion_unavailable	GPU completion unavailable; throughput unavailable.
+dev.world	World
+dev.quick_actions	Quick actions
+dev.god_mode	Invulnerability
+dev.heal	Heal / revive
+dev.session	Session modifiers
+dev.session_help	Needs, speed and clock modifiers reset on map load. Closing the menu keeps them active.
+dev.lock_hunger	No hunger
+dev.lock_thirst	No thirst
+dev.lock_exhaustion	No exhaustion
+dev.speed	Walk / swim speed multiplier
+dev.reset_modifiers	Reset needs / speed / clock modifiers
+dev.values	Edit player values
+dev.states_help	Removes every state, including invulnerability and beneficial effects.
+dev.teleport_help	Dismount before teleporting. The remembered position belongs to this map only.
+dev.remember	Remember position
+dev.return	Return to remembered position
+dev.surface	Move above terrain
+dev.coordinates	Exact coordinates
+dev.freeze_time	Freeze day / night clock
+dev.time_help	Clock freeze leaves simulation running and resets on load. Time presets skip growth and time events.
+dev.morning	Morning
+dev.noon	Noon
+dev.evening	Evening
+dev.midnight	Midnight
+dev.custom_time	Custom date / time
+dev.repair	Repair carried items
+dev.items_help	Search by name or ID, choose a quantity, then click an item to receive it.
+dev.no_items	No matching items.

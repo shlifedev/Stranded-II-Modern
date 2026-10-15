@@ -95,7 +95,7 @@ bool initialize(){
   if(context)return true;
   if(!window || !device)return false;
   IMGUI_CHECKVERSION();context=ImGui::CreateContext();
-  ImGui::StyleColorsDark();auto &io=ImGui::GetIO();io.IniFilename=nullptr;io.LogFilename=nullptr;
+  s2debugui::applyStyle();auto &io=ImGui::GetIO();io.IniFilename=nullptr;io.LogFilename=nullptr;
   io.ConfigFlags|=ImGuiConfigFlags_NavEnableKeyboard;
   io.ConfigFlags|=ImGuiConfigFlags_NoMouseCursorChange;
   if(!ImGui_ImplSDL2_InitForOther(window)){ImGui::DestroyContext(context);context=nullptr;return false;}
@@ -172,21 +172,25 @@ bb_int_t BBCALL bbDebugUiFrame(BBStr *title,BBStr *font){
   if(path!=loadedFont){loadedFont=path;s2debugui::loadFonts(path);}
   ImGui_ImplWGPU_NewFrame();ImGui_ImplSDL2_NewFrame();ImGui::NewFrame();building=true;
   auto size=ImGui::GetIO().DisplaySize;
-  ImGui::SetNextWindowSize(ImVec2(std::min(720.0f,size.x-20),std::min(660.0f,size.y-20)),ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(std::min(900.0f,size.x-20),std::min(760.0f,size.y-20)),ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSizeConstraints(ImVec2(std::min(480.0f,size.x-20),std::min(360.0f,size.y-20)),ImVec2(size.x,size.y));
   ImGui::SetNextWindowPos(ImVec2(10,10),ImGuiCond_FirstUseEver);
+  label+="###developer-menu"; // The title may change after a shortcut/language change.
   bool open=visible;bool expanded=ImGui::Begin(label.c_str(),&open);
   if(!open)setVisible(false);
-  tabs=expanded && ImGui::BeginTabBar("developer-tabs");return 1;
+  tabs=expanded && ImGui::BeginTabBar("developer-tabs",ImGuiTabBarFlags_FittingPolicyScroll);return 1;
 }
 void BBCALL bbDebugUiFinish(){if(!building)return;if(tabs)ImGui::EndTabBar();ImGui::End();ImGui::Render();building=false;tabs=false;drawReady=true;}
-bb_int_t BBCALL bbDebugUiTab(BBStr *label){auto s=consume(label);return building && tabs && ImGui::BeginTabItem(s.c_str());}
-void BBCALL bbDebugUiTabEnd(){if(building)ImGui::EndTabItem();}
+bb_int_t BBCALL bbDebugUiTab(BBStr *label){auto s=consume(label);if(!building || !tabs || !ImGui::BeginTabItem(s.c_str()))return 0;ImGui::PushID(s.c_str());ImGui::BeginChild("content");return 1;}
+void BBCALL bbDebugUiTabEnd(){if(building){ImGui::EndChild();ImGui::PopID();ImGui::EndTabItem();}}
 void BBCALL bbDebugUiText(BBStr *text){auto s=consume(text);if(building)ImGui::TextWrapped("%s",s.c_str());}
+void BBCALL bbDebugUiHeading(BBStr *text){auto s=consume(text);if(building){ImGui::Spacing();ImGui::SeparatorText(s.c_str());}}
+void BBCALL bbDebugUiHint(BBStr *text){auto s=consume(text);if(building){ImGui::PushStyleColor(ImGuiCol_Text,ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));ImGui::TextWrapped("%s",s.c_str());ImGui::PopStyleColor();}}
 bb_int_t BBCALL bbDebugUiButton(BBStr *label){auto s=consume(label);return building && ImGui::Button(s.c_str());}
 bb_int_t BBCALL bbDebugUiCheck(BBStr *label,bb_int_t value){auto s=consume(label);bool v=value!=0;changed=building && ImGui::Checkbox(s.c_str(),&v);return v;}
-bb_int_t BBCALL bbDebugUiInt(BBStr *label,bb_int_t value,bb_int_t minimum,bb_int_t maximum){auto s=consume(label);int v=value;changed=building && ImGui::SliderInt(s.c_str(),&v,minimum,maximum);return v;}
-bb_float_t BBCALL bbDebugUiFloat(BBStr *label,bb_float_t value,bb_float_t minimum,bb_float_t maximum){auto s=consume(label);float v=value;changed=building && s2debugui::floatControl(s.c_str(),&v,minimum,maximum);return v;}
-BBStr *BBCALL bbDebugUiInput(BBStr *label,BBStr *value,bb_int_t multiline){auto s=consume(label),v=consume(value);changed=false;if(building){if(multiline)changed=ImGui::InputTextMultiline(s.c_str(),&v,ImVec2(-1,180));else changed=ImGui::InputText(s.c_str(),&v);}return new BBStr(v);}
+bb_int_t BBCALL bbDebugUiInt(BBStr *label,bb_int_t value,bb_int_t minimum,bb_int_t maximum){auto s=consume(label);int v=value;changed=false;if(building){s2debugui::beginControl(s.c_str());changed=ImGui::SliderInt("##value",&v,minimum,maximum,"%d",ImGuiSliderFlags_AlwaysClamp);s2debugui::endControl();}return v;}
+bb_float_t BBCALL bbDebugUiFloat(BBStr *label,bb_float_t value,bb_float_t minimum,bb_float_t maximum){auto s=consume(label);float v=value;changed=false;if(building){s2debugui::beginControl(s.c_str());changed=s2debugui::floatControl("##value",&v,minimum,maximum);s2debugui::endControl();}return v;}
+BBStr *BBCALL bbDebugUiInput(BBStr *label,BBStr *value,bb_int_t multiline){auto s=consume(label),v=consume(value);changed=false;if(building){s2debugui::beginControl(s.c_str());if(multiline)changed=ImGui::InputTextMultiline("##value",&v,ImVec2(-1,180));else changed=ImGui::InputText("##value",&v);s2debugui::endControl();}return new BBStr(v);}
 bb_int_t BBCALL bbDebugUiChanged(){return changed;}
 void BBCALL bbDebugUiSameLine(){if(building)ImGui::SameLine();}
 void BBCALL bbDebugUiDisabled(bb_int_t value){if(building)ImGui::BeginDisabled(value!=0);}
@@ -214,7 +218,7 @@ void s2DebugUiForgetCanvas(BBCanvas *canvas){
 }
 bb_int_t BBCALL bbDebugUiItemsBegin(){
   if(!building)return 0;
-  int columns=std::max(1,int(ImGui::GetContentRegionAvail().x/92.0f));
+  int columns=std::max(1,int(ImGui::GetContentRegionAvail().x/120.0f));
   items=ImGui::BeginTable("item-grid",columns,ImGuiTableFlags_SizingStretchSame);
   return items;
 }

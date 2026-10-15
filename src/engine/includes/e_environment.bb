@@ -150,7 +150,9 @@ Function e_environment_update()
 	
 	;Time
 	If m_section<>Csection_editor Then
-		If Not map_freezetime Then
+  Local freeze=dev_freeze_time And dev_player()
+  If freeze Then in_tgametime=gt
+		If map_freezetime=0 And freeze=0 Then
 			;Inc. Minute?
 			If (gt-in_tgametime)>=Cworld_minute_ms Then
 				;Set Last Time Update

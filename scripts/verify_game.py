@@ -106,6 +106,9 @@ End
         raise ValueError('The save menu fixture marker changed.')
     text = text.replace('; SAVE_MENU_CHECKS',
                         (root/'tests/save_menu.bb').read_text('utf8').replace('preview_check(', 'smoke_check('))
+    text = text.replace('WriteLine smoke_report,"FAILURES "+smoke_failures',
+        (root/'tests/dev_cheats.bb').read_text('utf8').replace('cheat_check(', 'smoke_check(') +
+        '\nWriteLine smoke_report,"FAILURES "+smoke_failures')
     entry.write_bytes(text.replace('\n','\r\n').encode('utf8'))
     exe = runtime/'SaveSmoke.exe'
     print('Isolated runtime:', runtime, flush=True)
@@ -128,7 +131,7 @@ End
         'save_and_map_menu_previews':'pass',
         'backups':'pass','rolling_autosaves':'pass','quicksave_load':'pass',
         'resolved_player_pose':'pass','collision_history_reset':'pass',
-        'continue_selection':'pass','visual_ui_and_cheat_engine':'not tested by this harness'},indent=2)+'\n',encoding='utf8')
+        'continue_selection':'pass','cheat_actions_and_lifecycle':'pass','visual_ui':'not tested by this harness'},indent=2)+'\n',encoding='utf8')
 
 
 if __name__ == '__main__':
