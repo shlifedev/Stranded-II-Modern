@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"7ae5ecd70fa17f64e71d3882aa2332da42b9fa60077b5846c5588bf45e3174be"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"6cd0b2093b5666245b82380ce8ea9bb8c5e1b041f5b8ef8509e7ebcada6b6bbd"} -->
 
 # 개발 가이드
 
@@ -202,7 +202,7 @@ python3 -m venv .venv
 
 [Mac CI](../.github/workflows/macos.yml)는 수동 테스트와 데스크톱 출시 워크플로의 재사용 빌드를 지원합니다. `macos-15` ARM64에서 고정 의존성을 `deps/ci-macos/`에 검증·준비하고 준비 → 빌드 → `core` 검사 → DMG 생성을 실행합니다. **Actions → macOS build → Run workflow**에서 브랜치를 선택하세요. 기본값인 `notarize=true`는 앱을 서명·공증하고 티켓을 붙인 뒤 최종 DMG도 서명·공증하고 티켓을 붙입니다. 둘 다 Gatekeeper 검사를 통과해야 합니다. `false`는 임시 서명한 앱을 넣은 미리보기 DMG를 만듭니다. 수동 실행은 `ci.py version`으로 `-local` 버전을 생성하며 Release·태그를 만들거나 출시 번호를 소모하지 않습니다. 출시 빌드는 Windows의 버전 아티팩트와 소스 커밋을 사용합니다. DMG·체크섬과 보고서는 Actions 아티팩트로 14일 보관하며 실제 게시는 아래 데스크톱 출시 절차에서 담당합니다.
 
-출시용 저장소 Secrets는 `APPLE_CERTIFICATE`(Developer ID Application 인증서·개인 키가 든 P12의 Base64), `APPLE_CERTIFICATE_PASSWORD`(P12 암호), `APPLE_ID`, `APPLE_PASSWORD`(앱 전용 암호), `APPLE_TEAM_ID`입니다. 데스크톱 워크플로가 Mac 재사용 워크플로에 명시적으로 전달합니다. 로컬 `--notarize` 검사에도 같은 환경 변수를 사용합니다. 임시 서명 키체인을 사용자 검색 목록에 추가하며 성공·실패 모두 기존 목록을 복원한 뒤 삭제합니다. 앱은 Hardened Runtime을 사용하며 앱·DMG 모두 보안 타임스탬프와 같은 팀 ID를 사용합니다. 각 공증은 최대 20분 기다리며 거부되거나 티켓·Gatekeeper 검사가 실패하면 중단합니다. 앱 결과·로그는 `build/macos/notarization-{report,log}.json`, DMG 결과·로그는 같은 폴더의 `notarization-dmg-{report,log}.json`에 기록합니다. [Apple 공증 안내](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow)를 참고하세요.
+출시용 저장소 Secrets는 `APPLE_CERTIFICATE`(Developer ID Application 인증서·개인 키가 든 P12의 Base64), `APPLE_CERTIFICATE_PASSWORD`(P12 암호), `APPLE_ID`, `APPLE_PASSWORD`(앱 전용 암호), `APPLE_TEAM_ID`입니다. 데스크톱 워크플로가 Mac 재사용 워크플로에 명시적으로 전달합니다. 로컬 `--notarize` 검사에도 같은 환경 변수를 사용합니다. 임시 서명 키체인을 사용자 검색 목록에 추가하며 성공·실패 모두 기존 목록을 복원한 뒤 삭제합니다. 앱은 Hardened Runtime을 사용하며 앱·DMG 모두 보안 타임스탬프와 같은 팀 ID를 사용합니다. 각 공증은 최대 20분 기다립니다. 티켓 첨부·검증은 일시적인 Apple 네트워크 오류에 한해 5·15·30초 간격으로 최대 4회 시도합니다. 유효하지 않은 티켓·서명, 공증 거부와 재시도 소진은 패키징을 중단합니다. 앱 결과·로그는 `build/macos/notarization-{report,log}.json`, DMG 결과·로그는 같은 폴더의 `notarization-dmg-{report,log}.json`에 기록합니다. [Apple 공증 안내](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow)를 참고하세요.
 
 테스트 DMG는 별도 Apple Silicon Mac, 특히 macOS 15에서 열고 앱을 Applications로 드래그한 뒤 이미지를 꺼내세요. 실행·재실행과 앱 교체 후 데이터 보존을 확인하세요. 한글 조합 입력, 전체 화면·앱 전환 후 입력 복귀, 배경음·효과음과 30분 플레이 후 저장·종료·재불러오기는 수동 검사 대상입니다. 기본 로컬 빌드와 `notarize=false`인 수동 CI는 임시 서명이며 공증하지 않습니다. 개발 메뉴용 `development.flag`는 로컬 개발 실행 폴더에만 유지하고 앱·DMG에서는 제외합니다. 네이티브 동영상·원시 TCP/UDP, Intel과 네이티브 Extended는 지원하지 않습니다.
 
