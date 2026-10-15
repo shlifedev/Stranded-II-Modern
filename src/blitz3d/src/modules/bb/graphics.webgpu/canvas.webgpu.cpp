@@ -943,17 +943,20 @@ void WebGPUCanvas::blit( int x,int y,BBCanvas *s,int src_x,int src_y,int src_w,i
 	float u0=sx0/srcW,v0=sy0/srcH;
 	float u1=(sx0+sw)/srcW,v1=(sy0+sh)/srcH;
 
+	// Keep destination geometry in the vertices, as for self-blit strips.
+	// Adjacent glyphs/images on one atlas then share the same uniforms.
+	float dx1=dx0+dw,dy1=dy0+dh;
 	const BBWebGPUVertex verts[6]={
-		{ 0.f,0.f,u0,v0 },
-		{ 0.f,1.f,u0,v1 },
-		{ 1.f,0.f,u1,v0 },
-		{ 1.f,0.f,u1,v0 },
-		{ 0.f,1.f,u0,v1 },
-		{ 1.f,1.f,u1,v1 }
+		{ dx0,dy0,u0,v0 },
+		{ dx0,dy1,u0,v1 },
+		{ dx1,dy0,u1,v0 },
+		{ dx1,dy0,u1,v0 },
+		{ dx0,dy1,u0,v1 },
+		{ dx1,dy1,u1,v1 }
 	};
 
 	float white[3]={ 1.f,1.f,1.f };
-	float xywh[4]={ dx0,dy0,dw,dh };
+	float xywh[4]={ 0.f,0.f,1.f,1.f };
 	float scale[2]={ 1.f,1.f };
 	// Blitz images use a per-draw RGB colour key. Keep the source pixels intact
 	// so DrawBlock, CopyImage, animated frames and changed masks all work too.
