@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"e89d68c3b75e80cf6fb4635c03ae8d347c100cb963a6dd2ef1f157e51ec665dc"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"5900dcb7e316f36a6e001b1f6353efe34236da27223071a6cf4e2d444b824912"} -->
 
 # Stranded II의 wgpu/WebGPU 크로스플랫폼 렌더러 마이그레이션
 
@@ -204,7 +204,7 @@ wgpuInstanceRequestAdapter(instance, &aopts, acb);
 
 네이티브 callback은 `WGPUCallbackMode_AllowProcessEvents`로 `wgpuInstanceProcessEvents()`를 통해 진행합니다. 웹은 `AllowSpontaneous`를 사용하고 기다리는 동안 `emscripten_sleep()`로 브라우저에 실행권을 돌려줍니다. JSPI는 동기식으로 작성된 WASM 호출 흐름이 비동기 브라우저 작업을 기다렸다가 재개하도록 돕습니다. WGSL이나 GPU 실행을 대신하는 기능은 아닙니다.
 
-현재 device descriptor에는 별도의 optional feature 목록이나 확대된 required limits를 요청하는 코드가 없습니다. WebGPU가 제공하는 기본 계약과 실제 adapter 제약 안에서 동작해야 합니다. `gfxDriverCaps3D()`의 기존 호환성 숫자를 실제 GPU 기능 조회로 해석해서는 안 됩니다.
+현재 device descriptor는 adapter가 지원하면 `timestamp-query`를 요청하고, 장치 생성이 실패하면 이 기능 없이 재시도합니다. 렌더링 자체는 이 프로파일링 기능이나 확대된 required limits를 요구하지 않으며 WebGPU의 기본 계약과 실제 adapter 제약 안에서 동작합니다. `gfxDriverCaps3D()`의 기존 호환성 숫자를 실제 GPU 기능 조회로 해석해서는 안 됩니다.
 
 ## 6. WGSL이 D3D12·Metal에서 실행되는 과정
 
@@ -353,10 +353,15 @@ uint32_t key = (uint32_t)blend_mode
     | ((flipped_tris ? 1u : 0u) << 5)
     | ((doublesided ? 1u : 0u) << 6)
     | ((wireframe ? 1u : 0u) << 7)
-    | ((uint32_t)format << 8);
+    | ((uint32_t)format << 8)
+    | ((shadow_pass ? 1u : 0u) << 24)
+    | ((pixel_lighting ? 1u : 0u) << 25)
+    | ((atmosphere ? 1u : 0u) << 26)
+    | ((sun_shadows ? 1u : 0u) << 27)
+    | ((samples == 4 ? 1u : 0u) << 28);
 ```
 
-blend·depth·topology·front face·culling·target format은 pipeline에 들어갑니다. 카메라·조명·재질·변환은 buffer/bind group에 들어갑니다. viewport·scissor는 pass 명령으로 설정합니다. 이 구분으로 재질 색을 바꿀 때마다 새 GPU pipeline을 만들지 않습니다.
+blend·depth·topology·front face·culling·target format·sample count는 pipeline에 들어갑니다. 그림자 캡처 여부와 조명·대기·그림자 기능 스위치도 pipeline 변형을 선택합니다. 카메라·조명 값·재질·변환은 buffer/bind group에 들어갑니다. viewport·scissor는 pass 명령으로 설정합니다. 이 구분으로 재질 색을 바꿀 때마다 새 GPU pipeline을 만들지 않습니다.
 
 | Z mode | compare | depth write | 용도 |
 | --- | --- | --- | --- |
@@ -478,6 +483,12 @@ CPU frustum 검사는 공통 [frustum 구현](../src/blitz3d/src/modules/bb/blit
 
 [풀 배치](../src/engine/includes/grasspread.bb)는 지형 조건을 만족하는 풀을 렌더러가 사용할 수 있게 유지합니다. 주 카메라 기준의 `HideEntity` 상태를 일정 시간 저장하지 않고, 매 프레임 각 렌더링 시야에서 표시 여부를 판단합니다. 게임 플레이에서는 그림자·반사·본 화면을 그리기 전에 배치를 갱신하며, 밀도와 거리 페이드는 선택한 설정을 유지합니다. 높이 마스크가 바뀌면 카메라가 정지해 있어도 배치를 다시 갱신합니다. 직교 투영 그림자의 시야는 평행한 측면을 사용하며 월드 변환 후에도 이 투영 방식을 유지합니다.
 
+### 13.1 지형 법선과 장면 가시성 캐시
+
+[지형 법선](../src/blitz3d/src/modules/bb/blitz3d/terrainrep.cpp)은 필요한 격자점에서 계산해 프레임·반사 시점 사이에 재사용합니다. 높이 변경은 해당 지점과 인접한 네 지점을 경계 순환까지 포함해 무효화하고, 지형 초기화는 전체 캐시를 무효화합니다. 기존 법선 계산식·LOD·모핑은 유지합니다. 64×64 지형은 조명 계산에서 처음 필요할 때 법선과 유효성 표시용으로 52KiB를 할당합니다.
+
+메시 가시성은 첫 시점에서 기존 방식으로 검사하고, 같은 장면 준비의 후속 시점에서 월드 좌표 경계를 재사용합니다. 시야 평면에 걸친 경계는 기존 방향성 검사를 유지합니다. 보간된 캡처와 카메라 자식을 포함해 매 `beginRender()`에서 캐시를 초기화하므로 `RenderWorld` 호출 사이의 변경으로 오래된 경계가 남지 않습니다. `verify_engine.py --render`는 높이 변경 후 법선·조명 픽셀과 변환·메시·사용자 지정 경계 변경 후 가시성·캡처 픽셀을 검사합니다.
+
 ## 14. 2D UI·글꼴·이미지의 기존 의미 보존
 
 `graphics.webgpu`는 `BBCanvas`의 화면·이미지·texture를 `WebGPUCanvas`로 구현합니다. 2D 정점은 position/UV의 **16 byte**, render state는 **64 byte**입니다. 정점과 uniform을 CPU staging에 모으고 pipeline·bind group·scissor·buffer가 같은 연속 draw를 합칩니다. strip topology는 별도로 draw하여 인접 strip 사이에 의도하지 않은 연결이 생기지 않게 합니다.
@@ -518,6 +529,8 @@ source가 A/B와 겹침:
 일반 canvas texture는 `TextureBinding|RenderAttachment|CopySrc|CopyDst` usage로 생성합니다. 이것이 모든 용도를 한 pass에서 동시에 사용할 수 있다는 뜻은 아닙니다. mipmap은 하위 level별 render pass로 생성하며 sample이 필요할 때 dirty 상태에 따라 갱신합니다.
 
 ## 16. 물 반사의 6방향 처리와 현재 큐브 텍스처 한계
+
+수면 개선을 켠 기본 상태에서는 `RenderWorldPlanar`로 평면 반사를 처리합니다. 이 개선을 끈 기존 반사 경로에서 `RenderWorldCube`를 호출합니다.
 
 `RenderWorldCube camera,texture[,tween]`는 [`World::renderCubeMap()`](../src/blitz3d/src/modules/bb/blitz3d/world.cpp)에서 6개 카메라 방향을 한 호출 안에서 처리합니다. `tween=1`이고 카메라에 자식이 없으면 객체 열거·보간·변환 준비를 한 번 공유합니다. 카메라 자식은 방향마다 이동할 수 있고 다른 tween 값은 기존 반복 준비 의미가 있으므로 그때는 6번 준비합니다.
 
@@ -570,9 +583,9 @@ presentation은 완성된 장면과 UI에 FXAA를 다시 적용하지 않습니�
 
 장치별 슬롯 4개가 각 프레임의 최대 512패스를 보관합니다. 슬롯이 모두 사용 중이면 해당 프레임은 건너뛰고 패스 한도 초과는 부분 측정으로 남깁니다. 콜백은 슬롯의 공유 소유권을 유지하고 단조 프레임 ID로 결과를 연결합니다. 초기화·이력 교체 후 오래된 결과는 무시하며 장치 분리 뒤 콜백은 측정값을 되살리지 않습니다. 미지원 장치에서도 CPU·그리기 통계는 남습니다.
 
-GPU 합계는 렌더 패스 시간이며 전송·대기·패스 사이 공백을 포함하지 않습니다. CPU와 GPU가 겹쳐 실행되므로 합산해 프레임 비용으로 해석하지 않습니다. 사용법과 검증 타깃은 [개발 가이드](development-ko.md#cpugpu-프로파일러)를 참고하세요.
+GPU 합계는 렌더 패스 시간이며 전송·대기·패스 사이 공백을 포함하지 않습니다. CPU와 GPU가 겹쳐 실행되므로 합산해 프레임 비용으로 해석하지 않습니다. CPU 집계 검사는 [프로파일러 모델 테스트](../src/blitz3d/tests/profiler_model.cpp), GPU 계측 검사는 [GPU 프로파일러 테스트](../src/blitz3d/tests/profiler_gpu.cpp)를 참고하세요.
 
-성능 테스트 집계기는 표시 이력에서 사라지기 전에 완료 CPU 프레임을 받고 늦은 GPU 결과를 프레임 ID로 연결합니다. 준비와 측정 경계는 기존 큐의 비동기 `wgpuQueueOnSubmittedWorkDone`으로 확인하며 게임 루프에 동기 읽기를 넣지 않습니다. 완료 FPS에는 마지막 GPU 완료 대기를 포함합니다. 취소·장치 해제는 콜백 티켓을 무효화하며 비교 결과는 프로파일러 표시 이력과 별도로 유지합니다. [성능 테스트 장면](development-ko.md#성능-테스트-장면)을 참고하세요.
+성능 테스트 집계기는 표시 이력에서 사라지기 전에 완료 CPU 프레임을 받고 늦은 GPU 결과를 프레임 ID로 연결합니다. 준비와 측정 경계는 기존 큐의 비동기 `wgpuQueueOnSubmittedWorkDone`으로 확인하며 게임 루프에 동기 읽기를 넣지 않습니다. 완료 FPS에는 마지막 GPU 완료 대기를 포함합니다. 취소·장치 해제는 콜백 티켓을 무효화하며 비교 결과는 프로파일러 표시 이력과 별도로 유지합니다. [성능 테스트 집계기 구현](../src/blitz3d/src/modules/bb/debugui/benchmark.cpp)을 참고하세요.
 
 ## 19. 검증 방법과 현재 문서의 검증 범위
 

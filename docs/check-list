@@ -17,6 +17,6 @@
 
 ## 그 외 메모
 
-- Extended에 포함된 QoL 기능을 Original로 옮기고 기본 disabled 처리 후 Extended는 리벨런스 버전으로 만드는게 좋아보인다.
+- 완료: 다섯 가지 QOL을 기본판과 공유하고 기본판 OFF·Extended ON을 적용했다. Extended 전용 리밸런싱은 아직 계획이다.
 - 위 기능중 멀티, 미니맵, 전체지도 등 기능들도 모두 오리지널에 포함하고 QoL로 포함한다. 설정 on/off 가능.
 - 이후 Extended는 어떻게 개발할지 방향성을 정해야겠다.

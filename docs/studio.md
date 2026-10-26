@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"6b416c6e0bf3a28ac0bc6d82b18533a90120789c0e5e030c96b38c210e3535b5"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"a6287bb52fd19e13164cb43719df12b4ddb0dd681bf702be1eba59c5d5b7683f"} -->
 
 # Stranded II Studio
 
@@ -8,9 +8,9 @@ A standalone development app for Extended content. The Electron/React interface 
 
 ## Preparation and launch
 
-Requirements: Python 3.12+, Node.js 22.12+ and Git. macOS needs Xcode Command Line Tools and FFmpeg/ffprobe on PATH; Windows needs the MSVC C++ build tools and Windows SDK. The 3D viewport uses Electron's WebGPU and JSPI support. This is a development version launched from the repository; installer packages are not provided.
+Building and launching the 3D app requires Windows x64 or Apple Silicon macOS, Python 3.12+, Node.js 22.12+ and Git. The current compiler toolchain rejects Linux and Intel macOS hosts. macOS needs Xcode Command Line Tools and FFmpeg/ffprobe on PATH; Windows needs the MSVC C++ build tools and Windows SDK. The 3D viewport uses Electron's WebGPU and JSPI support. This is a development version launched from the repository; installer packages are not provided.
 
-On Windows, double-click [Studio.cmd](../scripts/Studio.cmd) in the `scripts/` folder. On macOS/Linux, run [Studio.sh](../scripts/Studio.sh) with `sh ./scripts/Studio.sh`. Both launchers also work from another directory when called by their path. The [shared launcher](../src/devtools/studio_launch.py) creates `.venv`, installs missing or changed Python/Node dependencies, prepares resources, builds and verifies the engine, then builds and starts the app. Outside Windows, missing CMake/Ninja tools are also installed in the virtual environment. Preparation failures prevent the app from opening.
+On Windows, double-click [Studio.cmd](../scripts/Studio.cmd) in the `scripts/` folder. On Apple Silicon macOS, run [Studio.sh](../scripts/Studio.sh) with `sh ./scripts/Studio.sh`. Both launchers also work from another directory when called by their path. The [shared launcher](../src/devtools/studio_launch.py) creates `.venv`, installs missing or changed Python/Node dependencies, prepares resources, builds and verifies the engine, then builds and starts the app. Outside Windows, missing CMake/Ninja tools are also installed in the virtual environment. Preparation failures prevent the app from opening.
 
 Resources and the engine are refreshed on every launch; no separate engine commands are needed. Game/font paths are found in existing Studio, web and Windows preparation settings, in that order, falling back to `deps/game` and `deps/fonts/NotoSansKR[wght].ttf` when no saved path is valid. Pass `--game PATH --font PATH` to the launcher for external inputs. See the [development guide](development.md) for official resources and the pinned font. Projects and personal saves are not reset.
 
@@ -115,7 +115,7 @@ Definition IDs and map instance IDs are separate. Cloning a definition allocates
 
 `project.json` stores definition changes, map-edit commands, file bindings and undo baseline snapshots. `sources/` stores original maps and assets named by their hashes. The `.s2s` files in `scripts/` are the authoritative script sources; preserve all three paths together. `.studio/` holds the last 100 undo entries, locks, font caches and recent preview-token caches. Interrupted file transactions recover on the next open without overwriting new external edits. Base resources are read-only. The `base` in `project.json` is usually relative; adjust it to the prepared resources when moving to another computer.
 
-Export requires an empty folder. `overrides/` contains native `.inf`, `.s2` and assets; `resources/locales/` contains project translations; `manifest.json` records revision and file hashes. Merge reviewed content into `resources/editions/extended/overrides/` and translations into `resources/locales/editions/extended/<code>.tsv`, then prepare/build Extended. Merge changes into existing files rather than replacing them wholesale. Ordinary builds, CI and releases are not started automatically.
+Export requires an empty folder. `overrides/` contains native `.inf`, `.s2` and assets; `locales/` contains project translations; `manifest.json` records revision and file hashes. Merge reviewed content into `resources/editions/extended/overrides/` and translations into `resources/locales/editions/extended/<code>.tsv`, then prepare/build Extended. Merge changes into existing files rather than replacing them wholesale. Ordinary builds, CI and releases are not started automatically.
 
 Register new text with `locale.set` and `[[loc:key]]`, including English fallback translations. When a project introduces new characters, preview reuses the existing bitmap-font generator and requires the font used during preparation. Additional fonts are also exported under `fonts/<code>/`; for testing exported content in a separate runtime, apply them to `core/locales/<code>/`. For integration into the repository, follow the catalog/font refresh procedure in the [localization guide](localization.md).
 

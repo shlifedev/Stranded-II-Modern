@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"fbc3c68ae5bde29736b095ad96a46f2d5cc753f9c01fbf3a3fea4122cac79414"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"3d4bda2e8802d2da232fce324c17d6a07c52cee03de77bf2a8d7e509d84503f6"} -->
 
 # Development guide
 
@@ -14,17 +14,7 @@ You need Windows 10/11 x64 with a Direct3D 12 GPU, Python 3.12 or later, and [re
 
 Install Visual Studio’s MSVC x64 C++ build tools, Windows SDK, CMake/Ninja tools and DIA SDK. `build` compiles the editable Blitz3D engine in `src/blitz3d/` with LLVM and links the game as a native x64 executable. Rendering uses Dawn/D3D12 and audio uses OpenAL Soft. Unicode input, IME and Windows services are linked into the runtime; `QolInput.dll` is no longer required. Runtime DLLs and their licenses are copied beside each edition’s EXE.
 
-Native runtimes use the speed-optimized `Release` configuration (`/O2` on MSVC), retaining strict floating-point behavior. WebGPU combines mesh edits until drawing and batches camera/presentation commands while preserving buffer-update and draw order. Copies sharing a mesh and material use instanced draws with individual colours and fade values. Transparent copies are merged only when consecutive, preserving depth order. Mesh visibility reuses the camera's frustum planes, and transparent sorting computes each model's distance once per camera; reflection frequency, grass density and graphics settings are unchanged.
-
-Dynamic mesh updates preserve GPU buffers used by earlier draws and upload new data into another version, reducing intermediate submissions. Versions are reused after submission, with extra buffer capacity capped at 32 MiB overall and 16 versions per mesh. Reaching either limit or using the wireframe index cache retains the existing submission path.
-
-Terrain shading lazily caches normals per height-field grid point and reuses them across frames and reflection views. Height edits invalidate the changed point and its four neighbours, including wrapped edges; clearing a terrain invalidates its cache. The original normal calculation, LOD and morphing remain unchanged. A 64×64 terrain uses 52 KiB for this cache after its first shaded render.
-
-Mesh visibility keeps the original test for the first view. Further views in the same scene preparation reuse world-space bounds, with the original oriented test retained at intersecting planes. Every scene preparation invalidates those bounds, including tweened captures and camera children. `verify_engine.py --render` compares visibility and capture pixels after transform, mesh and custom-bound changes; it also compares terrain normals and lit pixels after height edits.
-
-Water reflections use `RenderWorldCube camera,texture[,tween]` to capture all six directions consecutively. With the default tween of `1` and no camera children, object lists and transforms are prepared once; otherwise, preparation runs for each direction. Each view retains visibility, distance fade and transparency sorting, and preparation is never reused between calls. Set the camera viewport to `(0,0,texture width,texture height)` before calling.
-
-WebGPU cube textures currently lack per-face storage and sampling, so they use the last copied 2D image. Sharing preparation across six views preserves this existing output behavior; it does not complete cube-texture support.
+Native runtimes use the speed-optimized `Release` configuration (`/O2` on MSVC), retaining strict floating-point behavior. For batching, buffer lifetimes, terrain/culling caches, planar reflections and the legacy cube-texture limitation, see the [renderer guide](wgpu-migration.md). Verify renderer changes on each affected platform without changing reflection cadence, grass density or user graphics settings.
 
 These dependencies are not included in the repository; prepare them yourself:
 
@@ -72,7 +62,7 @@ Use the following commands from the repository root. Close the development game 
 | --- | --- |
 | Edit `src/engine/**/*.bb` or `src/blitz3d/` | `.\scripts\dev.ps1 build -Python .\.venv\Scripts\python.exe` |
 | Edit `resources/locales/` translations, languages, or fonts | `.\scripts\dev.ps1 localize -Python .\.venv\Scripts\python.exe` |
-| Edit `resources/` | `.\scripts\dev.ps1 setup -Python .\.venv\Scripts\python.exe` |
+| Edit non-translation resources in `resources/` | `.\scripts\dev.ps1 setup -Python .\.venv\Scripts\python.exe` |
 | Automated checks | `.\scripts\dev.ps1 check -Python .\.venv\Scripts\python.exe` |
 | Launch the game | `.\scripts\Play.cmd` |
 
@@ -99,6 +89,12 @@ Both editions share a Dear ImGui menu. Assign a shortcut under **Settings → Co
 Opening the menu keeps the game running and blocks game input. The Status tab's pause stays active after closing the menu. Tools include single-player cheats, an item icon grid, position/time changes, settings previews, and searchable/copyable logs. **Save** and **Revert to saved settings** are separate; changes are never saved automatically. Display mode, resolution, FPS limit and language require restarting after saving. Logs retain at most 2,048 entries / 2MiB; scrolling up stops following new messages.
 
 Shared game UI lives in `src/engine/includes/devmenu.bb`, native ImGui/SDL/WebGPU integration in `src/blitz3d/src/modules/bb/debugui/`, and browser IME integration in `src/web/debugui.js`. Windows editions, macOS, Web and Studio use the same implementation. On Windows, `python src/devtools/verify_engine.py --graphics --input` checks input ownership and window/context lifetimes. The `s2_debugui_check` CMake target accepts a prepared `core/locales/<code>/ui.ttf` path and checks Unicode glyphs, sliders and log following without a window. Check actual display, IME composition/paste and each platform's execution separately.
+
+### CPU/GPU profiler and performance test scene
+
+In **Developer menu → Profiler**, start recording, reproduce the workload, then stop and select a frame or copy the analysis. Recording continues after closing the menu and retains the latest 2,048 frames. CPU total/self times and GPU render-pass times overlap; do not add them. Unsupported GPU timestamps leave CPU and draw statistics available. See the [renderer guide](wgpu-migration.md#181-optional-cpu-and-gpu-profiling) for measurement details.
+
+From the main menu, open the developer menu’s **Performance test** tab and select **Enter test scene**. Add object/unit/item groups and compare graphics settings in a disposable scene. Automatic comparison repeats a 3-second warm-up and 8-second measurement three times per condition. CSV/JSON exports go to the runtime’s `core/benchmarks/`; returning to the main menu restores the prior settings without saving test changes. Completed FPS includes the final asynchronous GPU drain and measures throughput, not display scanout FPS.
 
 ## Native rendering benchmark
 
@@ -178,7 +174,7 @@ Before the first publication, set the repository's **Settings → Pages → Buil
 .\.venv\Scripts\python.exe -X utf8 src/devtools/web_pages.py
 ```
 
-`web_pages.py` stages only the eight runtime files from the current checked build in `build/web/pages/`. It excludes `/checks/`, logs, and personal saves, uses relative paths and a deployment-specific cache key, and records file hashes in `build/web/pages-report.json`. Unexpected output files cause an error instead of being deleted. Deployments are serialized, and build/check failures leave the existing site in place. Post-deployment checks compare HTTP file hashes and the WASM media type; actual gameplay still needs separate verification.
+`web_pages.py` stages only the nine runtime files (including `debugui.js`) from the current checked build in `build/web/pages/`. It excludes `/checks/`, logs, and personal saves, uses relative paths and a deployment-specific cache key, and records file hashes in `build/web/pages-report.json`. Unexpected output files cause an error instead of being deleted. Deployments are serialized, and build/check failures leave the existing site in place. Post-deployment checks compare HTTP file hashes and the WASM media type; actual gameplay still needs separate verification.
 
 ## Experimental native macOS build
 
@@ -189,7 +185,7 @@ Build on Apple Silicon with Xcode Command Line Tools, Git, Python 3.12+, CMake, 
 ```sh
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python src/devtools/dev.py setup --platform macos --game deps/game --font deps/fonts/NotoSansKR.ttf
+.venv/bin/python src/devtools/dev.py setup --platform macos --game deps/game --font "deps/fonts/NotoSansKR[wght].ttf"
 .venv/bin/python src/devtools/dev.py build --platform macos
 .venv/bin/python src/devtools/dev.py check --platform macos
 .venv/bin/python src/devtools/macos_package.py
@@ -210,7 +206,7 @@ Test the DMG on another Apple Silicon Mac, especially macOS 15: open it, drag th
 
 ## Extended authoring app
 
-[Stranded II Studio](studio.md) edits content and maps through a standalone GUI and JSON CLI. It provides a 3D viewport using the actual Blitz/Extended engine, undo, validation and native resource exports. Use `python src/devtools/studio.py` for its commands. `scripts/Studio.cmd` on Windows or `sh ./scripts/Studio.sh` on macOS/Linux automatically prepares dependencies and the engine before launching the app. Follow the Studio guide for details. Engine outputs stay under `build/studio/` and app outputs under `src/studio/dist/`; ordinary game, CI and release edition selection remain unchanged.
+[Stranded II Studio](studio.md) edits content and maps through a standalone GUI and JSON CLI. It provides a 3D viewport using the actual Blitz/Extended engine, undo, validation and native resource exports. Use `python src/devtools/studio.py` for its commands. `scripts/Studio.cmd` on Windows or `sh ./scripts/Studio.sh` on Apple Silicon macOS automatically prepares dependencies and the engine before launching the app. Follow the Studio guide for details. Engine outputs stay under `build/studio/` and app outputs under `src/studio/dist/`; ordinary game, CI and release edition selection remain unchanged.
 
 Studio uses the same iframe and Blitz engine for editing and play. `src/studio/engine/studio.js` waits for pending scene ACKs and checks the latest saved map; `studio_load` in `src/engine/studio/runtime.bb` reloads that map while retaining the engine and definitions. Resource changes require explicit **Apply resources** initialization. Stop restores the authoring map in the in-memory filesystem and the editor camera without writing to the project. Changes to this path require Studio builds/checks; changes to the shared engine also require both editions' builds/checks and relevant game verification.
 
@@ -221,7 +217,7 @@ Studio uses the same iframe and Blitz engine for editing and play. `src/studio/e
 ```text
 edit src/engine/ → build command → build/runtime/StrandedII.exe → scripts/Play.cmd
 edit resources/locales/ translations, languages or fonts → localize command → refresh build/runtime/core/locales/
-edit resources/ → setup command → refresh resources in build/runtime/
+edit non-translation resources in resources/ → setup command → refresh resources in build/runtime/
 ```
 
 | Path | Role | Git tracking |
@@ -235,7 +231,7 @@ edit resources/ → setup command → refresh resources in build/runtime/
 | `src/studio/` | Studio UI, Electron shell and app tests | Included |
 | `src/tests/` | Integration tests and native/web fixtures | Included |
 | `AGENTS.md`, `docs/reference/AGENTS-ko.md` | Agent instructions and Korean reading copy | Included |
-| `config/` | Initial settings, dependency pins and optional legacy reference declarations | Included |
+| `config/` | Game defaults/versions, build/dependency settings and verification hashes, document translation settings, legacy reference declarations | Included |
 | `docs/`, `licenses/` | Documentation and copyright notices | Included |
 | `deps/` | Original game, fonts and pinned third-party SDKs/libraries | Excluded |
 | `.venv/` | Python virtual environment | Excluded |
@@ -262,7 +258,7 @@ src/engine/
   editions/classic/modules.bb     Stranded II UI/input/building selection
   editions/extended/profile.bb    Extended identity and window title
   editions/extended/modules.bb    Extended UI/input/building selection
-resources/overrides/              Shared resource overrides (create when needed)
+resources/overrides/              Shared resource overrides, including QOL guides
 resources/editions/classic/overrides/   Stranded II resource overrides
 resources/editions/extended/overrides/  Extended resource overrides
 build/runtime/                   Stranded II runtime, settings and saves
@@ -436,7 +432,7 @@ gh release create ci-deps-v1 `
   --latest=false
 ```
 
-Then manually run `Windows build and release` in Actions to download the game ZIP. To update dependencies, rebuild the bundle and update the configuration with its printed SHA-256 and a new Release tag/filename. A mismatched ZIP is rejected before extraction, even on a cache hit. Ordinary changes to synchronized documents or game sources do not require rebuilding the dependency ZIP. If bundled license names or contents change, update `config/dependency-license-files.json`, rebuild the dependency ZIP and update its complete pinned hash.
+Then manually run `Desktop build and release` in Actions to download the game ZIP. To update dependencies, rebuild the bundle and update the configuration with its printed SHA-256 and a new Release tag/filename. A mismatched ZIP is rejected before extraction, even on a cache hit. Ordinary changes to synchronized documents or game sources do not require rebuilding the dependency ZIP. If bundled license names or contents change, update `config/dependency-license-files.json`, rebuild the dependency ZIP and update its complete pinned hash.
 
 ### Release ZIP contents
 

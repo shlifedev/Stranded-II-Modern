@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"f17ce509f212a25eda21592bd01720b0ccad184216910a1ab42f88dee9c20855"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"61351b354e82de4fe0cc1ac904ce482e5b5eea1497582b91fc9607f69d126f78"} -->
 
 # Stranded II Studio
 
@@ -8,9 +8,9 @@ Extended 콘텐츠를 만드는 독립 개발 앱입니다. Electron·React 화�
 
 ## 준비와 실행
 
-Python 3.12 이상, Node.js 22.12 이상, Git이 필요합니다. macOS는 Xcode Command Line Tools와 PATH에 있는 FFmpeg/ffprobe, Windows는 MSVC C++ 빌드 도구와 Windows SDK가 필요합니다. 3D 화면은 Electron의 WebGPU와 JSPI 지원을 사용합니다. 현재 저장소에서 실행하는 개발 버전이며 설치 패키지는 제공하지 않습니다.
+3D 앱 빌드·실행에는 Windows x64 또는 Apple Silicon macOS, Python 3.12 이상, Node.js 22.12 이상, Git이 필요합니다. 현재 컴파일러 도구체인은 Linux와 Intel macOS 호스트를 지원하지 않습니다. macOS는 Xcode Command Line Tools와 PATH에 있는 FFmpeg/ffprobe, Windows는 MSVC C++ 빌드 도구와 Windows SDK가 필요합니다. 3D 화면은 Electron의 WebGPU와 JSPI 지원을 사용합니다. 현재 저장소에서 실행하는 개발 버전이며 설치 패키지는 제공하지 않습니다.
 
-Windows에서는 `scripts/` 폴더의 [Studio.cmd](../scripts/Studio.cmd)를 더블 클릭하고, macOS/Linux에서는 `sh ./scripts/Studio.sh`로 [Studio.sh](../scripts/Studio.sh)를 실행합니다. 다른 폴더에서도 실행 파일의 경로를 지정해 호출할 수 있습니다. 두 파일은 [공통 실행 스크립트](../src/devtools/studio_launch.py)로 `.venv` 생성, 누락되거나 변경된 Python·Node 의존성 설치, 리소스 준비, 엔진 빌드·검증, 앱 빌드·실행을 순서대로 처리합니다. Windows 이외에서는 누락된 CMake·Ninja도 가상 환경에 설치합니다. 준비가 실패하면 앱을 열지 않습니다.
+Windows에서는 `scripts/` 폴더의 [Studio.cmd](../scripts/Studio.cmd)를 더블 클릭하고, Apple Silicon macOS에서는 `sh ./scripts/Studio.sh`로 [Studio.sh](../scripts/Studio.sh)를 실행합니다. 다른 폴더에서도 실행 파일의 경로를 지정해 호출할 수 있습니다. 두 파일은 [공통 실행 스크립트](../src/devtools/studio_launch.py)로 `.venv` 생성, 누락되거나 변경된 Python·Node 의존성 설치, 리소스 준비, 엔진 빌드·검증, 앱 빌드·실행을 순서대로 처리합니다. Windows 이외에서는 누락된 CMake·Ninja도 가상 환경에 설치합니다. 준비가 실패하면 앱을 열지 않습니다.
 
 실행할 때마다 리소스와 엔진을 갱신하므로 엔진 명령을 따로 실행할 필요가 없습니다. 게임·폰트 경로는 기존 Studio·웹·Windows 준비 설정 순서로 찾고, 유효한 경로가 없으면 `deps/game`과 `deps/fonts/NotoSansKR[wght].ttf`를 사용합니다. 외부 경로는 실행 파일에 `--game PATH --font PATH`로 전달합니다. 공식 게임·고정 폰트 준비는 [개발 가이드](development-ko.md)를 참고하세요. 프로젝트와 개인 세이브는 초기화하지 않습니다.
 
@@ -115,7 +115,7 @@ python src/devtools/studio.py export build/studio-example --out build/studio-exa
 
 `project.json`에 정의 수정·맵 편집 명령·파일 연결·실행 취소 기준 스냅샷을, `sources/`에 해시로 이름 붙인 원본 맵·에셋을 저장합니다. `scripts/`의 `.s2s`가 파일 스크립트의 원본이며 이 세 경로를 함께 보관하세요. `.studio/`는 최근 100개 실행 취소 기록·잠금·폰트 캐시·최근 미리보기 토큰 캐시입니다. 파일 쓰기가 중단되면 다음 열기에서 트랜잭션을 복구하되 새 외부 변경은 덮어쓰지 않습니다. 원본 기본 리소스는 수정하지 않습니다. `project.json`의 `base`는 보통 상대 경로이며 다른 컴퓨터에서는 준비된 기본 리소스 위치에 맞추세요.
 
-내보내기는 빈 폴더만 사용합니다. `overrides/`에는 네이티브 `.inf`·`.s2`·에셋, `resources/locales/`에는 프로젝트 번역, `manifest.json`에는 버전·파일 해시를 만듭니다. 검토한 콘텐츠는 `resources/editions/extended/overrides/`, 번역은 `resources/locales/editions/extended/<code>.tsv`에 병합한 뒤 Extended를 준비·빌드합니다. 기존 파일이 있으면 통째로 덮어쓰지 말고 변경 내용을 병합하세요. 일반 빌드·CI·배포는 자동 실행하지 않습니다.
+내보내기는 빈 폴더만 사용합니다. `overrides/`에는 네이티브 `.inf`·`.s2`·에셋, `locales/`에는 프로젝트 번역, `manifest.json`에는 버전·파일 해시를 만듭니다. 검토한 콘텐츠는 `resources/editions/extended/overrides/`, 번역은 `resources/locales/editions/extended/<code>.tsv`에 병합한 뒤 Extended를 준비·빌드합니다. 기존 파일이 있으면 통째로 덮어쓰지 말고 변경 내용을 병합하세요. 일반 빌드·CI·배포는 자동 실행하지 않습니다.
 
 `locale.set`과 `[[loc:key]]`로 새 문구를 등록하고 영어 대체 번역도 제공하세요. 프로젝트가 새 글자를 사용하면 기존 폰트 생성기를 재사용해 미리보기용 글꼴을 보충합니다. 이때 준비에 사용한 폰트 파일이 필요합니다. 보충 글꼴은 내보내기의 `fonts/<code>/`에도 포함되며, 내보낸 콘텐츠를 별도 런타임에서 시험할 때 `core/locales/<code>/`에 적용할 수 있습니다. 정식 리소스 통합은 [현지화 가이드](localization-ko.md)의 카탈로그·폰트 갱신 절차를 따릅니다.
 

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"c53cdf4cac7c4ab54bf0c91ca6a694e5161eea1fbc21c9a719980c6124e5a4d9"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"c44cd7246082e27c1f8e16507ad2750005897b7bcd4aed0fb6d8f997a376c97e"} -->
 
 # Translating the game
 
@@ -6,7 +6,7 @@
 
 [Back to README](../README.md) · [Development guide](development.md)
 
-**Edit `resources/locales/<code>.tsv` for the language you want to translate.** English source text is in [resources/locales/en.tsv](../resources/locales/en.tsv); Korean translations are in [resources/locales/ko.tsv](../resources/locales/ko.tsv). Translation, language, and font changes do not require rebuilding the EXE.
+**Edit `resources/locales/<code>.tsv` for the language you want to translate.** English source text is in [resources/locales/en.tsv](../resources/locales/en.tsv); Korean translations are in [resources/locales/ko.tsv](../resources/locales/ko.tsv). Translation, language, and font changes do not require recompiling the Windows EXE. Web distributions and macOS app bundles need a platform `build` after `localize` to include the refreshed language packs; see the [development guide](development.md).
 
 English (`en`), Korean (`ko`), and German (`de`, **Deutsch**) are bundled in both editions. [German translations](../resources/locales/de.tsv) reuse the [official German Gold 1.0.0.1 text](https://www.unrealsoftware.de/get.php?get=stranded2.zip), adapted and supplemented for this project's features and Extended. The default font supports the German pack.
 

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/official-site-post.md","language":"en","syncedHash":"a2a33e3b99c40504daabb3c48c97f2ce3d2b2122fe9df0c86d609f574e8459f3"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/official-site-post.md","language":"en","syncedHash":"53f640022cbbb91c8ee5de8b9c713fceb3fc502540316cb4a94a5b67524987b1"} -->
 
 # Draft post for the official site
 
@@ -18,20 +18,21 @@ These problems were not especially difficult to solve, but there were many place
 
 Recent advances in AI have made it much easier to solve these problems.
 
-I plan to produce separate builds: one preserving the original content, and another adding convenience features and balance changes. The original version will preserve gameplay, with the following changes:
+The project now maintains Stranded II, preserving the original content and game rules, separately from Extended, intended for future balance and content changes. Both editions share these improvements:
 
 - You can now select a language and add languages yourself.
 - The refresh rate limit has been removed. (Entity ticks are calculated correctly too.)
-- Additional graphics options.
+- A shared WebGPU renderer with optional lighting, shadows, water, atmosphere and anti-aliasing settings.
 - Fixes for quick save/load not working.
-- At least three Auto Save slots and a Continue button on the main menu.
+- Five rotating autosave slots and a Continue button on the main menu.
+- Individually configurable recipe browsing, quick storage transfers, automatic closing of empty corpses, display sorting and held construction input. All default to OFF in Stranded II and ON in Extended; saved selections are preserved.
 
-If I expand the original game in the future, it will involve modifying the game's core source code rather than making a `mod`. I haven't decided what to call it yet, but these are some ideas:
+Windows builds use a custom LLVM-based Blitz compiler and Dawn/D3D12 runtime. The base game also has experimental WebGPU browser and Apple Silicon macOS versions (Dawn/Metal). The web target requires desktop Chrome/Edge with WebGPU and JSPI; the Mac app targets macOS 15 or later. This does not establish verification of the entire campaign or every environment.
 
-- QoL features (toggleable in settings).
+Extended is currently for local development, with CI builds and distribution disabled. It has no exclusive gameplay or content yet. Future work on the game core and edition-specific resources may explore these ideas:
+
 - Rebalancing and additional content.
 - Multiplayer support.
 - More enjoyable gameplay on random islands beyond the scenario mode.
-- Cross-platform support. (This may require modifying the Blitz3D engine. I intend to try if it is feasible.)
 
-That's all for now. These are only plans, though. Enjoy the game!
+These ideas remain plans, not implemented features. See the [QOL guide](qol.md), [edition differences](extend-features.md) and [development guide](development.md) for current usage. Enjoy the game!

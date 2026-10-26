@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"78c841082488019499ab48e0dcc7ded0942a08318461a5d846237495e6557be3"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"6dddbb0b6945767e68f58f320548498bb45fd20d17210a877315df4a8278bff7"} -->
 
 # 게임 번역하기
 
@@ -6,7 +6,7 @@
 
 [README로 돌아가기](../README-ko.md) · [개발 가이드](development-ko.md)
 
-**번역할 언어의 `resources/locales/<코드>.tsv`를 수정하면 됩니다.** 영어 원문은 [resources/locales/en.tsv](../resources/locales/en.tsv), 한국어 번역은 [resources/locales/ko.tsv](../resources/locales/ko.tsv)에 있습니다. 번역·언어·폰트 변경에는 EXE 재빌드가 필요하지 않습니다.
+**번역할 언어의 `resources/locales/<코드>.tsv`를 수정하면 됩니다.** 영어 원문은 [resources/locales/en.tsv](../resources/locales/en.tsv), 한국어 번역은 [resources/locales/ko.tsv](../resources/locales/ko.tsv)에 있습니다. 번역·언어·폰트 변경에는 Windows EXE 재컴파일이 필요하지 않습니다. 웹 배포본과 macOS 앱에는 `localize` 뒤 해당 플랫폼의 `build`로 새 언어팩을 포함해야 합니다. [개발 가이드](development-ko.md)를 참고하세요.
 
 두 판 모두 영어(`en`), 한국어(`ko`), 독일어(`de`, **Deutsch**)를 기본 제공합니다. [독일어 번역](../resources/locales/de.tsv)은 [공식 독일어 Gold 1.0.0.1 문구](https://www.unrealsoftware.de/get.php?get=stranded2.zip)를 활용하고, 이 프로젝트의 기능과 확장판에 맞게 조정·보충했습니다. 독일어 팩은 기본 폰트로 표시할 수 있습니다.
 

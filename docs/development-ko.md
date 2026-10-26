@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"d499ab625064854e1fdfb80e2be163824e9ab0fe266d6c71b171f09d695c0b5a"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"c766f6c6b9d4241960ae736799b49eecee274133f10bfebb6ccfc074fd0cb2f7"} -->
 
 # 개발 가이드
 
@@ -14,17 +14,7 @@ Windows 10/11 x64와 Direct3D 12 지원 GPU, Python 3.12 이상, [requirements.t
 
 Visual Studio의 MSVC x64 C++ 빌드 도구, Windows SDK, CMake/Ninja 도구, DIA SDK를 설치합니다. `build`는 저장소의 `src/blitz3d/` 엔진을 LLVM과 함께 빌드해 게임을 x64 네이티브 실행 파일로 연결합니다. 그래픽은 Dawn/D3D12, 오디오는 OpenAL Soft를 사용합니다. Unicode 입력·IME·Windows 서비스는 런타임에 내장하며 `QolInput.dll`은 필요하지 않습니다. 실행에 필요한 DLL과 라이선스는 각 판의 EXE 옆에 복사합니다.
 
-네이티브 런타임은 속도 우선 `Release` 설정(MSVC의 `/O2`)을 사용하며 기존 부동소수점 연산 규칙을 유지합니다. WebGPU는 메시 변경을 그리기 직전까지 모아서 업로드하고, 버퍼 갱신과 그리기 순서를 지키면서 카메라·화면 출력 명령을 함께 제출합니다. 동일한 메시·재질의 복제본은 각자의 색과 페이드 값을 유지하며 인스턴싱으로 묶어 그립니다. 반투명 복제본은 연속된 명령만 묶어 깊이 순서를 유지합니다. 메시 가시성 검사는 카메라의 시야 평면을 재사용하고, 반투명 정렬용 거리는 카메라마다 물체당 한 번만 계산합니다. 반사 갱신 주기·풀 밀도·그래픽 설정은 바꾸지 않습니다.
-
-동적 메시를 갱신할 때는 앞선 그리기에 사용한 GPU 버퍼를 보존하고 다른 버퍼에 새 데이터를 업로드해 중간 명령 제출을 줄입니다. 버퍼는 제출 후 재사용하며, 추가 버퍼 용량은 전체 32MiB, 버전 수는 메시당 16개로 제한합니다. 한도에 도달하거나 와이어프레임 인덱스 캐시를 쓰면 기존 제출 방식으로 처리합니다.
-
-지형 조명은 필요한 격자점의 법선을 계산해 저장하고 프레임과 반사 시점 사이에 재사용합니다. 높이를 수정하면 해당 지점과 인접한 네 지점을 경계 순환까지 포함해 무효화하며, 지형 초기화 시 전체 캐시를 무효화합니다. 기존 법선 계산식과 LOD·모핑은 유지합니다. 64×64 지형은 처음 조명을 적용해 그린 뒤 이 캐시에 52KiB를 사용합니다.
-
-메시 가시성은 첫 시점에서 기존 방식으로 검사합니다. 같은 장면 준비에 속한 후속 시점은 월드 좌표 경계를 재사용하며, 경계가 시야 평면에 걸치면 기존 방향성 검사를 유지합니다. 보간된 캡처와 카메라 자식을 포함해 장면을 준비할 때마다 경계를 무효화합니다. `verify_engine.py --render`는 변환·메시·사용자 지정 경계 변경 후의 가시성과 반사 픽셀을 비교하며, 높이 수정 후 지형 법선과 조명 픽셀도 비교합니다.
-
-물 반사는 `RenderWorldCube camera,texture[,tween]`으로 6방향을 연속 처리합니다. 기본 보간값 `1`이고 카메라에 자식이 없으면 객체 목록·변환 준비를 한 번만 수행하며, 그 외에는 방향마다 준비합니다. 각 방향의 가시성·거리 페이드·투명도 정렬은 유지하고 호출 사이에는 준비 상태를 재사용하지 않습니다. 호출 전에 카메라 뷰포트를 `(0,0,텍스처 너비,텍스처 높이)`로 설정합니다.
-
-현재 WebGPU의 큐브 텍스처에는 면별 저장·샘플링이 구현되지 않아 마지막으로 복사한 2D 이미지가 사용됩니다. 6방향 준비 공유는 이 기존 출력 동작을 유지하며, 큐브 텍스처 지원을 완성하는 변경은 아닙니다.
+네이티브 런타임은 속도 우선 `Release` 설정(MSVC의 `/O2`)을 사용하며 기존 부동소수점 연산 규칙을 유지합니다. 배치·버퍼 수명·지형 및 가시성 캐시·평면 반사·기존 큐브 텍스처의 한계는 [렌더러 가이드](wgpu-migration-ko.md)를 참고하세요. 렌더러 변경은 반사 갱신 주기·풀 밀도·사용자 그래픽 설정을 유지하고 영향을 받는 플랫폼별로 검증합니다.
 
 아래 의존성은 저장소에 포함하지 않으므로 직접 준비합니다.
 
@@ -72,7 +62,7 @@ python -m venv .venv
 | --- | --- |
 | `src/engine/**/*.bb` 또는 `src/blitz3d/` 수정 | `.\scripts\dev.ps1 build -Python .\.venv\Scripts\python.exe` |
 | `resources/locales/` 번역·언어·폰트 수정 | `.\scripts\dev.ps1 localize -Python .\.venv\Scripts\python.exe` |
-| `resources/` 수정 | `.\scripts\dev.ps1 setup -Python .\.venv\Scripts\python.exe` |
+| `resources/`의 번역 외 리소스 수정 | `.\scripts\dev.ps1 setup -Python .\.venv\Scripts\python.exe` |
 | 자동 검사 | `.\scripts\dev.ps1 check -Python .\.venv\Scripts\python.exe` |
 | 게임 실행 | `.\scripts\Play.cmd` |
 
@@ -99,6 +89,12 @@ Python으로 직접 실행할 수도 있습니다.
 메뉴를 열어도 게임은 진행되며 게임 입력은 차단됩니다. 상태 탭의 일시정지는 메뉴를 닫아도 유지됩니다. 싱글 플레이 치트, 아이템 아이콘 격자, 좌표·시간 이동, 설정 미리 적용, 검색·복사 가능한 로그를 제공합니다. 설정은 **저장**과 **저장된 설정으로 되돌리기**를 구분하며 자동 저장하지 않습니다. 화면 모드·해상도·FPS 제한·언어는 저장 후 재시작이 필요합니다. 로그는 최대 2,048건 / 2MiB이며 위로 스크롤하면 최신 로그 따라가기를 멈춥니다.
 
 공유 게임 UI는 `src/engine/includes/devmenu.bb`, 네이티브 ImGui·SDL 입력·WebGPU 출력 연결은 `src/blitz3d/src/modules/bb/debugui/`, 브라우저 IME 연결은 `src/web/debugui.js`에 있습니다. Windows 두 에디션, macOS, Web 및 Studio가 같은 구현을 사용합니다. Windows에서 `python src/devtools/verify_engine.py --graphics --input`은 입력 소유권과 창·컨텍스트 수명을 검사합니다. `s2_debugui_check` CMake 타깃은 준비된 `core/locales/<code>/ui.ttf` 경로를 인수로 받아 유니코드 글리프·슬라이더·로그 따라가기를 창 없이 검사합니다. 실제 화면, 한글 조합·붙여넣기와 각 플랫폼 실행은 별도로 확인합니다.
+
+### CPU·GPU 프로파일러와 성능 테스트 장면
+
+**개발 메뉴 → 프로파일러**에서 기록을 시작하고 확인할 동작을 재현한 뒤 기록을 정지하여 프레임을 선택하거나 분석 결과를 복사합니다. 메뉴를 닫아도 기록은 계속되며 최근 2,048프레임을 보관합니다. CPU 전체·자체 시간과 GPU 렌더 패스 시간은 서로 겹치므로 합산하지 않습니다. GPU timestamp 미지원 장치에서도 CPU·그리기 통계는 확인할 수 있습니다. 측정 원리는 [렌더러 가이드](wgpu-migration-ko.md#181-선택형-cpugpu-프로파일링)를 참고하세요.
+
+메인 메뉴에서 개발 메뉴의 **성능 테스트 → 테스트 장면 열기**를 선택하면 임시 장면에 오브젝트·유닛·아이템 그룹을 추가하고 그래픽 설정을 비교할 수 있습니다. 자동 비교는 조건마다 준비 3초·측정 8초를 3회 반복합니다. CSV·JSON은 실행 폴더의 `core/benchmarks/`에 내보내며 메인 메뉴로 돌아가면 테스트 변경을 저장하지 않고 이전 설정을 복원합니다. 완료 FPS는 마지막 비동기 GPU 완료 대기를 포함한 처리량이며 모니터 표시 FPS가 아닙니다.
 
 ## 네이티브 렌더링 벤치마크
 
@@ -178,7 +174,7 @@ WebGPU의 동일 버퍼 `CopyRect`는 임시 텍스처를 재사용하고, 앞�
 .\.venv\Scripts\python.exe -X utf8 src/devtools/web_pages.py
 ```
 
-`web_pages.py`는 검사를 통과한 현재 빌드의 실행 파일 8개만 `build/web/pages/`에 모읍니다. `/checks/`, 로그, 개인 저장은 게시하지 않습니다. 상대 경로와 배포별 캐시 키를 사용하며 배포 목록·해시는 `build/web/pages-report.json`에 기록합니다. 출력 폴더에 예상하지 못한 파일이 있으면 삭제하지 않고 중단합니다. 배포 작업은 직렬화하고, 빌드·검사 실패 시 기존 사이트를 유지합니다. 게시 후 HTTP 파일 해시·WASM 형식을 확인하지만 실제 플레이 검증은 별도로 수행해야 합니다.
+`web_pages.py`는 검사를 통과한 현재 빌드의 `debugui.js`를 포함한 실행 파일 9개만 `build/web/pages/`에 모읍니다. `/checks/`, 로그, 개인 저장은 게시하지 않습니다. 상대 경로와 배포별 캐시 키를 사용하며 배포 목록·해시는 `build/web/pages-report.json`에 기록합니다. 출력 폴더에 예상하지 못한 파일이 있으면 삭제하지 않고 중단합니다. 배포 작업은 직렬화하고, 빌드·검사 실패 시 기존 사이트를 유지합니다. 게시 후 HTTP 파일 해시·WASM 형식을 확인하지만 실제 플레이 검증은 별도로 수행해야 합니다.
 
 ## 실험용 macOS 네이티브 빌드
 
@@ -189,7 +185,7 @@ Apple Silicon Mac에 Xcode Command Line Tools, Git, Python 3.12 이상, CMake, N
 ```sh
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python src/devtools/dev.py setup --platform macos --game deps/game --font deps/fonts/NotoSansKR.ttf
+.venv/bin/python src/devtools/dev.py setup --platform macos --game deps/game --font "deps/fonts/NotoSansKR[wght].ttf"
 .venv/bin/python src/devtools/dev.py build --platform macos
 .venv/bin/python src/devtools/dev.py check --platform macos
 .venv/bin/python src/devtools/macos_package.py
@@ -210,7 +206,7 @@ python3 -m venv .venv
 
 ## Extended 제작 앱
 
-[Stranded II Studio](studio-ko.md)는 독립 GUI와 JSON CLI로 콘텐츠·맵을 편집합니다. 실제 Blitz/Extended 엔진을 사용하는 3D 화면, 실행 취소, 검증, 네이티브 리소스 내보내기를 제공합니다. 전용 명령은 `python src/devtools/studio.py`이며, Windows는 `scripts/Studio.cmd`, macOS/Linux는 `sh ./scripts/Studio.sh`로 의존성·엔진 준비부터 앱 실행까지 자동 처리합니다. 자세한 사용법은 Studio 가이드를 따릅니다. 엔진 산출물은 `build/studio/`, 앱 산출물은 `src/studio/dist/`에 저장하고 일반 게임·CI·릴리스 에디션 선택은 변경하지 않습니다.
+[Stranded II Studio](studio-ko.md)는 독립 GUI와 JSON CLI로 콘텐츠·맵을 편집합니다. 실제 Blitz/Extended 엔진을 사용하는 3D 화면, 실행 취소, 검증, 네이티브 리소스 내보내기를 제공합니다. 전용 명령은 `python src/devtools/studio.py`이며, Windows는 `scripts/Studio.cmd`, Apple Silicon macOS는 `sh ./scripts/Studio.sh`로 의존성·엔진 준비부터 앱 실행까지 자동 처리합니다. 자세한 사용법은 Studio 가이드를 따릅니다. 엔진 산출물은 `build/studio/`, 앱 산출물은 `src/studio/dist/`에 저장하고 일반 게임·CI·릴리스 에디션 선택은 변경하지 않습니다.
 
 Studio는 편집·플레이에 동일한 iframe과 Blitz 엔진을 사용합니다. `src/studio/engine/studio.js`가 기존 차분 ACK를 기다린 뒤 최신 저장 맵을 확인하고, `src/engine/studio/runtime.bb`의 `studio_load`가 엔진·정의를 유지한 채 맵을 다시 불러옵니다. 리소스 변경은 명시적인 **리소스 적용**으로 초기화합니다. 정지는 메모리 파일 시스템의 편집 맵 원본과 카메라를 복원하며 프로젝트에는 쓰지 않습니다. 이 경로를 수정하면 Studio 빌드·검사를 실행하고, 공통 엔진도 수정했다면 두 판의 빌드·검사와 관련 게임 검증을 추가합니다.
 
@@ -221,7 +217,7 @@ Studio는 편집·플레이에 동일한 iframe과 Blitz 엔진을 사용합니�
 ```text
 src/engine/ 수정 → build 명령 → build/runtime/StrandedII.exe → scripts/Play.cmd
 resources/locales/ 번역·언어·폰트 수정 → localize 명령 → build/runtime/core/locales/ 갱신
-resources/ 수정 → setup 명령 → build/runtime/의 리소스 갱신
+resources/의 번역 외 리소스 수정 → setup 명령 → build/runtime/의 리소스 갱신
 ```
 
 | 경로 | 역할 | Git 관리 |
@@ -235,7 +231,7 @@ resources/ 수정 → setup 명령 → build/runtime/의 리소스 갱신
 | `src/studio/` | Studio UI·Electron 실행부·앱 테스트 | 포함 |
 | `src/tests/` | 통합 테스트와 네이티브·웹 검증 자료 | 포함 |
 | `AGENTS.md`, `docs/reference/AGENTS-ko.md` | 에이전트 지침과 한국어 보기용 번역 | 포함 |
-| `config/` | 초기 설정, 의존성 버전·해시, 선택형 구버전 비교용 선언 | 포함 |
+| `config/` | 게임 기본값·버전, 빌드·의존성 설정과 검증 해시, 문서 번역 설정, 구버전 비교용 선언 | 포함 |
 | `docs/`, `licenses/` | 문서와 저작권 고지 | 포함 |
 | `deps/` | 원본 게임·글꼴과 고정한 외부 SDK·라이브러리 | 제외 |
 | `.venv/` | Python 가상환경 | 제외 |
@@ -262,7 +258,7 @@ src/engine/
   editions/classic/modules.bb     기본판의 UI·입력·건축 구현 선택
   editions/extended/profile.bb    확장판 식별·창 제목
   editions/extended/modules.bb    확장판의 UI·입력·건축 구현 선택
-resources/overrides/              공통 리소스 변경분(필요할 때 생성)
+resources/overrides/              QOL 안내 등을 포함한 공통 리소스 변경분
 resources/editions/classic/overrides/   기본판 리소스 변경분
 resources/editions/extended/overrides/  확장판 리소스 변경분
 build/runtime/                   기본판 실행·설정·세이브
@@ -436,7 +432,7 @@ gh release create ci-deps-v1 `
   --latest=false
 ```
 
-이후 Actions의 `Windows build and release`를 수동 실행하면 ZIP을 받을 수 있습니다. 의존성을 갱신할 때는 ZIP을 다시 만들고 출력된 SHA-256과 새 Release 태그·파일명을 설정에 함께 반영합니다. 해시가 다른 ZIP은 캐시에 있어도 압축을 풀지 않습니다. 기존 동기화된 문서나 소스 변경만으로 의존성 ZIP을 다시 만들 필요는 없습니다. 단, 번들용 라이선스의 목록이나 내용을 변경하면 `config/dependency-license-files.json`을 갱신하고 의존성 ZIP을 다시 만든 뒤 전체 해시도 함께 갱신합니다.
+이후 Actions의 `Desktop build and release`를 수동 실행하면 ZIP을 받을 수 있습니다. 의존성을 갱신할 때는 ZIP을 다시 만들고 출력된 SHA-256과 새 Release 태그·파일명을 설정에 함께 반영합니다. 해시가 다른 ZIP은 캐시에 있어도 압축을 풀지 않습니다. 기존 동기화된 문서나 소스 변경만으로 의존성 ZIP을 다시 만들 필요는 없습니다. 단, 번들용 라이선스의 목록이나 내용을 변경하면 `config/dependency-license-files.json`을 갱신하고 의존성 ZIP을 다시 만든 뒤 전체 해시도 함께 갱신합니다.
 
 ### 배포 ZIP 구성
 

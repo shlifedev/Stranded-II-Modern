@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"edd186e0ad52d336deed2df8db29597676b1b80f6903c0838ab20265fae576e5"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"9357acb6586a4fc9907d6580c594f7a28f19395e573d56da47ba35aec4228cd6"} -->
 
 # How the web version works
 
@@ -33,6 +33,7 @@ The distribution files have these roles:
 | `assets.js` | Loads resources into `/game/` in the virtual filesystem. |
 | `index.html` | Page structure, including the game display, search field, and fullscreen button. |
 | `shell.js` | Initialization, storage, focus/input, and services connecting the game to the browser. |
+| `debugui.js` | Browser text/IME integration for the shared Dear ImGui developer menu. |
 | `defaults.json` | Lists settings files to persist and language information. |
 | `version.json` | Distribution version and build information. |
 
@@ -112,7 +113,7 @@ Resizing the browser window scales the image proportionally with CSS. Game setti
 
 ## 6. Static-file distribution and separate gameplay verification
 
-GitHub Pages hosts the eight distribution files described above. [`web_pages.py`](../src/devtools/web_pages.py) stages only files matching the current sources, build, and verification results, and adds a deployment-specific cache key to file URLs to reduce mixing old code with new resources. No server process running the game is required.
+GitHub Pages hosts the nine distribution files described above. [`web_pages.py`](../src/devtools/web_pages.py) stages only files matching the current sources, build, and verification results, and adds a deployment-specific cache key to file URLs to reduce mixing old code with new resources. No server process running the game is required.
 
 The current target is **desktop Chrome/Edge with WebGPU and JSPI support**. Run it over HTTPS or a local development address where WebGPU is available. Startup displays an error and stops if either feature or a GPU adapter is unavailable. Mobile, web Extended, the editor, and the full campaign are outside the verified support scope; raw TCP/UDP calls return connection failure.
 

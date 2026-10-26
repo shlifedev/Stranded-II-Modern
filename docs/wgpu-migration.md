@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"557e33cfb6eeb1d7a2390e1a03f5cb7339a02a7b3826e93002b9bc466bcaa197"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"c7c16a040ba0263eba4be493d1615a123dc9633794e9d25449b39bd0cfd24881"} -->
 
 # Stranded II's wgpu/WebGPU cross-platform renderer migration
 
@@ -202,7 +202,7 @@ wgpuInstanceRequestAdapter(instance, &aopts, acb);
 
 Native callbacks use `WGPUCallbackMode_AllowProcessEvents` and advance through `wgpuInstanceProcessEvents()`. Web callbacks use `AllowSpontaneous`, with `emscripten_sleep()` yielding to the browser during waits. JSPI helps a synchronously written WASM call flow suspend for asynchronous browser work and resume afterwards. It does not replace WGSL or GPU execution.
 
-The current device descriptor does not request a separate optional-feature list or expanded required limits. Rendering must fit the baseline WebGPU contract and actual adapter constraints. The legacy compatibility number returned by `gfxDriverCaps3D()` must not be interpreted as an actual GPU feature query.
+The device descriptor requests `timestamp-query` when the adapter supports it, then retries without it if device creation fails. Rendering does not require this profiling feature or expanded required limits; it must fit the baseline WebGPU contract and actual adapter constraints. The legacy compatibility number returned by `gfxDriverCaps3D()` must not be interpreted as an actual GPU feature query.
 
 ## 6. Executing WGSL on D3D12 and Metal
 
@@ -351,10 +351,15 @@ uint32_t key = (uint32_t)blend_mode
     | ((flipped_tris ? 1u : 0u) << 5)
     | ((doublesided ? 1u : 0u) << 6)
     | ((wireframe ? 1u : 0u) << 7)
-    | ((uint32_t)format << 8);
+    | ((uint32_t)format << 8)
+    | ((shadow_pass ? 1u : 0u) << 24)
+    | ((pixel_lighting ? 1u : 0u) << 25)
+    | ((atmosphere ? 1u : 0u) << 26)
+    | ((sun_shadows ? 1u : 0u) << 27)
+    | ((samples == 4 ? 1u : 0u) << 28);
 ```
 
-Blend, depth, topology, front face, culling and target format belong to the pipeline. Camera, lighting, material and transforms belong to buffers/bind groups. Viewport and scissor are pass commands. Changing a material colour therefore does not require a new GPU pipeline.
+Blend, depth, topology, front face, culling, target format and sample count belong to the pipeline. Shadow-capture mode and lighting/atmosphere/shadow feature switches also select pipeline variants. Camera, light values, material and transforms belong to buffers/bind groups. Viewport and scissor are pass commands. Changing a material colour therefore does not require a new GPU pipeline.
 
 | Z mode | Compare | Depth write | Use |
 | --- | --- | --- | --- |
@@ -476,6 +481,12 @@ CPU frustum tests remain in the shared [frustum implementation](../src/blitz3d/s
 
 [Grass placement](../src/engine/includes/grasspread.bb) keeps terrain-eligible patches available to the renderer. Visibility is tested separately for each render view every frame, without a timed main-camera `HideEntity` cache. Gameplay updates placement before shadow, reflection and main rendering; density and distance fading retain the selected settings. Changing the height mask invalidates placement even with a stationary camera. Orthographic shadow frusta use parallel side planes and retain that projection through world transforms.
 
+### 13.1 Terrain normals and scene culling caches
+
+[Terrain normals](../src/blitz3d/src/modules/bb/blitz3d/terrainrep.cpp) are calculated lazily per height-field grid point and reused across frames and reflection views. A height edit invalidates that point and its four neighbours, including wrapped edges; clearing the terrain invalidates the whole cache. The original normal calculation, LOD and morphing remain unchanged. A 64×64 terrain allocates 52 KiB for normals and validity flags after shading first needs them.
+
+Mesh culling uses the original test for the first view and reuses world-space bounds for later views within the same scene preparation. Intersecting frustum planes retain the oriented test. Every `beginRender()` resets the cache, including tweened captures and camera children, so edits between `RenderWorld` calls cannot leave stale bounds. `verify_engine.py --render` checks terrain normals/lit pixels after height changes and visibility/capture pixels after transform, mesh and custom-bound changes.
+
 ## 14. Preserving 2D UI, font and image semantics
 
 `graphics.webgpu` implements `BBCanvas` screens, images and textures as `WebGPUCanvas`. A 2D position/UV vertex occupies **16 bytes** and render state occupies **64 bytes**. CPU staging accumulates vertices/uniforms; consecutive draws sharing pipeline, bind group, scissor and buffer are merged. Strip topologies use separate draws to avoid unintended connections between adjacent strips.
@@ -516,6 +527,8 @@ Replacing all `CopyRect` calls with one frame-start snapshot would lose the orig
 Ordinary canvas textures use `TextureBinding|RenderAttachment|CopySrc|CopyDst`. Declaring these usages does not permit all of them simultaneously in one pass. Mipmaps are generated through per-level render passes and updated according to dirty state when sampling requires them.
 
 ## 16. Six-view water reflection and current cube-texture limitations
+
+With the water enhancement enabled (the default), the game uses `RenderWorldPlanar` for planar reflections. The legacy reflection path used when that enhancement is off calls `RenderWorldCube`.
 
 `RenderWorldCube camera,texture[,tween]` handles six camera directions within one call to [`World::renderCubeMap()`](../src/blitz3d/src/modules/bb/blitz3d/world.cpp). With `tween=1` and no camera children, it shares enumeration, interpolation and transform preparation once. Camera children may move with each view, and other tween values preserve repeated-preparation semantics; those cases prepare six times.
 
@@ -568,9 +581,9 @@ Device creation optionally requests standard `timestamp-query` and retries witho
 
 Four slots per device each retain up to 512 passes for a frame. When every slot is busy, that frame is skipped; exceeding the pass limit produces a partial measurement. Callbacks retain shared ownership of their slot and match results through monotonic frame IDs. Stale results after clearing or history replacement are ignored; callbacks after device detach cannot revive measurements. Unsupported devices retain CPU/draw statistics.
 
-GPU sums cover render-pass durations, excluding transfers, waits and gaps between passes. CPU and GPU work overlap; their sum does not represent frame cost. See the [development guide](development.md#cpu-and-gpu-profiler) for usage and verification targets.
+GPU sums cover render-pass durations, excluding transfers, waits and gaps between passes. CPU and GPU work overlap; their sum does not represent frame cost. See the [profiler model tests](../src/blitz3d/tests/profiler_model.cpp) for CPU aggregation checks and the [GPU profiler tests](../src/blitz3d/tests/profiler_gpu.cpp) for GPU instrumentation checks.
 
-The performance test collector observes completed CPU frames before ring eviction and routes late GPU samples by frame ID. Warm-up and measurement boundaries use asynchronous `wgpuQueueOnSubmittedWorkDone` fences on the existing queue; no synchronous readback is inserted into the game loop. Completed FPS includes the final drain. Cancellation/device loss invalidates callback tickets, and trial storage remains independent of the profiler display history. See [Performance test scene](development.md#performance-test-scene).
+The performance test collector observes completed CPU frames before ring eviction and routes late GPU samples by frame ID. Warm-up and measurement boundaries use asynchronous `wgpuQueueOnSubmittedWorkDone` fences on the existing queue; no synchronous readback is inserted into the game loop. Completed FPS includes the final drain. Cancellation/device loss invalidates callback tickets, and trial storage remains independent of the profiler display history. See the [performance test collector implementation](../src/blitz3d/src/modules/bb/debugui/benchmark.cpp).
 
 ## 19. Verification paths and this document's verification scope
 
