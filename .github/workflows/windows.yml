@@ -64,7 +64,7 @@ jobs:
         run: python -m pip install -r requirements.txt
 
       - name: Test packaging and release recovery
-        run: python -X utf8 -m unittest discover -s tests -p test_ci*.py
+        run: python -X utf8 -m unittest discover -s src/tests -p test_ci*.py
 
       - name: Select release or preview version
         env:
@@ -74,9 +74,9 @@ jobs:
           PUBLISH_RELEASE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' && inputs.publish }}
         run: |
           if ($env:PUBLISH_RELEASE -eq 'true') {
-            python -X utf8 scripts/ci.py version --channel "$env:RELEASE_CHANNEL" --repo "$env:GH_REPO"
+            python -X utf8 src/devtools/ci.py version --channel "$env:RELEASE_CHANNEL" --repo "$env:GH_REPO"
           } else {
-            python -X utf8 scripts/ci.py version
+            python -X utf8 src/devtools/ci.py version
           }
           if ($LASTEXITCODE -ne 0) { throw 'Version selection failed' }
 
@@ -91,7 +91,7 @@ jobs:
 
       - name: Read dependency pin
         id: pin
-        run: python -X utf8 scripts/ci.py config --github-output "$env:GITHUB_OUTPUT"
+        run: python -X utf8 src/devtools/ci.py config --github-output "$env:GITHUB_OUTPUT"
 
       - name: Cache pinned dependency archive
         id: cache
@@ -118,30 +118,30 @@ jobs:
         id: deps
         env:
           DEPENDENCY_ASSET: ${{ steps.pin.outputs.asset }}
-        run: python -X utf8 scripts/ci.py dependencies --archive "build/ci/downloads/$env:DEPENDENCY_ASSET" --github-output "$env:GITHUB_OUTPUT"
+        run: python -X utf8 src/devtools/ci.py dependencies --archive "build/ci/downloads/$env:DEPENDENCY_ASSET" --github-output "$env:GITHUB_OUTPUT"
 
       - name: Cache pinned engine dependencies
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: deps/blitz3d
-          key: blitz3d-windows-x64-${{ hashFiles('config/blitz3d-toolchain.json', 'scripts/blitz3d_toolchain.py') }}
+          key: blitz3d-windows-x64-${{ hashFiles('config/blitz3d-toolchain.json', 'src/devtools/blitz3d_toolchain.py') }}
 
       - name: Prepare runtime resources
         env:
           GAME_INPUT: ${{ steps.deps.outputs.game }}
           FONT_INPUT: ${{ steps.deps.outputs.font }}
-        run: python -X utf8 scripts/dev.py setup --game "$env:GAME_INPUT" --font "$env:FONT_INPUT"
+        run: python -X utf8 src/devtools/dev.py setup --game "$env:GAME_INPUT" --font "$env:FONT_INPUT"
 
       - name: Compile embedded Blitz3D and game
-        run: python -X utf8 scripts/dev.py build --version-info build/ci/version.json
+        run: python -X utf8 src/devtools/dev.py build --version-info build/ci/version.json
 
       - name: Check resources and non-graphical runtime behavior
-        run: python -X utf8 scripts/dev.py check
+        run: python -X utf8 src/devtools/dev.py check
 
       - name: Package standalone game
         env:
           GAME_INPUT: ${{ steps.deps.outputs.game }}
-        run: python -X utf8 scripts/ci.py package --game "$env:GAME_INPUT" --version-info build/ci/version.json
+        run: python -X utf8 src/devtools/ci.py package --game "$env:GAME_INPUT" --version-info build/ci/version.json
 
       - name: Upload game ZIP and checksum
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -228,4 +228,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          python -X utf8 scripts/ci.py release --repo "$GH_REPO" --include-macos
+          python -X utf8 src/devtools/ci.py release --repo "$GH_REPO" --include-macos

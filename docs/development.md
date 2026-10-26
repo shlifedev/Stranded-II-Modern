@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"ce88981c71372c71622af440d7dec3b39f5f0ff6df69993ce1228e302263e250"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"fbc3c68ae5bde29736b095ad96a46f2d5cc753f9c01fbf3a3fea4122cac79414"} -->
 
 # Development guide
 
@@ -54,10 +54,10 @@ Run these commands in PowerShell from the repository root:
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -X utf8 scripts/dev.py setup --game deps/game --font 'deps/fonts/NotoSansKR[wght].ttf'
-.\.venv\Scripts\python.exe -X utf8 scripts/dev.py build
-.\.venv\Scripts\python.exe -X utf8 scripts/dev.py check
-.\Play.cmd
+.\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py setup --game deps/game --font 'deps/fonts/NotoSansKR[wght].ttf'
+.\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py build
+.\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py check
+.\scripts\Play.cmd
 ```
 
 `setup` prepares original resources, UTF-8 references, fonts and external engine dependencies. It never downloads over or patches `src/blitz3d/`. Compiler, runtime libraries and generated CMake headers stay under `build/engine/<target>/`; game outputs stay in each edition’s own build directory.
@@ -70,13 +70,13 @@ Use the following commands from the repository root. Close the development game 
 
 | Change | Command |
 | --- | --- |
-| Edit `src/engine/**/*.bb` or `src/blitz3d/` | `.\dev.ps1 build -Python .\.venv\Scripts\python.exe` |
-| Edit `locales/` translations, languages, or fonts | `.\dev.ps1 localize -Python .\.venv\Scripts\python.exe` |
-| Edit `resources/` | `.\dev.ps1 setup -Python .\.venv\Scripts\python.exe` |
-| Automated checks | `.\dev.ps1 check -Python .\.venv\Scripts\python.exe` |
-| Launch the game | `.\Play.cmd` |
+| Edit `src/engine/**/*.bb` or `src/blitz3d/` | `.\scripts\dev.ps1 build -Python .\.venv\Scripts\python.exe` |
+| Edit `resources/locales/` translations, languages, or fonts | `.\scripts\dev.ps1 localize -Python .\.venv\Scripts\python.exe` |
+| Edit `resources/` | `.\scripts\dev.ps1 setup -Python .\.venv\Scripts\python.exe` |
+| Automated checks | `.\scripts\dev.ps1 check -Python .\.venv\Scripts\python.exe` |
+| Launch the game | `.\scripts\Play.cmd` |
 
-The repository's `Play.cmd` and `Play-Extended.cmd` are development shortcuts to the built runtime folders. They are excluded from release ZIPs; players launch their edition's EXE directly.
+The repository's `scripts/Play.cmd` and `scripts/Play-Extended.cmd` are development shortcuts to the built runtime folders. They are excluded from release ZIPs; players launch their edition's EXE directly.
 
 For changes to both code and resources, use `setup → build → check → launch`. Translation, new-language, and font changes use `localize → check → launch` without recompiling the EXE. `setup` includes the same language-pack preparation. See the [localization guide](localization.md#choose-a-font) for font settings.
 
@@ -84,10 +84,12 @@ For changes to both code and resources, use `setup → build → check → launc
 
 `build` compiles a temporary executable, then replaces `build/runtime/StrandedII.exe`. If replacement fails because the game is running, close the game and run `build` again.
 
+Windows borderless mode uses SDL desktop fullscreen on the primary monitor, keeping SDL and Win32 window state synchronized. The selected render resolution remains independent of the desktop-sized window. Do not apply raw Win32 style/position changes to the SDL game window. `verify_engine.py --graphics` checks native client origin/bounds, repeated fullscreen transitions, unchanged desktop video mode, and preserved render resolution. Run it at each relevant DPI setting; actual Alt-Tab recovery still requires an in-game check.
+
 You can also launch directly through Python:
 
 ```powershell
-.\.venv\Scripts\python.exe -X utf8 scripts/dev.py run -- -win -fps 120
+.\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py run -- -win -fps 120
 ```
 
 ## Developer menu
@@ -96,7 +98,7 @@ Both editions share a Dear ImGui menu. Assign a shortcut under **Settings → Co
 
 Opening the menu keeps the game running and blocks game input. The Status tab's pause stays active after closing the menu. Tools include single-player cheats, an item icon grid, position/time changes, settings previews, and searchable/copyable logs. **Save** and **Revert to saved settings** are separate; changes are never saved automatically. Display mode, resolution, FPS limit and language require restarting after saving. Logs retain at most 2,048 entries / 2MiB; scrolling up stops following new messages.
 
-Shared game UI lives in `src/engine/includes/devmenu.bb`, native ImGui/SDL/WebGPU integration in `src/blitz3d/src/modules/bb/debugui/`, and browser IME integration in `src/web/debugui.js`. Windows editions, macOS, Web and Studio use the same implementation. On Windows, `python scripts/verify_engine.py --graphics --input` checks input ownership and window/context lifetimes. The `s2_debugui_check` CMake target accepts a prepared `core/locales/<code>/ui.ttf` path and checks Unicode glyphs, sliders and log following without a window. Check actual display, IME composition/paste and each platform's execution separately.
+Shared game UI lives in `src/engine/includes/devmenu.bb`, native ImGui/SDL/WebGPU integration in `src/blitz3d/src/modules/bb/debugui/`, and browser IME integration in `src/web/debugui.js`. Windows editions, macOS, Web and Studio use the same implementation. On Windows, `python src/devtools/verify_engine.py --graphics --input` checks input ownership and window/context lifetimes. The `s2_debugui_check` CMake target accepts a prepared `core/locales/<code>/ui.ttf` path and checks Unicode glyphs, sliders and log following without a window. Check actual display, IME composition/paste and each platform's execution separately.
 
 ## Native rendering benchmark
 
@@ -107,10 +109,10 @@ When lighting or shadows is enabled, sun light shares the original ambient budge
 On Windows, prepare the selected edition's runtime, then run the isolated benchmark. It generates and reloads seeded `.s2` stress maps with 0/256/768/1536 trees and rocks, and also tests the first adventure island. It uses the real game loop, native renderer and clock. Camera position and input are fixed; no GUI operation is needed. Existing games, saves and settings are preserved.
 
 ```powershell
-.\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --run
-.\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --existing build/benchmark-<name> --run --suite resolution --width 1280 --height 720 --label lowres
-.\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --existing build/benchmark-<name> --rebuild --run --cases baseline,island,objects_1536 --label optimized
-.\.venv\Scripts\python.exe -X utf8 scripts/benchmark_native.py --run --cases baseline,island --width 1920 --height 1080 --render water,lighting,shadows,atmosphere --label remaster
+.\.venv\Scripts\python.exe -X utf8 src/devtools/benchmark_native.py --run
+.\.venv\Scripts\python.exe -X utf8 src/devtools/benchmark_native.py --existing build/benchmark-<name> --run --suite resolution --width 1280 --height 720 --label lowres
+.\.venv\Scripts\python.exe -X utf8 src/devtools/benchmark_native.py --existing build/benchmark-<name> --rebuild --run --cases baseline,island,objects_1536 --label optimized
+.\.venv\Scripts\python.exe -X utf8 src/devtools/benchmark_native.py --run --cases baseline,island --width 1920 --height 1080 --render water,lighting,shadows,atmosphere --label remaster
 ```
 
 The default is 2048×1152, three repeats per case, a 3-second warmup and 8-second measurement. Each trial starts a fresh process. It compares water, grass, view range, terrain, wind, object density and sky views. `--suite smoke` selects five controls; `--cases baseline,water_3,grass_0` selects individual cases. Use a new `--label` to retain earlier results. `--edition extended` uses only that edition's resources and settings; include it when reusing its folder.
@@ -130,10 +132,10 @@ All Python development commands accept `--platform windows|web|macos`, defaultin
 Web development also needs Git. Preparation downloads pinned dependencies into `deps/blitz3d/`, `deps/emsdk/` and `deps/ffmpeg-web/`; the first build takes time and disk space. Complete Windows setup first, then run:
 
 ```powershell
-.\.venv\Scripts\python.exe -X utf8 scripts/dev.py setup --platform web
-.\.venv\Scripts\python.exe -X utf8 scripts/dev.py build --platform web
-.\.venv\Scripts\python.exe -X utf8 scripts/dev.py check --platform web
-.\.venv\Scripts\python.exe -X utf8 scripts/dev.py run --platform web
+.\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py setup --platform web
+.\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py build --platform web
+.\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py check --platform web
+.\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py run --platform web
 ```
 
 Open `http://127.0.0.1:8765/` in desktop Chrome/Edge. After checking WebGPU and WebAssembly JSPI support and preparing resources and storage, the original game starts automatically. There is no separate start or language selection screen; HTML messages are English. Select the game language in its Settings; saved selections are preserved, with English as the first-run default. The first canvas click enables mouse capture and audio without also acting as game input.
@@ -151,12 +153,12 @@ Saves and settings use a separate base-game store in the browser's IndexedDB. Sa
 After building the web version, prepare an actual-engine comparison with the command below. It runs the Windows reference in a separate copy without using the current game or saves. Audio comparison uses the web-prepared files in both engines. Open `/checks/` on the web server and click the check button to compare the same scenario in WebGPU. This checks Korean bitmap glyphs and image colour keys, vertical orientation through frame copies and motion blur, audio decoding, editor and random-island initialization (including terrain colours, grass colours, player creation, and a 30-second limit per generated world), the menu camera loop, the original intro's ship/camera/events, transition to the first island, and skipping the intro. Synthetic sequence time does not verify real-time playback speed or FPS.
 
 ```powershell
-.\.venv\Scripts\python.exe -X utf8 scripts/verify_web_game.py
+.\.venv\Scripts\python.exe -X utf8 src/devtools/verify_web_game.py
 ```
 
 WebGPU reuses a temporary texture for same-buffer `CopyRect` operations and batches source regions unaffected by earlier writes, reducing copies and draws for water and underwater effects. Overlapping copies see earlier results; scaled copies keep the original path. The C++ CPU fixture in `check --platform web` runs the actual copy methods to check pixels, colour keys, clipping, ordering, two snapshots per water update, and texture reuse. Actual GPU performance requires gameplay verification.
 
-For frame-drop comparisons, prepare `scripts/profile_web.py --serve`, then open `http://127.0.0.1:8766/` in Chrome/Edge and start the comparison. It uses a separate engine copy with real WebGPU and real clocks, without mounting IndexedDB or player saves. Select the island or menu scene and resolution. Water qualities 6, 3 and 0 at a 144 FPS cap, and quality 0 at a 60 FPS cap, each run three times for 30 seconds after a 5-second warmup. Every trial uses a fresh WASM instance; losing window focus invalidates the trial. Keep the window foreground for about seven minutes per scene.
+For frame-drop comparisons, prepare `src/devtools/profile_web.py --serve`, then open `http://127.0.0.1:8766/` in Chrome/Edge and start the comparison. It uses a separate engine copy with real WebGPU and real clocks, without mounting IndexedDB or player saves. Select the island or menu scene and resolution. Water qualities 6, 3 and 0 at a 144 FPS cap, and quality 0 at a 60 FPS cap, each run three times for 30 seconds after a 5-second warmup. Every trial uses a fresh WASM instance; losing window focus invalidates the trial. Keep the window foreground for about seven minutes per scene.
 
 Results are saved to `build/web/profile-*/report.json`: FPS and p95/p99 intervals between completed Flip calls; CPU time for water, reflections, main rendering and frame waiting; and texture creation, copy and draw-call counts. Reflection time is part of water time, so do not add them together. These values are not GPU execution time or display scanout FPS, and instrumentation adds overhead. The automatic camera and muted audio do not replace input, audio or full-gameplay verification. Use `--existing build/web/profile-<name>` to serve a prepared profiler again.
 
@@ -171,9 +173,9 @@ The [WebPlay workflow](../.github/workflows/web.yml) builds, checks, and deploys
 Before the first publication, set the repository's **Settings → Pages → Build and deployment → Source** to **GitHub Actions** and allow main deployments in the `github-pages` environment. The address is `https://shlifedev.github.io/Stranded-II-Modern/`. Local and Pages browser saves are separate and are not migrated automatically.
 
 ```powershell
-.\.venv\Scripts\python.exe -X utf8 scripts/dev.py build --platform web
-.\.venv\Scripts\python.exe -X utf8 scripts/dev.py check --platform web
-.\.venv\Scripts\python.exe -X utf8 scripts/web_pages.py
+.\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py build --platform web
+.\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py check --platform web
+.\.venv\Scripts\python.exe -X utf8 src/devtools/web_pages.py
 ```
 
 `web_pages.py` stages only the eight runtime files from the current checked build in `build/web/pages/`. It excludes `/checks/`, logs, and personal saves, uses relative paths and a deployment-specific cache key, and records file hashes in `build/web/pages-report.json`. Unexpected output files cause an error instead of being deleted. Deployments are serialized, and build/check failures leave the existing site in place. Post-deployment checks compare HTTP file hashes and the WASM media type; actual gameplay still needs separate verification.
@@ -187,11 +189,11 @@ Build on Apple Silicon with Xcode Command Line Tools, Git, Python 3.12+, CMake, 
 ```sh
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python scripts/dev.py setup --platform macos --game deps/game --font deps/fonts/NotoSansKR.ttf
-.venv/bin/python scripts/dev.py build --platform macos
-.venv/bin/python scripts/dev.py check --platform macos
-.venv/bin/python scripts/macos_package.py
-.venv/bin/python scripts/dev.py run --platform macos
+.venv/bin/python src/devtools/dev.py setup --platform macos --game deps/game --font deps/fonts/NotoSansKR.ttf
+.venv/bin/python src/devtools/dev.py build --platform macos
+.venv/bin/python src/devtools/dev.py check --platform macos
+.venv/bin/python src/devtools/macos_package.py
+.venv/bin/python src/devtools/dev.py run --platform macos
 ```
 
 `build` prints the locally signed `build/macos/apps/<build-id>/Stranded II.app` path and records it in `build/macos/build-report.json`. Double-clicking the app prepares its resources and stores settings/saves in `~/Library/Application Support/Stranded II Native Preview/`. Existing settings and saves survive resource refreshes. `run --platform macos` uses the app with the isolated `build/macos/runtime/` profile instead. Neither path imports Windows or browser data. Fresh profiles start windowed at 1280×720. `localize --platform macos` refreshes development language packs; rebuild to update the app. Unsupported source WAV encodings are converted to PCM in the native runtime; original files are preserved.
@@ -208,17 +210,17 @@ Test the DMG on another Apple Silicon Mac, especially macOS 15: open it, drag th
 
 ## Extended authoring app
 
-[Stranded II Studio](studio.md) edits content and maps through a standalone GUI and JSON CLI. It provides a 3D viewport using the actual Blitz/Extended engine, undo, validation and native resource exports. Use `python scripts/studio.py` for its commands. `Studio.cmd` on Windows or `sh ./Studio.sh` on macOS/Linux automatically prepares dependencies and the engine before launching the app. Follow the Studio guide for details. Engine outputs stay under `build/studio/` and app outputs under `studio/dist/`; ordinary game, CI and release edition selection remain unchanged.
+[Stranded II Studio](studio.md) edits content and maps through a standalone GUI and JSON CLI. It provides a 3D viewport using the actual Blitz/Extended engine, undo, validation and native resource exports. Use `python src/devtools/studio.py` for its commands. `scripts/Studio.cmd` on Windows or `sh ./scripts/Studio.sh` on macOS/Linux automatically prepares dependencies and the engine before launching the app. Follow the Studio guide for details. Engine outputs stay under `build/studio/` and app outputs under `src/studio/dist/`; ordinary game, CI and release edition selection remain unchanged.
 
-Studio uses the same iframe and Blitz engine for editing and play. `studio/engine/studio.js` waits for pending scene ACKs and checks the latest saved map; `studio_load` in `src/engine/studio/runtime.bb` reloads that map while retaining the engine and definitions. Resource changes require explicit **Apply resources** initialization. Stop restores the authoring map in the in-memory filesystem and the editor camera without writing to the project. Changes to this path require Studio builds/checks; changes to the shared engine also require both editions' builds/checks and relevant game verification.
+Studio uses the same iframe and Blitz engine for editing and play. `src/studio/engine/studio.js` waits for pending scene ACKs and checks the latest saved map; `studio_load` in `src/engine/studio/runtime.bb` reloads that map while retaining the engine and definitions. Resource changes require explicit **Apply resources** initialization. Stop restores the authoring map in the in-memory filesystem and the editor camera without writing to the project. Changes to this path require Studio builds/checks; changes to the shared engine also require both editions' builds/checks and relevant game verification.
 
 ## Where to make changes
 
 **Implement game features in `src/engine/` and compiler/runtime changes in `src/blitz3d/`.** `build/` contains executables and check results, not authoritative sources. The paths and commands below are for Stranded II. See the [next section](#stranded-ii-and-extended) for Extended paths.
 
 ```text
-edit src/engine/ → build command → build/runtime/StrandedII.exe → Play.cmd
-edit locales/ translations, languages or fonts → localize command → refresh build/runtime/core/locales/
+edit src/engine/ → build command → build/runtime/StrandedII.exe → scripts/Play.cmd
+edit resources/locales/ translations, languages or fonts → localize command → refresh build/runtime/core/locales/
 edit resources/ → setup command → refresh resources in build/runtime/
 ```
 
@@ -226,9 +228,13 @@ edit resources/ → setup command → refresh resources in build/runtime/
 | --- | --- | --- |
 | `src/engine/` | Directly edited Blitz3D game sources; entrypoint: `StrandedII.bb` | Included |
 | `src/blitz3d/` | Editable shared compiler, runtime, graphics/input/audio modules and original licenses | Included |
-| `locales/` | Per-language translations, names, font settings, and legacy text-number mappings | Included |
+| `resources/locales/` | Per-language translations, names, font settings, and legacy text-number mappings | Included |
 | `resources/` | Original-text-to-key mappings and edited resources | Included |
-| `scripts/`, `dev.ps1` | Preparation, build, launch, and verification tools | Included |
+| `scripts/` | Shell, PowerShell and CMD launchers | Included |
+| `src/devtools/` | Python preparation, build, verification and Studio tools | Included |
+| `src/studio/` | Studio UI, Electron shell and app tests | Included |
+| `src/tests/` | Integration tests and native/web fixtures | Included |
+| `AGENTS.md`, `docs/reference/AGENTS-ko.md` | Agent instructions and Korean reading copy | Included |
 | `config/` | Initial settings, dependency pins and optional legacy reference declarations | Included |
 | `docs/`, `licenses/` | Documentation and copyright notices | Included |
 | `deps/` | Original game, fonts and pinned third-party SDKs/libraries | Excluded |
@@ -280,10 +286,10 @@ Resources are prepared in this order: official input, localization preparation, 
 All development commands accept `--edition classic|extended` and default to Stranded II. Dependencies and the compiler are shared; runtime folders, reports, and verification artifacts are separate. Stranded II data is neither moved nor automatically copied to Extended.
 
 ```powershell
-.\.venv\Scripts\python.exe -X utf8 scripts/dev.py setup --edition extended
-.\.venv\Scripts\python.exe -X utf8 scripts/dev.py build --edition extended
-.\.venv\Scripts\python.exe -X utf8 scripts/dev.py check --edition extended
-.\Play-Extended.cmd
+.\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py setup --edition extended
+.\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py build --edition extended
+.\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py check --edition extended
+.\scripts\Play-Extended.cmd
 ```
 
 Use these commands after registering dependency paths in the [first build](#first-build). To prepare Extended first, add `--edition extended` to the initial `setup` command. Extended defaults are in `config/editions/extended/modern.ini`; `setup` does not replace existing personal settings.
@@ -292,7 +298,7 @@ Use these commands after registering dependency paths in the [first build](#firs
 
 This section is for developers adding UI or quests. For existing text, follow the [localization guide](localization.md).
 
-1. Add a descriptive key such as `quest.island1.arrival` and its English text to `locales/en.tsv`. Use `locales/editions/extended/en.tsv` for Extended-only text.
+1. Add a descriptive key such as `quest.island1.arrival` and its English text to `resources/locales/en.tsv`. Use `resources/locales/editions/extended/en.tsv` for Extended-only text.
 2. Add the same key and translation at the corresponding path for each translated language.
 3. Reference it as `[[loc:key]]` in the code or script that displays it.
 
@@ -311,9 +317,9 @@ Use distinct keys for different meanings of the same English word. The stock str
 | Edit | Location and rules |
 | --- | --- |
 | Original display text to key mappings | `resources/source-keys.json`; help text uses `resources/help-terms.json` |
-| Legacy translation numbers to keys | `locales/legacy-index.json` — preserve existing numbers |
+| Legacy translation numbers to keys | `resources/locales/legacy-index.json` — preserve existing numbers |
 | Edited resources | Shared `resources/overrides/mods/Stranded II/...` or edition-specific `resources/editions/<edition>/overrides/mods/Stranded II/...` |
-| `.s2` maps | Length-prefixed binary. Use the map editor or [scripts/s2map.py](../scripts/s2map.py) to edit strings only, preserving terrain, IDs, other fields, and attachments |
+| `.s2` maps | Length-prefixed binary. Use the map editor or [src/devtools/s2map.py](../src/devtools/s2map.py) to edit strings only, preserving terrain, IDs, other fields, and attachments |
 
 Apply resource edits with `setup`, code edits with `build`, or translation-only edits with `localize`, then run `check`. New resource files must also be connected so the game reads them. Do not replace settings, saves, or executables through resource overrides.
 
@@ -331,20 +337,20 @@ For game-code changes, run `build` and `check`, then verify the changed feature 
 | `localize` | Registered languages, catalogs, TTF/OTF glyphs and fallback sources, preserving the working pack on failure | `build/localization-report.json`, `build/runtime/core/locales/fonts-report.json` |
 | `build` | Embedded compiler/runtime build, actual Blitz compilation and executable/source/DLL hashes | `build/build-report.json` |
 | `check` | Text references, substitution variables, fonts, actual Blitz loader/parser, settings preservation, timing/frame waits, save replacement/locking failures/backups/five slots/queue/Continue selection | `build/check-*/report.json` and detailed results in that folder |
-| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_game.py` | Save/map menu previews and actual map/save/backup/quick save/load/autosave state recovery in an isolated game | `build/game-smoke-*/report.json` |
-| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_qol_logic.py --language ko` | Actual Blitz QOL logic, crafting, transfers, sorting, and settings; uses graphics entity and script test doubles | `build/qol-logic-*/report.json` |
-| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_qol.py --language ko` | Actual crafting, transfers, script vetoes, and save/load in a copied runtime; requires a graphics device | `build/qol-smoke-*/report.json` |
-| `.\.venv\Scripts\python.exe -X utf8 scripts/verify_collisions.py --edition classic` | Rock mesh sanitation, slope approach/retreat, jumping/landing, corridors/swimming, control transitions and projectile collisions in an isolated Blitz runtime | `build/collision-smoke-*/report.json` |
+| `.\.venv\Scripts\python.exe -X utf8 src/devtools/verify_game.py` | Save/map menu previews and actual map/save/backup/quick save/load/autosave state recovery in an isolated game | `build/game-smoke-*/report.json` |
+| `.\.venv\Scripts\python.exe -X utf8 src/devtools/verify_qol_logic.py --language ko` | Actual Blitz QOL logic, crafting, transfers, sorting, and settings; uses graphics entity and script test doubles | `build/qol-logic-*/report.json` |
+| `.\.venv\Scripts\python.exe -X utf8 src/devtools/verify_qol.py --language ko` | Actual crafting, transfers, script vetoes, and save/load in a copied runtime; requires a graphics device | `build/qol-smoke-*/report.json` |
+| `.\.venv\Scripts\python.exe -X utf8 src/devtools/verify_collisions.py --edition classic` | Rock mesh sanitation, slope approach/retreat, jumping/landing, corridors/swimming, control transitions and projectile collisions in an isolated Blitz runtime | `build/collision-smoke-*/report.json` |
 
 For movement and collision changes, run `verify_collisions.py` for both editions. Extended uses `--edition extended` and writes results to `build/extended/collision-smoke-*/`. The check uses real terrain and rock models with 60/120/144 Hz and 100ms time steps and sends no GUI input. Actual rendering FPS and the user's reported location require separate verification. The existing `diagnostics=1` option in `core/modern.ini` logs requested/resolved movement, terrain correction, contact points/normals and rejected moves to `core/modern.log` at most four times per second.
 
-`check` compares the native ABI with the frozen original Blitz3D 1.118 output and tests timers, parsers, save-file handling and related behavior without rendering. It also exercises actual settings saves and reloads to check that every view-distance level applies consistently. `python scripts/verify_engine.py --input` checks console character codes, held keys, committed text and mouse event delivery through the real SDL queue without a window or OS input. With capture state substituted, it also checks single counts arriving between reads and recentering, independent axis consumption, direction reversal and 0.02-degree rotation. A substituted cursor query and simulated timestamp offsets after 1 or 10 seconds at 2×/3×/5×/10× check immediate coordinate recovery despite discarded motion, deduplication, drags, clicks, wheels and query failures. Actual Cheat Engine use, Win32 cursor queries and focus transitions require separate verification.
+`check` compares the native ABI with the frozen original Blitz3D 1.118 output and tests timers, parsers, save-file handling and related behavior without rendering. It also exercises actual settings saves and reloads to check that every view-distance level applies consistently. `python src/devtools/verify_engine.py --input` checks console character codes, held keys, committed text and mouse event delivery through the real SDL queue without a window or OS input. With capture state substituted, it also checks single counts arriving between reads and recentering, independent axis consumption, direction reversal and 0.02-degree rotation. A substituted cursor query and simulated timestamp offsets after 1 or 10 seconds at 2×/3×/5×/10× check immediate coordinate recovery despite discarded motion, deduplication, drags, clicks, wheels and query failures. Actual Cheat Engine use, Win32 cursor queries and focus transitions require separate verification.
 
-`python scripts/verify_engine.py --render` draws into textures using a real D3D12 device and the engine shaders without a window, checking matte/specular colours, textures, fog, distance fade, instanced transparency, alpha-test silhouettes and depth order across cameras. It also compares optimized frustum tests against transformed bounding-box corners and the legacy calculation. Six-view capture checks compare pixels with individual legacy renders and cover preparation counts, scene changes between calls, camera children and tween values. Specular lighting follows the original D3D7 material strength and exponent and is added after texturing. `--graphics` additionally checks D3D12 drawing, pixel readback and graphics-context lifetime in an isolated fixture with a window. Actual rendering FPS, raw mouse response, Alt-Tab, visual smoothness, and full progression require separate in-game checks.
+`python src/devtools/verify_engine.py --render` draws into textures using a real D3D12 device and the engine shaders without a window, checking matte/specular colours, textures, fog, distance fade, instanced transparency, alpha-test silhouettes and depth order across cameras. It also compares optimized frustum tests against transformed bounding-box corners and the legacy calculation. Six-view capture checks compare pixels with individual legacy renders and cover preparation counts, scene changes between calls, camera children and tween values. Specular lighting follows the original D3D7 material strength and exponent and is added after texturing. `--graphics` additionally checks D3D12 drawing, pixel readback and graphics-context lifetime in an isolated fixture with a window. Actual rendering FPS, raw mouse response, Alt-Tab, visual smoothness, and full progression require separate in-game checks.
 
 Both editions' `check` runs `verify_qol_logic.py`. It tests edition defaults, missing/invalid settings, all 32 option combinations, and the shared engine functions with entity/script test doubles; it does not verify display, real scripts, map saves, or IME. Both QOL verification commands accept `--edition classic|extended` and default to Stranded II; Extended reports are under `build/extended/`. `verify_qol.py --interactive` prepares a separate test game with QOL enabled and no personal saves, without launching it. Run that copy to check Korean composition/commit/cancel, search focus and Alt-Tab, long names and detail scrolling, Shift-click/R/Shift+R, each option on/off, and cancellation of held construction. Use `--language en` for English and `--desktop` for borderless mode. Simulated construction intervals do not measure actual rendering FPS.
 
-For save changes, also use `scripts/verify_game.py` to test actual map loading and saving/loading. It shares `tests/save_menu.bb` with macOS `--suite full` to check preview replacement, repeated and empty list visits, and refreshing after deleting the last save through the actual list-loading functions. It uses a copied runtime and an empty save folder without writing to the user's game or saves. It needs a graphics device and does not test UI interaction. The default is an 800×600 window; `--desktop` tests borderless mode fitted to the monitor, and `--edition extended` selects Extended. Extended reports are under `build/extended/`.
+For save changes, also use `src/devtools/verify_game.py` to test actual map loading and saving/loading. It shares `src/tests/save_menu.bb` with macOS `--suite full` to check preview replacement, repeated and empty list visits, and refreshing after deleting the last save through the actual list-loading functions. It uses a copied runtime and an empty save folder without writing to the user's game or saves. It needs a graphics device and does not test UI interaction. The default is an 800×600 window; `--desktop` tests borderless mode fitted to the monitor, and `--edition extended` selects Extended. Extended reports are under `build/extended/`.
 
 When changing timing code, review `modern_runtime.bb`, `modern_math.bb`, `modern_ui.bb`, and their callers together. Keep game time (QPC) separate from frame waiting, and preserve full-frame elapsed time, the 100ms cap, fractional accumulation, and the shared focus/presentation path. External-speed simulation in `verify_clock_hooks.py` runs only in a separate test process.
 
@@ -367,7 +373,7 @@ See [QOL options](qol.md) for shared features and shortcuts, and [Extended diffe
 
 Edit the English `.md` or Korean `-ko.md` directly. Name new Korean documents like `example-ko.md`. An AI agent updates the other languages during repository tasks; this is not a continuously running translation service.
 
-[.dev-docs-ai-translation.json](../.dev-docs-ai-translation.json) controls document languages, independently of game languages. English-only edits are synchronized from English; when both languages change, Korean takes priority. Do not manually change the hash on the first line. See [AGENTS.md](../AGENTS.md) for the full rules.
+[config/dev-docs-ai-translation.json](../config/dev-docs-ai-translation.json) controls document languages, independently of game languages. English-only edits are synchronized from English; when both languages change, Korean takes priority. Do not manually change the hash on the first line. See [AGENTS.md](../AGENTS.md) for the full rules.
 
 As an exception, `README-ko.md` is maintained by the user and agents do not change it without an explicit editing request. Other README languages are synchronized from the Korean original. When creating or updating documentation, follow each document's purpose and style in [auto-gen-please.json](auto-gen-please.json), updating only the documents needed.
 
@@ -388,7 +394,7 @@ For manual runs, `publish=false` only creates ZIPs and runs checks. Other branch
 
 Write public release titles and descriptions in English.
 
-Windows CI runs `setup → build → check → package` on Windows Server 2022 with Python 3.13. The final publication job runs on `macos-15` with Bash and calls `scripts/ci.py release --include-macos` to validate both platforms’ versions, commits, and checksums. It mounts the DMG read-only and checks app hashes, execute permissions, ARM64 format, native check results, and actual app/DMG signatures, stapled tickets, and Gatekeeper acceptance. Published releases remain immutable, including historical Mac ZIPs; interrupted drafts cannot silently replace their original artifact set. Mac files cannot be added to an existing published Windows-only release. Windows `check` and Mac `core` do not verify display, rendering FPS, app switching, or full gameplay. Verify GitHub Actions runs separately from local checks.
+Windows CI runs `setup → build → check → package` on Windows Server 2022 with Python 3.13. The final publication job runs on `macos-15` with Bash and calls `src/devtools/ci.py release --include-macos` to validate both platforms’ versions, commits, and checksums. It mounts the DMG read-only and checks app hashes, execute permissions, ARM64 format, native check results, and actual app/DMG signatures, stapled tickets, and Gatekeeper acceptance. Published releases remain immutable, including historical Mac ZIPs; interrupted drafts cannot silently replace their original artifact set. Mac files cannot be added to an existing published Windows-only release. Windows `check` and Mac `core` do not verify display, rendering FPS, app switching, or full gameplay. Verify GitHub Actions runs separately from local checks.
 
 To avoid repeated download traffic to upstream sites, store game resources, the compiler, and the font once in a dependency Release in the same repository. For these build inputs, CI uses only this Release and the Actions cache. Missing files cause a failure with preparation instructions; CI does not automatically download those inputs from upstream sites.
 
@@ -413,7 +419,7 @@ Builds generate `core/version.txt` and `core/version.json`. The game displays th
 Prepare local dependencies as described above, then run from the repository root. Existing prepared `deps/` inputs do not need to be downloaded again.
 
 ```powershell
-.\.venv\Scripts\python.exe -X utf8 scripts/ci.py bundle
+.\.venv\Scripts\python.exe -X utf8 src/devtools/ci.py bundle
 ```
 
 This creates `build/ci-upload/StrandedII-ci-deps-v1.zip` and `.zip.sha256`. It validates every existing game/compiler manifest hash and the font hash before bundling only required files and original licenses. Bundle license names and hashes are pinned in [config/dependency-license-files.json](../config/dependency-license-files.json), so adding release licenses does not affect validation of the existing dependency ZIP. The final game release includes every file currently in `licenses/`. Personal saves/settings and the Blitz editor's examples/media are excluded. The dependency ZIP's complete SHA-256, Release tag, and filename are pinned in [config/ci-dependencies.json](../config/ci-dependencies.json).
@@ -439,8 +445,8 @@ The release ZIP's `StrandedII/` folder includes `StrandedII.exe`, original game 
 Packaging uses an explicit file list, so a used development runtime's personal saves, custom maps, screenshots, `preserved/`, logs, and check reports are excluded. Key bindings come from the original dependencies; `core/modern.ini` comes from the repository's initial settings. Personal `sys/settings.cfg` is also excluded, so new installations use the engine's graphics quality and volume defaults. The development runtime is not modified. Local packaging is also available.
 
 ```powershell
-.\.venv\Scripts\python.exe -X utf8 scripts/ci.py package --game deps/game
-.\.venv\Scripts\python.exe -X utf8 -m unittest discover -s tests -p 'test_ci*.py'
+.\.venv\Scripts\python.exe -X utf8 src/devtools/ci.py package --game deps/game
+.\.venv\Scripts\python.exe -X utf8 -m unittest discover -s src/tests -p 'test_ci*.py'
 ```
 
 Output names are `build/release/StrandedII-<display version>-windows.zip` and `.zip.sha256`. An example local build is `StrandedII-1.1.0-local-windows.zip`. Packaging does not compile or run game checks, so first complete `setup → build → check` with the latest sources. CI stores version information in `version-context` and game ZIPs in `StrandedII-windows`.

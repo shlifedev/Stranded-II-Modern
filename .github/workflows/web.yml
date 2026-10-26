@@ -44,7 +44,7 @@ jobs:
 
       - name: Read dependency pin
         id: pin
-        run: python -X utf8 scripts/ci.py config --github-output "$env:GITHUB_OUTPUT"
+        run: python -X utf8 src/devtools/ci.py config --github-output "$env:GITHUB_OUTPUT"
 
       - name: Cache pinned game dependencies
         id: game-cache
@@ -69,7 +69,7 @@ jobs:
         id: deps
         env:
           DEPENDENCY_ASSET: ${{ steps.pin.outputs.asset }}
-        run: python -X utf8 scripts/ci.py dependencies --archive "build/ci/downloads/$env:DEPENDENCY_ASSET" --github-output "$env:GITHUB_OUTPUT"
+        run: python -X utf8 src/devtools/ci.py dependencies --archive "build/ci/downloads/$env:DEPENDENCY_ASSET" --github-output "$env:GITHUB_OUTPUT"
 
       - name: Identify build environment
         id: image
@@ -82,28 +82,28 @@ jobs:
             deps/blitz3d
             deps/emsdk
             deps/ffmpeg-web
-          key: web-windows-2022-${{ steps.image.outputs.version }}-${{ hashFiles('config/web-toolchain.json', 'config/blitz3d-toolchain.json', 'scripts/blitz3d_toolchain.py', 'scripts/web_toolchain.py', 'scripts/web_audio.py') }}
+          key: web-windows-2022-${{ steps.image.outputs.version }}-${{ hashFiles('config/web-toolchain.json', 'config/blitz3d-toolchain.json', 'src/devtools/blitz3d_toolchain.py', 'src/devtools/web_toolchain.py', 'src/devtools/web_audio.py') }}
 
       - name: Prepare native comparison resources
         env:
           GAME_INPUT: ${{ steps.deps.outputs.game }}
           FONT_INPUT: ${{ steps.deps.outputs.font }}
-        run: python -X utf8 scripts/dev.py setup --game "$env:GAME_INPUT" --font "$env:FONT_INPUT"
+        run: python -X utf8 src/devtools/dev.py setup --game "$env:GAME_INPUT" --font "$env:FONT_INPUT"
 
       - name: Prepare web resources and toolchain
         env:
           GAME_INPUT: ${{ steps.deps.outputs.game }}
           FONT_INPUT: ${{ steps.deps.outputs.font }}
-        run: python -X utf8 scripts/dev.py setup --platform web --game "$env:GAME_INPUT" --font "$env:FONT_INPUT"
+        run: python -X utf8 src/devtools/dev.py setup --platform web --game "$env:GAME_INPUT" --font "$env:FONT_INPUT"
 
       - name: Build WebPlay
-        run: python -X utf8 scripts/dev.py build --platform web
+        run: python -X utf8 src/devtools/dev.py build --platform web
 
       - name: Check WebPlay and Windows/WASM parity
-        run: python -X utf8 scripts/dev.py check --platform web
+        run: python -X utf8 src/devtools/dev.py check --platform web
 
       - name: Stage verified Pages files
-        run: python -X utf8 scripts/web_pages.py
+        run: python -X utf8 src/devtools/web_pages.py
 
       - name: Upload checked site
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

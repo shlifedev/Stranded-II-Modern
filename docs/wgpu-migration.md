@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"608ee71e669a765a52f06aea6d2aaeafe015a514276afb41cc6a3fdca55a96ba"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"557e33cfb6eeb1d7a2390e1a03f5cb7339a02a7b3826e93002b9bc466bcaa197"} -->
 
 # Stranded II's wgpu/WebGPU cross-platform renderer migration
 
@@ -592,28 +592,28 @@ These commands illustrate relevant verification after preparing the correspondin
 
 ```powershell
 # Windows: check shared engine changes with real builds/checks of both editions
-python scripts/dev.py build --edition classic
-python scripts/dev.py check --edition classic
-python scripts/dev.py build --edition extended
-python scripts/dev.py check --edition extended
+python src/devtools/dev.py build --edition classic
+python src/devtools/dev.py check --edition classic
+python src/devtools/dev.py build --edition extended
+python src/devtools/dev.py check --edition extended
 
 # Windows: offscreen D3D12 checks using actual production shaders
-python scripts/verify_engine.py --render
+python src/devtools/verify_engine.py --render
 # Additional checks using a window
-python scripts/verify_engine.py --graphics
+python src/devtools/verify_engine.py --graphics
 
 # Web: distinguish build/static/CPU checks from actual browser checks
-python scripts/dev.py build --platform web
-python scripts/dev.py check --platform web
-python scripts/verify_web_game.py
-python scripts/dev.py run --platform web
+python src/devtools/dev.py build --platform web
+python src/devtools/dev.py check --platform web
+python src/devtools/verify_web_game.py
+python src/devtools/dev.py run --platform web
 ```
 
 ```sh
 # Run on an Apple Silicon Mac
-python scripts/dev.py build --platform macos
-python scripts/dev.py check --platform macos --suite core
-python scripts/dev.py check --platform macos --suite full
+python src/devtools/dev.py build --platform macos
+python src/devtools/dev.py check --platform macos --suite core
+python src/devtools/dev.py check --platform macos --suite full
 ```
 
 Record adapter, driver, build configuration, resolution, water quality, view distance, FPS cap and focus conditions when comparing actual GPU performance. Fewer queue submissions/draws can reduce CPU overhead without automatically reducing GPU pixel workload. Use separate runtimes and empty save directories; do not use the player's running game or saves.
@@ -651,7 +651,7 @@ WebGPU connects multiple native APIs through a common resource, pipeline and sha
 | Native Windows modules | [s2windows/CMakeLists.txt](../src/blitz3d/src/runtime/s2windows/CMakeLists.txt) |
 | Native Mac modules | [s2macos/CMakeLists.txt](../src/blitz3d/src/runtime/s2macos/CMakeLists.txt) |
 | Web linker/JSPI/WebGPU port | [linker_lld.cpp](../src/blitz3d/src/tools/compiler/linker_lld/linker_lld.cpp) |
-| Dependency/build routing | [blitz3d_toolchain.py](../scripts/blitz3d_toolchain.py), [configuration](../config/blitz3d-toolchain.json) |
-| Actual offscreen GPU fixture | [runtime_render.cpp](../src/blitz3d/tests/runtime_render.cpp), [verify_engine.py](../scripts/verify_engine.py) |
+| Dependency/build routing | [blitz3d_toolchain.py](../src/devtools/blitz3d_toolchain.py), [configuration](../config/blitz3d-toolchain.json) |
+| Actual offscreen GPU fixture | [runtime_render.cpp](../src/blitz3d/tests/runtime_render.cpp), [verify_engine.py](../src/devtools/verify_engine.py) |
 
 For general API/language rules, see the [WebGPU specification](https://www.w3.org/TR/webgpu/), [WGSL alignment and size](https://www.w3.org/TR/WGSL/#alignment-and-size), [Dawn project](https://dawn.googlesource.com/dawn/) and [Rust wgpu project](https://github.com/gfx-rs/wgpu). Distinguish features a general implementation can provide from those this project actually connects, implements and verifies.

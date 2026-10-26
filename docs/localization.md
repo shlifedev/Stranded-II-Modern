@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"3290dcac93dd5a4f3a7474a12248375e1578098953d6b45447bbc79f958a92d5"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"c53cdf4cac7c4ab54bf0c91ca6a694e5161eea1fbc21c9a719980c6124e5a4d9"} -->
 
 # Translating the game
 
@@ -6,13 +6,13 @@
 
 [Back to README](../README.md) · [Development guide](development.md)
 
-**Edit `locales/<code>.tsv` for the language you want to translate.** English source text is in [locales/en.tsv](../locales/en.tsv); Korean translations are in [locales/ko.tsv](../locales/ko.tsv). Translation, language, and font changes do not require rebuilding the EXE.
+**Edit `resources/locales/<code>.tsv` for the language you want to translate.** English source text is in [resources/locales/en.tsv](../resources/locales/en.tsv); Korean translations are in [resources/locales/ko.tsv](../resources/locales/ko.tsv). Translation, language, and font changes do not require rebuilding the EXE.
 
-English (`en`), Korean (`ko`), and German (`de`, **Deutsch**) are bundled in both editions. [German translations](../locales/de.tsv) reuse the [official German Gold 1.0.0.1 text](https://www.unrealsoftware.de/get.php?get=stranded2.zip), adapted and supplemented for this project's features and Extended. The default font supports the German pack.
+English (`en`), Korean (`ko`), and German (`de`, **Deutsch**) are bundled in both editions. [German translations](../resources/locales/de.tsv) reuse the [official German Gold 1.0.0.1 text](https://www.unrealsoftware.de/get.php?get=stranded2.zip), adapted and supplemented for this project's features and Extended. The default font supports the German pack.
 
 ## 1. Edit the translation file
 
-1. Find the text in `locales/en.tsv`.
+1. Find the text in `resources/locales/en.tsv`.
 2. In your language's TSV, translate **only the text to the right of the same key**. If the key is absent, add a row with that key.
 3. Save as **UTF-8 without BOM**.
 
@@ -37,8 +37,8 @@ To test locally, complete [environment setup and the first build](development.md
 Close the game you are testing and run these commands in **PowerShell from the repository root**:
 
 ```powershell
-.\dev.ps1 localize -Python .\.venv\Scripts\python.exe
-.\dev.ps1 check -Python .\.venv\Scripts\python.exe
+.\scripts\dev.ps1 localize -Python .\.venv\Scripts\python.exe
+.\scripts\dev.ps1 check -Python .\.venv\Scripts\python.exe
 .\build\runtime\StrandedII.exe
 ```
 
@@ -48,8 +48,8 @@ Select the language under **Settings → Graphics → Language**, apply, and res
 
 For example, Japanese uses `ja`. Language codes use lowercase letters, digits, and hyphens (`ja`, `pt-br`, etc.).
 
-1. Create `locales/ja.tsv` with keys from `en.tsv` and your translations. Including only translated rows is fine.
-2. Create `locales/ja.json`:
+1. Create `resources/locales/ja.tsv` with keys from `en.tsv` and your translations. Including only translated rows is fine.
+2. Create `resources/locales/ja.json`:
 
 ```json
 {
@@ -63,7 +63,7 @@ Keep the bundled English, Korean, and German packs. Japanese translations are no
 
 ## Choose a font
 
-The default font is Noto Sans KR. To use another font, put its `.ttf` or `.otf` file in `deps/fonts/` and add `"font": "deps/fonts/MyFont.ttf"` to the language's `locales/<code>.json`. Paths are relative to the repository root; no Windows font installation is needed.
+The default font is Noto Sans KR. To use another font, put its `.ttf` or `.otf` file in `deps/fonts/` and add `"font": "deps/fonts/MyFont.ttf"` to the language's `resources/locales/<code>.json`. Paths are relative to the repository root; no Windows font installation is needed.
 
 - After changes, follow `localize → check → launch` above. Remove the `font` field to restore the default font specified by the initial `setup --font`.
 - Missing characters fall back to the default Noto, then fonts specified by other language packs. If none contains a character, preparation stops, reports the character, `U+XXXX`, and translation key, and preserves the existing pack. Select a font containing it and rerun.
@@ -75,20 +75,20 @@ The developer menu uses ProggyForever (the ProggyClean family) for English and P
 
 ## Edition-specific translations
 
-Both editions use `locales/<code>.tsv`. To change text in just one edition, put **only the changed rows** in the following file. Create the folders if needed.
+Both editions use `resources/locales/<code>.tsv`. To change text in just one edition, put **only the changed rows** in the following file. Create the folders if needed.
 
 | Edition | File |
 | --- | --- |
-| Stranded II | `locales/editions/classic/<code>.tsv` |
-| Extended | `locales/editions/extended/<code>.tsv` |
+| Stranded II | `resources/locales/editions/classic/<code>.tsv` |
+| Extended | `resources/locales/editions/extended/<code>.tsv` |
 
-Matching keys override shared translations. When adding a new key, also add its English source to that edition's `en.tsv`. Language names and fonts use the shared `locales/<code>.json`.
+Matching keys override shared translations. When adding a new key, also add its English source to that edition's `en.tsv`. Language names and fonts use the shared `resources/locales/<code>.json`.
 
 Commands default to Stranded II. After [preparing Extended](development.md#stranded-ii-and-extended), use the following commands for it. To apply shared translations to both editions, run the commands once for each edition.
 
 ```powershell
-.\dev.ps1 localize -Python .\.venv\Scripts\python.exe --edition extended
-.\dev.ps1 check -Python .\.venv\Scripts\python.exe --edition extended
+.\scripts\dev.ps1 localize -Python .\.venv\Scripts\python.exe --edition extended
+.\scripts\dev.ps1 check -Python .\.venv\Scripts\python.exe --edition extended
 .\build\extended\runtime\StrandedII-Extended.exe
 ```
 

@@ -1,27 +1,28 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"3cd93faf13e4e00003aef7b89bd242ac600a4ce0cfa1b90839f3288cd32735ee"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"6c5d2039f294dc565c1d7d7026cb5134a93d1bbd17a8e13a6db4a99dc92e163f"} -->
 
 # Stranded II development instructions
 
-[English](AGENTS.md) · [한국어](AGENTS-ko.md)
+[English](AGENTS.md) · [한국어](docs/reference/AGENTS-ko.md)
 
 The architecture has Stranded II and Extended editions using a shared engine, edition-specific resources, and language packs selected at launch (EN/KO/DE bundled). Communicate with the user in Korean.
 
 - Both editions provide individual Settings > QOL controls for recipe browsing, storage transfers, closing emptied corpses, display sorting, and held construction input. Defaults are OFF in Stranded II and ON in Extended; preserve saved selections. Keep their implementation and supporting resources shared. Extended remains available for future separate gameplay and content; Extended-only changes must not alter Stranded II. Verify shared engine changes in both editions.
 - The entrypoints are `src/engine/StrandedII.bb` and `src/engine/StrandedIIExtended.bb`. Select implementations in `editions/<edition>/modules.bb`. When Extended behavior diverges, separate only the required modules rather than copying the whole engine.
 - Commands default to Stranded II when `--edition classic|extended` is omitted. Stranded II uses `build/runtime`; Extended uses `build/extended/runtime`. Do not share or automatically copy settings or saves.
-- Put edition resources in `resources/editions/<edition>/overrides/` and translations in `locales/editions/<edition>/<code>.tsv`. Shared resource/catalog changes affect both editions. Write Extended rebalancing only in its own paths.
+- Put edition resources in `resources/editions/<edition>/overrides/` and translations in `resources/locales/editions/<edition>/<code>.tsv`. Shared resource/catalog changes affect both editions. Write Extended rebalancing only in its own paths.
 - `main`/`dev` are stable/development channels. CI builds and checks only the base game; a `main` push automatically publishes a stable release after checks pass. Development releases use `publish=true` in the manual workflow. Extended is for local development for now; keep CI edition selection, build and release routing commented out. Do not publish a release or trigger one by pushing without a request.
 - Public names for the base game and its release titles have no edition label. Keep `classic` only as the internal identifier in existing commands, paths and metadata.
 
+- Keep shell/PowerShell/CMD launchers in `scripts/` and Python development tools in `src/devtools/`, Studio in `src/studio/`, integration tests in `src/tests/`, and game catalogs in `resources/locales/`. The root `AGENTS.md` is the instruction entrypoint; `docs/reference/AGENTS-ko.md` is its Korean reading copy.
 - Edit `src/engine/**/*.bb` directly. These files are tracked sources, not generated output. Do not run the old `src/ko-full` generators against the current engine.
-- Follow `scripts/dev.py setup|localize|build|run|check` and the directory structure in `docs/development.md`. Python handles preparation, fonts, and verification only; it does not regenerate engine code.
+- Follow `src/devtools/dev.py setup|localize|build|run|check` and the directory structure in `docs/development.md`. Python handles preparation, fonts, and verification only; it does not regenerate engine code.
 - Edit the shared Blitz compiler/runtime directly in `src/blitz3d/`; do not restore upstream sources or overlay patches. External SDK/library pins are in `config/blitz3d-toolchain.json`; generated files belong in `build/engine/`.
 - Development dependencies are in `deps/game`, `deps/blitz3d`, and `deps/fonts`. `deps/Blitz3D-V1.118` is an optional original reference, not the production compiler. `games/`, `dist/`, `archive/`, `tools/`, `src/ko-full/`, and `src/upstream/` are local cleanup targets requested by the user and are not needed for active builds. Specify external dependencies through setup arguments.
 - Local cleanup of `tools/` was deferred because the existing Blitz3D editor was running. The user was asked to save and close it. Confirm that it has closed, then recheck the cleanup scope and Git tracking before cleanup. Do not interrupt the current game.
 - Do not overwrite the user's game or saves, or forcibly terminate a running user game. Verify changes in `build/runtime` or a separate copy. Preserve current saves and existing user data in `build/runtime/preserved`; do not delete them as generated output during cleanup.
-- `language=<registered code>` takes effect on restart. Language packs pair `locales/<code>.tsv` with `.json` metadata; `localize` refreshes catalogs and fonts without rebuilding the EXE. Do not force the game to close through the language Apply button. Preserve FPS and display settings.
+- `language=<registered code>` takes effect on restart. Language packs pair `resources/locales/<code>.tsv` with `.json` metadata; `localize` refreshes catalogs and fonts without rebuilding the EXE. Do not force the game to close through the language Apply button. Preserve FPS and display settings.
 - Catalogs use UTF-8 without BOM and fixed keys. Their syntax is documented in `docs/localization.md`. Missing translated entries fall back to English; entries missing in both languages produce diagnostics.
-- `.s2` maps are length-prefixed binary files. Use `scripts/s2map.py` to change only string spans, preserving terrain, IDs, non-string fields, and attachments.
+- `.s2` maps are length-prefixed binary files. Use `src/devtools/s2map.py` to change only string spans, preserving terrain, IDs, non-string fields, and attachments.
 - Official input uses CP1252; prepared data and engine sources use UTF-8. Convert original delimiters 166/182/191 to 31/30/29 only in strings. Do not replace numeric IDs indiscriminately.
 - Diary titles are lookup IDs. Translate their display aliases only. Do not translate commands, events, or paths. Preserve `$1`, `$wood`, `$key_*`, `$img=`, and font markers.
 - Frame rate and Alt-Tab handling are in `modern_runtime.bb`, `modern_math.bb`, `modern_ui.bb`, and their callers. Preserve full-frame elapsed time, the 100ms cap, fractional time accumulation, and the shared presentation/focus path.
@@ -47,8 +48,8 @@ The architecture has Stranded II and Extended editions using a shared engine, ed
 
 Select references and checks for the layer being changed.
 
-- Renderer: [WebGPU migration](docs/wgpu-migration.md). On Windows, `python scripts/verify_engine.py --render` checks actual offscreen D3D12 rendering; `python scripts/verify_engine.py --graphics` checks windows and context lifetimes.
-- Compiler/native ABI: use the numeric/pointer explanation in [macOS architecture](docs/macos-architecture.md) and the original Blitz3D 1.118 reference-output comparison in `python scripts/verify_engine.py`. `--input` checks the SDL input queue without a window and does not replace actual IME/Alt-Tab verification.
+- Renderer: [WebGPU migration](docs/wgpu-migration.md). On Windows, `python src/devtools/verify_engine.py --render` checks actual offscreen D3D12 rendering; `python src/devtools/verify_engine.py --graphics` checks windows and context lifetimes.
+- Compiler/native ABI: use the numeric/pointer explanation in [macOS architecture](docs/macos-architecture.md) and the original Blitz3D 1.118 reference-output comparison in `python src/devtools/verify_engine.py`. `--input` checks the SDL input queue without a window and does not replace actual IME/Alt-Tab verification.
 - Platforms/editions: follow [Development](docs/development.md) and [Web architecture](docs/web-architecture.md). Build/check both Windows editions for shared engine changes; verify affected Metal/browser paths separately in their own environments. Windows success alone does not establish verification on other platforms.
 
 ## Creating and updating documentation
@@ -59,7 +60,7 @@ Select references and checks for the layer being changed.
 
 ## AI documentation translation
 
-Maintain project Markdown documents in the languages configured by the root `.dev-docs-ai-translation.json`. This is an agent workflow, not a background service or an AI API integration. Keep all document variants in Git. Documentation languages are independent of game catalogs and settings.
+Maintain project Markdown documents in the languages configured by `config/dev-docs-ai-translation.json`. This is an agent workflow, not a background service or an AI API integration. Keep all document variants in Git. Documentation languages are independent of game catalogs and settings.
 
 ### Exception for the user-maintained README
 
@@ -73,6 +74,7 @@ Maintain project Markdown documents in the languages configured by the root `.de
 - Validate the JSON before writing: language codes must be nonempty strings consisting of ASCII letters/digits separated by single hyphens, unique ignoring case. The default language must not also appear in `targetLanguages`, and the preferred editing language must be active. Treat invalid settings as an error, without rewriting documents.
 - Enumerate tracked files and untracked files not excluded by Git, for example with `git ls-files --cached --others --exclude-standard`. Include `.md` extensions case-insensitively. Do not scan `.git`, ignored dependencies, local builds, or archives for additional documents. Do not modify upstream license originals.
 - Group each default document with same-directory variants named `<stem>-<language>.md`, such as `README.md` and `README-ko.md`. Configured language suffixes are reserved for document variants. Recognize a new Korean document such as `docs/example-ko.md` even when its English counterpart does not exist yet. Do not treat a variant as a separate document to translate recursively.
+- Exception to same-directory grouping: `docs/reference/AGENTS-ko.md` is the Korean variant of root `AGENTS.md`, with metadata `document: "AGENTS.md"`. Keep this pair synchronized and adjust relative links for each location. Do not recreate root `AGENTS-ko.md` or `docs/reference/AGENTS.md`.
 - Each nonempty variant, including English, starts with one metadata line and one blank separator line:
 
 ```text
@@ -99,7 +101,7 @@ print(sha256(text.encode("utf-8")).hexdigest())
 - At task start, inspect staged changes, unstaged changes, and untracked documents. Recheck edits made during the task before finishing. Also check stored body hashes so edits committed before synchronization are not missed.
 - A variant is an editing input when its body differs from `syncedHash`, or when a newly authored document has no synchronization metadata. Git changes whose bodies still match their synchronization hashes are previous AI output, not new editing inputs. Metadata-only and checkout line-ending changes do not select an editing language.
 - Select the input separately for each document group: one changed language wins; with multiple changed languages, prefer `preferredEditLanguage`, then `defaultLanguage`. If neither is among multiple changed languages, preserve the edits and ask the user to choose. With the initial settings, changed Korean takes priority even when English also changed; English-only edits take priority when Korean has not changed since synchronization.
-- Read the changed variants and use the selected version as the content authority. Translate directly from that version into every other active language. Do not require the user to first rewrite Korean edits in English. Changes to `AGENTS-ko.md` must also update the actual `AGENTS.md` entrypoint; translated filenames are not separate instruction entrypoints.
+- Read the changed variants and use the selected version as the content authority. Translate directly from that version into every other active language. Do not require the user to first rewrite Korean edits in English. Changes to `docs/reference/AGENTS-ko.md` must also update the actual `AGENTS.md` entrypoint; translated filenames are not separate instruction entrypoints.
 - If there are no editing inputs but a target variant is missing, use the existing preferred editing language, otherwise English, otherwise a remaining active variant. Generate only missing variants. Do not retranslate already synchronized variants unnecessarily.
 
 ### Completing synchronization

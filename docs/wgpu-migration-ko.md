@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"6616a0598b5d8f4fffdb558ce157daf6be8454252f2df97e13a96c67449e9857"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"e89d68c3b75e80cf6fb4635c03ae8d347c100cb963a6dd2ef1f157e51ec665dc"} -->
 
 # Stranded II의 wgpu/WebGPU 크로스플랫폼 렌더러 마이그레이션
 
@@ -594,28 +594,28 @@ GPU 합계는 렌더 패스 시간이며 전송·대기·패스 사이 공백을
 
 ```powershell
 # Windows: 공유 엔진 변경은 두 에디션의 실제 빌드·check로 확인
-python scripts/dev.py build --edition classic
-python scripts/dev.py check --edition classic
-python scripts/dev.py build --edition extended
-python scripts/dev.py check --edition extended
+python src/devtools/dev.py build --edition classic
+python src/devtools/dev.py check --edition classic
+python src/devtools/dev.py build --edition extended
+python src/devtools/dev.py check --edition extended
 
 # Windows: 실제 production shader의 offscreen D3D12 검사
-python scripts/verify_engine.py --render
+python src/devtools/verify_engine.py --render
 # 창을 사용하는 추가 그래픽 검사
-python scripts/verify_engine.py --graphics
+python src/devtools/verify_engine.py --graphics
 
 # 웹: 빌드·정적/CPU 검사와 실제 브라우저 검사는 구분
-python scripts/dev.py build --platform web
-python scripts/dev.py check --platform web
-python scripts/verify_web_game.py
-python scripts/dev.py run --platform web
+python src/devtools/dev.py build --platform web
+python src/devtools/dev.py check --platform web
+python src/devtools/verify_web_game.py
+python src/devtools/dev.py run --platform web
 ```
 
 ```sh
 # Apple Silicon Mac에서 실행
-python scripts/dev.py build --platform macos
-python scripts/dev.py check --platform macos --suite core
-python scripts/dev.py check --platform macos --suite full
+python src/devtools/dev.py build --platform macos
+python src/devtools/dev.py check --platform macos --suite core
+python src/devtools/dev.py check --platform macos --suite full
 ```
 
 실제 GPU 성능을 비교할 때는 adapter·driver·빌드 설정·해상도·물 품질·시야·FPS cap·focus 조건을 기록합니다. queue submit이나 draw 수 감소는 CPU overhead를 줄일 수 있지만 GPU pixel workload 감소를 자동으로 의미하지 않습니다. 시험은 별도 runtime·빈 저장 폴더에서 수행하고 사용자의 실행 중 게임·세이브를 사용하지 않습니다.
@@ -653,7 +653,7 @@ WebGPU가 여러 native API를 연결하는 이유는 공통 리소스·파이�
 | 네이티브 Windows 모듈 | [s2windows/CMakeLists.txt](../src/blitz3d/src/runtime/s2windows/CMakeLists.txt) |
 | 네이티브 Mac 모듈 | [s2macos/CMakeLists.txt](../src/blitz3d/src/runtime/s2macos/CMakeLists.txt) |
 | 웹 linker·JSPI·WebGPU port | [linker_lld.cpp](../src/blitz3d/src/tools/compiler/linker_lld/linker_lld.cpp) |
-| 의존성·빌드 라우팅 | [blitz3d_toolchain.py](../scripts/blitz3d_toolchain.py), [config](../config/blitz3d-toolchain.json) |
-| 실제 offscreen GPU fixture | [runtime_render.cpp](../src/blitz3d/tests/runtime_render.cpp), [verify_engine.py](../scripts/verify_engine.py) |
+| 의존성·빌드 라우팅 | [blitz3d_toolchain.py](../src/devtools/blitz3d_toolchain.py), [config](../config/blitz3d-toolchain.json) |
+| 실제 offscreen GPU fixture | [runtime_render.cpp](../src/blitz3d/tests/runtime_render.cpp), [verify_engine.py](../src/devtools/verify_engine.py) |
 
 일반 API·언어 규칙은 [WebGPU 사양](https://www.w3.org/TR/webgpu/), [WGSL alignment와 size](https://www.w3.org/TR/WGSL/#alignment-and-size), [Dawn 프로젝트](https://dawn.googlesource.com/dawn/), [Rust wgpu 프로젝트](https://github.com/gfx-rs/wgpu)를 참고합니다. 외부 구현체가 제공할 수 있는 기능과 이 프로젝트가 실제로 연결·구현·검증한 기능은 구분해야 합니다.

@@ -110,7 +110,7 @@ End Function
 Function loc_languages_load()
  Delete Each Tlanguage:loc_language_count=0
  Local stream=ReadFile(set_rootdir$+"core\locales\languages.dat"),n,i,language.Tlanguage
- If stream=0 Then RuntimeError "Language registry missing. Run scripts/dev.py localize."
+ If stream=0 Then RuntimeError "Language registry missing. Run src/devtools/dev.py localize."
  n=ReadInt(stream)
  If n<1 Or n>1024 Then RuntimeError "Invalid language registry"
  For i=1 To n

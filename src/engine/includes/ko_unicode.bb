@@ -86,7 +86,7 @@ End Function
 Function ko_font_load(id)
  Local path$=set_rootdir$+"core\locales\"+loc_language$+"\"
  Local f=ReadFile(path$+"glyphs.dat"),n,i,c,nw,tw,nx,tx,ni,ti,pages,p
- If f=0 Then RuntimeError "Language font missing. Run scripts/dev.py localize."
+ If f=0 Then RuntimeError "Language font missing. Run src/devtools/dev.py localize."
  If ReadInt(f)<>$32544E46 Then RuntimeError "Invalid language font format"
  n=ReadInt(f)
  ko_cellw=ReadInt(f):ko_cellh=ReadInt(f)

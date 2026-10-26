@@ -51,6 +51,11 @@ Function modern_win_iconic(window)
  Return 0
 End Function
 
+Function modern_win_borderless()
+ ; Fullscreen still requires a user gesture handled by the browser shell.
+ Return True
+End Function
+
 Function modern_win_style(window,index,style)
  ; Browser window chrome belongs to the browser; the canvas owns presentation.
  Return True

@@ -97,9 +97,8 @@ End Function
 Function modern_window()
  modern_hwnd=Int(SystemProperty("AppHWND"))
  If modern_borderless And modern_hwnd<>0 Then
-  ; WS_POPUP | WS_VISIBLE; HWND_NOTOPMOST; SWP_FRAMECHANGED | SWP_NOACTIVATE.
-  modern_win_style(modern_hwnd,-16,$90000000)
-  modern_win_position(modern_hwnd,-2,0,0,modern_win_metric(0),modern_win_metric(1),$30)
+  ; The platform owns both native and window-manager fullscreen state.
+  If modern_win_borderless()=0 Then RuntimeError "Unable to enter borderless fullscreen"
  EndIf
  modern_reset_clock()
 End Function

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"51af98c116f276aadc77ae62acddf8a00b313531f9e57cf2a76127defdf12841"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"6b416c6e0bf3a28ac0bc6d82b18533a90120789c0e5e030c96b38c210e3535b5"} -->
 
 # Stranded II Studio
 
@@ -10,22 +10,22 @@ A standalone development app for Extended content. The Electron/React interface 
 
 Requirements: Python 3.12+, Node.js 22.12+ and Git. macOS needs Xcode Command Line Tools and FFmpeg/ffprobe on PATH; Windows needs the MSVC C++ build tools and Windows SDK. The 3D viewport uses Electron's WebGPU and JSPI support. This is a development version launched from the repository; installer packages are not provided.
 
-On Windows, double-click [Studio.cmd](../Studio.cmd) in the repository root. On macOS/Linux, run [Studio.sh](../Studio.sh) with `sh ./Studio.sh`. Both launchers also work from another directory when called by their path. The [shared launcher](../scripts/studio_launch.py) creates `.venv`, installs missing or changed Python/Node dependencies, prepares resources, builds and verifies the engine, then builds and starts the app. Outside Windows, missing CMake/Ninja tools are also installed in the virtual environment. Preparation failures prevent the app from opening.
+On Windows, double-click [Studio.cmd](../scripts/Studio.cmd) in the `scripts/` folder. On macOS/Linux, run [Studio.sh](../scripts/Studio.sh) with `sh ./scripts/Studio.sh`. Both launchers also work from another directory when called by their path. The [shared launcher](../src/devtools/studio_launch.py) creates `.venv`, installs missing or changed Python/Node dependencies, prepares resources, builds and verifies the engine, then builds and starts the app. Outside Windows, missing CMake/Ninja tools are also installed in the virtual environment. Preparation failures prevent the app from opening.
 
 Resources and the engine are refreshed on every launch; no separate engine commands are needed. Game/font paths are found in existing Studio, web and Windows preparation settings, in that order, falling back to `deps/game` and `deps/fonts/NotoSansKR[wght].ttf` when no saved path is valid. Pass `--game PATH --font PATH` to the launcher for external inputs. See the [development guide](development.md) for official resources and the pinned font. Projects and personal saves are not reset.
 
-Use `Studio.cmd --prepare-only` or `sh ./Studio.sh --prepare-only` to prepare everything without opening the app. To run individual steps manually, activate a Python virtual environment from the repository root and use:
+Use `scripts/Studio.cmd --prepare-only` or `sh ./scripts/Studio.sh --prepare-only` to prepare everything without opening the app. To run individual steps manually, activate a Python virtual environment from the repository root and use:
 
 ```sh
 python -m pip install -r requirements.txt cmake ninja
-python scripts/studio.py engine setup --game deps/game --font "deps/fonts/NotoSansKR[wght].ttf"
-python scripts/studio.py engine build
-python scripts/studio.py engine check
-npm --prefix studio ci
-npm --prefix studio start
+python src/devtools/studio.py engine setup --game deps/game --font "deps/fonts/NotoSansKR[wght].ttf"
+python src/devtools/studio.py engine build
+python src/devtools/studio.py engine check
+npm --prefix src/studio ci
+npm --prefix src/studio start
 ```
 
-If web/Studio preparation settings already exist, the path arguments to `engine setup` may be omitted. The engine is edited directly in the shared `src/blitz3d/` sources. Preparation downloads pinned external SDKs/libraries; compiler/runtime outputs stay in `build/engine/`, Studio game outputs in `build/studio/`, and app outputs in `studio/dist/`. The launchers and app prefer the repository's `.venv` Python; set `S2_STUDIO_PYTHON` to use another interpreter.
+If web/Studio preparation settings already exist, the path arguments to `engine setup` may be omitted. The engine is edited directly in the shared `src/blitz3d/` sources. Preparation downloads pinned external SDKs/libraries; compiler/runtime outputs stay in `build/engine/`, Studio game outputs in `build/studio/`, and app outputs in `src/studio/dist/`. The launchers and app prefer the repository's `.venv` Python; set `S2_STUDIO_PYTHON` to use another interpreter.
 
 Create a project in an empty folder or open an existing project on the start screen. Use **`build/studio/runtime`** as the base resources for 3D preview. The CLI can edit, validate and export projects using other prepared bases, but preview requires the same base path as its bundled resources.
 
@@ -69,15 +69,15 @@ Save UTF-8 without BOM and use ASCII letters, numbers, `_`, `-` and `.` in paths
 
 Export embeds bound text in native definitions/maps and includes the files under `sys/scripts/studio/`. For example, reference `scripts/story/reward.s2s` with `extendscript 0,0,"sys/scripts/studio/story/reward.s2s";`. Static checks do not guarantee execution semantics. Runtime errors link to the original line only when saved source and parser contents match unambiguously; dynamic or duplicated code shows entity/event/parser-row context. The log retains 300 events; variables show up to 256 entries and the first 1,024 characters of each value. Select the watched entity before starting a test.
 
-Use **Templates** in Content to create a healing item, recipe, building, NPC or tonic-delivery scenario. **Preview changes**, then **Create** allocates IDs, references, files and English/Korean translations in one transaction. The scenario follows nearby ingredient collection → tonic crafting → NPC delivery → reward → completion. Apply the [CLI example](../studio/examples/tonic-scenario.json) to a new project.
+Use **Templates** in Content to create a healing item, recipe, building, NPC or tonic-delivery scenario. **Preview changes**, then **Create** allocates IDs, references, files and English/Korean translations in one transaction. The scenario follows nearby ingredient collection → tonic crafting → NPC delivery → reward → completion. Apply the [CLI example](../src/studio/examples/tonic-scenario.json) to a new project.
 
 ```sh
-python scripts/studio.py scripts PROJECT
-python scripts/studio.py scripts PROJECT --path scripts/tonic_delivery/npc.s2s
-python scripts/studio.py scripts PROJECT --query reward
-python scripts/studio.py templates PROJECT
-python scripts/studio.py apply PROJECT --file studio/examples/tonic-scenario.json --dry-run
-python scripts/studio.py apply PROJECT --file studio/examples/tonic-scenario.json --expect-revision 0
+python src/devtools/studio.py scripts PROJECT
+python src/devtools/studio.py scripts PROJECT --path scripts/tonic_delivery/npc.s2s
+python src/devtools/studio.py scripts PROJECT --query reward
+python src/devtools/studio.py templates PROJECT
+python src/devtools/studio.py apply PROJECT --file src/studio/examples/tonic-scenario.json --dry-run
+python src/devtools/studio.py apply PROJECT --file src/studio/examples/tonic-scenario.json --expect-revision 0
 ```
 
 CLI `script.write` requires `path`, `text` and `expectedHash`. Read the hash from `scripts --path`; use `null` for a new file. The `target` for `script.bind`/`script.extract`/`script.unbind` uses `scope: map|entity|definition` and the corresponding `map`, `kind` and `id`. Existing `map.script`, `entity.script` and `content.set` operations on bound targets also require `expectedHash`. The `scriptsVersion` in `revision` detects external file edits. JSON `preview` rechecks `expectRevision` and `expectScriptsVersion` during preparation. File writes, bindings and templates participate in undo/redo, which rejects conflicts with external edits.
@@ -91,16 +91,16 @@ The CLI works without a GUI and returns JSON on stdout. Errors and failed valida
 JSON requests pass the content identifier as `contentId`. The `id` field identifies the protocol request.
 
 ```sh
-python scripts/studio.py schema
-python scripts/studio.py init build/studio-example --base build/studio/runtime --name "My island"
-python scripts/studio.py apply build/studio-example --file studio/examples/first-island.json --expect-revision 0
-python scripts/studio.py inspect build/studio-example --map island
-python scripts/studio.py catalog build/studio-example --kind item --query 나무
-python scripts/studio.py thumbnail build/studio-example --kind item --id 1
-python scripts/studio.py validate build/studio-example
-python scripts/studio.py undo build/studio-example --expect-revision 1
-python scripts/studio.py redo build/studio-example --expect-revision 2
-python scripts/studio.py export build/studio-example --out build/studio-example-export
+python src/devtools/studio.py schema
+python src/devtools/studio.py init build/studio-example --base build/studio/runtime --name "My island"
+python src/devtools/studio.py apply build/studio-example --file src/studio/examples/first-island.json --expect-revision 0
+python src/devtools/studio.py inspect build/studio-example --map island
+python src/devtools/studio.py catalog build/studio-example --kind item --query 나무
+python src/devtools/studio.py thumbnail build/studio-example --kind item --id 1
+python src/devtools/studio.py validate build/studio-example
+python src/devtools/studio.py undo build/studio-example --expect-revision 1
+python src/devtools/studio.py redo build/studio-example --expect-revision 2
+python src/devtools/studio.py export build/studio-example --out build/studio-example-export
 ```
 
 `apply` accepts one command or an array; `--file -` reads stdin. An array is one transaction and saves nothing on failure. `--dry-run` returns results and diagnostics without changes. When working alongside the GUI, pass the revision from `inspect`/`revision` as `--expect-revision`. `schema` describes supported commands and fields.
@@ -115,7 +115,7 @@ Definition IDs and map instance IDs are separate. Cloning a definition allocates
 
 `project.json` stores definition changes, map-edit commands, file bindings and undo baseline snapshots. `sources/` stores original maps and assets named by their hashes. The `.s2s` files in `scripts/` are the authoritative script sources; preserve all three paths together. `.studio/` holds the last 100 undo entries, locks, font caches and recent preview-token caches. Interrupted file transactions recover on the next open without overwriting new external edits. Base resources are read-only. The `base` in `project.json` is usually relative; adjust it to the prepared resources when moving to another computer.
 
-Export requires an empty folder. `overrides/` contains native `.inf`, `.s2` and assets; `locales/` contains project translations; `manifest.json` records revision and file hashes. Merge reviewed content into `resources/editions/extended/overrides/` and translations into `locales/editions/extended/<code>.tsv`, then prepare/build Extended. Merge changes into existing files rather than replacing them wholesale. Ordinary builds, CI and releases are not started automatically.
+Export requires an empty folder. `overrides/` contains native `.inf`, `.s2` and assets; `resources/locales/` contains project translations; `manifest.json` records revision and file hashes. Merge reviewed content into `resources/editions/extended/overrides/` and translations into `resources/locales/editions/extended/<code>.tsv`, then prepare/build Extended. Merge changes into existing files rather than replacing them wholesale. Ordinary builds, CI and releases are not started automatically.
 
 Register new text with `locale.set` and `[[loc:key]]`, including English fallback translations. When a project introduces new characters, preview reuses the existing bitmap-font generator and requires the font used during preparation. Additional fonts are also exported under `fonts/<code>/`; for testing exported content in a separate runtime, apply them to `core/locales/<code>/`. For integration into the repository, follow the catalog/font refresh procedure in the [localization guide](localization.md).
 
@@ -124,15 +124,15 @@ Edits preserve unrelated map data and attachments. Unlock password-protected map
 ## Verification
 
 ```sh
-python -m unittest discover -s tests -p "test_studio*.py"
-python scripts/studio.py engine check
-npm --prefix studio run check
-npm --prefix studio test
-python scripts/verify_studio_scripts.py
+python -m unittest discover -s src/tests -p "test_studio*.py"
+python src/devtools/studio.py engine check
+npm --prefix src/studio run check
+npm --prefix src/studio test
+python src/devtools/verify_studio_scripts.py
 ```
 
 Script checks cover external edits, stale hashes, transaction recovery, bindings, undo, source positions and templates. On Windows, `verify_studio_scripts.py` requires prepared Studio and Extended runtimes. It exports the example into a separate copy and uses the real engine to check ingredient collection, crafting, NPC delivery, rewards, healing items, error traces and variable JSON. It uses neither user saves nor GUI input.
 
 Icon checks cover color keys, frames and output-image selection, asset precedence, refresh after resource edits and cache retention during map edits, path restrictions, read-only behavior, request caching/cancellation and IPC responses. Placement checks cover display scaling, latest-pointer delivery, model/snap capture, preview cancellation and rejection of unapplied definitions. Actual translucent model display still requires a separate check in the app.
 
-Tests cover data preservation, transactions, deltas/ACKs, pending resources, movement math, cancellation/conflicts, IPC, engine reuse, the latest saved map, stale requests, canceled starts, and map/camera restoration without launching a GUI. `engine check` verifies actual Blitz build artifacts, Extended catalogs, allowlisted resources and audio conversion. After changing the shared map loader, build/check both editions and run `python scripts/verify_game.py` and `python scripts/verify_game.py --edition extended` to check existing save/load behavior. View switching, selection, dragging, mouse capture, Alt-Tab, scaling, sound and Korean rendering still require separate checks in the app. The diagnostic log's time from start request to first game frame is not an FPS measurement.
+Tests cover data preservation, transactions, deltas/ACKs, pending resources, movement math, cancellation/conflicts, IPC, engine reuse, the latest saved map, stale requests, canceled starts, and map/camera restoration without launching a GUI. `engine check` verifies actual Blitz build artifacts, Extended catalogs, allowlisted resources and audio conversion. After changing the shared map loader, build/check both editions and run `python src/devtools/verify_game.py` and `python src/devtools/verify_game.py --edition extended` to check existing save/load behavior. View switching, selection, dragging, mouse capture, Alt-Tab, scaling, sound and Korean rendering still require separate checks in the app. The diagnostic log's time from start request to first game frame is not an FPS measurement.

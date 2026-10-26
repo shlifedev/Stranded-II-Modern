@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"0ee6e4b078c775cb8af84a5ed0913c79a5312f8643d6f4616e969565478449d4"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"78c841082488019499ab48e0dcc7ded0942a08318461a5d846237495e6557be3"} -->
 
 # 게임 번역하기
 
@@ -6,13 +6,13 @@
 
 [README로 돌아가기](../README-ko.md) · [개발 가이드](development-ko.md)
 
-**번역할 언어의 `locales/<코드>.tsv`를 수정하면 됩니다.** 영어 원문은 [locales/en.tsv](../locales/en.tsv), 한국어 번역은 [locales/ko.tsv](../locales/ko.tsv)에 있습니다. 번역·언어·폰트 변경에는 EXE 재빌드가 필요하지 않습니다.
+**번역할 언어의 `resources/locales/<코드>.tsv`를 수정하면 됩니다.** 영어 원문은 [resources/locales/en.tsv](../resources/locales/en.tsv), 한국어 번역은 [resources/locales/ko.tsv](../resources/locales/ko.tsv)에 있습니다. 번역·언어·폰트 변경에는 EXE 재빌드가 필요하지 않습니다.
 
-두 판 모두 영어(`en`), 한국어(`ko`), 독일어(`de`, **Deutsch**)를 기본 제공합니다. [독일어 번역](../locales/de.tsv)은 [공식 독일어 Gold 1.0.0.1 문구](https://www.unrealsoftware.de/get.php?get=stranded2.zip)를 활용하고, 이 프로젝트의 기능과 확장판에 맞게 조정·보충했습니다. 독일어 팩은 기본 폰트로 표시할 수 있습니다.
+두 판 모두 영어(`en`), 한국어(`ko`), 독일어(`de`, **Deutsch**)를 기본 제공합니다. [독일어 번역](../resources/locales/de.tsv)은 [공식 독일어 Gold 1.0.0.1 문구](https://www.unrealsoftware.de/get.php?get=stranded2.zip)를 활용하고, 이 프로젝트의 기능과 확장판에 맞게 조정·보충했습니다. 독일어 팩은 기본 폰트로 표시할 수 있습니다.
 
 ## 1. 번역 파일 수정하기
 
-1. `locales/en.tsv`에서 번역할 문구를 찾습니다.
+1. `resources/locales/en.tsv`에서 번역할 문구를 찾습니다.
 2. 대상 언어의 TSV에서 **같은 키의 오른쪽 문구만** 번역합니다. 키가 없으면 같은 키로 행을 추가합니다.
 3. 파일을 **UTF-8, BOM 없이** 저장합니다.
 
@@ -37,8 +37,8 @@ quest.example.greeting<TAB>$name님, 환영합니다!
 테스트할 게임을 종료하고 **저장소 루트의 PowerShell**에서 실행하세요.
 
 ```powershell
-.\dev.ps1 localize -Python .\.venv\Scripts\python.exe
-.\dev.ps1 check -Python .\.venv\Scripts\python.exe
+.\scripts\dev.ps1 localize -Python .\.venv\Scripts\python.exe
+.\scripts\dev.ps1 check -Python .\.venv\Scripts\python.exe
 .\build\runtime\StrandedII.exe
 ```
 
@@ -48,8 +48,8 @@ quest.example.greeting<TAB>$name님, 환영합니다!
 
 예를 들어 일본어의 코드는 `ja`입니다. 언어 코드는 소문자 영문·숫자·하이픈을 사용합니다(`ja`, `pt-br` 등).
 
-1. `locales/ja.tsv`를 만들고 `en.tsv`에서 가져온 키와 번역을 넣습니다. 번역한 행만 넣어도 됩니다.
-2. `locales/ja.json`을 다음처럼 만듭니다.
+1. `resources/locales/ja.tsv`를 만들고 `en.tsv`에서 가져온 키와 번역을 넣습니다. 번역한 행만 넣어도 됩니다.
+2. `resources/locales/ja.json`을 다음처럼 만듭니다.
 
 ```json
 {
@@ -63,7 +63,7 @@ quest.example.greeting<TAB>$name님, 환영합니다!
 
 ## 폰트 지정
 
-기본 폰트는 Noto Sans KR입니다. 다른 폰트가 필요하면 `.ttf` 또는 `.otf` 파일을 `deps/fonts/`에 넣고, 대상 언어의 `locales/<코드>.json`에 `"font": "deps/fonts/MyFont.ttf"`를 추가합니다. 경로는 저장소 루트 기준이며 Windows에 설치할 필요는 없습니다.
+기본 폰트는 Noto Sans KR입니다. 다른 폰트가 필요하면 `.ttf` 또는 `.otf` 파일을 `deps/fonts/`에 넣고, 대상 언어의 `resources/locales/<코드>.json`에 `"font": "deps/fonts/MyFont.ttf"`를 추가합니다. 경로는 저장소 루트 기준이며 Windows에 설치할 필요는 없습니다.
 
 - 변경 후에는 위의 `localize → check → 실행` 절차를 따릅니다. `font` 필드를 삭제하면 최초 `setup --font`로 지정한 기본 폰트로 돌아갑니다.
 - 지정 폰트에 없는 글자는 기본 Noto, 다른 언어팩의 지정 폰트 순으로 보완합니다. 그래도 없으면 문자·`U+XXXX`·번역 키를 표시하고 적용을 중단하며 기존 언어팩을 유지합니다. 해당 글자가 있는 폰트를 지정해 다시 실행하세요.
@@ -75,20 +75,20 @@ quest.example.greeting<TAB>$name님, 환영합니다!
 
 ## 기본판·확장판 전용 번역
 
-`locales/<코드>.tsv`는 기본판과 확장판이 함께 사용합니다. 한 판에서만 바꿀 문구는 다음 파일에 **바꿀 행만** 넣습니다. 폴더가 없으면 만드세요.
+`resources/locales/<코드>.tsv`는 기본판과 확장판이 함께 사용합니다. 한 판에서만 바꿀 문구는 다음 파일에 **바꿀 행만** 넣습니다. 폴더가 없으면 만드세요.
 
 | 적용할 판 | 파일 |
 | --- | --- |
-| 기본판 | `locales/editions/classic/<코드>.tsv` |
-| 확장판 | `locales/editions/extended/<코드>.tsv` |
+| 기본판 | `resources/locales/editions/classic/<코드>.tsv` |
+| 확장판 | `resources/locales/editions/extended/<코드>.tsv` |
 
-같은 키는 공통 번역을 덮어씁니다. 새 키를 추가하면 해당 판의 `en.tsv`에도 영어 원문을 넣습니다. 언어 이름·폰트는 공통 `locales/<코드>.json`에서 지정합니다.
+같은 키는 공통 번역을 덮어씁니다. 새 키를 추가하면 해당 판의 `en.tsv`에도 영어 원문을 넣습니다. 언어 이름·폰트는 공통 `resources/locales/<코드>.json`에서 지정합니다.
 
 명령에서 판을 생략하면 기본판입니다. 확장판은 [확장판 준비](development-ko.md#기본판과-확장판)를 마친 뒤 다음 명령을 사용합니다. 공통 번역을 두 판에 적용하려면 각 판에서 한 번씩 실행하세요.
 
 ```powershell
-.\dev.ps1 localize -Python .\.venv\Scripts\python.exe --edition extended
-.\dev.ps1 check -Python .\.venv\Scripts\python.exe --edition extended
+.\scripts\dev.ps1 localize -Python .\.venv\Scripts\python.exe --edition extended
+.\scripts\dev.ps1 check -Python .\.venv\Scripts\python.exe --edition extended
 .\build\extended\runtime\StrandedII-Extended.exe
 ```
 

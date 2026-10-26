@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"81d8923fe7329b521cdafff95aab67331d7f06064937ff5cf499fdfc0c484d84"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"277a420a62d293ef3e6fba4bbdfda2453184466b9b662bf76dc77cae0471543c"} -->
 
 # 웹 버전 구현 원리
 
@@ -112,7 +112,7 @@ Web Locks API를 사용할 수 있는 환경에서는 같은 사이트의 저장
 
 ## 6. 정적 파일로 배포하며, 실제 플레이는 별도로 검증합니다
 
-GitHub Pages에는 앞에서 설명한 배포 파일 8개를 게시합니다. [`web_pages.py`](../scripts/web_pages.py)는 현재 소스·빌드·검사 결과가 일치하는 파일만 모으고, 배포별 캐시 키를 파일 URL에 붙여 이전 코드와 새 리소스가 섞이는 것을 줄입니다. 게임을 실행하는 서버 프로세스는 필요하지 않습니다.
+GitHub Pages에는 앞에서 설명한 배포 파일 8개를 게시합니다. [`web_pages.py`](../src/devtools/web_pages.py)는 현재 소스·빌드·검사 결과가 일치하는 파일만 모으고, 배포별 캐시 키를 파일 URL에 붙여 이전 코드와 새 리소스가 섞이는 것을 줄입니다. 게임을 실행하는 서버 프로세스는 필요하지 않습니다.
 
 현재 대상은 **WebGPU와 JSPI를 지원하는 데스크톱 Chrome/Edge**입니다. WebGPU를 사용할 수 있는 HTTPS 또는 로컬 개발 주소에서 실행해야 합니다. 두 기능이나 GPU adapter를 사용할 수 없으면 시작 단계에서 안내하고 중단합니다. 모바일·웹 Extended·에디터·전체 캠페인은 지원 완료 범위에 포함하지 않으며, 원시 TCP/UDP 호출은 연결 실패로 반환합니다.
 
@@ -124,4 +124,4 @@ GitHub Pages에는 앞에서 설명한 배포 파일 8개를 게시합니다. [`
 
 표는 구현된 검사 범위입니다. 자동 검사의 성공은 실제 GPU·IndexedDB·전체 플레이 검증을 뜻하지 않습니다. `/checks/`는 별도로 준비하는 로컬 검사 페이지이며 공개 Pages 배포에 포함하지 않습니다.
 
-구현을 따라가려면 [웹 빌드·리소스 패키징](../scripts/web_build.py) → [페이지 구조](../src/web/index.html) → [브라우저 서비스](../src/web/shell.js) → [공통 게임 연결](../src/engine/platforms/web/services.bb) → [호환성 검사](../scripts/verify_web.py) 순서로 읽으면 됩니다.
+구현을 따라가려면 [웹 빌드·리소스 패키징](../src/devtools/web_build.py) → [페이지 구조](../src/web/index.html) → [브라우저 서비스](../src/web/shell.js) → [공통 게임 연결](../src/engine/platforms/web/services.bb) → [호환성 검사](../src/devtools/verify_web.py) 순서로 읽으면 됩니다.

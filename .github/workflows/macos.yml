@@ -70,17 +70,17 @@ jobs:
 
       - name: Select preview version
         if: inputs.version_artifact == ''
-        run: python scripts/ci.py version
+        run: python src/devtools/ci.py version
 
       - name: Check platform and packaging boundaries
         run: |
-          python -m unittest discover -s tests -p 'test_macos*.py'
-          python -m unittest discover -s tests -p 'test_ci*.py'
-          python -m unittest discover -s tests -p 'test_web_platform.py'
+          python -m unittest discover -s src/tests -p 'test_macos*.py'
+          python -m unittest discover -s src/tests -p 'test_ci*.py'
+          python -m unittest discover -s src/tests -p 'test_web_platform.py'
 
       - name: Read game dependency pin
         id: pin
-        run: python scripts/ci.py config --github-output "$GITHUB_OUTPUT"
+        run: python src/devtools/ci.py config --github-output "$GITHUB_OUTPUT"
 
       - name: Cache verified game dependency archive
         id: game-cache
@@ -106,7 +106,7 @@ jobs:
         env:
           DEPENDENCY_ASSET: ${{ steps.pin.outputs.asset }}
         run: |
-          python scripts/ci.py dependencies --archive "build/ci/downloads/$DEPENDENCY_ASSET" \
+          python src/devtools/ci.py dependencies --archive "build/ci/downloads/$DEPENDENCY_ASSET" \
             --destination deps/ci-macos --github-output "$GITHUB_OUTPUT"
 
       - name: Identify build environment
@@ -120,23 +120,23 @@ jobs:
         with:
           path: |
             deps/blitz3d
-          key: macos-15-arm64-${{ steps.image.outputs.version }}-${{ steps.image.outputs.sdk }}-${{ hashFiles('config/macos-toolchain.json', 'config/blitz3d-toolchain.json', 'scripts/blitz3d_toolchain.py', 'scripts/macos_toolchain.py') }}
+          key: macos-15-arm64-${{ steps.image.outputs.version }}-${{ steps.image.outputs.sdk }}-${{ hashFiles('config/macos-toolchain.json', 'config/blitz3d-toolchain.json', 'src/devtools/blitz3d_toolchain.py', 'src/devtools/macos_toolchain.py') }}
 
       - name: Prepare native resources and toolchain
         env:
           GAME_INPUT: ${{ steps.deps.outputs.game }}
           FONT_INPUT: ${{ steps.deps.outputs.font }}
-        run: python scripts/dev.py setup --platform macos --game "$GAME_INPUT" --font "$FONT_INPUT"
+        run: python src/devtools/dev.py setup --platform macos --game "$GAME_INPUT" --font "$FONT_INPUT"
 
       - name: Build native app
-        run: python scripts/dev.py build --platform macos --version-info build/ci/version.json
+        run: python src/devtools/dev.py build --platform macos --version-info build/ci/version.json
 
       - name: Check native ABI and app package without graphics
-        run: python scripts/dev.py check --platform macos --suite core
+        run: python src/devtools/dev.py check --platform macos --suite core
 
       - name: Package local preview DMG and verify installation copy
         if: inputs.version_artifact == '' && !inputs.notarize
-        run: python scripts/macos_package.py
+        run: python src/devtools/macos_package.py
 
       - name: Sign, notarize, and verify app and DMG
         if: inputs.version_artifact != '' || inputs.notarize
@@ -146,7 +146,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: python scripts/macos_package.py --notarize
+        run: python src/devtools/macos_package.py --notarize
 
       - name: Upload native DMG and checksum
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

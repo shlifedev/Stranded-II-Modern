@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"a72523857229bd19f2d0276afee082524c5bdd9c83e52a34d22e0918f5f2c010"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"23660aa09389bedc8196c3a4ffb2c76164ad6dd917c3aa70bbd872c066882d5a"} -->
 
 # macOS 구현 원리
 
@@ -111,4 +111,4 @@ macOS 런타임은 **정수·실수를 32비트로 유지하고, 내부 포인�
 
 표는 구현된 검사 범위를 설명합니다. 특정 배포본의 실제 수행 결과는 함께 제공하는 `verification-summary.json`을 확인하세요. CI는 `core`를 실행하며, `full`의 게임 시나리오도 가상으로 진행시킨 시간을 사용하므로 실제 플레이 속도나 전체 캠페인을 검증하지는 않습니다.
 
-구현을 따라가려면 [도구 준비](../scripts/macos_toolchain.py) → [공통 네이티브 엔진](../src/blitz3d/src/runtime/s2macos/CMakeLists.txt) → [앱 빌드·패키징](../scripts/macos_build.py) → [검증](../scripts/verify_macos.py) 순서로 읽으면 됩니다.
+구현을 따라가려면 [도구 준비](../src/devtools/macos_toolchain.py) → [공통 네이티브 엔진](../src/blitz3d/src/runtime/s2macos/CMakeLists.txt) → [앱 빌드·패키징](../src/devtools/macos_build.py) → [검증](../src/devtools/verify_macos.py) 순서로 읽으면 됩니다.

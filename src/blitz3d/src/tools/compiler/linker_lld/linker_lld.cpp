@@ -180,7 +180,7 @@ void Linker_LLD::createExe( bool debug,const std::string &rt,const Target &targe
 		args.push_back( "/nodefaultlib" );
 		args.push_back( "oldnames.lib" );
         const char *paths=getenv("LIB");
-        if(!paths || !*paths) throw std::runtime_error("MSVC/Windows SDK library paths are missing; build through scripts/dev.py");
+        if(!paths || !*paths) throw std::runtime_error("MSVC/Windows SDK library paths are missing; build through src/devtools/dev.py");
         std::string search=paths;size_t begin=0,end;
         do{end=search.find(';',begin);auto path=search.substr(begin,end-begin);
            if(!path.empty()) args.push_back("/libpath:"+path);begin=end+1;

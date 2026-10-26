@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"bc7040803640d61c448a63e9f3cf17ced2ba00b2db6752a6b3ef9f5910371f01"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"80623e01f6d0698b2eea15ed1cc19ec82ca18b8ac1cddc613b0514ea4756e2a4"} -->
 
 # How the macOS version works
 
@@ -111,4 +111,4 @@ The current target is **Apple Silicon, macOS 15.0 or later, and the base game**.
 
 The table describes the implemented checks. For tests actually performed on a particular distribution, consult its included `verification-summary.json`. CI runs `core`; even the game scenarios in `full` use synthetic time, so they do not verify real-time gameplay speed or the entire campaign.
 
-To follow the implementation, read [tool preparation](../scripts/macos_toolchain.py) → [shared native engine](../src/blitz3d/src/runtime/s2macos/CMakeLists.txt) → [app building and packaging](../scripts/macos_build.py) → [verification](../scripts/verify_macos.py).
+To follow the implementation, read [tool preparation](../src/devtools/macos_toolchain.py) → [shared native engine](../src/blitz3d/src/runtime/s2macos/CMakeLists.txt) → [app building and packaging](../src/devtools/macos_build.py) → [verification](../src/devtools/verify_macos.py).

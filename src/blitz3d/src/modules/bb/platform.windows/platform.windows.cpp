@@ -45,9 +45,15 @@ std::wstring bankText(bbBank *bank){
     while(length<count && data[length]) ++length;
     return std::wstring(data,length);
 }
+#ifdef S2_WINDOWS_GRAPHICS
+SDL_Window *mainSDLWindow(){
+    SDL_Window *win=SDL_GetKeyboardFocus();if(!win) win=SDL_GetWindowFromID(1);
+    return win;
+}
+#endif
 HWND mainWindow(){
 #ifdef S2_WINDOWS_GRAPHICS
-    SDL_Window *win=SDL_GetKeyboardFocus();if(!win) win=SDL_GetWindowFromID(1);
+    SDL_Window *win=mainSDLWindow();
     if(win){SDL_SysWMinfo info={};SDL_VERSION(&info.version);if(SDL_GetWindowWMInfo(win,&info)) return info.info.win.window;}
 #endif
     return nullptr;
@@ -91,6 +97,22 @@ bb_int_t BBCALL s2WinFindClose(bb_int_t id){int ok=result(FindClose(handle(id)))
 bb_int_t BBCALL s2WinLastError(){return bb_int_t(fileError);}
 bb_int_t BBCALL s2WinForeground(){HWND app=mainWindow();return app && GetForegroundWindow()==app?s2Handle(app):0;}
 bb_int_t BBCALL s2WinIconic(bb_int_t id){return IsIconic(window(id));}
+bb_int_t BBCALL s2WinBorderless(){
+#ifdef S2_WINDOWS_GRAPHICS
+    SDL_Window *win=mainSDLWindow();
+    if(!win)return 0;
+    // Keep SDL's fullscreen/windowed geometry in sync with the HWND. Raw
+    // SetWindowLong/SetWindowPos leaves SDL treating this as a decorated window
+    // during later size, DPI and restore events.
+    if((SDL_GetWindowFlags(win)&SDL_WINDOW_FULLSCREEN_DESKTOP)==SDL_WINDOW_FULLSCREEN_DESKTOP)return 1;
+    // Match the game's primary-monitor desktop resolution selection. Let SDL
+    // use the full display bounds (not the taskbar work area) without a mode switch.
+    SDL_SetWindowPosition(win,SDL_WINDOWPOS_CENTERED_DISPLAY(0),SDL_WINDOWPOS_CENTERED_DISPLAY(0));
+    return SDL_SetWindowFullscreen(win,SDL_WINDOW_FULLSCREEN_DESKTOP)==0;
+#else
+    return 0;
+#endif
+}
 bb_int_t BBCALL s2WinStyle(bb_int_t id,bb_int_t index,bb_int_t style){return bb_int_t(SetWindowLongPtrW(window(id),index,LONG_PTR(uint32_t(style))));}
 bb_int_t BBCALL s2WinPosition(bb_int_t id,bb_int_t after,bb_int_t x,bb_int_t y,bb_int_t w,bb_int_t h,bb_int_t flags){
     HWND next=after>0?window(after):reinterpret_cast<HWND>(intptr_t(after));

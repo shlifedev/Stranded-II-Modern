@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"fdf38007cce49efa843b57fa17e0fc049f5356b52d446a4322bba635e3d5a8cc"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"f17ce509f212a25eda21592bd01720b0ccad184216910a1ab42f88dee9c20855"} -->
 
 # Stranded II Studio
 
@@ -10,22 +10,22 @@ Extended 콘텐츠를 만드는 독립 개발 앱입니다. Electron·React 화�
 
 Python 3.12 이상, Node.js 22.12 이상, Git이 필요합니다. macOS는 Xcode Command Line Tools와 PATH에 있는 FFmpeg/ffprobe, Windows는 MSVC C++ 빌드 도구와 Windows SDK가 필요합니다. 3D 화면은 Electron의 WebGPU와 JSPI 지원을 사용합니다. 현재 저장소에서 실행하는 개발 버전이며 설치 패키지는 제공하지 않습니다.
 
-Windows에서는 루트의 [Studio.cmd](../Studio.cmd)를 더블 클릭하고, macOS/Linux에서는 `sh ./Studio.sh`로 [Studio.sh](../Studio.sh)를 실행합니다. 다른 폴더에서도 실행 파일의 경로를 지정해 호출할 수 있습니다. 두 파일은 [공통 실행 스크립트](../scripts/studio_launch.py)로 `.venv` 생성, 누락되거나 변경된 Python·Node 의존성 설치, 리소스 준비, 엔진 빌드·검증, 앱 빌드·실행을 순서대로 처리합니다. Windows 이외에서는 누락된 CMake·Ninja도 가상 환경에 설치합니다. 준비가 실패하면 앱을 열지 않습니다.
+Windows에서는 `scripts/` 폴더의 [Studio.cmd](../scripts/Studio.cmd)를 더블 클릭하고, macOS/Linux에서는 `sh ./scripts/Studio.sh`로 [Studio.sh](../scripts/Studio.sh)를 실행합니다. 다른 폴더에서도 실행 파일의 경로를 지정해 호출할 수 있습니다. 두 파일은 [공통 실행 스크립트](../src/devtools/studio_launch.py)로 `.venv` 생성, 누락되거나 변경된 Python·Node 의존성 설치, 리소스 준비, 엔진 빌드·검증, 앱 빌드·실행을 순서대로 처리합니다. Windows 이외에서는 누락된 CMake·Ninja도 가상 환경에 설치합니다. 준비가 실패하면 앱을 열지 않습니다.
 
 실행할 때마다 리소스와 엔진을 갱신하므로 엔진 명령을 따로 실행할 필요가 없습니다. 게임·폰트 경로는 기존 Studio·웹·Windows 준비 설정 순서로 찾고, 유효한 경로가 없으면 `deps/game`과 `deps/fonts/NotoSansKR[wght].ttf`를 사용합니다. 외부 경로는 실행 파일에 `--game PATH --font PATH`로 전달합니다. 공식 게임·고정 폰트 준비는 [개발 가이드](development-ko.md)를 참고하세요. 프로젝트와 개인 세이브는 초기화하지 않습니다.
 
-앱을 열지 않고 전체 준비를 확인하려면 `Studio.cmd --prepare-only` 또는 `sh ./Studio.sh --prepare-only`를 사용합니다. 각 단계를 직접 실행하려면 저장소 루트에서 Python 가상 환경을 활성화한 뒤 아래 명령을 사용합니다.
+앱을 열지 않고 전체 준비를 확인하려면 `scripts/Studio.cmd --prepare-only` 또는 `sh ./scripts/Studio.sh --prepare-only`를 사용합니다. 각 단계를 직접 실행하려면 저장소 루트에서 Python 가상 환경을 활성화한 뒤 아래 명령을 사용합니다.
 
 ```sh
 python -m pip install -r requirements.txt cmake ninja
-python scripts/studio.py engine setup --game deps/game --font "deps/fonts/NotoSansKR[wght].ttf"
-python scripts/studio.py engine build
-python scripts/studio.py engine check
-npm --prefix studio ci
-npm --prefix studio start
+python src/devtools/studio.py engine setup --game deps/game --font "deps/fonts/NotoSansKR[wght].ttf"
+python src/devtools/studio.py engine build
+python src/devtools/studio.py engine check
+npm --prefix src/studio ci
+npm --prefix src/studio start
 ```
 
-이미 웹/Studio 준비 설정이 있으면 `engine setup`의 경로 인자를 생략할 수 있습니다. 엔진은 공통 `src/blitz3d/` 소스에서 직접 수정합니다. 준비 과정은 고정한 외부 SDK·라이브러리를 받고, 컴파일러·런타임은 `build/engine/`, Studio 게임 산출물은 `build/studio/`, 앱 산출물은 `studio/dist/`에 생성합니다. 실행 파일과 앱은 저장소의 `.venv` Python을 우선 사용하며, 다른 인터프리터는 `S2_STUDIO_PYTHON`으로 지정합니다.
+이미 웹/Studio 준비 설정이 있으면 `engine setup`의 경로 인자를 생략할 수 있습니다. 엔진은 공통 `src/blitz3d/` 소스에서 직접 수정합니다. 준비 과정은 고정한 외부 SDK·라이브러리를 받고, 컴파일러·런타임은 `build/engine/`, Studio 게임 산출물은 `build/studio/`, 앱 산출물은 `src/studio/dist/`에 생성합니다. 실행 파일과 앱은 저장소의 `.venv` Python을 우선 사용하며, 다른 인터프리터는 `S2_STUDIO_PYTHON`으로 지정합니다.
 
 시작 화면에서 빈 프로젝트 폴더를 선택해 만들거나 기존 프로젝트를 엽니다. 3D 미리보기용 기본 리소스는 **`build/studio/runtime`**으로 지정합니다. 다른 준비된 기본 리소스도 CLI 편집·검증·내보내기에 사용할 수 있지만, 미리보기는 빌드에 포함된 리소스와 같은 기본 경로를 요구합니다.
 
@@ -69,15 +69,15 @@ Ctrl/Cmd+Z는 실행 취소, Ctrl/Cmd+Shift+Z는 다시 실행, Ctrl/Cmd+D는 �
 
 내보낼 때 연결 내용을 네이티브 정의·맵에 반영하고 파일도 `sys/scripts/studio/`에 포함합니다. 예를 들어 `scripts/story/reward.s2s`는 `extendscript 0,0,"sys/scripts/studio/story/reward.s2s";`로 참조할 수 있습니다. 정적 검사는 실행 의미를 보장하지 않습니다. 실행 오류는 저장본과 파서 내용을 유일하게 대응할 수 있을 때 원본 행으로 이동하며, 동적·중복 코드는 개체/이벤트/파서 행 문맥만 표시합니다. 실행 이벤트는 최근 300개, 변수는 최대 256개와 값의 앞 1,024자를 표시합니다. 선택 개체는 테스트 시작 전에 선택하세요.
 
-콘텐츠의 **템플릿**에서 회복 아이템·제작법·건축·NPC·치료제 전달 시나리오를 선택하세요. **변경 미리보기** 후 **생성**하면 ID·참조·파일·영어/한국어 번역을 한 트랜잭션으로 만듭니다. 시나리오는 근처 재료 수집 → 치료제 제작 → NPC 전달 → 보상 → 완료 흐름입니다. [CLI 예제](../studio/examples/tonic-scenario.json)는 새 프로젝트에 적용할 수 있습니다.
+콘텐츠의 **템플릿**에서 회복 아이템·제작법·건축·NPC·치료제 전달 시나리오를 선택하세요. **변경 미리보기** 후 **생성**하면 ID·참조·파일·영어/한국어 번역을 한 트랜잭션으로 만듭니다. 시나리오는 근처 재료 수집 → 치료제 제작 → NPC 전달 → 보상 → 완료 흐름입니다. [CLI 예제](../src/studio/examples/tonic-scenario.json)는 새 프로젝트에 적용할 수 있습니다.
 
 ```sh
-python scripts/studio.py scripts PROJECT
-python scripts/studio.py scripts PROJECT --path scripts/tonic_delivery/npc.s2s
-python scripts/studio.py scripts PROJECT --query reward
-python scripts/studio.py templates PROJECT
-python scripts/studio.py apply PROJECT --file studio/examples/tonic-scenario.json --dry-run
-python scripts/studio.py apply PROJECT --file studio/examples/tonic-scenario.json --expect-revision 0
+python src/devtools/studio.py scripts PROJECT
+python src/devtools/studio.py scripts PROJECT --path scripts/tonic_delivery/npc.s2s
+python src/devtools/studio.py scripts PROJECT --query reward
+python src/devtools/studio.py templates PROJECT
+python src/devtools/studio.py apply PROJECT --file src/studio/examples/tonic-scenario.json --dry-run
+python src/devtools/studio.py apply PROJECT --file src/studio/examples/tonic-scenario.json --expect-revision 0
 ```
 
 CLI의 `script.write`에는 `path`, `text`, `expectedHash`가 필요합니다. 해시는 `scripts --path` 결과에서 읽으며 새 파일은 `null`입니다. `script.bind`/`script.extract`/`script.unbind`의 `target`은 `scope: map|entity|definition`과 해당 `map`·`kind`·`id`를 사용합니다. 연결된 대상의 기존 `map.script`·`entity.script`·`content.set` 호출도 `expectedHash`를 요구합니다. `revision` 응답의 `scriptsVersion`은 외부 파일 변경도 감지합니다. JSON `preview`의 `expectRevision`·`expectScriptsVersion`은 테스트 준비 시점에 다시 검사합니다. 파일 쓰기·연결·템플릿은 실행 취소/다시 실행에 포함하며 외부 파일과 충돌하면 중단합니다.
@@ -91,16 +91,16 @@ CLI는 GUI 없이 실행되며 표준 출력에 JSON을 반환합니다. 오류�
 JSON 요청에서는 콘텐츠 식별자를 `contentId`로 전달합니다. `id`는 통신 요청 식별자입니다.
 
 ```sh
-python scripts/studio.py schema
-python scripts/studio.py init build/studio-example --base build/studio/runtime --name "My island"
-python scripts/studio.py apply build/studio-example --file studio/examples/first-island.json --expect-revision 0
-python scripts/studio.py inspect build/studio-example --map island
-python scripts/studio.py catalog build/studio-example --kind item --query 나무
-python scripts/studio.py thumbnail build/studio-example --kind item --id 1
-python scripts/studio.py validate build/studio-example
-python scripts/studio.py undo build/studio-example --expect-revision 1
-python scripts/studio.py redo build/studio-example --expect-revision 2
-python scripts/studio.py export build/studio-example --out build/studio-example-export
+python src/devtools/studio.py schema
+python src/devtools/studio.py init build/studio-example --base build/studio/runtime --name "My island"
+python src/devtools/studio.py apply build/studio-example --file src/studio/examples/first-island.json --expect-revision 0
+python src/devtools/studio.py inspect build/studio-example --map island
+python src/devtools/studio.py catalog build/studio-example --kind item --query 나무
+python src/devtools/studio.py thumbnail build/studio-example --kind item --id 1
+python src/devtools/studio.py validate build/studio-example
+python src/devtools/studio.py undo build/studio-example --expect-revision 1
+python src/devtools/studio.py redo build/studio-example --expect-revision 2
+python src/devtools/studio.py export build/studio-example --out build/studio-example-export
 ```
 
 `apply`는 명령 하나 또는 명령 배열을 받으며 `--file -`는 표준 입력입니다. 배열은 한 트랜잭션으로 처리하고 실패하면 변경을 저장하지 않습니다. `--dry-run`은 변경 없이 결과·진단을 확인합니다. GUI와 함께 작업할 때 `inspect`/`revision`에서 받은 버전을 `--expect-revision`으로 지정하세요. `schema`가 지원 명령과 필드를 안내합니다.
@@ -115,7 +115,7 @@ python scripts/studio.py export build/studio-example --out build/studio-example-
 
 `project.json`에 정의 수정·맵 편집 명령·파일 연결·실행 취소 기준 스냅샷을, `sources/`에 해시로 이름 붙인 원본 맵·에셋을 저장합니다. `scripts/`의 `.s2s`가 파일 스크립트의 원본이며 이 세 경로를 함께 보관하세요. `.studio/`는 최근 100개 실행 취소 기록·잠금·폰트 캐시·최근 미리보기 토큰 캐시입니다. 파일 쓰기가 중단되면 다음 열기에서 트랜잭션을 복구하되 새 외부 변경은 덮어쓰지 않습니다. 원본 기본 리소스는 수정하지 않습니다. `project.json`의 `base`는 보통 상대 경로이며 다른 컴퓨터에서는 준비된 기본 리소스 위치에 맞추세요.
 
-내보내기는 빈 폴더만 사용합니다. `overrides/`에는 네이티브 `.inf`·`.s2`·에셋, `locales/`에는 프로젝트 번역, `manifest.json`에는 버전·파일 해시를 만듭니다. 검토한 콘텐츠는 `resources/editions/extended/overrides/`, 번역은 `locales/editions/extended/<code>.tsv`에 병합한 뒤 Extended를 준비·빌드합니다. 기존 파일이 있으면 통째로 덮어쓰지 말고 변경 내용을 병합하세요. 일반 빌드·CI·배포는 자동 실행하지 않습니다.
+내보내기는 빈 폴더만 사용합니다. `overrides/`에는 네이티브 `.inf`·`.s2`·에셋, `resources/locales/`에는 프로젝트 번역, `manifest.json`에는 버전·파일 해시를 만듭니다. 검토한 콘텐츠는 `resources/editions/extended/overrides/`, 번역은 `resources/locales/editions/extended/<code>.tsv`에 병합한 뒤 Extended를 준비·빌드합니다. 기존 파일이 있으면 통째로 덮어쓰지 말고 변경 내용을 병합하세요. 일반 빌드·CI·배포는 자동 실행하지 않습니다.
 
 `locale.set`과 `[[loc:key]]`로 새 문구를 등록하고 영어 대체 번역도 제공하세요. 프로젝트가 새 글자를 사용하면 기존 폰트 생성기를 재사용해 미리보기용 글꼴을 보충합니다. 이때 준비에 사용한 폰트 파일이 필요합니다. 보충 글꼴은 내보내기의 `fonts/<code>/`에도 포함되며, 내보낸 콘텐츠를 별도 런타임에서 시험할 때 `core/locales/<code>/`에 적용할 수 있습니다. 정식 리소스 통합은 [현지화 가이드](localization-ko.md)의 카탈로그·폰트 갱신 절차를 따릅니다.
 
@@ -124,15 +124,15 @@ python scripts/studio.py export build/studio-example --out build/studio-example-
 ## 검증
 
 ```sh
-python -m unittest discover -s tests -p "test_studio*.py"
-python scripts/studio.py engine check
-npm --prefix studio run check
-npm --prefix studio test
-python scripts/verify_studio_scripts.py
+python -m unittest discover -s src/tests -p "test_studio*.py"
+python src/devtools/studio.py engine check
+npm --prefix src/studio run check
+npm --prefix src/studio test
+python src/devtools/verify_studio_scripts.py
 ```
 
 파일 검사는 외부 변경·오래된 해시·트랜잭션 복구·연결·실행 취소·원본 위치·템플릿을 확인합니다. Windows의 `verify_studio_scripts.py`는 준비된 Studio와 Extended 런타임이 필요하며, 별도 복사본에서 실제 엔진으로 예제를 내보내 재료 수집·제작·NPC 전달·보상·회복 아이템·오류 추적·변수 JSON을 검사합니다. 사용자 저장 파일이나 GUI 입력은 사용하지 않습니다.
 
 아이콘 검사는 투명색·프레임·결과물 이미지 선택, 에셋 우선순위, 리소스 변경 후 갱신과 맵 편집 중 캐시 유지, 경로 제한, 읽기 전용 동작, 요청 캐시·취소와 IPC 응답을 확인합니다. 배치 검사는 화면 배율, 최신 커서 전달, 선택 모델·스냅 유지, 미리보기 취소와 미적용 정의 차단을 확인합니다. 반투명 모델의 실제 표시는 앱에서 별도로 확인해야 합니다.
 
-테스트는 데이터 보존·트랜잭션·차분/ACK·리소스 대기·이동 수학·취소/충돌·IPC와 동일 엔진 재사용·최신 저장 맵 반영·오래된 요청 무시·시작 취소·맵과 카메라 복원을 확인하며 GUI를 실행하지 않습니다. `engine check`는 실제 Blitz 빌드 산출물, Extended 카탈로그, 허용 목록에 포함된 리소스와 오디오 변환을 검사합니다. 공통 맵 로더를 변경했다면 두 판을 빌드·검사하고 `python scripts/verify_game.py`와 `python scripts/verify_game.py --edition extended`로 기존 저장·불러오기도 확인합니다. 화면 전환·선택·드래그·마우스 캡처·Alt-Tab·배율·소리·한국어 표시는 앱에서 별도로 확인해야 합니다. 진단 탭의 시작 요청부터 첫 게임 프레임까지 시간은 FPS 측정이 아닙니다.
+테스트는 데이터 보존·트랜잭션·차분/ACK·리소스 대기·이동 수학·취소/충돌·IPC와 동일 엔진 재사용·최신 저장 맵 반영·오래된 요청 무시·시작 취소·맵과 카메라 복원을 확인하며 GUI를 실행하지 않습니다. `engine check`는 실제 Blitz 빌드 산출물, Extended 카탈로그, 허용 목록에 포함된 리소스와 오디오 변환을 검사합니다. 공통 맵 로더를 변경했다면 두 판을 빌드·검사하고 `python src/devtools/verify_game.py`와 `python src/devtools/verify_game.py --edition extended`로 기존 저장·불러오기도 확인합니다. 화면 전환·선택·드래그·마우스 캡처·Alt-Tab·배율·소리·한국어 표시는 앱에서 별도로 확인해야 합니다. 진단 탭의 시작 요청부터 첫 게임 프레임까지 시간은 FPS 측정이 아닙니다.
