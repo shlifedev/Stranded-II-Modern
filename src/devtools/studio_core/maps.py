@@ -39,7 +39,7 @@ class EditableMap:
     def __init__(self, data):
         try:
             self.source = Map(data)
-        except (AssertionError, struct.error, UnicodeError) as exc:
+        except (ValueError, struct.error) as exc:
             raise ValueError(f'Invalid or unsupported .s2 map: {exc}') from exc
         if self.source.headers[5] != b'map':
             raise ValueError('Studio edits maps only; player saves are not authoring inputs')

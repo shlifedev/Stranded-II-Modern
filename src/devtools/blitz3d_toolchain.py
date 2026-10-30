@@ -55,20 +55,28 @@ def library(name):
     return DEPS / config()['libraries'][name]['directory']
 
 
+def download(url, expected, target):
+    """Replace target only with a complete download that matches its pin."""
+    pending = target.with_name(target.name + '.download')
+    print('Downloading:', url, flush=True)
+    try:
+        with urllib.request.urlopen(url, timeout=120) as source, pending.open('wb') as output:
+            shutil.copyfileobj(source, output)
+        if digest(pending) != expected:
+            raise ValueError(f'Downloaded file does not match its pinned SHA-256: {url}')
+        pending.replace(target)
+    finally:
+        pending.unlink(missing_ok=True)
+
+
 def fetch(spec, archive_name):
     """Fetch immutable dependencies only, never engine sources."""
     DEPS.mkdir(parents=True, exist_ok=True)
     archive = DEPS / archive_name
-    if not archive.exists():
-        pending = archive.with_suffix(archive.suffix + '.download')
-        print('Downloading:', spec['url'], flush=True)
-        with urllib.request.urlopen(spec['url'], timeout=120) as source, pending.open('wb') as output:
-            shutil.copyfileobj(source, output)
-        if digest(pending) != spec['sha256']:
-            raise ValueError(f'Dependency checksum mismatch: {pending}')
-        pending.replace(archive)
-    if digest(archive) != spec['sha256']:
-        raise ValueError(f'Dependency checksum mismatch: {archive}')
+    # Archive names do not carry the pinned version, so after a pin update the
+    # previous archive is still here. Treat it as a stale cache, not an error.
+    if not archive.exists() or digest(archive) != spec['sha256']:
+        download(spec['url'], spec['sha256'], archive)
     destination = DEPS / spec['directory']
     if destination.is_dir():
         return destination

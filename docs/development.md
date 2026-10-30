@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"3d4bda2e8802d2da232fce324c17d6a07c52cee03de77bf2a8d7e509d84503f6"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"eb2e9ca549ffa1a772b26a3a3764a29ac47b0c513eb9dd6064bec138d1c77d0f"} -->
 
 # Development guide
 
@@ -10,7 +10,7 @@ For a first build, follow **environment setup → first build**. Once set up, us
 
 ## Setting up the development environment
 
-You need Windows 10/11 x64 with a Direct3D 12 GPU, Python 3.12 or later, and [requirements.txt](../requirements.txt). Use an ASCII workspace path such as `C:\Stranded II`; spaces are allowed.
+You need Windows 10/11 x64 with a Direct3D 12 GPU, Python 3.12 or later, and [requirements.txt](../requirements.txt). Use an ASCII workspace path such as `C:\Stranded II`; spaces are allowed. `dev.py` stops on Python before 3.12 and under `-O`/`PYTHONOPTIMIZE`, which would skip verification asserts.
 
 Install Visual Studio’s MSVC x64 C++ build tools, Windows SDK, CMake/Ninja tools and DIA SDK. `build` compiles the editable Blitz3D engine in `src/blitz3d/` with LLVM and links the game as a native x64 executable. Rendering uses Dawn/D3D12 and audio uses OpenAL Soft. Unicode input, IME and Windows services are linked into the runtime; `QolInput.dll` is no longer required. Runtime DLLs and their licenses are copied beside each edition’s EXE.
 
@@ -35,7 +35,7 @@ deps/
     NotoSansKR[wght].ttf
 ```
 
-Game/font versions and hashes are in [config/dependencies.json](../config/dependencies.json) and [config/game-files.json](../config/game-files.json). `setup` downloads the SDKs and libraries pinned in [config/blitz3d-toolchain.json](../config/blitz3d-toolchain.json) to `deps/blitz3d/`. Blitz3D 1.118 is an optional reference dependency, not the production compiler. Engine origin and integrated changes are recorded in [src/blitz3d/upstream.json](../src/blitz3d/upstream.json).
+Game/font versions and hashes are in [config/dependencies.json](../config/dependencies.json) and [config/game-files.json](../config/game-files.json). `setup` downloads the SDKs and libraries pinned in [config/blitz3d-toolchain.json](../config/blitz3d-toolchain.json) to `deps/blitz3d/`. When a pin changes, a cached archive or UI font that no longer matches it is downloaded again and replaced only after the new hash matches. Blitz3D 1.118 is an optional reference dependency, not the production compiler. Engine origin and integrated changes are recorded in [src/blitz3d/upstream.json](../src/blitz3d/upstream.json).
 
 ## First build
 
@@ -164,7 +164,7 @@ The current scope is an experimental single-player web build. Mobile, web Extend
 
 ### GitHub Pages deployment
 
-The [WebPlay workflow](../.github/workflows/web.yml) builds, checks, and deploys to Pages on main pushes and manual runs targeting main. Pushes and PRs that change only files with the lowercase `.md` extension are excluded; this filter does not apply to manual runs. PRs only run checks and create artifacts. Windows builds with the existing CI dependency ZIP and pinned web tools; Ubuntu publishes the site. The web workflow creates no Releases or tags. The existing Windows release policy remains in effect.
+The [WebPlay workflow](../.github/workflows/web.yml) builds, checks, and deploys to Pages on main pushes and manual runs targeting main. Pushes and PRs that change only files with the lowercase `.md` extension are excluded; this filter does not apply to manual runs. PRs only run checks and create artifacts; a newer push to the same PR cancels its running check. Windows builds with the existing CI dependency ZIP and pinned web tools; Ubuntu publishes the site. The web workflow creates no Releases or tags. The existing Windows release policy remains in effect.
 
 Before the first publication, set the repository's **Settings → Pages → Build and deployment → Source** to **GitHub Actions** and allow main deployments in the `github-pages` environment. The address is `https://shlifedev.github.io/Stranded-II-Modern/`. Local and Pages browser saves are separate and are not migrated automatically.
 
@@ -392,7 +392,7 @@ Write public release titles and descriptions in English.
 
 Windows CI runs `setup → build → check → package` on Windows Server 2022 with Python 3.13. The final publication job runs on `macos-15` with Bash and calls `src/devtools/ci.py release --include-macos` to validate both platforms’ versions, commits, and checksums. It mounts the DMG read-only and checks app hashes, execute permissions, ARM64 format, native check results, and actual app/DMG signatures, stapled tickets, and Gatekeeper acceptance. Published releases remain immutable, including historical Mac ZIPs; interrupted drafts cannot silently replace their original artifact set. Mac files cannot be added to an existing published Windows-only release. Windows `check` and Mac `core` do not verify display, rendering FPS, app switching, or full gameplay. Verify GitHub Actions runs separately from local checks.
 
-To avoid repeated download traffic to upstream sites, store game resources, the compiler, and the font once in a dependency Release in the same repository. For these build inputs, CI uses only this Release and the Actions cache. Missing files cause a failure with preparation instructions; CI does not automatically download those inputs from upstream sites.
+To avoid repeated download traffic to upstream sites, store game resources, the compiler, and the font once in a dependency Release in the same repository. For these build inputs, CI uses only this Release and the Actions cache. Missing files cause a failure with preparation instructions; CI does not automatically download those inputs from upstream sites. Windows desktop and web CI cache engine SDKs and the pinned UI font per pin, downloading them from their pinned URLs only on a cache miss.
 
 ### Setting versions and automatic increments
 

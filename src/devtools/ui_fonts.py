@@ -20,7 +20,8 @@ def prepare(root):
     folder = root / 'deps/fonts/ui'
     folder.mkdir(parents=True, exist_ok=True)
     target = folder / spec['filename']
-    if not target.exists():
+    # The filename stays the same across pin updates; replace an outdated copy.
+    if not target.exists() or digest(target) != spec['sha256']:
         with tempfile.TemporaryDirectory(prefix='.ui-font-', dir=folder) as temporary:
             pending = Path(temporary) / target.name
             print('Downloading UI font:', spec['url'], flush=True)
@@ -29,6 +30,4 @@ def prepare(root):
             if digest(pending) != spec['sha256']:
                 raise ValueError('UI font checksum mismatch')
             pending.replace(target)
-    if digest(target) != spec['sha256']:
-        raise ValueError('UI font checksum mismatch')
     return target
