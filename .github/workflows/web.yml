@@ -15,7 +15,8 @@ permissions:
 
 concurrency:
   group: web-pages-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
-  cancel-in-progress: false
+  # A newer PR push supersedes its previous check; production runs always finish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   PYTHONUTF8: '1'
@@ -82,7 +83,8 @@ jobs:
             deps/blitz3d
             deps/emsdk
             deps/ffmpeg-web
-          key: web-windows-2022-${{ steps.image.outputs.version }}-${{ hashFiles('config/web-toolchain.json', 'config/blitz3d-toolchain.json', 'src/devtools/blitz3d_toolchain.py', 'src/devtools/web_toolchain.py', 'src/devtools/web_audio.py') }}
+            deps/fonts/ui
+          key: web-windows-2022-${{ steps.image.outputs.version }}-${{ hashFiles('config/web-toolchain.json', 'config/blitz3d-toolchain.json', 'src/devtools/blitz3d_toolchain.py', 'src/devtools/web_toolchain.py', 'src/devtools/web_audio.py', 'src/devtools/ui_fonts.py') }}
 
       - name: Prepare native comparison resources
         env:

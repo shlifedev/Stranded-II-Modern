@@ -123,8 +123,11 @@ jobs:
       - name: Cache pinned engine dependencies
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: deps/blitz3d
-          key: blitz3d-windows-x64-${{ hashFiles('config/blitz3d-toolchain.json', 'src/devtools/blitz3d_toolchain.py') }}
+          # The UI font pin also lives in blitz3d-toolchain.json.
+          path: |
+            deps/blitz3d
+            deps/fonts/ui
+          key: blitz3d-windows-x64-${{ hashFiles('config/blitz3d-toolchain.json', 'src/devtools/blitz3d_toolchain.py', 'src/devtools/ui_fonts.py') }}
 
       - name: Prepare runtime resources
         env:

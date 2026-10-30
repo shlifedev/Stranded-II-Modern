@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"c766f6c6b9d4241960ae736799b49eecee274133f10bfebb6ccfc074fd0cb2f7"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"a4db365bf67a15aeda889d333ae63a6cea1f1e593742d328215034a2f0b3c91d"} -->
 
 # 개발 가이드
 
@@ -10,7 +10,7 @@
 
 ## 개발 환경 준비
 
-Windows 10/11 x64와 Direct3D 12 지원 GPU, Python 3.12 이상, [requirements.txt](../requirements.txt)이 필요합니다. 작업 폴더는 `C:\Stranded II`처럼 영문 경로를 사용하세요. 공백은 있어도 됩니다.
+Windows 10/11 x64와 Direct3D 12 지원 GPU, Python 3.12 이상, [requirements.txt](../requirements.txt)이 필요합니다. 작업 폴더는 `C:\Stranded II`처럼 영문 경로를 사용하세요. 공백은 있어도 됩니다. `dev.py`는 Python 3.12 미만이나 검증 assert를 건너뛰는 `-O`/`PYTHONOPTIMIZE` 환경에서는 오류로 중단합니다.
 
 Visual Studio의 MSVC x64 C++ 빌드 도구, Windows SDK, CMake/Ninja 도구, DIA SDK를 설치합니다. `build`는 저장소의 `src/blitz3d/` 엔진을 LLVM과 함께 빌드해 게임을 x64 네이티브 실행 파일로 연결합니다. 그래픽은 Dawn/D3D12, 오디오는 OpenAL Soft를 사용합니다. Unicode 입력·IME·Windows 서비스는 런타임에 내장하며 `QolInput.dll`은 필요하지 않습니다. 실행에 필요한 DLL과 라이선스는 각 판의 EXE 옆에 복사합니다.
 
@@ -35,7 +35,7 @@ deps/
     NotoSansKR[wght].ttf
 ```
 
-게임·글꼴 버전과 해시는 [config/dependencies.json](../config/dependencies.json), [config/game-files.json](../config/game-files.json)에 있습니다. `setup`은 [config/blitz3d-toolchain.json](../config/blitz3d-toolchain.json)에 고정한 SDK·라이브러리를 `deps/blitz3d/`에 받습니다. Blitz3D 1.118은 비교용 선택 의존성이며 실제 빌드에는 사용하지 않습니다. 엔진 출처와 통합한 변경은 [src/blitz3d/upstream.json](../src/blitz3d/upstream.json)에 기록합니다.
+게임·글꼴 버전과 해시는 [config/dependencies.json](../config/dependencies.json), [config/game-files.json](../config/game-files.json)에 있습니다. `setup`은 [config/blitz3d-toolchain.json](../config/blitz3d-toolchain.json)에 고정한 SDK·라이브러리를 `deps/blitz3d/`에 받습니다. 고정값이 바뀌어 기존에 받아 둔 압축 파일이나 UI 글꼴이 맞지 않으면 다시 받고, 새 해시가 일치할 때만 교체합니다. Blitz3D 1.118은 비교용 선택 의존성이며 실제 빌드에는 사용하지 않습니다. 엔진 출처와 통합한 변경은 [src/blitz3d/upstream.json](../src/blitz3d/upstream.json)에 기록합니다.
 
 ## 최초 빌드
 
@@ -164,7 +164,7 @@ WebGPU의 동일 버퍼 `CopyRect`는 임시 텍스처를 재사용하고, 앞�
 
 ### GitHub Pages 배포
 
-[WebPlay 워크플로](../.github/workflows/web.yml)는 main 푸시와 main 대상 수동 실행에서 빌드·검사 후 Pages에 배포합니다. 변경 파일이 모두 소문자 `.md`인 푸시·PR은 제외하며, 수동 실행에는 이 필터를 적용하지 않습니다. PR은 검사와 아티팩트 생성만 수행합니다. Windows에서 기존 CI 의존성 ZIP과 고정한 웹 도구로 빌드하고 Ubuntu에서 게시하며, 웹 워크플로는 Release·태그를 생성하지 않습니다. 기존 Windows 릴리스 정책은 유지됩니다.
+[WebPlay 워크플로](../.github/workflows/web.yml)는 main 푸시와 main 대상 수동 실행에서 빌드·검사 후 Pages에 배포합니다. 변경 파일이 모두 소문자 `.md`인 푸시·PR은 제외하며, 수동 실행에는 이 필터를 적용하지 않습니다. PR은 검사와 아티팩트 생성만 수행하며, 같은 PR에 새 푸시가 오면 진행 중인 검사를 취소합니다. Windows에서 기존 CI 의존성 ZIP과 고정한 웹 도구로 빌드하고 Ubuntu에서 게시하며, 웹 워크플로는 Release·태그를 생성하지 않습니다. 기존 Windows 릴리스 정책은 유지됩니다.
 
 최초 게시 전에 저장소 **Settings → Pages → Build and deployment → Source**를 **GitHub Actions**로 설정하고 `github-pages` 환경에서 main 배포를 허용합니다. 주소는 `https://shlifedev.github.io/Stranded-II-Modern/`입니다. 로컬 주소와 Pages의 브라우저 저장소는 별개이며 자동 이전하지 않습니다.
 
@@ -392,7 +392,7 @@ msg "[[loc:quest.island1.arrival]]";
 
 Windows CI는 Windows Server 2022와 Python 3.13에서 `setup → build → check → package`를 실행합니다. 최종 게시 작업은 `macos-15`의 Bash에서 `src/devtools/ci.py release --include-macos`를 실행해 양쪽 버전·커밋·체크섬을 검증합니다. DMG를 읽기 전용으로 마운트하고 앱 해시·실행 권한·ARM64 형식·네이티브 검사 결과와 실제 앱·DMG 서명, 공증 티켓, Gatekeeper 승인을 검사합니다. 과거 Mac ZIP을 포함한 공개 릴리스는 불변이며 중단된 초안의 원래 자산 구성을 자동 교체하지 않습니다. Mac 파일이 없는 기존 공개 릴리스에는 나중에 덧붙이지 않습니다. Windows `check`와 Mac `core`는 화면·렌더링 FPS·앱 전환·전체 플레이를 검증하지 않습니다. 실제 GitHub Actions 실행은 로컬 검사와 별도로 확인하세요.
 
-원본 사이트에 반복 다운로드 트래픽을 발생시키지 않도록 게임 리소스·컴파일러·글꼴은 같은 저장소의 의존성용 Release에 한 번 보관합니다. 이 빌드 입력에는 해당 Release와 Actions 캐시만 사용합니다. 파일이 없으면 준비 방법을 안내하고 실패하며, 해당 입력을 원본 사이트에서 자동 다운로드하지 않습니다.
+원본 사이트에 반복 다운로드 트래픽을 발생시키지 않도록 게임 리소스·컴파일러·글꼴은 같은 저장소의 의존성용 Release에 한 번 보관합니다. 이 빌드 입력에는 해당 Release와 Actions 캐시만 사용합니다. 파일이 없으면 준비 방법을 안내하고 실패하며, 해당 입력을 원본 사이트에서 자동 다운로드하지 않습니다. Windows 데스크톱·웹 CI는 엔진 SDK와 고정 UI 글꼴을 고정값별로 캐시하고, 캐시가 없을 때만 고정 URL에서 받습니다.
 
 ### 버전 지정과 자동 증가
 

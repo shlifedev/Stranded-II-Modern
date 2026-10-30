@@ -22,7 +22,8 @@ class Map:
         self.pos = 0
         self.fields = []
         self.headers = [self.line() for _ in range(12)]
-        assert self.headers[0].startswith(b'### Stranded II'), 'Bad map header'
+        if not self.headers[0].startswith(b'### Stranded II'):
+            raise ValueError('Bad map header')
         mode = self.headers[5]
         formats = (self.headers[6] + b'000')[:3]
         self.skip(96 * 72 * 3)
@@ -43,7 +44,8 @@ class Map:
         self.skip((color_size + 1) ** 2)
         for i, kind in enumerate(('object', 'unit', 'item')):
             count = self.integer()
-            assert 0 <= count < 100000, (kind, count)
+            if not 0 <= count < 100000:
+                raise ValueError(f'Implausible {kind} count {count} at byte {self.pos}')
             type_size = 2 if formats[i] != ord('0') else 1
             stride = {'object': 28, 'unit': 48, 'item': 34}[kind] + type_size
             self.skip(stride * count)
@@ -64,7 +66,8 @@ class Map:
         if mode == b'sav':
             self.skip(8)
         trailer = [self.line() for _ in range(3)]
-        assert trailer[-1] == b'www.unrealsoftware.de', (self.pos, trailer)
+        if trailer[-1] != b'www.unrealsoftware.de':
+            raise ValueError(f'Unexpected map trailer at byte {self.pos}: {trailer!r}')
         while self.pos < len(data):
             start = self.pos
             name_raw = self.line()
@@ -75,10 +78,12 @@ class Map:
             length = self.integer()
             content = bytes(255 - b for b in self.take(length))
             self.fields.append(Field('attachment/' + name, body_start, self.pos, content, 'attachment'))
-        assert self.pos == len(data)
+        if self.pos != len(data):
+            raise ValueError(f'Map parser stopped at byte {self.pos} of {len(data)}')
 
     def take(self, count):
-        assert count >= 0 and self.pos + count <= len(self.data), (self.pos, count, len(self.data))
+        if count < 0 or self.pos + count > len(self.data):
+            raise ValueError(f'Truncated map: {count} bytes requested at byte {self.pos} of {len(self.data)}')
         result = self.data[self.pos:self.pos + count]
         self.pos += count
         return result
@@ -106,7 +111,8 @@ class Map:
     def write(self, changes=None):
         changes = changes or {}
         known = {f.key for f in self.fields}
-        assert set(changes) <= known, set(changes) - known
+        if unknown := set(changes) - known:
+            raise ValueError(f'Unknown map fields: {sorted(unknown)}')
         out, pos = bytearray(), 0
         for field in self.fields:
             out.extend(self.data[pos:field.start])
@@ -127,6 +133,7 @@ if __name__ == '__main__':
     for path in Path('mods/Stranded II/maps').rglob('*.s2'):
         data = path.read_bytes()
         model = Map(data)
-        assert model.write() == data, path
+        if model.write() != data:
+            raise ValueError(f'Map does not round-trip: {path}')
         summary.append({'map': str(path), 'text_fields': len(model.fields), 'text_bytes': sum(len(f.data) for f in model.fields)})
     print(json.dumps(summary, indent=2))

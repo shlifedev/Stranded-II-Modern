@@ -127,6 +127,9 @@ def main():
     global PROFILE,BUILD,RUNTIME
     PROFILE=Edition(args.edition);BUILD=PROFILE.build_dir(ROOT);RUNTIME=PROFILE.runtime(ROOT)
     try:
+        if sys.version_info<(3,12):raise ValueError('Python 3.12 or later is required; see docs/development.md.')
+        # check and the verify_* tools it starts express results as assert statements.
+        if sys.flags.optimize:raise ValueError('Run without -O or PYTHONOPTIMIZE; it would skip verification asserts.')
         if getattr(args,'suite',None) and args.platform!='macos':
             raise ValueError('--suite is only supported by check --platform macos.')
         if args.platform=='macos':

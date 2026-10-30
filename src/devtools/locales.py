@@ -134,7 +134,7 @@ def prepare(root,game,runtime,edition='classic'):
     map_count=0
     for p in (base/'maps').rglob('*.s2'):
         relative=p.relative_to(base).as_posix();model=Map(p.read_bytes());fields={}
-        assert model.write({})==p.read_bytes(),relative
+        if model.write({})!=model.data:raise ValueError(f'Map does not round-trip before conversion: {relative}')
         for field in model.fields:
             if field.kind=='attachment':continue
             location=relative+'::'+field.key;text=field.data.decode('cp1252')
@@ -147,7 +147,8 @@ def prepare(root,game,runtime,edition='classic'):
         rebuilt=Map(dest.read_bytes())
         # Replacing all converted fields with originals must restore every byte,
         # including geometry, numeric IDs, extensions and embedded attachments.
-        assert rebuilt.write({f.key:f.data for f in model.fields if f.kind!='attachment'})==model.data,relative
+        if rebuilt.write({f.key:f.data for f in model.fields if f.kind!='attachment'})!=model.data:
+            raise ValueError(f'Map conversion changed bytes outside its strings: {relative}')
         map_count+=1
     pairs={a:ref(a) for a in aliases if a in keys}
     (out/'sys/ko_aliases.dat').write_bytes(struct.pack('<i',len(pairs))+b''.join(bstring(a)+bstring(b) for a,b in sorted(pairs.items())))
