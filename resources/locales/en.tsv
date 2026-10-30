@@ -2589,6 +2589,7 @@ modern.no_quicksave	No quick save yet.
 modern.resolution	Resolution
 modern.restart	Saved. Display and language changes apply after restarting the game.
 modern.save_failed	Save failed. Check folder permissions and disk space. The previous save is retained.
+modern.save_name_invalid	Invalid save name. Avoid \\ / : * ? " < > | and device names such as CON.
 modern.saved	Game saved.
 modern.settings_failed	Could not save settings. Check folder permissions and available disk space.
 modern.windowed	Windowed

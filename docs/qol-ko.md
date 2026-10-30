@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/qol.md","language":"ko","syncedHash":"4b787e90f290b0fcc52bc2714356b47323a8977dffbc8eb3c73aa550f11a94cd"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/qol.md","language":"ko","syncedHash":"3f4a5914087cd3b3cf5a327dd9c4561b23a2ba5e57b0b5ac31c842e024bef2dd"} -->
 
 # QOL 설정
 
@@ -6,7 +6,7 @@
 
 [README로 돌아가기](../README-ko.md) · [개발 가이드](development-ko.md)
 
-Stranded II와 Extended 모두 **설정 → QOL**에서 아래 기능을 각각 켜고 끌 수 있습니다. 기본값은 **기본판 모두 OFF**, **Extended 모두 ON**이며 저장된 선택이 우선합니다. 적용하면 저장과 동시에 반영되고, 취소하면 아직 적용하지 않은 변경을 버립니다.
+Stranded II와 Extended 모두 **설정 → QOL**에서 아래 기능을 각각 켜고 끌 수 있습니다. 기본값은 **기본판 모두 OFF**, **Extended 모두 ON**이며 저장된 선택이 우선합니다. 적용하면 저장과 동시에 반영되고, 취소하거나 **Esc**를 누르면 아직 적용하지 않은 변경을 버립니다.
 
 | 기능 | 사용 방법 |
 | --- | --- |

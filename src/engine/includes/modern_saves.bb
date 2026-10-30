@@ -27,6 +27,29 @@ Function modern_save_valid(path$)
  Return ok
 End Function
 
+; Windows refuses these names. A colon is worse: NTFS reads it as a stream separator and can
+; leave a stray file behind, while the player only sees the disk-space/permissions message.
+Function modern_save_name_valid(name$)
+ If name$="" Then Return False
+ Local i,c,base$=name$
+ For i=1 To Len(name$)
+  c=Asc(Mid(name$,i,1))
+  If c<32 Or Instr("\/:*?<>|"+Chr(34),Chr(c))>0 Then Return False
+ Next
+ If Instr(base$,".")>0 Then base$=Left(base$,Instr(base$,".")-1)
+ base$=Upper(Trim(base$))
+ Select base$
+  Case "CON","PRN","AUX","NUL":Return False
+ End Select
+ If Len(base$)=4 And (Left(base$,3)="COM" Or Left(base$,3)="LPT") And Instr("0123456789",Right(base$,1))>0 Then Return False
+ Return True
+End Function
+
+Function modern_save_named(name$)
+ If modern_save_name_valid(name$)=0 Then gui_msg("[[loc:modern.save_name_invalid]]",Cbmpf_red):Return False
+ Return save_map("saves\"+name$+".sav","sav","")
+End Function
+
 Function modern_autosave_path$(slot)
  If slot=1 Then Return "saves\AUTOSAVE.sav"
  Return "saves\AUTOSAVE_"+slot+".sav"

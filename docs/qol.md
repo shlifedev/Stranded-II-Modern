@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/qol.md","language":"en","syncedHash":"7a7431368afb3211d49ff22e8d289070897062098d43e58d55f045842ef65b23"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/qol.md","language":"en","syncedHash":"14b4bdb0006f7e679729de5d5616957ddd1d9882e65b5a9fef3f1986609b09d2"} -->
 
 # QOL options
 
@@ -6,7 +6,7 @@
 
 [Back to README](../README.md) · [Development guide](development.md)
 
-Both Stranded II and Extended provide these features under **Settings → QOL**. Each option can be toggled separately. Defaults are **all OFF in Stranded II** and **all ON in Extended**. Saved selections take precedence. Apply saves the options and activates them immediately; Cancel discards pending changes.
+Both Stranded II and Extended provide these features under **Settings → QOL**. Each option can be toggled separately. Defaults are **all OFF in Stranded II** and **all ON in Extended**. Saved selections take precedence. Apply saves the options and activates them immediately; Cancel or **Esc** discards pending changes.
 
 | Feature | How to use it |
 | --- | --- |

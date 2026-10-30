@@ -168,6 +168,15 @@ check(loaded$="saves\QUICKSAVE.sav","quickload dispatch")
 check(in_quicksave=0,"world-clearing load safely drains requests")
 modern_queue_save(4):modern_process_saves()
 check(loaded$=modern_latest_save(1),"autoload chooses latest rolling slot")
+check(modern_save_name_valid("Day 3 - camp") And modern_save_name_valid("Höhle 캠프") And modern_save_name_valid("console"),"ordinary save names accepted")
+check(modern_save_name_valid("")=0 And modern_save_name_valid("Day 3: camp")=0 And modern_save_name_valid("..\escape")=0,"empty, stream and path names refused")
+check(modern_save_name_valid("a?b")=0 And modern_save_name_valid("a"+Chr(34)+"b")=0 And modern_save_name_valid("a"+Chr(9)+"b")=0,"wildcard, quote and control characters refused")
+check(modern_save_name_valid("con")=0 And modern_save_name_valid("Lpt1.old")=0 And modern_save_name_valid("COM9")=0,"device names refused")
+shown=messages
+check(modern_save_named("bad:name")=0,"invalid manual save refused")
+check(messages=shown+1 And FileType("saves\bad")=0,"invalid name explained without a stray file")
+check(modern_save_named("Day 3 - camp"),"valid manual save name")
+check(modern_save_valid("saves\Day 3 - camp.sav"),"valid manual save written")
 modern_capture_settings()
 remaster_option("render_water","1"):remaster_option("render_shadows","1")
 remaster_option("render_shadows","invalid")
@@ -227,7 +236,7 @@ End
     assert (out / 'core/modern.ini.bak').read_text('utf8') == config
     assert len(list((out/'saves').glob('AUTOSAVE*.sav'))) == 5
     (out / 'report.json').write_text(json.dumps({'save_replacement': 'pass',
-        'save_queue': 'pass', 'five_autosaves': 'pass', 'continue_selection': 'pass',
+        'save_queue': 'pass', 'five_autosaves': 'pass', 'continue_selection': 'pass', 'manual_save_names': 'pass',
         'display_settings': 'pass', 'real_game_serialization': 'requires graphics smoke test'}, indent=2)+'\n', encoding='utf8')
 
 

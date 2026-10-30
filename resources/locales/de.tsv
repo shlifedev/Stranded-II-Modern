@@ -2590,6 +2590,7 @@ modern.no_quicksave	Noch kein Schnellspeicherstand.
 modern.resolution	Auflösung
 modern.restart	Gespeichert. Anzeige- und Sprachänderungen gelten nach einem Neustart des Spiels.
 modern.save_failed	Speichern fehlgeschlagen. Prüfe Ordnerrechte und freien Speicherplatz. Der bisherige Spielstand bleibt erhalten.
+modern.save_name_invalid	Ungültiger Spielstandname. Vermeide \\ / : * ? " < > | und Gerätenamen wie CON.
 modern.saved	Spiel gespeichert.
 modern.settings_failed	Einstellungen konnten nicht gespeichert werden. Prüfe Ordnerrechte und freien Speicherplatz.
 modern.windowed	Fenster
