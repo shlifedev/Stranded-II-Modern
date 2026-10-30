@@ -79,6 +79,7 @@ struct WebGPUContextResources{
 
 	WGPUTexture surface_texture=0;
 	WGPUTextureView surface_view=0;
+	bool surface_sampled=false;
 
 	WGPUShaderModule shader=0;
 	WGPUBindGroupLayout bind_layout=0;

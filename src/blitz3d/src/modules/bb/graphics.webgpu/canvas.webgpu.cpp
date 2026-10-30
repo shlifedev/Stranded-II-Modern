@@ -131,7 +131,10 @@ WGPUTextureView WebGPUCanvas::targetView(){
 }
 
 WGPUTextureView WebGPUCanvas::sampleView(){
-	if( is_surface ) return res->acquireSurfaceView();
+	if( is_surface ){
+		res->surface_sampled=true;
+		return res->acquireSurfaceView();
+	}
 	if( dirty ) uploadData();
 	ensureTexture();
 	if( mips_dirty ){
@@ -538,25 +541,30 @@ void WebGPUCanvas::draw2d( WGPUPrimitiveTopology topology,bool blend,WGPUTexture
 
 void WebGPUCanvas::quad( int x,int y,int w,int h,bool solid,bool blend,
                          WGPUTextureView tex,float col[3] ){
-	float xywh[4]={ (float)x,(float)y,(float)w,(float)h };
+	// The rectangle lives in the vertices, as in blitSelf, so consecutive rects
+	// of one colour share a uniform slot and merge. The shader's position*1+0
+	// reproduces the former unit*wh+xy exactly.
+	float xywh[4]={ 0.f,0.f,1.f,1.f };
 	float scale[2]={ scale_x,scale_y };
+	float l=(float)x,t=(float)y;
+	float r=l+(float)w,b=t+(float)h;
 
 	if( solid ){
-		static const BBWebGPUVertex verts[6]={
-			{ 0.f,0.f,0.f,0.f },
-			{ 0.f,1.f,0.f,1.f },
-			{ 1.f,0.f,1.f,0.f },
-			{ 1.f,0.f,1.f,0.f },
-			{ 0.f,1.f,0.f,1.f },
-			{ 1.f,1.f,1.f,1.f }
+		const BBWebGPUVertex verts[6]={
+			{ l,t,0.f,0.f },
+			{ l,b,0.f,1.f },
+			{ r,t,1.f,0.f },
+			{ r,t,1.f,0.f },
+			{ l,b,0.f,1.f },
+			{ r,b,1.f,1.f }
 		};
 		draw2d( WGPUPrimitiveTopology_TriangleList,blend,tex,res->sampler_linear,xywh,col,scale,verts,6 );
 	}else{
-		static const BBWebGPUVertex verts[8]={
-			{ 0.f,0.f,0.f,0.f },{ 0.f,1.f,0.f,1.f },
-			{ 0.f,1.f,0.f,1.f },{ 1.f,1.f,1.f,1.f },
-			{ 1.f,1.f,1.f,1.f },{ 1.f,0.f,1.f,0.f },
-			{ 1.f,0.f,1.f,0.f },{ 0.f,0.f,0.f,0.f }
+		const BBWebGPUVertex verts[8]={
+			{ l,t,0.f,0.f },{ l,b,0.f,1.f },
+			{ l,b,0.f,1.f },{ r,b,1.f,1.f },
+			{ r,b,1.f,1.f },{ r,t,1.f,0.f },
+			{ r,t,1.f,0.f },{ l,t,0.f,0.f }
 		};
 		draw2d( WGPUPrimitiveTopology_LineList,blend,tex,res->sampler_linear,xywh,col,scale,verts,8 );
 	}
@@ -943,17 +951,21 @@ void WebGPUCanvas::blit( int x,int y,BBCanvas *s,int src_x,int src_y,int src_w,i
 	float u0=sx0/srcW,v0=sy0/srcH;
 	float u1=(sx0+sw)/srcW,v1=(sy0+sh)/srcH;
 
+	// Destination positions go in the vertices so every glyph of a bitmap-font
+	// run (DrawImageRect from one page) shares uniforms and becomes one draw.
+	float l=dx0,t=dy0;
+	float r=l+dw,b=t+dh;
 	const BBWebGPUVertex verts[6]={
-		{ 0.f,0.f,u0,v0 },
-		{ 0.f,1.f,u0,v1 },
-		{ 1.f,0.f,u1,v0 },
-		{ 1.f,0.f,u1,v0 },
-		{ 0.f,1.f,u0,v1 },
-		{ 1.f,1.f,u1,v1 }
+		{ l,t,u0,v0 },
+		{ l,b,u0,v1 },
+		{ r,t,u1,v0 },
+		{ r,t,u1,v0 },
+		{ l,b,u0,v1 },
+		{ r,b,u1,v1 }
 	};
 
 	float white[3]={ 1.f,1.f,1.f };
-	float xywh[4]={ dx0,dy0,dw,dh };
+	float xywh[4]={ 0.f,0.f,1.f,1.f };
 	float scale[2]={ 1.f,1.f };
 	// Blitz images use a per-draw RGB colour key. Keep the source pixels intact
 	// so DrawBlock, CopyImage, animated frames and changed masks all work too.
