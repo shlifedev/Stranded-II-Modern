@@ -9,6 +9,9 @@
 #ifdef BB_EMSCRIPTEN
 #include <emscripten.h>
 #endif
+#ifdef BB_WINDOWS
+#include "../../../stdutil/windows_utf8.h"
+#endif
 
 static FILE *in;
 static std::vector<int> chunk_stack;
@@ -329,7 +332,11 @@ MeshModel *Loader_B3D::load( const std::string &f,const Transform &conv,int hint
 	collapse=!!(hint&MeshLoader::HINT_COLLAPSE);
 	animonly=!!(hint&MeshLoader::HINT_ANIMONLY);
 
+#ifdef BB_WINDOWS
+	in=_wfopen( bbWide( f ).c_str(),L"rb" );
+#else
 	in=fopen( f.c_str(),"rb" );
+#endif
 	if( !in ){
 		fprintf( stderr,"[b3d] fopen failed: %s errno=%d %s\n",f.c_str(),errno,strerror( errno ) );
 #ifdef BB_EMSCRIPTEN

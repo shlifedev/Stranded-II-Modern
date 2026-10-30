@@ -34,7 +34,7 @@ def check_abi(output):
         engine.compile_test(root / 'src/tests' / (name + '.bb'), exe, cwd=output, graphics=False)
         execute(exe, output, name)
     return {'original_1_118_bytes': len(expected), 'type_lifetime': 'pass',
-            'unicode_files_and_native_handles': 'pass'}
+            'unicode_files_and_native_handles': 'pass', 'partial_utf8_paths': 'pass'}
 
 
 def check_input(output):
