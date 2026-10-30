@@ -194,19 +194,19 @@ Function ai_mode(mode,duration=0,setani=1)
 					Case 1
 						If Dunit_ani_idle1(TCunit\typ,0)<>0. Then
 							ai_ani(ani_idle1)
-							play_soundset(Dunit_sfx(TCunit\typ),snd_idle1,TCunit\h)
+							play_unitsound(TCunit\typ,snd_idle1,TCunit\h)
 							playidle=1
 						EndIf
 					Case 2
 						If Dunit_ani_idle2(TCunit\typ,0)<>0. Then
 							ai_ani(ani_idle2)
-							play_soundset(Dunit_sfx(TCunit\typ),snd_idle2,TCunit\h)
+							play_unitsound(TCunit\typ,snd_idle2,TCunit\h)
 							playidle=1
 						EndIf
 					Case 3
 						If Dunit_ani_idle3(TCunit\typ,0)<>0. Then
 							ai_ani(ani_idle3)
-							play_soundset(Dunit_sfx(TCunit\typ),snd_idle3,TCunit\h)
+							play_unitsound(TCunit\typ,snd_idle3,TCunit\h)
 							playidle=1
 						EndIf
 				End Select
@@ -408,7 +408,7 @@ Function ai_check(attitude=0,landcheck=1,centercheck=1)
 											If tame=1 Then doit=0
 											If doit=1 Then
 												;Sound / FX
-												play_soundset(Dunit_sfx(TCunit\typ),snd_attack,TCunit\h)
+												play_unitsound(TCunit\typ,snd_attack,TCunit\h)
 												ai_mode(ai_attack)
 												;Event
 												set_parsecache(Cclass_unit,TCunit\id,"ai_attack")
@@ -439,7 +439,7 @@ Function ai_check(attitude=0,landcheck=1,centercheck=1)
 														ai_mode(ai_hunt,10000)
 														If ms-TCunit\lastspot>5000 Then
 															TCunit\lastspot=ms
-															play_soundset(Dunit_sfx(TCunit\typ),snd_spot,TCunit\h)
+															play_unitsound(TCunit\typ,snd_spot,TCunit\h)
 														EndIf
 													EndIf
 												EndIf
@@ -449,7 +449,7 @@ Function ai_check(attitude=0,landcheck=1,centercheck=1)
 													ai_mode(ai_hunt,10000)
 													If ms-TCunit\lastspot>5000 Then
 														TCunit\lastspot=ms
-														play_soundset(Dunit_sfx(TCunit\typ),snd_spot,TCunit\h)
+														play_unitsound(TCunit\typ,snd_spot,TCunit\h)
 													EndIf
 												;Killerbird (408) Attack
 												ElseIf Dunit_behaviour(TCunit\typ)=408 Then
@@ -457,7 +457,7 @@ Function ai_check(attitude=0,landcheck=1,centercheck=1)
 														ai_mode(ai_hunt,10000)
 														If ms-TCunit\lastspot>5000 Then
 															TCunit\lastspot=ms
-															play_soundset(Dunit_sfx(TCunit\typ),snd_spot,TCunit\h)
+															play_unitsound(TCunit\typ,snd_spot,TCunit\h)
 														EndIf
 													EndIf
 												EndIf
@@ -579,7 +579,7 @@ Function ai_getfood(water=0)
 				TCunit\ai_duration=5000
 				TCunit\ai_timer=gt
 				ai_ani(ani_attack)
-				play_soundset(Dunit_sfx(TCunit\typ),snd_attack,TCunit\h)
+				play_unitsound(TCunit\typ,snd_attack,TCunit\h)
 				sfx_emit sfx_eat,TCunit\h
 				
 				;Script
@@ -1405,11 +1405,11 @@ Function ai_movesound(mode=1)
 			;Play
 			If TCunit\chan<>0 Then
 				If ChannelPlaying(TCunit\chan)=0 Then
-					TCunit\chan=play_soundset(Dunit_sfx(TCunit\typ),snd_move,TCunit\h)
+					TCunit\chan=play_unitsound(TCunit\typ,snd_move,TCunit\h)
 					;If TCunit\chan<>0 Then LoopSound TCunit\chan
 				EndIf
 			Else
-				TCunit\chan=play_soundset(Dunit_sfx(TCunit\typ),snd_move,TCunit\h)
+				TCunit\chan=play_unitsound(TCunit\typ,snd_move,TCunit\h)
 				;If TCunit\chan<>0 Then LoopSound TCunit\chan
 			EndIf
 		Else

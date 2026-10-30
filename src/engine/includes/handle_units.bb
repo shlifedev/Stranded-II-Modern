@@ -406,7 +406,7 @@ Function kill_unit()
 				Tkill\ani=Dunit_ani_die(Tkill\typ,1)
 				Animate Tkill\mh,3,Dunit_ani_die(Tkill\typ,0),Dunit_ani_die(Tkill\typ,1)
 				;SFX
-				play_soundset(Dunit_sfx(Tkill\typ),snd_die,Tkill\h)
+				play_unitsound(Tkill\typ,snd_die,Tkill\h)
 			EndIf
 			;Health Max
 			Tkill\health_max#=0

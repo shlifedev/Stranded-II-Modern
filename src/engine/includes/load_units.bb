@@ -38,6 +38,7 @@ Dim Dunit_ani_spcl#(Cunit_count,1)	;Ani Special
 Dim Dunit_loopmoveani(Cunit_count)	;Loop Move Animation?
 
 Dim Dunit_sfx$(Cunit_count)			;Sfx Source
+Dim Dunit_soundset(Cunit_count)		;Tsoundset handle of Dunit_sfx$
 
 Dim Dunit_behaviour(Cunit_count)	;Behaviour
 
@@ -383,6 +384,15 @@ Function load_units()
 				unit_count_e=unit_count_e+1
 			EndIf
 		EndIf
+	Next
+
+	;Soundsets are only created above and never freed. Moving units ask for
+	;their move sound every frame, so do the name search once per type here.
+	For i=0 To Cunit_count
+		Dunit_soundset(i)=0
+		For Tsoundset.Tsoundset=Each Tsoundset
+			If Tsoundset\name$=Dunit_sfx$(i) Then Dunit_soundset(i)=Handle(Tsoundset):Exit
+		Next
 	Next
 End Function
 

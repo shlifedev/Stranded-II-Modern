@@ -84,25 +84,19 @@ Function load_soundset(name$)
 End Function
 
 
-;### Play Soundset Sound
-Function play_soundset(name$,sound,entity)
-	;Find
-	For Tsoundset.Tsoundset=Each Tsoundset
-		If Tsoundset\name$=name$ Then
-			;DebugLog "playsoundset "+name$+" sound: "+sound
-			Select sound
-				Case snd_spot Return sfx_emit(Tsoundset\spot,entity)
-				Case snd_attack Return sfx_emit(Tsoundset\attack,entity)
-				Case snd_idle1 Return sfx_emit(Tsoundset\idle1,entity)
-				Case snd_idle2 Return sfx_emit(Tsoundset\idle2,entity)
-				Case snd_idle3 Return sfx_emit(Tsoundset\idle3,entity)
-				Case snd_die Return sfx_emit(Tsoundset\die,entity)
-				Case snd_flee Return sfx_emit(Tsoundset\flee,entity)
-				Case snd_move Return sfx_emit(Tsoundset\move,entity)
-			End Select
-			Return 0
-		EndIf
-	Next
-	;Failed
+;### Play Soundset Sound of a Unit Type (set resolved in load_units)
+Function play_unitsound(typ,sound,entity)
+	Local soundset.Tsoundset=Object.Tsoundset(Dunit_soundset(typ))
+	If soundset=Null Then Return 0
+	Select sound
+		Case snd_spot Return sfx_emit(soundset\spot,entity)
+		Case snd_attack Return sfx_emit(soundset\attack,entity)
+		Case snd_idle1 Return sfx_emit(soundset\idle1,entity)
+		Case snd_idle2 Return sfx_emit(soundset\idle2,entity)
+		Case snd_idle3 Return sfx_emit(soundset\idle3,entity)
+		Case snd_die Return sfx_emit(soundset\die,entity)
+		Case snd_flee Return sfx_emit(soundset\flee,entity)
+		Case snd_move Return sfx_emit(soundset\move,entity)
+	End Select
 	Return 0
 End Function

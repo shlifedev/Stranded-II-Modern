@@ -9,6 +9,15 @@ Global ko_editing=0
 Type Tkoalias
  Field original$,translated$,link
 End Type
+; Drawn labels repeat every frame, but resolving their catalog references and
+; decoding UTF-8 through Mid copies the whole string for every byte. Runs keep
+; the decoded codes of each source text until a catalog entry changes.
+Type Tkorun
+ Field source$,editing,codes,count,link
+End Type
+Const Cko_run_limit=4096
+Dim ko_run_heads(4095)
+Global ko_run_entries,ko_run_generation=-1
 
 Function ko_cont(b)
  Return b>=128 And b<192
@@ -81,6 +90,50 @@ Function ko_localize$(t$)
   a=Object.Tkoalias(a\link)
  Wend
  Return loc_resolve(t$)
+End Function
+
+; Length and tail spread catalog references and numbers without a full byte walk.
+Function ko_run_hash(t$)
+ Local tail$=Right(t$,8),h=Len(t$),i
+ For i=1 To Len(tail$)
+  h=(h*31+Asc(Mid(tail$,i,1))) And 4095
+ Next
+ Return h
+End Function
+
+Function ko_run_clear()
+ Local run.Tkorun
+ For run=Each Tkorun
+  FreeBank run\codes
+  Delete run
+ Next
+ Dim ko_run_heads(4095)
+ ko_run_entries=0
+ ko_run_generation=loc_generation
+End Function
+
+; The run stays valid until the next ko_run call, which may flush the cache.
+Function ko_run.Tkorun(t$)
+ If ko_run_generation<>loc_generation Then ko_run_clear()
+ Local h=ko_run_hash(t$)
+ Local run.Tkorun=Object.Tkorun(ko_run_heads(h))
+ While run<>Null
+  If run\editing=ko_editing Then
+   If run\source$=t$ Then Return run
+  EndIf
+  run=Object.Tkorun(run\link)
+ Wend
+ If ko_run_entries>=Cko_run_limit Then ko_run_clear()
+ Local text$=ko_localize(t$),i
+ run=New Tkorun
+ run\source$=t$:run\editing=ko_editing
+ run\count=Len(text$):run\codes=CreateBank(run\count*2)
+ For i=1 To run\count
+  PokeShort run\codes,(i-1)*2,ko_code(text$,i)
+ Next
+ run\link=ko_run_heads(h):ko_run_heads(h)=Handle(run)
+ ko_run_entries=ko_run_entries+1
+ Return run
 End Function
 
 Function ko_font_load(id)

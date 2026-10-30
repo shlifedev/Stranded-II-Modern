@@ -118,13 +118,13 @@ Function game_input_animal(Tunit.Tunit)
 		;Sound
 		If Tunit\chan<>0 Then
 			If ChannelPlaying(Tunit\chan)=0 Then
-				Tunit\chan=play_soundset(Dunit_sfx(Tunit\typ),snd_move,Tunit\h)
+				Tunit\chan=play_unitsound(Tunit\typ,snd_move,Tunit\h)
 				ChannelVolume Tunit\chan,Float((Float(Abs(v_speed#))/v_topspeed#))*set_fxvolume#
 			Else
 				ChannelVolume Tunit\chan,Float((Float(Abs(v_speed#))/v_topspeed#))*set_fxvolume#
 			EndIf
 		Else
-			Tunit\chan=play_soundset(Dunit_sfx(Tunit\typ),snd_move,Tunit\h)
+			Tunit\chan=play_unitsound(Tunit\typ,snd_move,Tunit\h)
 			ChannelVolume Tunit\chan,Float((Float(Abs(v_speed#))/v_topspeed#))*set_fxvolume#
 		EndIf
 	EndIf
@@ -208,13 +208,13 @@ Function game_input_vehicle(Tunit.Tunit)
 		;Sound
 		If Tunit\chan<>0 Then
 			If ChannelPlaying(Tunit\chan)=0 Then
-				Tunit\chan=play_soundset(Dunit_sfx(Tunit\typ),snd_move,Tunit\h)
+				Tunit\chan=play_unitsound(Tunit\typ,snd_move,Tunit\h)
 				ChannelVolume Tunit\chan,Float((Float(Abs(v_speed#))/v_topspeed#))*set_fxvolume#
 			Else
 				ChannelVolume Tunit\chan,Float((Float(Abs(v_speed#))/v_topspeed#))*set_fxvolume#
 			EndIf
 		Else
-			Tunit\chan=play_soundset(Dunit_sfx(Tunit\typ),snd_move,Tunit\h)
+			Tunit\chan=play_unitsound(Tunit\typ,snd_move,Tunit\h)
 			ChannelVolume Tunit\chan,Float((Float(Abs(v_speed#))/v_topspeed#))*set_fxvolume#
 		EndIf
 	EndIf
@@ -309,13 +309,13 @@ Function game_input_watercraft(Tunit.Tunit)
 		;Sound
 		If Tunit\chan<>0 Then
 			If ChannelPlaying(Tunit\chan)=0 Then
-				Tunit\chan=play_soundset(Dunit_sfx(Tunit\typ),snd_move,Tunit\h)
+				Tunit\chan=play_unitsound(Tunit\typ,snd_move,Tunit\h)
 				ChannelVolume Tunit\chan,Float((Float(Abs(v_speed#))/v_topspeed#))*set_fxvolume#
 			Else
 				ChannelVolume Tunit\chan,Float((Float(Abs(v_speed#))/v_topspeed#))*set_fxvolume#
 			EndIf
 		Else
-			Tunit\chan=play_soundset(Dunit_sfx(Tunit\typ),snd_move,Tunit\h)
+			Tunit\chan=play_unitsound(Tunit\typ,snd_move,Tunit\h)
 			ChannelVolume Tunit\chan,Float((Float(Abs(v_speed#))/v_topspeed#))*set_fxvolume#
 		EndIf
 	EndIf
@@ -400,13 +400,13 @@ Function game_input_aircraft(Tunit.Tunit)
 		;Sound
 		If Tunit\chan<>0 Then
 			If ChannelPlaying(Tunit\chan)=0 Then
-				Tunit\chan=play_soundset(Dunit_sfx(Tunit\typ),snd_move,Tunit\h)
+				Tunit\chan=play_unitsound(Tunit\typ,snd_move,Tunit\h)
 				ChannelVolume Tunit\chan,Float((Float(Abs(v_speed#))/v_topspeed#))*set_fxvolume#
 			Else
 				ChannelVolume Tunit\chan,Float((Float(Abs(v_speed#))/v_topspeed#))*set_fxvolume#
 			EndIf
 		Else
-			Tunit\chan=play_soundset(Dunit_sfx(Tunit\typ),snd_move,Tunit\h)
+			Tunit\chan=play_unitsound(Tunit\typ,snd_move,Tunit\h)
 			ChannelVolume Tunit\chan,Float((Float(Abs(v_speed#))/v_topspeed#))*set_fxvolume#
 		EndIf
 	EndIf
