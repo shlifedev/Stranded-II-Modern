@@ -48,6 +48,8 @@ If ReadString(probe_input)<>"partial" Then RuntimeError "Partial UTF-8 readback"
 CloseFile probe_input
 DeleteFile probe_name$+".sav"
 If FileType(probe_name$+".sav")<>0 Then RuntimeError "Partial UTF-8 DeleteFile"
+; The raw command tail keeps separators, quotes and non-ANSI text.
+If CommandLine()<>"-win -fps 120 -mod "+Chr(34)+"My Mod"+Chr(34)+" 한글" Then RuntimeError "Command line: "+CommandLine()
 If modern_counter_frequency(probe_data)=0 Then RuntimeError "Counter frequency"
 If PeekInt(probe_data,0)=0 And PeekInt(probe_data,4)=0 Then RuntimeError "Counter frequency bank"
 If modern_counter(probe_data)=0 Then RuntimeError "Counter bank"

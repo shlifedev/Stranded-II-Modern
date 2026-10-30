@@ -7,9 +7,9 @@ import tempfile
 import blitz3d_toolchain as engine
 
 
-def execute(exe, output, name, timeout=60):
+def execute(exe, output, name, timeout=60, args=()):
     with (output / (name + '.log')).open('w', encoding='utf8') as log:
-        subprocess.run([str(exe)], cwd=output, stdout=log, stderr=subprocess.STDOUT,
+        subprocess.run([str(exe), *args], cwd=output, stdout=log, stderr=subprocess.STDOUT,
                        check=True, timeout=timeout)
 
 
@@ -29,12 +29,15 @@ def check_abi(output):
     expected = bytes.fromhex((root / 'src/tests/macos_abi.golden.hex').read_text('ascii'))
     if (output / 'semantics.bin').read_bytes() != expected:
         raise AssertionError('Native output differs from the original Blitz3D 1.118 reference.')
+    # windows_platform.bb expects these exact arguments back from CommandLine().
+    arguments = {'windows_platform': ('-win', '-fps', '120', '-mod', 'My Mod', '한글')}
     for name in ('macos_lifetime', 'windows_platform'):
         exe = output / (name + '.exe')
         engine.compile_test(root / 'src/tests' / (name + '.bb'), exe, cwd=output, graphics=False)
-        execute(exe, output, name)
+        execute(exe, output, name, args=arguments.get(name, ()))
     return {'original_1_118_bytes': len(expected), 'type_lifetime': 'pass',
-            'unicode_files_and_native_handles': 'pass', 'partial_utf8_paths': 'pass'}
+            'unicode_files_and_native_handles': 'pass', 'partial_utf8_paths': 'pass',
+            'raw_command_line': 'pass'}
 
 
 def check_input(output):
