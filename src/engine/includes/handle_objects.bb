@@ -784,7 +784,7 @@ Function object_spawnpos(id)
 		If Tobject\id=id Then
 			If Dobject_spawn$(Tobject\typ)<>"" Then
 				;Split
-				split(Dobject_spawn$(TCobject\typ))
+				split(Dobject_spawn$(Tobject\typ))
 				s_item=Int(splits$(0))
 				s_rate=Int(splits$(1))
 				s_xzr#=Float(splits$(2))

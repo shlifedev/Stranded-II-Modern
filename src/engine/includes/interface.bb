@@ -2364,10 +2364,13 @@ Function interface()
 						Select Tcscr\typ
 							;Text
 							Case 1
+								; -1 means the hover font pair, which shares font 0 metrics. It is not a font index.
+								cscrfont=Tcscr\col
+								If cscrfont<0 Then cscrfont=0
 								Select Tcscr\align
 									Case 0,1 x=Tcscr\x
-									Case 2 x=Tcscr\x-(bmpf_len(Tcscr\txt$,Tcscr\col)/2)
-									Case 3 x=Tcscr\x-bmpf_len(Tcscr\txt$,Tcscr\col)
+									Case 2 x=Tcscr\x-(bmpf_len(Tcscr\txt$,cscrfont)/2)
+									Case 3 x=Tcscr\x-bmpf_len(Tcscr\txt$,cscrfont)
 									Default x=Tcscr\x
 								End Select
 								If gui_txtb(x,Tcscr\y,Tcscr\txt$,1,Tcscr\col,Tcscr\tooltip$) Then
