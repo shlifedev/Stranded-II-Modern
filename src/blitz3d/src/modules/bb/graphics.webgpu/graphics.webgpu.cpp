@@ -180,8 +180,49 @@ static void bbUncapturedError( WGPUDevice const *device,WGPUErrorType type,WGPUS
 	LOGD( "[webgpu] uncaptured error (%d): %.*s",(int)type,(int)message.length,message.data?message.data:"" );
 }
 
+// Releasing a device and tearing down an instance report here as well, possibly
+// after the owning context is gone, so userdata is only the device's serial.
+static uint32_t bb_device_serial=0,bb_lost_device_serial=0;
+
 static void bbDeviceLost( WGPUDevice const *device,WGPUDeviceLostReason reason,WGPUStringView message,void *userdata1,void *userdata2 ){
 	LOGD( "[webgpu] device lost (%d): %.*s",(int)reason,(int)message.length,message.data?message.data:"" );
+	if( reason==WGPUDeviceLostReason_Unknown ) bb_lost_device_serial=(uint32_t)(uintptr_t)userdata1;
+}
+
+bool WebGPUContextResources::deviceLost()const{
+	return device && device_serial && bb_lost_device_serial==device_serial;
+}
+
+// A lost device turns every later draw, present and readback into a silent
+// no-op. The game would keep running behind a frozen picture, and a save would
+// store whatever a LockBuffer readback produced on the dead device (the terrain
+// colour map only exists on the GPU). Stop before that, while saves are intact.
+void WebGPUContextResources::endIfDeviceLost( bool after_failure ){
+	if( device_loss_reported || !device_serial ) return;
+	if( after_failure && !deviceLost() ){
+		// A browser may reject the map before it reports the loss behind it.
+#ifdef BB_EMSCRIPTEN
+		emscripten_sleep( 1 );
+#else
+		if( instance ) wgpuInstanceProcessEvents( instance );
+#endif
+	}
+	if( !deviceLost() ) return;
+	device_loss_reported=true;
+
+	static const char *message=
+		"The graphics device stopped responding (GPU driver reset, update or removal), "
+		"so the game cannot continue and will close. Progress since your last save is lost; "
+		"existing saves were not changed.\n\n"
+		"그래픽 장치가 응답하지 않습니다(GPU 드라이버 재설정·업데이트 또는 분리). "
+		"게임을 계속할 수 없어 종료합니다. 마지막 저장 이후의 진행은 사라지며 기존 세이브는 바뀌지 않았습니다.";
+#ifdef BB_EMSCRIPTEN
+	SDL_Window *parent=0;
+#else
+	SDL_Window *parent=window;
+#endif
+	SDL_ShowSimpleMessageBox( SDL_MESSAGEBOX_ERROR,bbApp().title.c_str(),message,parent );
+	RTEX( "Graphics device lost" );
 }
 
 
@@ -279,6 +320,8 @@ bool WebGPUContextResources::initDevice( const char *canvas_selector,int width,i
 	ddesc.defaultQueue.label=bbStrView( "bb.queue" );
 	ddesc.deviceLostCallbackInfo.mode=BB_WGPU_CALLBACK_MODE;
 	ddesc.deviceLostCallbackInfo.callback=bbDeviceLost;
+	device_serial=++bb_device_serial;
+	ddesc.deviceLostCallbackInfo.userdata1=(void*)(uintptr_t)device_serial;
 	ddesc.uncapturedErrorCallbackInfo.callback=bbUncapturedError;
 	WGPURequestDeviceCallbackInfo dcb={};
 	dcb.mode=BB_WGPU_CALLBACK_MODE;
@@ -1353,7 +1396,8 @@ void WebGPUContextDriver::closeGraphics( BBGraphics *g ){
 }
 
 bool WebGPUContextDriver::graphicsLost(){
-	return false;
+	WebGPUGraphics *g=(WebGPUGraphics*)graphics;
+	return g && g->res.deviceLost();
 }
 
 static double bb_last_raf_ms=0;
@@ -1396,6 +1440,7 @@ void WebGPUContextDriver::flip( bool vwait ){
 #else
 	wgpuInstanceProcessEvents(g->res.instance);
 #endif
+	g->res.endIfDeviceLost();
 }
 
 static BBContextDriver *createWebGPUContext( const std::string &name ){
