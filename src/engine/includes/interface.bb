@@ -349,7 +349,7 @@ Function interface()
 					If m_menu=Cmenu_if_savegame Then
 						loadtemp$=in_input$(0)
 						If loadtemp$<>"" Then
-							If save_map("saves\"+loadtemp$+".sav","sav","") Then m_menu=0
+							If modern_save_named(loadtemp$) Then m_menu=0
 						EndIf
 					Else
 						load_savegames()
@@ -999,7 +999,7 @@ Function interface()
 					
 					;Save
 					If gui_ibutton(742,542,Cicon_save,sm$(155),loadtemp$<>"") Then
-						If save_map("saves\"+loadtemp$+".sav","sav","") Then m_menu=0
+						If modern_save_named(loadtemp$) Then m_menu=0
 					EndIf
 					
 				

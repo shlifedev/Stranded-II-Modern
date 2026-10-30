@@ -328,7 +328,7 @@ Function menu()
 			
 			qol_options_nav()
 			remaster_options_nav()
-			If gui_button(5,(set_scry)-100,sm$(3),1,Cicon_x) Then
+			If gui_button(5,(set_scry)-100,sm$(3),1,Cicon_x) Or menu_escape() Then
 				menu_set(Cmenu_main,0)
 				dev_revert_settings()
 				prepare_cache_viewranges()
@@ -636,7 +636,7 @@ Function menu()
 				load_map("maps\"+loadtemp$+".s2","")
 			EndIf
 			
-			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Then menu_set(Cmenu_main)
+			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Or menu_escape() Then menu_set(Cmenu_main)
 
 		;Singleplayer Load
 		Case Cmenu_sp_load
@@ -728,7 +728,7 @@ Function menu()
 				load_map("saves\"+loadtemp$+".sav","")
 			EndIf
 			
-			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Then menu_set(Cmenu_main)
+			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Or menu_escape() Then menu_set(Cmenu_main)
 		
 		;Random Map Settings
 		Case Cmenu_random
@@ -802,7 +802,7 @@ Function menu()
 				randommapcreate()
 			EndIf
 			
-			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Then menu_set(Cmenu_main)
+			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Or menu_escape() Then menu_set(Cmenu_main)
 		
 		;Multiplayer
 		Case Cmenu_mp
@@ -818,7 +818,7 @@ Function menu()
 			If gui_button(5,5+50,sm$(126),0) Then menu_set(Cmenu_mp_lan)
 			If gui_button(5,5+100,sm$(127)) Then menu_set(Cmenu_mp_create)
 			
-			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Then menu_set(Cmenu_main)
+			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Or menu_escape() Then menu_set(Cmenu_main)
 			
 			;Scrolltext
 			bmpf_txt_scroll(236,60,in_usgn_msg$,0,740,in_usgn_msgscr#)
@@ -927,7 +927,7 @@ Function menu()
 			If gui_button(5,5+50,sm$(126),0) Then menu_set(Cmenu_mp_lan)
 			If gui_button(5,5+100,sm$(127)) Then menu_set(Cmenu_mp_create)
 			
-			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Then menu_set(Cmenu_main)
+			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Or menu_escape() Then menu_set(Cmenu_main)
 			
 			;Server Name
 			bmpf_txt(236,63,sm$(133)+":")
@@ -1004,7 +1004,7 @@ Function menu()
 			If y<0 Then in_input(0)=set_scry
 			
 			;Quit Button
-			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Then
+			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Or menu_escape() Then
 				menu_set(Cmenu_main)
 			EndIf
 		
@@ -1032,6 +1032,17 @@ Function menu()
 End Function
 
 
+;### Menu Escape (Back / Cancel)
+Function menu_escape()
+	; Key capture consumes Escape as its own cancel, and a focused text field is left first.
+	If in_escape=0 Or in_getkey<>-1 Then Return 0
+	If in_inputfocus<>-1 Then
+		in_inputfocus=-1
+		Return 0
+	EndIf
+	Return 1
+End Function
+
 
 ;### Menu Keysetting
 Function menu_keysetting(y,name$,id)
@@ -1058,6 +1069,9 @@ Function menu_keysetting(y,name$,id)
 		bmpf_txt(236,83+y,name$,over)
 		If id=Ckey_devmenu And in_keys(id)=0 Then
 			bmpf_txt(506,83+y,"None",over)
+		ElseIf in_keys(id)=0 And over=0 Then
+			; Taking a key for another action clears it here without notice
+			bmpf_txt(506,83+y,in_keyname$(0),Cbmpf_red)
 		Else
 			bmpf_txt(506,83+y,in_keyname$(in_keys(id)),over)
 		EndIf
@@ -1135,7 +1149,11 @@ Function menu_keysettingscript(y,name$,id)
 		EndIf
 		;Draw
 		bmpf_txt(236,83+y,name$,over)
-		bmpf_txt(506,83+y,in_keyname$(game_scriptkey(id)),over)
+		If game_scriptkey(id)=0 And over=0 Then
+			bmpf_txt(506,83+y,in_keyname$(0),Cbmpf_red)
+		Else
+			bmpf_txt(506,83+y,in_keyname$(game_scriptkey(id)),over)
+		EndIf
 	Else
 		;Draw
 		bmpf_txt(236,83+y,name$,1)
