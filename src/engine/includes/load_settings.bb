@@ -14,6 +14,9 @@ End Function
 
 ;### Load Settings
 Function load_settings()
+	modern_seed_file("sys\controls.cfg","sys\controls.default.cfg")
+	modern_seed_file("sys\scriptcontrols.cfg","sys\scriptcontrols.default.cfg")
+	modern_seed_file(set_rootdir$+"core\modern.ini",set_rootdir$+"core\modern.default.ini")
 	;Controls
 	Dim in_keys(21)
 	; Local builds opt in; release packages omit this development-only marker.

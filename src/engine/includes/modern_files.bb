@@ -24,6 +24,14 @@ Function modern_commit_file(path$,staged$,backup=1)
  Return True
 End Function
 
+; Release archives carry initial settings under .default names. Copy one into place
+; only when the player has none, so extracting an update keeps personal settings.
+Function modern_seed_file(path$,defaults$)
+ If FileType(path$)<>0 Or FileType(defaults$)<>1 Then Return False
+ If modern_file_copy(defaults$,path$+".tmp",0)=0 Then modern_file_error=modern_last_error():Return False
+ Return modern_commit_file(path$,path$+".tmp",0)
+End Function
+
 Function modern_stamp(path$,infoBank)
  Local descriptor=modern_file_find(path$,infoBank)
  If descriptor=-1 Then Return False
