@@ -207,6 +207,10 @@ qcheck(m_menu=Cmenu_if_exchange,"auto-close OFF leaves empty corpse open")
 qol_enabled(Cqol_close)=1
 if_exchange(Cclass_object,fixture_storage,1)
 qol_bulk(0):qcheck(m_menu=Cmenu_if_exchange,"empty storage stays open")
+qcheck(qol_shift_reserved(),"Shift+Esc closes storage instead of quitting with transfers ON")
+qol_enabled(Cqol_storage)=0:qcheck(qol_shift_reserved()=0,"transfers OFF keep original Shift+Esc quit")
+qol_enabled(Cqol_storage)=1:m_menu=0:qcheck(qol_shift_reserved()=0,"gameplay keeps original Shift+Esc quit")
+m_menu=Cmenu_if_exchange
 Global vetoid=fixture_add(26,1,Cclass_unit,g_player)
 Global oldscript$=Ditem_script$(26),oldkeys$=Ditem_scriptk$(26)
 Ditem_script$(26)="on:drop {"+Chr(31)+"skipevent;"+Chr(31)+"}"

@@ -175,7 +175,7 @@ def main():
     selected = {
         'qol.bb': ('qol_init', 'qol_settings_reset', 'qol_setting_owned', 'qol_settings_write',
                    'qol_settings_apply', 'qol_settings_restart', 'qol_frame', 'qol_attack2',
-                   'qol_build_accept', 'qol_build_result', 'qol_min', 'qol_max'),
+                   'qol_build_accept', 'qol_build_result', 'qol_shift_reserved', 'qol_min', 'qol_max'),
         'qol_inventory.bb': ('qol_category', 'qol_rank', 'qol_item.Titem', 'qol_count', 'qol_view',
                              'qol_inventory_enabled', 'qol_protected', 'qol_destination_exists', 'qol_move', 'qol_bulk'),
         'qol_recipes.bb': ('qol_recipe.Tqolrecipe', 'qol_part', 'qol_guides_load', 'qol_recipe_locked',

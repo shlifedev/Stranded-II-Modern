@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/qol.md","language":"en","syncedHash":"7a7431368afb3211d49ff22e8d289070897062098d43e58d55f045842ef65b23"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/qol.md","language":"en","syncedHash":"b62fd706d3752a413f10d7e4ec3288b5b798c01b4dd59b320924e46a02bd193e"} -->
 
 # QOL options
 
@@ -11,7 +11,7 @@ Both Stranded II and Extended provide these features under **Settings → QOL**.
 | Feature | How to use it |
 | --- | --- |
 | Recipe book | Open the book from the inventory to search recipes loaded by the game. Filter by category or craftability, inspect ingredients and related recipes, or craft once. Separate interactions such as cooking appear as guides. |
-| Quick storage transfers | With storage or a corpse open, Shift+click to move a stack. For the selected item, **1** moves one and **F** moves the stack. **R** collects everything; **Shift+R** deposits item types already present in storage. Depositing protects equipped and quickslot items. |
+| Quick storage transfers | With storage or a corpse open, Shift+click to move a stack. For the selected item, **1** moves one and **F** moves the stack. **R** collects everything; **Shift+R** deposits item types already present in storage. Depositing protects equipped and quickslot items. In this view, Shift+Esc only closes the window; elsewhere it still quits immediately without saving, as in the original. |
 | Close after looting a corpse | With quick storage transfers enabled, automatically close the inventory when Take all leaves the corpse empty. Ordinary storage stays open. |
 | Automatic sorting | Display items in this order: quickslots 1–9 → tools → weapons → ammunition → food → potions → materials → other, then by name within each category. |
 | Hold to build | Hold right-click with a hammer to keep supplying materials to the same construction target. It stops on release, completion, target or equipment changes, menu or focus changes, or leaving range. |

@@ -129,6 +129,12 @@ Function qol_build_result(id,continuing)
  EndIf
 End Function
 
+; Shift+Esc is the original quit-without-saving shortcut. Quick transfers keep Shift
+; held in the storage window, so Esc there only closes the window.
+Function qol_shift_reserved()
+ Return m_menu=Cmenu_if_exchange And qol_enabled(Cqol_storage)
+End Function
+
 Function qol_shutdown()
  qol_search_close()
 End Function
