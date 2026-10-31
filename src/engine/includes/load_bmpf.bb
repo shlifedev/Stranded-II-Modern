@@ -69,11 +69,10 @@ End Function
 
 ;############################################ Draw Font (left)
 Function bmpf_txt(x,y,txt$,id=0)
-	txt$=ko_localize(txt$)
-	Local strlen=Len(txt$)
+	Local run.Tkorun=ko_run(txt$)
 	Local i,sign
-	For i=1 To strlen
-		sign=ko_code(txt$,i)
+	For i=0 To run\count-1
+		sign=PeekShort(run\codes,i*2)
 		If sign<>32 Then
 			ko_glyph(sign,id,x,y)
 			x=x+bmpf_framesw(sign,id)
@@ -86,11 +85,10 @@ End Function
 
 ;############################################ Draw Font (center)
 Function bmpf_txt_c(x,y,txt$,id=0)
-	txt$=ko_localize(txt$)
-	Local strlen=Len(txt$)
+	Local run.Tkorun=ko_run(txt$)
 	Local i,sign,offset
-	For i=1 To strlen
-		sign=ko_code(txt$,i)
+	For i=0 To run\count-1
+		sign=PeekShort(run\codes,i*2)
 		If sign<>32 Then
 			offset=offset+bmpf_framesw(sign,id)
 		Else
@@ -98,8 +96,8 @@ Function bmpf_txt_c(x,y,txt$,id=0)
 		EndIf
 	Next
 	x=x-(offset/2)
-	For i=1 To strlen
-		sign=ko_code(txt$,i)
+	For i=0 To run\count-1
+		sign=PeekShort(run\codes,i*2)
 		If sign<>32 Then
 			ko_glyph(sign,id,x,y)
 			x=x+bmpf_framesw(sign,id)
@@ -112,11 +110,10 @@ End Function
 
 ;############################################ Draw Font (right)
 Function bmpf_txt_r(x,y,txt$,id=0)
-	txt$=ko_localize(txt$)
-	Local strlen=Len(txt$)
+	Local run.Tkorun=ko_run(txt$)
 	Local i,sign
-	For i=strlen To 1 Step -1
-		sign=ko_code(txt$,i)
+	For i=run\count-1 To 0 Step -1
+		sign=PeekShort(run\codes,i*2)
 		If sign<>32 Then
 			x=x-bmpf_framesw(sign,id)
 			ko_glyph(sign,id,x,y)
@@ -129,11 +126,10 @@ End Function
 
 ;############################################ Font len
 Function bmpf_len(txt$,id=0)
-	txt$=ko_localize(txt$)
-	Local strlen=Len(txt$)
+	Local run.Tkorun=ko_run(txt$)
 	Local x,i,sign
-	For i=1 To strlen
-		sign=ko_code(txt$,i)
+	For i=0 To run\count-1
+		sign=PeekShort(run\codes,i*2)
 		If sign<>32 Then
 			x=x+bmpf_framesw(sign,id)
 		Else
@@ -340,13 +336,12 @@ End Function
 
 ;############################################ Draw Font (scroll)
 Function bmpf_txt_scroll(x#,y,txt$,id=0,ml,scroll#)
-	txt$=ko_localize(txt$)
+	Local run.Tkorun=ko_run(txt$)
 	Local sx#=x#
-	Local strlen=Len(txt$)
 	Local i,sign
 	x#=x#+scroll#
-	For i=1 To strlen
-		sign=ko_code(txt$,i)
+	For i=0 To run\count-1
+		sign=PeekShort(run\codes,i*2)
 		If sign<>32 Then
 			If x#>=sx# And x#+bmpf_framesw(sign,id)<=ml Then
 				ko_glyph(sign,id,x,y)

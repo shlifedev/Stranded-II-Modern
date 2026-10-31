@@ -30,7 +30,7 @@ Dim Dobject_gt(Cobject_count)			;Game Timer
 Dim Dobject_state#(Cobject_count,3)		;State Mode (0) + Offsets
 Dim Dobject_searchratio#(Cobject_count)	;Search Ratio
 
-Dim Dobject_active(Cobject_count)		;Active?
+Dim Dobject_active(Cobject_count)		;Per-frame behaviour (fountain/closekill/closetrigger); sway is driven by swayspeed alone
 Dim Dobject_behaviour$(Cobject_count)	;Behaviour
 
 Dim Dobject_spawn$(Cobject_count)		;Spawn (item typ, day rate, xz-range, y-range, y-offset, limit, count)
@@ -154,8 +154,8 @@ Function load_objects()
 						Case "health"	Dobject_health#(i)=Float(val$)
 										Dobject_healthchange#(i)=Dobject_health#(i)/10.
 						Case "healthchange" Dobject_healthchange#(i)=Float(val$)
-						Case "swayspeed" Dobject_swayspeed#(i)=Float(val$):Dobject_active(i)=1
-						Case "swaypower" Dobject_swaypower#(i)=Float(val$):Dobject_active(i)=1
+						Case "swayspeed" Dobject_swayspeed#(i)=Float(val$)
+						Case "swaypower" Dobject_swaypower#(i)=Float(val$)
 						;Case "gt" Dobject_gt(i)=Int(val$)
 						Case "maxweight" Dobject_maxweight(i)=Int(val$)
 						
