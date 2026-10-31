@@ -26,6 +26,9 @@ BBStr * BBCALL bbRight( BBStr *s,bb_int_t n ){
 
 BBStr * BBCALL bbReplace( BBStr *s,BBStr *from,BBStr *to ){
 	int n=0,from_sz=from->size(),to_sz=to->size();
+	// An empty search string matches at every position without advancing, so the loop
+	// below would never finish (and keeps growing s when 'to' is not empty).
+	if( !from_sz ){ delete from;delete to;return s; }
 	while( n<s->size() && (n=s->find( *from,n ))!=std::string::npos ){
 		s->replace( n,from_sz,*to );
 		n+=to_sz;

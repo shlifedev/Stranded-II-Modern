@@ -53,6 +53,7 @@ bool OGGAudioStream::readHeader(){
 	if( !vi ) return false;
 
 	channels=vi->channels;
+	if( channels!=1 && channels!=2 ) return false;
 	frequency=vi->rate;
 	samples=(unsigned int)( ov_pcm_total( &vfile,-1 )*channels );
 
