@@ -177,6 +177,12 @@ def player_data(relative):
             path.name.lower().startswith('screen_'))
 
 
+def default_name(relative):
+    """Players update by extracting over the old folder; never replace their own copy."""
+    path = PurePosixPath(relative)
+    return str(path.with_name(f'{path.stem}.default{path.suffix}'))
+
+
 def release_members(runtime, game, edition='classic'):
     profile = Edition(edition)
     info = runtime_info(runtime)
@@ -189,9 +195,11 @@ def release_members(runtime, game, edition='classic'):
         if player_data(relative):
             continue
         # Ship original key bindings, even when packaging a used local runtime.
-        members[relative] = (checked_bytes(game, relative, expected)
-                             if relative.endswith('.cfg')
-                             else file_bytes(runtime, relative))
+        # The game copies them into place on first launch.
+        if relative.endswith('.cfg'):
+            members[default_name(relative)] = checked_bytes(game, relative, expected)
+        else:
+            members[relative] = file_bytes(runtime, relative)
     for relative, path in override_files(ROOT, edition).items():
         data = file_bytes(runtime, relative)
         if data != path.read_bytes():
@@ -251,7 +259,7 @@ def release_members(runtime, game, edition='classic'):
             for page in range((count + 1023) // 1024):
                 relative = f'core/locales/{code}/{style}_{page}.bmp'
                 members[relative] = file_bytes(runtime, relative)
-    members['core/modern.ini'] = file_bytes(ROOT, profile.defaults)
+    members[default_name('core/modern.ini')] = file_bytes(ROOT, profile.defaults)
     members.update(license_members())
     for name, path in engine.license_sources().items():
         data = file_bytes(runtime, 'licenses/' + name)
@@ -269,6 +277,8 @@ def release_members(runtime, game, edition='classic'):
         'Optional QOL: Settings > QOL; apply to activate individual options immediately.\n'
         '선택형 QOL: 설정 > QOL에서 개별 옵션을 선택하고 적용하면 즉시 반영됩니다.\n'
         'Saves / 저장 파일: mods/Stranded II/saves/\n'
+        'Update: extract the new ZIP to the same place and replace files; saves and settings are kept.\n'
+        '업데이트: 새 ZIP을 같은 위치에 덮어쓰며 풀어도 저장 파일과 설정은 유지됩니다.\n'
         'Original game / 원작: Peter Schauß / Unreal Software, https://www.unrealsoftware.de/\n'
         'This is an unofficial modified version. / 비공식 수정 버전입니다.\n'
         'Copyright and component licenses / 저작권 및 구성물 라이선스: licenses/\n'

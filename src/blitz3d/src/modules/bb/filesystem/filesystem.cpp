@@ -8,7 +8,7 @@
 #include <set>
 #include <cstring>
 #ifdef BB_WINDOWS
-#include <filesystem>
+#include "../../../stdutil/windows_utf8.h"
 #else
 #include <dirent.h>
 #endif
@@ -19,7 +19,7 @@ static std::string bbResolvePath( std::string want ){
 	for( char &c : want ) if( c=='\\' ) c='/';
 #ifdef BB_WINDOWS
     std::error_code error;
-    return std::filesystem::exists(std::filesystem::u8path(want),error)?want:"";
+    return std::filesystem::exists(bbWidePath(want),error)?want:"";
 #else
 	{ struct stat st; if( stat( want.c_str(),&st )==0 ) return want; }
 	std::string cur = want.size() && want[0]=='/' ? "/" : ".";
@@ -69,12 +69,16 @@ std::streambuf *BBFileSystem::openFile( const std::string &file,std::ios_base::o
 	for( char &c : path ) if( c=='\\' ) c='/';
 	std::filebuf *buf=d_new std::filebuf();
 #ifdef BB_WINDOWS
-    if(buf->open(std::filesystem::u8path(path),n|std::ios_base::binary)) return buf;
+    if(buf->open(bbWidePath(path),n|std::ios_base::binary)) return buf;
+    // The retry must not fall back to an ANSI name: for a write it could
+    // create a mojibake file beside the intended one.
+    std::string real=bbResolvePath(file);
+    if(!real.empty() && buf->open(bbWidePath(real),n|std::ios_base::binary)) return buf;
 #else
 	if( buf->open( path.c_str(),n|std::ios_base::binary ) ) return buf;
-#endif
 	std::string real = bbResolvePath( file );
 	if( !real.empty() && buf->open( real.c_str(),n|std::ios_base::binary ) ) return buf;
+#endif
 	delete buf;
 	return 0;
 }

@@ -41,6 +41,39 @@ uint64_t nanos(bool continuous){
   return (unsigned __int128)(continuous?mach_continuous_time():mach_absolute_time())*scale.numer/scale.denom;
 }
 int result(int rc){if(rc<0){fileError=errno;return 0;}fileError=0;return 1;}
+// resolution=desktop is resolved before Graphics3D starts SDL video. SDL's
+// display 0 is the CoreGraphics main display, measured in points.
+SDL_DisplayMode mainDisplayMode(){
+  SDL_DisplayMode mode={};
+  if(CGDisplayModeRef current=CGDisplayCopyDisplayMode(CGMainDisplayID())){
+    mode.w=int(CGDisplayModeGetWidth(current));mode.h=int(CGDisplayModeGetHeight(current));
+    CGDisplayModeRelease(current);
+  }
+  return mode;
+}
+// SDL's default menu bar has no Edit menu, and AppKit text fields receive
+// Cmd-X/C/V/A only as Edit menu key equivalents. The items stay disabled while
+// the game view is first responder, so gameplay keys are unaffected.
+NSMenuItem *editMenu=nil;
+void installEditMenu(){
+  NSMenu *bar=[NSApp mainMenu];
+  if(editMenu || !bar) return;
+  NSMenu *menu=[[NSMenu alloc] initWithTitle:@"Edit"];
+  [menu addItemWithTitle:@"Cut" action:@selector(cut:) keyEquivalent:@"x"];
+  [menu addItemWithTitle:@"Copy" action:@selector(copy:) keyEquivalent:@"c"];
+  [menu addItemWithTitle:@"Paste" action:@selector(paste:) keyEquivalent:@"v"];
+  [menu addItemWithTitle:@"Select All" action:@selector(selectAll:) keyEquivalent:@"a"];
+  editMenu=[[NSMenuItem alloc] initWithTitle:@"Edit" action:nil keyEquivalent:@""];
+  [editMenu setSubmenu:menu];[menu release];
+  [bar insertItem:editMenu atIndex:std::min<NSInteger>(1,[bar numberOfItems])];
+}
+void removeEditMenu(){
+  if(!editMenu) return;
+  NSMenu *bar=[NSApp mainMenu];
+  NSInteger index=bar?[bar indexOfItem:editMenu]:-1;
+  if(index>=0) [bar removeItemAtIndex:index];
+  [editMenu release];editMenu=nil;
+}
 }
 
 bool s2MacSearchFocused(){
@@ -58,7 +91,9 @@ std::string strandedMacProperty(const std::string &request){
   if(op=="error") return std::to_string(fileError);
   if(op=="focus") return window && (SDL_GetWindowFlags(window)&SDL_WINDOW_INPUT_FOCUS) && !(SDL_GetWindowFlags(window)&SDL_WINDOW_MINIMIZED)?"1":"0";
   if(op=="width" || op=="height"){
-    SDL_DisplayMode mode={};if(SDL_GetDesktopDisplayMode(window?SDL_GetWindowDisplayIndex(window):0,&mode)<0) return op=="width"?"1280":"720";
+    SDL_DisplayMode mode={};
+    if(SDL_GetDesktopDisplayMode(window?SDL_GetWindowDisplayIndex(window):0,&mode)<0) mode=mainDisplayMode();
+    if(mode.w<=0 || mode.h<=0) return op=="width"?"1280":"720";
     return std::to_string(op=="width"?mode.w:mode.h);
   }
   if(op=="canvas-width" || op=="canvas-height"){
@@ -105,10 +140,11 @@ std::string strandedMacProperty(const std::string &request){
     if(searchField){[searchField removeFromSuperview];[searchField release];}
     searchField=[[NSTextField alloc] initWithFrame:NSMakeRect(0,0,250,28)];
     [searchField setStringValue:ns(value)];[searchField setFont:[NSFont systemFontOfSize:16]];
-    [[nativeWindow() contentView] addSubview:searchField];return "2";
+    [[nativeWindow() contentView] addSubview:searchField];installEditMenu();return "2";
   }
   if(op=="search-close"){
-    if(searchField){[nativeWindow() makeFirstResponder:nil];[searchField removeFromSuperview];[searchField release];searchField=nil;}return "1";
+    if(searchField){[nativeWindow() makeFirstResponder:nil];[searchField removeFromSuperview];[searchField release];searchField=nil;}
+    removeEditMenu();return "1";
   }
   if(op=="search-text") return utf8([searchField stringValue]);
   if(op=="search-set"){[searchField setStringValue:ns(value)];return "1";}
@@ -166,7 +202,11 @@ std::string strandedMacAppDirectory(const std::string &executable){
       if(exists && (settings || previous==fingerprint)) continue;
       fs::create_directories(target.parent_path());
       fs::path temporary=target;temporary+=".native-install";
-      if(fs::exists(temporary) || fs::is_symlink(temporary)) throw std::runtime_error("Unfinished asset installation; preserve and inspect .native-install");
+      // Quitting between copy and rename leaves a partial copy of a bundled file,
+      // never player data. Replace it so one interrupted launch cannot block all later ones.
+      auto leftover=fs::symlink_status(temporary);
+      if(fs::is_regular_file(leftover)) fs::remove(temporary);
+      else if(fs::exists(leftover)) throw std::runtime_error("Unexpected .native-install entry; preserve and inspect it");
       fs::copy_file(bundle/relative,temporary);
       fs::rename(temporary,target);
     }

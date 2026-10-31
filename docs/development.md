@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"3d4bda2e8802d2da232fce324c17d6a07c52cee03de77bf2a8d7e509d84503f6"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"1c5109327645aed4d9d6f916d5395f12a05e9c9dbc95287abd2b277200945b65"} -->
 
 # Development guide
 
@@ -436,7 +436,7 @@ Then manually run `Desktop build and release` in Actions to download the game ZI
 
 ### Release ZIP contents
 
-The release ZIP's `StrandedII/` folder includes `StrandedII.exe`, original game resources, localized resources, per-language bitmap fonts, initial settings, and licenses. Extract the whole ZIP and double-click `StrandedII.exe`. No launch CMD is included. Players do not need separate Python, Blitz3D, or font installations; display, FPS, and language are changed in the game's settings menu.
+The release ZIP's `StrandedII/` folder includes `StrandedII.exe`, original game resources, localized resources, per-language bitmap fonts, initial settings, and licenses. Initial settings ship as `core/modern.default.ini` and `mods/Stranded II/sys/controls.default.cfg`/`sys/scriptcontrols.default.cfg`; the game copies each one into place only when the player's file is missing, so extracting an update over an existing folder keeps saves and settings. Extract the whole ZIP and double-click `StrandedII.exe`. No launch CMD is included. Players do not need separate Python, Blitz3D, or font installations; display, FPS, and language are changed in the game's settings menu.
 
 Packaging uses an explicit file list, so a used development runtime's personal saves, custom maps, screenshots, `preserved/`, logs, and check reports are excluded. Key bindings come from the original dependencies; `core/modern.ini` comes from the repository's initial settings. Personal `sys/settings.cfg` is also excluded, so new installations use the engine's graphics quality and volume defaults. The development runtime is not modified. Local packaging is also available.
 

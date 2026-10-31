@@ -290,18 +290,17 @@ Function parse_math_st$(txt$)
 				valuetype=var_type(Tpm\value)
 				ovaluetype=var_type(p_m_value)
 				If Tpm\value=0 Then parse_error("zerodiv","'"+prev+"/"+Tpm\value+"'")
-				; parse_error only reports. An integer division by zero would still raise a CPU exception and close the game.
 				If p_m_basec=0 Then
 					;DebugLog "Calc -> Operation: "+p_m_value#+"+"+prev#+"/"+Tpm\value#
 					If prevtype+valuetype+ovaluetype=0 Then
-						If Int(Tpm\value)<>0 Then p_m_value=Int(p_m_value)+(Int(prev)/Int(Tpm\value)) Else p_m_value=Int(p_m_value)
+						p_m_value=Int(p_m_value)+(Int(prev)/Int(Tpm\value))
 					Else
 						p_m_value=Float(p_m_value)+(Float(prev)/Float(Tpm\value))
 					EndIf
 				Else
 					;DebugLog "Calc -> Operation: "+prev#+"/"+Tpm\value#
 					If prevtype+valuetype+ovaluetype=0 Then
-						If Int(Tpm\value)<>0 Then p_m_value=(Int(prev)/Int(Tpm\value)) Else p_m_value=0
+						p_m_value=(Int(prev)/Int(Tpm\value))
 					Else
 						p_m_value=(Float(prev)/Float(Tpm\value))
 					EndIf

@@ -3,6 +3,8 @@
 Dim loc_heads(4095)
 Global loc_language$="en",loc_saved$="en",loc_pending$="en"
 Global loc_language_count
+; Bumped on every catalog change so text caches resolve references again.
+Global loc_generation
 Type Tlanguage
  Field code$,name$,index
 End Type
@@ -34,6 +36,7 @@ Function loc_put(key$,value$)
   h=loc_hash(key$):entry\link=loc_heads(h):loc_heads(h)=Handle(entry)
  EndIf
  entry\value$=value$
+ loc_generation=loc_generation+1
 End Function
 
 Function loc_unescape$(value$)
@@ -72,6 +75,7 @@ Function loc_load(language$)
  If Not loc_available(language$) Then language$="en"
  Delete Each Tlocale
  For i=0 To 4095:loc_heads(i)=0:Next
+ loc_generation=loc_generation+1
  If Not loc_read(set_rootdir$+"core\locales\en.tsv") Then RuntimeError "Missing English localization catalog"
  If language$<>"en" Then
   If Not loc_read(set_rootdir$+"core\locales\"+language$+".tsv") Then language$="en"

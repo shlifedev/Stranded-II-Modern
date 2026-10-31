@@ -5,9 +5,13 @@
 #include "pivot.h"
 #include "meshutil.h"
 #include <cerrno>
+#include <climits>
 #include <cstring>
 #ifdef BB_EMSCRIPTEN
 #include <emscripten.h>
+#endif
+#ifdef BB_WINDOWS
+#include "../../../stdutil/windows_utf8.h"
 #endif
 
 static FILE *in;
@@ -18,6 +22,7 @@ static std::vector<Object*> bones;
 
 static bool collapse;
 static bool animonly;
+static bool truncated;
 
 static int swap_endian( int n ){
 	return ((n&0xff)<<24)|((n&0xff00)<<8)|((n&0xff0000)>>8)|((n&0xff000000)>>24);
@@ -28,11 +33,13 @@ static void clear(){
 	brushes.clear();
 	textures.clear();
 	chunk_stack.clear();
+	truncated=false;
 }
 
 static int readChunk(){
 	int header[2];
 	if( fread( header,8,1,in )<1 ){
+		truncated=true;
 		chunk_stack.push_back( (int)ftell( in ) );
 		return 0;
 	}
@@ -47,18 +54,26 @@ static void exitChunk(){
 }
 
 static int chunkSize(){
-	if( feof( in ) ) return 0;
+	// exitChunk()'s fseek clears the EOF flag, so a short read has to be remembered
+	// separately; otherwise a chunk claiming more bytes than the file has spins forever.
+	if( truncated || feof( in ) ) return 0;
 	int n=chunk_stack.back()-ftell( in );
 	return n>0 ? n : 0;
 }
 
 static void read( void *buf,int n ){
 	if( n<=0 ) return;
-	if( fread( buf,n,1,in )<1 ) memset( buf,0,n );
+	if( fread( buf,n,1,in )<1 ){
+		memset( buf,0,n );
+		truncated=true;
+	}
 }
 
-static void skip( int n ){
-	fseek( in,n,SEEK_CUR );
+// Skips 'count' 4-byte values. Counts come straight from the file, so the byte total must
+// not wrap into a backwards seek (which would re-read the same bytes forever).
+static void skipValues( long long count ){
+	if( count<=0 ) return;
+	fseek( in,count>INT_MAX/4 ? INT_MAX : (long)(count*4),SEEK_CUR );
 }
 
 static int readInt(){
@@ -137,7 +152,7 @@ static void readBrushes(){
 		int blend=readInt();
 		int fx=readInt();
 		readIntArray( tex_id,n_read );
-		if( n_texs>n_read ) skip( (n_texs-n_read)*4 );
+		skipValues( n_texs-n_read );
 
 		Brush bru;
 
@@ -164,6 +179,7 @@ static int readVertices(){
 	if( tc_sets<0 ) tc_sets=0;
 	if( tc_size<0 ) tc_size=0;
 	int tc_read=tc_size<4 ? tc_size : 4;
+	int tc_kept=tc_sets<2 ? tc_sets : 2;
 
 	float tc[4]={0};
 
@@ -176,11 +192,14 @@ static int readVertices(){
 		if( flags&2 ){
 			readColor( &t.color );
 		}
-		for( int k=0;k<tc_sets;++k ){
+		for( int k=0;k<tc_kept;++k ){
 			readFloatArray( tc,tc_read );
-			if( tc_size>tc_read ) skip( (tc_size-tc_read)*4 );
-			if( k<2 ) memcpy( t.tex_coords[k],tc,8 );
+			skipValues( tc_size-tc_read );
+			memcpy( t.tex_coords[k],tc,8 );
 		}
+		// Only two coordinate sets are kept; a corrupt set count must not mean a
+		// per-vertex loop of billions of iterations.
+		skipValues( (long long)(tc_sets-tc_kept)*tc_size );
 		MeshLoader::addVertex( t );
 	}
 
@@ -329,7 +348,11 @@ MeshModel *Loader_B3D::load( const std::string &f,const Transform &conv,int hint
 	collapse=!!(hint&MeshLoader::HINT_COLLAPSE);
 	animonly=!!(hint&MeshLoader::HINT_ANIMONLY);
 
+#ifdef BB_WINDOWS
+	in=_wfopen( bbWide( f ).c_str(),L"rb" );
+#else
 	in=fopen( f.c_str(),"rb" );
+#endif
 	if( !in ){
 		fprintf( stderr,"[b3d] fopen failed: %s errno=%d %s\n",f.c_str(),errno,strerror( errno ) );
 #ifdef BB_EMSCRIPTEN

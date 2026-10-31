@@ -200,6 +200,122 @@ compat_phase$="skip"
 m_menu=0:load_map("maps\adventure\map01.s2",""):parse_all():seq_update()
 parse_globalevent("skipsequence"):parse_all():modern_process_saves()
 compat_check(Lower(map_path$)="maps\adventure\map02.s2","skip uses original map transition")
+
+; Exercise script safety through the actual parser, live entities and renderer.
+Function compat_script(script$)
+ parse_env(0,0,"compat","Script safety fixture")
+ loadstring_parsecache(script$,Chr(31))
+ parse()
+ compat_check(p_error=0,"parse "+script$)
+End Function
+
+Function compat_script_safety()
+ Local quote$=Chr(34)
+ Local target.Tobject,decoy.Tobject,item.Titem,click.Tcscr,label.t3d,recipe.Tbui
+ Local spawn1$=Dobject_spawn$(1),spawn2$=Dobject_spawn$(2)
+ set_object(-1,1,0,0):target=TCobject
+ set_object(-1,2,0,0):decoy=TCobject
+ PositionEntity target\h,10,20,30
+ Dobject_spawn$(1)="1,1,0,0,7,1,1"
+ Dobject_spawn$(2)="1,1,0,0,99,1,1"
+ compat_check(object_spawnpos(target\id)=1,"spawn position resolves requested object")
+ compat_check(Abs(tmp_x#-10)<0.001 And Abs(tmp_y#-27)<0.001 And Abs(tmp_z#-30)<0.001,"spawn position ignores unrelated current object")
+ TCobject=Null
+ compat_check(object_spawnpos(target\id)=1 And Abs(tmp_y#-27)<0.001,"spawn position accepts null current object")
+ Dobject_spawn$(1)=spawn1$:Dobject_spawn$(2)=spawn2$
+
+ set_item(-1,1,10,20,30):item=TCitem
+ RotateEntity item\h,0,37,0:RotateEntity decoy\h,0,91,0
+ TCobject=decoy
+ compat_script("model "+quote$+Ditem_model$(1)+quote$+","+quote$+"item"+quote$+","+item\id+";")
+ compat_check(Abs(EntityYaw(item\h)-37)<0.001,"item model preserves its yaw")
+ compat_check(Abs(EntityYaw(decoy\h)-91)<0.001,"item model leaves unrelated object yaw unchanged")
+ TCobject=Null
+ compat_script("model "+quote$+Ditem_model$(1)+quote$+","+quote$+"item"+quote$+","+item\id+";")
+ compat_check(Abs(EntityYaw(item\h)-37)<0.001,"item model accepts null current object")
+ compat_check(Abs(EntityX(item\h)-10)<0.001 And Abs(EntityY(item\h)-20)<0.001 And Abs(EntityZ(item\h)-30)<0.001,"item model preserves position")
+
+ ; Include both boundaries, the hover sentinel and clearly invalid values.
+ For sample=0 To 5
+  Select sample
+   Case 0:font=-2
+   Case 1:font=-1
+   Case 2:font=0
+   Case 3:font=bmpf_count
+   Case 4:font=bmpf_count+1
+   Case 5:font=255
+  End Select
+  expected=font
+  If font<0 Or font>bmpf_count Then expected=0
+  compat_script("text 19,"+quote$+"safety"+quote$+","+font+";")
+  compat_check(in_sitxt_font(19)=expected,"interface text font "+font)
+  compat_script("text3d "+quote$+"item"+quote$+","+item\id+","+quote$+"safety"+quote$+","+font+";")
+  For label=Each t3d
+   If label\class=Cclass_item And label\id=item\id Then
+    compat_check(label\typ=expected,"3D text font "+font)
+    Exit
+   EndIf
+  Next
+  compat_check(label<>Null,"3D text was created")
+  compat_script("cscr_text "+quote$+"safety"+quote$+",400,300,"+font+",2;")
+  click=Last Tcscr
+  expected=font
+  If font<-1 Or font>bmpf_count Then expected=-1
+  compat_check(click\col=expected,"clickscreen font "+font)
+  Delete click
+ Next
+ in_sitxt(19)=0
+ compat_script("text3d "+quote$+"item"+quote$+","+item\id+","+quote$+quote$+";")
+
+ ; Compare actual centred/right-aligned pixels for hover and normal fonts.
+ Local previous_menu=m_menu,normal=CreateImage(400,32),hover=CreateImage(400,32)
+ click=New Tcscr:click\typ=1:click\txt$="Hover alignment":click\x=400:click\y=300
+ m_menu=Cmenu_if_clickscreen:in_mx=0:in_my=0:in_mrelease(1)=0
+ SetBuffer BackBuffer()
+ For alignment=2 To 3
+  click\align=alignment:click\col=0:interface():GrabImage normal,0,300
+  click\col=-1:interface():GrabImage hover,0,300
+  Local mismatches=0,ink=0
+  LockBuffer ImageBuffer(normal):LockBuffer ImageBuffer(hover)
+  For py=0 To 31
+   For px=0 To 399
+    Local expected_pixel=ReadPixelFast(px,py,ImageBuffer(normal)) And $FFFFFF
+    If expected_pixel<>0 Then ink=ink+1
+    If (ReadPixelFast(px,py,ImageBuffer(hover)) And $FFFFFF)<>expected_pixel Then mismatches=mismatches+1
+   Next
+  Next
+  UnlockBuffer ImageBuffer(hover):UnlockBuffer ImageBuffer(normal)
+  compat_check(ink>0 And mismatches=0,"hover font pixel alignment "+alignment)
+ Next
+ Delete click:FreeImage normal:FreeImage hover:m_menu=previous_menu
+ free_item(item\id):free_object(decoy\id)
+
+ ; A valid unit recipe with no ingredients reaches the real completion path.
+ Local unit_script$=Dunit_script$(2),unit_events$=Dunit_scriptk$(2)
+ Dunit_script$(2)="on:build_finish { $compat_build_finish=currentid(); }"
+ Dunit_scriptk$(2)=Chr(31)+"build_finish"
+ Local recipe_id=0
+ For recipe=Each Tbui
+  If recipe\id>recipe_id Then recipe_id=recipe\id
+ Next
+ recipe=New Tbui:recipe\id=recipe_id+1:recipe\mode=2:recipe\typ=-2
+ PositionEntity target\h,EntityX(cam),EntityY(cam),EntityZ(cam)
+ set_state(Cstate_buildplace,Cclass_object,target\id):TCstate\value=-2
+ Local previous_attack=g_cplayer\player_lastattack,previous_hold=qol_hold_state
+ g_cplayer\player_lastattack=gt-Ditem_rate(g_cplayer\player_weapon)-1:qol_hold_state=0
+ Local constructed_id=unit_serial+1
+ var_set("compat_build_finish","0")
+ compat_check(game_build()=1,"unit construction completes")
+ compat_check(con_unit(constructed_id),"unit construction creates a unit")
+ compat_check(Int(var_get$("compat_build_finish"))=constructed_id,"unit build_finish runs the matching definition script")
+ var_free("compat_build_finish"):free_unit(constructed_id):Delete recipe
+ g_cplayer\player_lastattack=previous_attack:qol_hold_state=previous_hold
+ Dunit_script$(2)=unit_script$:Dunit_scriptk$(2)=unit_events$
+End Function
+
+compat_phase$=""
+compat_script_safety()
+
 WriteLine compat_report,"FAILURES "+compat_failures
 CloseFile compat_report
 e_clear():EndGraphics():End

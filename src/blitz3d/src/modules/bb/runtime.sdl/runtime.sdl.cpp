@@ -277,7 +277,11 @@ bool SDLRuntime::idle(){
 				if( ev.data ) bbOnEvent.run( &ev );
 			}
 		}else if( event.type==SDL_TEXTINPUT ){
-#ifdef BB_WINDOWS
+#ifdef BB_MACOS
+            // SDL's Cocoa handler translates every key before AppKit dispatches it,
+            // so text typed into the search field would also reach GetKey.
+            if(s2MacSearchFocused()) continue;
+#elif defined(BB_WINDOWS)
             if(s2WindowsSearchFocused()) continue;
 #endif
 			char *c=event.text.text;

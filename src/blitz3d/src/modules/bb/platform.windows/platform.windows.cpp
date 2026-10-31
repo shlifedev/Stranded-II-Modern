@@ -7,6 +7,7 @@
 #include <string>
 #include <bb/blitz/legacy32.h>
 #include "platform.windows.h"
+#include "../../../stdutil/windows_utf8.h"
 #ifdef S2_WINDOWS_GRAPHICS
 #include <SDL.h>
 #include <SDL_syswm.h>
@@ -25,14 +26,9 @@ void *buffer(bbBank *bank,size_t bytes){
     if(!bank || bank->size<0 || size_t(bank->size)<bytes) RTEX("Windows service buffer is too small");
     return bank->data;
 }
-std::wstring wide(const std::string &value){
-    int size=MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,value.data(),int(value.size()),nullptr,0);
-    if(!size && !value.empty()) RTEX("Invalid UTF-8 Windows service argument");
-    std::wstring out(size,L'\0');
-    if(size) MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,value.data(),int(value.size()),out.data(),size);
-    return out;
-}
-std::wstring consume(BBStr *value){std::string text=*value;delete value;return wide(text);}
+// Match WriteFile/FileType: a stray byte from legacy text input must name the
+// same file there, and a clipboard copy must not raise a runtime error.
+std::wstring consume(BBStr *value){std::string text=*value;delete value;return bbWide(text);}
 std::string utf8(const wchar_t *value){
     int size=WideCharToMultiByte(CP_UTF8,0,value,-1,nullptr,0,nullptr,nullptr);
     std::string out(size,'\0');
