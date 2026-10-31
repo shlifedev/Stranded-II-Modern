@@ -1,6 +1,9 @@
 
 #include "../stdutil/stdutil.h"
 #include "stream.h"
+#ifdef BB_WINDOWS
+#include "../../../stdutil/windows_utf8.h"
+#endif
 
 #include <cstdlib>
 
@@ -70,7 +73,11 @@ double AudioStream::toSeconds( long pos ){
 
 bool AudioStream::init( const char *url ){
 	path=url;
+#ifdef BB_WINDOWS
+	in.open( bbWidePath( url ),std::ios_base::in|std::ios::binary );
+#else
 	in.open( url,std::ios_base::in|std::ios::binary );
+#endif
 	if( !readHeader() ) return false;
 	start=pos();
 	return true;

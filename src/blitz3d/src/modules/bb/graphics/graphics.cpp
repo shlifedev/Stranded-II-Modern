@@ -7,6 +7,9 @@
 #include <bb/input/input.h>
 #include <bb/graphics/graphics.h>
 #include <bb/pixmap/pixmap.h>
+#ifdef BB_WINDOWS
+#include "../../../stdutil/windows_utf8.h"
+#endif
 
 #include <vector>
 #include <set>
@@ -623,7 +626,12 @@ static bool saveCanvas( BBCanvas *c,const std::string &f ){
     const int w=c->getWidth(),h=c->getHeight();
     if(w<=0 || h<=0 || w>32768 || h>32768) return false;
     const uint32_t stride=(uint32_t(w)*3+3)&~3u;
+#ifdef BB_WINDOWS
+    // LoadImage opens UTF-8 names through the file system; save the same way.
+    std::ofstream output(bbWidePath(canonicalpath(f)),std::ios::binary|std::ios::trunc);
+#else
     std::ofstream output(canonicalpath(f),std::ios::binary|std::ios::trunc);
+#endif
     if(!output || !c->lock()) return false;
     auto word=[&](uint32_t value,int bytes){for(int i=0;i<bytes;++i) output.put(char(value>>(i*8)));};
     output.write("BM",2);word(54+stride*h,4);word(0,4);word(54,4);
