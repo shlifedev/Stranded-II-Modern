@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"c44cd7246082e27c1f8e16507ad2750005897b7bcd4aed0fb6d8f997a376c97e"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"ec9a81111cb036b5c8758e627c529feb719ec76aca18a19c3709721f364e4df2"} -->
 
 # Translating the game
 
@@ -8,7 +8,7 @@
 
 **Edit `resources/locales/<code>.tsv` for the language you want to translate.** English source text is in [resources/locales/en.tsv](../resources/locales/en.tsv); Korean translations are in [resources/locales/ko.tsv](../resources/locales/ko.tsv). Translation, language, and font changes do not require recompiling the Windows EXE. Web distributions and macOS app bundles need a platform `build` after `localize` to include the refreshed language packs; see the [development guide](development.md).
 
-English (`en`), Korean (`ko`), and German (`de`, **Deutsch**) are bundled in both editions. [German translations](../resources/locales/de.tsv) reuse the [official German Gold 1.0.0.1 text](https://www.unrealsoftware.de/get.php?get=stranded2.zip), adapted and supplemented for this project's features and Extended. The default font supports the German pack.
+English (`en`), Korean (`ko`), German (`de`, **Deutsch**), and [Simplified Chinese](../resources/locales/zh-cn.tsv) (`zh-cn`, **简体中文**) are bundled in both editions. [German translations](../resources/locales/de.tsv) reuse the [official German Gold 1.0.0.1 text](https://www.unrealsoftware.de/get.php?get=stranded2.zip), adapted and supplemented for this project's features and Extended. The default font supports the German pack.
 
 ## 1. Edit the translation file
 
@@ -59,19 +59,21 @@ For example, Japanese uses `ja`. Language codes use lowercase letters, digits, a
 
 3. Follow `localize → check → launch` above. The new language appears in settings automatically.
 
-Keep the bundled English, Korean, and German packs. Japanese translations are not currently bundled.
+Keep the bundled English, Korean, German, and Simplified Chinese packs. Japanese translations are not currently bundled.
 
 ## Choose a font
 
-The default font is Noto Sans KR. To use another font, put its `.ttf` or `.otf` file in `deps/fonts/` and add `"font": "deps/fonts/MyFont.ttf"` to the language's `resources/locales/<code>.json`. Paths are relative to the repository root; no Windows font installation is needed.
+The default font is Noto Sans KR. Simplified Chinese uses Noto Sans SC: `setup` / `localize` downloads it to `deps/fonts/NotoSansSC[wght].ttf` if absent and verifies the font and license checksums pinned in [config/dependencies.json](../config/dependencies.json). An existing verified copy works offline; a checksum mismatch stops preparation without replacing the file. Its [OFL license](../licenses/NotoSansSC-OFL.txt) is included in prepared runtimes.
 
-- After changes, follow `localize → check → launch` above. Remove the `font` field to restore the default font specified by the initial `setup --font`.
+To use another font, put its `.ttf` or `.otf` file in `deps/fonts/` and add `"font": "deps/fonts/MyFont.ttf"` to the language's `resources/locales/<code>.json`. Paths are relative to the repository root; no Windows font installation is needed.
+
+- After changes, follow `localize → check → launch` above. Remove the `font` field to restore the default font specified by the initial `setup --font`. For Chinese, restore `"font": "deps/fonts/NotoSansSC[wght].ttf"`; the default KR font alone lacks some Simplified Chinese characters.
 - Missing characters fall back to the default Noto, then fonts specified by other language packs. If none contains a character, preparation stops, reports the character, `U+XXXX`, and translation key, and preserves the existing pack. Select a font containing it and rerun.
 - Variable fonts are supported, but `.ttc`, supplementary-plane emoji, complex shaping, and right-to-left layout are not.
 
 Previews are in `build/runtime/core/locales/<code>/preview.png`; font usage is recorded in `build/runtime/core/locales/fonts-report.json`. For Extended, look under `build/extended/runtime/`. Check the final appearance in the game.
 
-The developer menu uses ProggyForever (the ProggyClean family) for English and Pretendard for Korean. `setup` / `localize` prepares checksum-pinned Pretendard and generates each language's `ui.ttf` plus the selected game font as `fallback.ttf`. Custom fonts also include the default Noto as `fallback-extra.ttf`. ImGui processes UTF-8 input and 32-bit Unicode codepoints, generating glyphs dynamically. Display coverage depends on the bundled fonts; complex shaping and color emoji are not guaranteed.
+The developer menu uses ProggyForever (the ProggyClean family) for English and Pretendard for Korean. `setup` / `localize` prepares checksum-pinned Pretendard and generates each language's `ui.ttf` plus the selected game font as `fallback.ttf`. Packs with a separate font, including Chinese, also include the default Noto as `fallback-extra.ttf`. ImGui processes UTF-8 input and 32-bit Unicode codepoints, generating glyphs dynamically. Display coverage depends on the bundled fonts; complex shaping and color emoji are not guaranteed.
 
 ## Edition-specific translations
 
@@ -99,7 +101,7 @@ For a translation contribution, share the edited TSV and, for a new language, it
 To distribute a pack to players, run `localize`, verify it, and bundle the edition's **entire `core/locales/` folder**: `build/runtime/core/locales/` for Stranded II, or `build/extended/runtime/core/locales/` for Extended.
 
 - Include `languages.dat`, TSV files, and each language's `glyphs.dat`, BMP pages, `ui.ttf` and fallback TTF files. You may omit `preview.png` and `fonts-report.json`, which contains absolute paths from the development PC.
-- Check that the font permits image generation and distribution, and include required license notices. Include the Pretendard and Proggy font notices too. The default Noto notices are in [licenses/](../licenses/).
+- Check that the font permits image generation and distribution, and include required license notices. Include the Noto Sans SC, Pretendard, and Proggy font notices too. The default Noto notices are in [licenses/](../licenses/).
 
 Recipients should close the game, back up and replace their existing `core/locales/`, then select the language in the game and restart. They need an engine for the same edition that supports language packs; do not install them with an older EXE. No separate Python or original font installation is needed.
 

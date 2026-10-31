@@ -15,8 +15,10 @@ def registry(packs):
 def refresh(root,runtime,default_font,edition='classic'):
     from fonts import make_fonts
     from ui_fonts import prepare
+    from bundled_fonts import prepare as prepare_bundled_fonts
     ui_font=prepare(root)
     packs=languages(root);catalogs=validate(root,edition)
+    font_licenses=prepare_bundled_fonts(root,packs)
     parent=runtime/'core';parent.mkdir(parents=True,exist_ok=True)
     stage=Path(tempfile.mkdtemp(prefix='.locales-stage-',dir=parent))
     target=parent/'locales';backup=stage.with_name(stage.name+'-previous')
@@ -38,6 +40,8 @@ def refresh(root,runtime,default_font,edition='classic'):
         (runtime/'licenses').mkdir(exist_ok=True)
         for name in ('Pretendard-OFL.txt','Proggy-fonts.txt'):
             shutil.copy2(root/'licenses'/name,runtime/'licenses'/name)
+        for license in font_licenses:
+            shutil.copy2(license,runtime/'licenses'/license.name)
         # Publish only after all generation succeeds; rollback on rename failure.
         if target.exists():os.replace(target,backup)
         try:os.replace(stage,target)

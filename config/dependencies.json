@@ -10,5 +10,15 @@
   "blitz_download": "https://blitzresearch.itch.io/blitz3d",
   "blitz_zip_sha256": "eb5b07c3f2ccf5142ddf866c1c4caec5c4ee262b6a3ab0bcc718a397a822cc02",
   "runtime_source_commit": "f132a78c9f2da255905bf477cb845994324b865a",
-  "runtime_source_zip_sha256": "02532c6b27d09c26f69ceac8b160756bed2574b613c671f97ef4770c275143fb"
+  "runtime_source_zip_sha256": "02532c6b27d09c26f69ceac8b160756bed2574b613c671f97ef4770c275143fb",
+  "language_fonts": {
+    "deps/fonts/NotoSansSC[wght].ttf": {
+      "url": "https://raw.githubusercontent.com/google/fonts/4efc2774c63917927efe769ca845def6bd6debae/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf",
+      "sha256": "3b1cf592f34d7f0f2e8c011eedb6147bd1e9ce693ced2276b2cf2d034a4cd4b0",
+      "license": "licenses/NotoSansSC-OFL.txt",
+      "license_sha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6",
+      "notice": "licenses/NotoSansSC-NOTICE.txt",
+      "notice_sha256": "e72208edb7db6a5c895007fbd4882fb69105ff6fb678b545d9d5e2f76b75b790"
+    }
+  }
 }
