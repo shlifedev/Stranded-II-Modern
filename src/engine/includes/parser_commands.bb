@@ -1863,6 +1863,7 @@ Function parse_commands(jumptosemi=1,internal=0)
 			If parse_comma(0) Then col=param()				;Color
 			If parse_comma(0) Then y=param()				;Offset
 			If parse_comma(0) Then z=param()				;Range
+			If col<0 Or col>bmpf_count Then col=0
 			If ha_type(classint,id)>0 Then
 				found=0
 				For t3d.t3d=Each t3d
@@ -2300,6 +2301,7 @@ Function parse_commands(jumptosemi=1,internal=0)
 			title$=params()												;Title
 			If parse_comma(0) Then col=param()								;Color
 			If parse_comma(0) Then image$=params()							;Image
+			If col<0 Or col>bmpf_count Then col=0
 			gui_msg(title$,col,image$)
 			
 		;Image Win
@@ -2319,6 +2321,7 @@ Function parse_commands(jumptosemi=1,internal=0)
 			If parse_comma(0) Then cancel$=params()							;Cancle Text
 			If parse_comma(0) Then okay$=params()							;Okay Text
 			If parse_comma(0) Then image$=params()							;Image
+			If col<0 Or col>bmpf_count Then col=0
 			p_return$=gui_msgdecide(title$,col,cancel$,okay$,image$)
 			;con_add("RETURN: "+p_return$)
 			
@@ -2334,6 +2337,7 @@ Function parse_commands(jumptosemi=1,internal=0)
 			If parse_comma(0) Then cancel$=params()							;Cancle Text
 			If parse_comma(0) Then okay$=params()							;Okay Text
 			If parse_comma(0) Then image$=params()							;Image
+			If col<0 Or col>bmpf_count Then col=0
 			p_return$=gui_msginput(title$,col,cancel$,okay$,image$)
 			;con_add("RETURN: "+p_return$)			
 			
@@ -2507,6 +2511,7 @@ Function parse_commands(jumptosemi=1,internal=0)
 				in_sitxt_y(id)=0
 				If parse_comma(0) Then
 					in_sitxt_font(id)=param()							;Font
+					If in_sitxt_font(id)<0 Or in_sitxt_font(id)>bmpf_count Then in_sitxt_font(id)=0
 				EndIf
 				If parse_comma(0) Then
 					in_sitxt_x(id)=param()								;X
@@ -2623,6 +2628,7 @@ Function parse_commands(jumptosemi=1,internal=0)
 			Tcscr\col=-1
 			If parse_comma(0) Then									;Col
 				Tcscr\col=param()
+				If Tcscr\col<-1 Or Tcscr\col>bmpf_count Then Tcscr\col=-1
 			EndIf
 			If parse_comma(0) Then
 				Tcscr\align=param()									;Alignment
@@ -3851,7 +3857,7 @@ Function parse_commands(jumptosemi=1,internal=0)
 							con_item(modelid)
 							TCitem\h=CopyEntity(newmodel)
 							PositionEntity TCitem\h,tmp_x#,tmp_y#,tmp_z#
-							RotateEntity TCobject\h,0,tmp_yaw#,0
+							RotateEntity TCitem\h,0,tmp_yaw#,0
 							If Ditem_radius#(TCitem\typ)=0. Then
 								EntityPickMode TCitem\h,2,1
 								EntityRadius TCitem\h,5

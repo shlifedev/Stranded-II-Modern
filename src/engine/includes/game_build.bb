@@ -139,7 +139,7 @@ Function game_build()
 						EndIf
 					Else
 						If Instr(Dunit_scriptk$(Abs(typ)),"build_finish") Then
-							parse_task(Cclass_unit,buildid,"build_finish","",Dunit_script$(typ))
+							parse_task(Cclass_unit,buildid,"build_finish","",Dunit_script$(Abs(typ)))
 							parse_sel_event("build_finish")
 						EndIf
 					EndIf
