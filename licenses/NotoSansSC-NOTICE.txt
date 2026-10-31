@@ -1,0 +1,6 @@
+Noto Sans SC language font and bitmap subset
+Copyright 2014-2021 Adobe (http://www.adobe.com/), Reserved Font Name 'Source'.
+Noto Sans SC supplies Simplified Chinese glyphs and bitmap font pages.
+Font files and derived bitmap pages: SIL Open Font License 1.1, NotoSansSC-OFL.txt.
+Pinned source and checksums: config/dependencies.json (language_fonts).
+Font source: https://github.com/google/fonts/tree/main/ofl/notosanssc
