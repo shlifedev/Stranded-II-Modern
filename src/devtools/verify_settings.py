@@ -4,6 +4,7 @@ import blitz3d_toolchain as engine
 import argparse
 import json
 import os
+import struct
 import subprocess
 from verify_timing import function
 
@@ -47,6 +48,14 @@ If CommandLine$()="devmenu" Then
  in_keys(Ckey_devmenu)=63:save_settings():load_settings()
  WriteLine binding_report,in_keys(Ckey_devmenu)
  CloseFile binding_report
+ End
+EndIf
+If CommandLine$()="seed" Then
+ load_settings()
+ Local seed_report=WriteFile("seed-result.txt")
+ WriteLine seed_report,in_keys(0)
+ WriteLine seed_report,set_msens#
+ CloseFile seed_report
  End
 EndIf
 If CommandLine$()="roundtrip" Then
@@ -93,6 +102,41 @@ EndIf
         raise AssertionError(f'Local developer shortcut default/explicit None/custom key: {values}')
     marker.unlink();controls.unlink()
     print('Developer shortcut release/local defaults and saved None/custom binding: passed')
+    # Release ZIPs ship .default copies. A fresh folder receives them; an update
+    # extracted over an existing game must leave the player's files alone.
+    def controls_bytes(first_key, sensitivity):
+        return (b'### controls\n' + struct.pack('<21h', *range(first_key, first_key + 21)) +
+                struct.pack('<f', sensitivity) + bytes((129, 0)))
+    seeded = {
+        controls: controls_bytes(17, 0.25),
+        output / 'sys/scriptcontrols.cfg': b'### script controls\n' + bytes(42),
+        output / 'core/modern.ini': b'language=ko\n',
+    }
+    defaults = {path: path.with_name(path.stem + '.default' + path.suffix) for path in seeded}
+    (output / 'core').mkdir(exist_ok=True)
+    for path, data in seeded.items():
+        defaults[path].write_bytes(data)
+        if path.exists():path.unlink()
+    for label, expected in (('fresh release folder', ['17', '0.25']), ('update over personal settings', ['44', '0.5'])):
+        subprocess.run([str(exe), 'seed'], cwd=output, check=True, timeout=15,
+                       creationflags=subprocess.CREATE_NO_WINDOW)
+        values = (output / 'seed-result.txt').read_text('ascii').splitlines()
+        if [values[0], str(float(values[1]))] != expected:
+            raise AssertionError(f'{label}: loaded {values}; expected {expected}')
+        for path, data in seeded.items():
+            if path.read_bytes() != data:
+                raise AssertionError(f'{label}: unexpected {path.name}')
+            if path.with_name(path.name + '.tmp').exists():
+                raise AssertionError(f'{label}: staging file left for {path.name}')
+        # The player's own settings now differ from every default.
+        seeded = {controls: controls_bytes(44, 0.5),
+                  output / 'sys/scriptcontrols.cfg': b'### script controls\n' + bytes(range(42)),
+                  output / 'core/modern.ini': b'language=en\nfps=60\n'}
+        for path, data in seeded.items():
+            path.write_bytes(data)
+        print('Release default settings passed:', label)
+    for path, default in defaults.items():
+        path.unlink();default.unlink()
     # This file follows the original settings format and represents a player who
     # chose lower quality, different volumes, and disabled motion blur.
     custom = ('### personal settings\n1024\n768\n16\n1\n0\n2\n1\n0\n'
@@ -128,7 +172,7 @@ EndIf
     print('Blitz settings save/reload passed: every view distance and invalid-value fallback')
     (output / 'report.json').write_text(json.dumps({
         'fresh_install_defaults': 'pass', 'personal_settings_preservation': 'pass',
-        'view_distance_save_reload': 'pass',
+        'view_distance_save_reload': 'pass', 'release_default_seeding': 'pass',
         'graphics_and_audio_output': 'not tested by this harness',
     }) + '\n', encoding='utf8')
 

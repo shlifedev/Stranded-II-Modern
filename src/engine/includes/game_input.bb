@@ -429,7 +429,7 @@ Function game_input_menu()
 					if_lastentry()
 				;ESC
 				ElseIf in_escape Then
-					If KeyDown(42) Then
+					If KeyDown(42) And qol_shift_reserved()=0 Then
 						m_performquit=1
 					Else
 						If m_menu=0 Then

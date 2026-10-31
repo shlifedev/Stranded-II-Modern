@@ -29,6 +29,8 @@ Function mod_setup()
 	
 	;Copy Settings
 	mod_copy(src$,tgt$,"sys\controls.cfg")
+	; A fresh release folder has only the default bindings until the base game first runs.
+	If FileType(src$+"sys\controls.cfg")=0 Then mod_copy(src$,tgt$,"sys\controls.default.cfg")
 	mod_copy(src$,tgt$,"sys\settings.cfg")
 	
 	;Copy Model

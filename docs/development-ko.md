@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"c766f6c6b9d4241960ae736799b49eecee274133f10bfebb6ccfc074fd0cb2f7"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"3db2d705896e9d1ab5a74fa9defa8c97efa551456eef979778fb585d3ae5ded3"} -->
 
 # 개발 가이드
 
@@ -436,7 +436,7 @@ gh release create ci-deps-v1 `
 
 ### 배포 ZIP 구성
 
-배포 ZIP의 `StrandedII/` 폴더에는 `StrandedII.exe`, 원본 게임 리소스, 현지화 리소스, 언어별 비트맵 글꼴, 초기 설정과 라이선스가 포함됩니다. 전체 압축을 풀고 `StrandedII.exe`를 더블클릭하면 됩니다. 실행용 CMD는 포함하지 않습니다. 플레이어는 Python·Blitz3D·글꼴을 별도로 설치할 필요가 없으며 화면·FPS·언어는 게임의 설정 메뉴에서 바꿉니다.
+배포 ZIP의 `StrandedII/` 폴더에는 `StrandedII.exe`, 원본 게임 리소스, 현지화 리소스, 언어별 비트맵 글꼴, 초기 설정과 라이선스가 포함됩니다. 초기 설정은 `core/modern.default.ini`와 `mods/Stranded II/sys/controls.default.cfg`·`sys/scriptcontrols.default.cfg`로 들어 있고, 게임은 플레이어 파일이 없을 때만 이를 복사하므로 업데이트를 기존 폴더에 덮어 풀어도 저장 파일과 설정이 유지됩니다. 전체 압축을 풀고 `StrandedII.exe`를 더블클릭하면 됩니다. 실행용 CMD는 포함하지 않습니다. 플레이어는 Python·Blitz3D·글꼴을 별도로 설치할 필요가 없으며 화면·FPS·언어는 게임의 설정 메뉴에서 바꿉니다.
 
 패키징은 파일 목록을 사용하므로 사용한 개발 런타임에 있는 개인 세이브, 사용자 지도, 스크린샷, `preserved/`, 로그와 검사 보고서를 포함하지 않습니다. 키 설정은 원본 의존성에서, `core/modern.ini`는 저장소 초기 설정에서 가져옵니다. 개인 `sys/settings.cfg`도 제외하므로 새 설치의 그래픽 품질과 음량은 엔진의 초기값을 사용합니다. 개발 런타임은 변경하지 않습니다. 로컬 패키징도 가능합니다.
 

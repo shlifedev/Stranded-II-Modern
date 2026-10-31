@@ -104,6 +104,7 @@ class CIPackagingTests(unittest.TestCase):
         self.assertNotIn('Play.cmd', readme)
         self.assertIn('Settings > Graphics', readme)
         self.assertIn('Settings > QOL', readme)
+        self.assertIn('saves and settings are kept', readme)
         build = json.loads(members[f'{profile.archive_root}/build-info.json'])
         self.assertEqual(build['runtime_files']['OpenAL32.dll'],
                          ci.digest(members[f'{profile.archive_root}/OpenAL32.dll']))
@@ -231,9 +232,12 @@ class CIPackagingTests(unittest.TestCase):
                      'Play.cmd', 'debug.bat', 'setup.ps1', 'StrandedII-old.exe'):
             self.put(self.runtime / name, b'private or obsolete')
         members = ci.release_members(self.runtime, self.game)
-        self.assertEqual(members['StrandedII/core/modern.ini'], b'fps=144\nlanguage=en\n')
+        # Extracting an update over an existing folder must not replace player files.
+        self.assertEqual(members['StrandedII/core/modern.default.ini'], b'fps=144\nlanguage=en\n')
+        self.assertNotIn('StrandedII/core/modern.ini', members)
         self.assertNotIn('StrandedII/mods/Stranded II/sys/settings.cfg', members)
-        self.assertEqual(members['StrandedII/mods/Stranded II/sys/controls.cfg'], b'original controls')
+        self.assertEqual(members['StrandedII/mods/Stranded II/sys/controls.default.cfg'], b'original controls')
+        self.assertNotIn('StrandedII/mods/Stranded II/sys/controls.cfg', members)
         self.assertNotIn('StrandedII/core/development.flag',members)
         self.assertEqual(members['StrandedII/core/locales/ko/ui.ttf'],b'UI font')
         self.assertEqual(members['StrandedII/core/locales/ko/fallback.ttf'],b'Unicode fallback font')
@@ -331,7 +335,8 @@ class CIPackagingTests(unittest.TestCase):
         self.assert_player_entrypoint(members, 'extended')
         self.assertTrue(members['StrandedII-Extended/README.txt'].startswith(b'Stranded II - Extended\n'))
         self.assertIn('StrandedII-Extended/' + content, members)
-        self.assertEqual(members['StrandedII-Extended/core/modern.ini'], b'fps=60\nlanguage=ko\n')
+        self.assertEqual(members['StrandedII-Extended/core/modern.default.ini'], b'fps=60\nlanguage=ko\n')
+        self.assertNotIn('StrandedII-Extended/core/modern.ini', members)
         self.assertEqual(ci.release_members(self.runtime, self.game), baseline)
         with self.assertRaisesRegex(ValueError, 'another edition'):
             ci.release_members(runtime, self.game, 'classic')
