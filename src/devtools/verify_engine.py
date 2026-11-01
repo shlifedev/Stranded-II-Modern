@@ -35,7 +35,12 @@ def check_abi(output):
         exe = output / (name + '.exe')
         engine.compile_test(root / 'src/tests' / (name + '.bb'), exe, cwd=output, graphics=False)
         execute(exe, output, name, args=arguments.get(name, ()))
+    directory = engine.BUILD / 'windows-console/cmake'
+    engine.run(['cmake', '--build', directory, '--target', 's2_stream_check', '-j', '8'],
+               env=engine.environment())
+    execute(directory / 's2_stream_check.exe', output, 'stream')
     return {'original_1_118_bytes': len(expected), 'type_lifetime': 'pass',
+            'binary_stream_reads': 'pass',
             'unicode_files_and_native_handles': 'pass', 'partial_utf8_paths': 'pass',
             'raw_command_line': 'pass'}
 

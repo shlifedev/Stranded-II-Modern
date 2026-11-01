@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"1c5109327645aed4d9d6f916d5395f12a05e9c9dbc95287abd2b277200945b65"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"75bf0149d3b30101b16236de4c23b73b0c33df810536f069624d8815adcf2c53"} -->
 
 # Development guide
 
@@ -326,6 +326,8 @@ The engine stores script variables as `[[loc:key|name=HEX_UTF8_BYTES]]` to prese
 ## Verifying changes
 
 For game-code changes, run `build` and `check`, then verify the changed feature in the game. For translations and fonts, run `localize` and `check`; for resources, run `setup` and `check`, then inspect the display. For documentation-only changes, check links and consistency with the described behavior.
+
+Native ABI checks also exercise binary `ReadString` with complete, truncated and damaged length-prefixed data. It retains only received bytes and grows storage as data arrives. Full-game compatibility checks cover item transfers whose `drop` scripts create, consume, move or delete items; transfers revalidate the original item and storage capacity after callbacks, and instance-level vetoes execute before moving items.
 
 | Check | Coverage | Results |
 | --- | --- | --- |

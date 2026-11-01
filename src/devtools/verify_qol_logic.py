@@ -162,6 +162,7 @@ def main():
         'load_strings.bb': ('ss$',),
         'modern_settings.bb': ('modern_capture_settings', 'modern_settings_reset', 'modern_options_save'),
         'handle_items.bb': ('free_item', 'store_item', 'countstored_items', 'combine_item',
+                            'exchange_item_count', 'exchange_item_source', 'con_item',
                             'exchange_item', 'capacity', 'get_stored_item'),
         'handle_units.bb': ('con_unit',),
         'handle_objects.bb': ('con_object',),

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"3db2d705896e9d1ab5a74fa9defa8c97efa551456eef979778fb585d3ae5ded3"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"ca2943fe39a08b118919ec1a5aced1b06b7ac9c5d7fc06eb35dcaa11e43809d8"} -->
 
 # 개발 가이드
 
@@ -326,6 +326,8 @@ msg "[[loc:quest.island1.arrival]]";
 ## 변경 검증
 
 게임 코드가 바뀌면 `build`와 `check`를 실행하고 변경한 기능을 게임에서 확인합니다. 번역·폰트는 `localize`와 `check`, 리소스는 `setup`과 `check` 후 표시를 확인합니다. 문서만 바꾼 경우에는 링크와 안내 내용의 일치 여부를 확인합니다.
+
+네이티브 ABI 검사는 정상·잘린·길이가 손상된 바이너리 `ReadString` 데이터도 검사합니다. 수신한 바이트만 유지하며 데이터가 들어오는 만큼 저장 공간을 늘립니다. 전체 게임 호환성 검사는 `drop` 스크립트가 아이템을 생성·소비·이동·삭제하는 보관함 이동도 다룹니다. 콜백 후 원래 아이템과 보관함 용량을 다시 확인하며, 인스턴스별 이동 거부는 실제 이동 전에 실행합니다.
 
 | 검사 | 확인 범위 | 결과 위치 |
 | --- | --- | --- |

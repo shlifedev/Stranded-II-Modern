@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"5900dcb7e316f36a6e001b1f6353efe34236da27223071a6cf4e2d444b824912"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"5f9c7b4e524c5f0be7990a0c6b2e0581d84727dd4858818b82807546e39a98a3"} -->
 
 # Stranded II의 wgpu/WebGPU 크로스플랫폼 렌더러 마이그레이션
 
@@ -552,6 +552,8 @@ size_t readback_size = bytes_per_row * height;
 ```
 
 너비 300이면 실제 RGBA row는 1,200 byte지만 copy buffer의 row pitch는 1,280 byte입니다. `mapAsync` 완료 후 padding을 제거해 CPU row에 복사합니다. `BGRA8Unorm`이면 R/B를 교환하고 `RGB10A2Unorm`이면 10/10/10/2-bit 값을 8-bit RGBA로 변환합니다.
+
+`RGB10A2Unorm` framebuffer를 `LockBuffer`로 잠그면 canvas는 원래 packed texel도 보관합니다. `WritePixel`/`WritePixelFast`와 픽셀 복사는 지정한 texel만 변경하며, 마지막 `UnlockBuffer`에서 수정 내용을 업로드하면서 나머지 texel의 10-bit 값을 그대로 유지합니다. 읽기만 한 lock은 framebuffer를 업로드하거나 양자화하지 않습니다.
 
 이 row pitch 규칙은 encoded texture-to-buffer copy의 제약입니다. `wgpuQueueWriteTexture()`의 업로드에 동일한 256-byte padding을 무조건 추가해야 한다는 뜻은 아닙니다. 현재 RGBA 업로드는 `width*4`, R8 atlas 업로드는 `width`를 bytesPerRow로 사용합니다.
 

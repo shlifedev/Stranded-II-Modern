@@ -13,6 +13,8 @@ protected:
 	int width,height;
 	mutable unsigned char *pixels;
 	mutable int lock_count;
+	std::vector<uint32_t> locked_wide_pixels;
+	bool pixels_modified=false;
 	BBImageFont *font;
 
 	int vx,vy,vw,vh;
