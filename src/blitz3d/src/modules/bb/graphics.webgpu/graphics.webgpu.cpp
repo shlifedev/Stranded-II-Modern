@@ -616,10 +616,13 @@ WGPUTextureView WebGPUContextResources::acquireSurfaceView(){
 
 void WebGPUContextResources::releaseSurfaceTexture(){
 	if( surface_view ){
-		invalidateBindGroupsFor( surface_view );
+		// Presentation releases this view every frame. Unless a canvas sampled
+		// it, no 2D/3D bind group can hold it, so skip both cache scans.
+		if( surface_sampled ) invalidateBindGroupsFor( surface_view );
 		wgpuTextureViewRelease( surface_view );
 		surface_view=0;
 	}
+	surface_sampled=false;
 	if( surface_texture ){
 		wgpuTextureRelease( surface_texture );
 		surface_texture=0;
@@ -856,15 +859,13 @@ WGPUBindGroup WebGPUContextResources::getBindGroup( WGPUTextureView view,WGPUSam
 }
 
 void WebGPUContextResources::invalidateBindGroupsFor( WGPUTextureView view ){
-	std::map<std::pair<WGPUTextureView,WGPUSampler>,WGPUBindGroup>::iterator it=bind_groups.begin();
-	while( it!=bind_groups.end() ){
-		if( it->first.first==view ){
-			if( it->second==bound_group ) bound_group=0;
-			wgpuBindGroupRelease( it->second );
-			it=bind_groups.erase( it );
-		}else{
-			++it;
-		}
+	// Keys order by view first, so this view's sampler variants are adjacent.
+	std::map<std::pair<WGPUTextureView,WGPUSampler>,WGPUBindGroup>::iterator it=
+		bind_groups.lower_bound( std::make_pair( view,(WGPUSampler)0 ) );
+	while( it!=bind_groups.end() && it->first.first==view ){
+		if( it->second==bound_group ) bound_group=0;
+		wgpuBindGroupRelease( it->second );
+		it=bind_groups.erase( it );
 	}
 	for( size_t i=0;i<listeners.size();++i ){
 		if( listeners[i].view_gone ) listeners[i].view_gone( listeners[i].ctx,view );
