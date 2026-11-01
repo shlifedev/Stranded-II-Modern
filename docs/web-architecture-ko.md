@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"e43b8ffc3bd5d71c518c4ac3c0a3ffa3ae637d696550aa34f86b8c9f4f62899a"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"c00f050d26b4d055ce9fb854baf51d7f81a37eb27ab2cb8ea080d7b0df8d8dee"} -->
 
 # 웹 버전 구현 원리
 
@@ -21,7 +21,7 @@ flowchart LR
     Linker --> Output["game.wasm + game.js"]
 ```
 
-수정 가능한 [내장 Blitz3D 엔진](../src/blitz3d/)을 Windows·웹·macOS·Studio가 공유합니다. [버전을 고정한 외부 SDK·라이브러리](../config/blitz3d-toolchain.json)와 Emscripten으로 게임과 엔진을 **WebAssembly(WASM)**로 빌드합니다. 엔진 소스를 직접 수정하며 준비 과정에서 패치를 덮어쓰지 않습니다. 브라우저가 로컬 CPU에서 게임을 실행하고 JavaScript는 로딩·브라우저 연동을 담당합니다.
+수정 가능한 [내장 Blitz3D 엔진](../src/blitz3d/)을 Windows·웹·macOS가 공유합니다. [버전을 고정한 외부 SDK·라이브러리](../config/blitz3d-toolchain.json)와 Emscripten으로 게임과 엔진을 **WebAssembly(WASM)**로 빌드합니다. 엔진 소스를 직접 수정하며 준비 과정에서 패치를 덮어쓰지 않습니다. 브라우저가 로컬 CPU에서 게임을 실행하고 JavaScript는 로딩·브라우저 연동을 담당합니다.
 
 배포 파일은 다음 역할로 나뉩니다.
 

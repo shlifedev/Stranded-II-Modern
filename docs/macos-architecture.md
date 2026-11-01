@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"80623e01f6d0698b2eea15ed1cc19ec82ca18b8ac1cddc613b0514ea4756e2a4"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"00d9068c1666f33579ec12db1eb25ac88bb556f1eeeb425302f1f185c825e6fb"} -->
 
 # How the macOS version works
 
@@ -54,7 +54,7 @@ The runtime factory retains the old name `bbCreateOpenGLRuntime`. The linked `gr
 
 ## 3. What the web and macOS versions share
 
-Windows, web, macOS and Studio share `src/blitz3d/`, including the WebGPU renderer. Platform selection chooses native Dawn/D3D12, browser WebGPU or native Dawn/Metal; engine changes are made directly in these sources.
+Windows, web and macOS share `src/blitz3d/`, including the WebGPU renderer. Platform selection chooses native Dawn/D3D12, browser WebGPU or native Dawn/Metal; engine changes are made directly in these sources.
 
 | Item | Web version | macOS app |
 | --- | --- | --- |

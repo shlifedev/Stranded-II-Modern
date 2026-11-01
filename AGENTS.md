@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"acffaaa1b047d5f2b2f04845c4d67ee16ff3b5a81b40b6883e545cd8c663ae24"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"edcc18d85e8a9c70ed2bf6b298d08a5bb48121d3d99ae1214d5c6087b702c8c0"} -->
 
 # Stranded II development instructions
 
@@ -13,7 +13,7 @@ The architecture has Stranded II and Extended editions using a shared engine, ed
 - `main`/`dev` are stable/development channels. CI builds and checks only the base game; a `main` push automatically publishes a stable release after checks pass. Development releases use `publish=true` in the manual workflow. Extended is for local development for now; keep CI edition selection, build and release routing commented out. Do not publish a release or trigger one by pushing without a request.
 - Public names for the base game and its release titles have no edition label. Keep `classic` only as the internal identifier in existing commands, paths and metadata.
 
-- Keep shell/PowerShell/CMD launchers in `scripts/` and Python development tools in `src/devtools/`, Studio in `src/studio/`, integration tests in `src/tests/`, and game catalogs in `resources/locales/`. The root `AGENTS.md` is the instruction entrypoint; `docs/reference/AGENTS-ko.md` is its Korean reading copy.
+- Keep shell/PowerShell/CMD launchers in `scripts/` and Python development tools in `src/devtools/`, integration tests in `src/tests/`, and game catalogs in `resources/locales/`. The root `AGENTS.md` is the instruction entrypoint; `docs/reference/AGENTS-ko.md` is its Korean reading copy.
 - Edit `src/engine/**/*.bb` directly. These files are tracked sources, not generated output. Do not run the old `src/ko-full` generators against the current engine.
 - Follow `src/devtools/dev.py setup|localize|build|run|check` and the directory structure in `docs/development.md`. Python handles preparation, fonts, and verification only; it does not regenerate engine code.
 - Edit the shared Blitz compiler/runtime directly in `src/blitz3d/`; do not restore upstream sources or overlay patches. External SDK/library pins are in `config/blitz3d-toolchain.json`; generated files belong in `build/engine/`.
@@ -35,7 +35,7 @@ The architecture has Stranded II and Extended editions using a shared engine, ed
 ## Custom engine architecture and compatibility
 
 - `src/engine/` contains Blitz game logic; `src/blitz3d/` contains the custom LLVM-based Blitz compiler and shared runtime. The runtime's `graphics.webgpu` owns devices, textures, 2D/UI, and presentation; `blitz3d.webgpu` owns 3D scenes, meshes, materials, and draws.
-- The renderer uses the C++ `webgpu.h` / `wgpu*` API and WGSL shaders, without the Rust `wgpu` crate. Windows uses Dawn → D3D12; macOS uses Dawn → Metal; web/Studio uses Emscripten `emdawnwebgpu` → browser WebGPU.
+- The renderer uses the C++ `webgpu.h` / `wgpu*` API and WGSL shaders, without the Rust `wgpu` crate. Windows uses Dawn → D3D12; macOS uses Dawn → Metal; web uses Emscripten `emdawnwebgpu` → browser WebGPU.
 - Historical names such as `runtime.opengl.static` and `bbCreateOpenGLRuntime` remain. Identify the actual rendering path from the linked modules and backend selection.
 - Native targets retain 32-bit Blitz integers/floats with 64-bit internal pointers. Game-facing resource handles are 32-bit IDs. Never cast pointers directly to Blitz integers; preserve `s2Handle`, `s2Pointer`, and handle-map invalidation on release.
 - Native handle wrappers are generated from `commands.decls` and `legacy32.py`. Edit the declarations/generator rather than generated build files. Preserve original numeric, binary, and save semantics.

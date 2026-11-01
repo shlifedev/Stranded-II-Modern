@@ -39,6 +39,92 @@ static bool device(WebGPUContextResources &res,bool timestamps){
   res.profiler=std::make_unique<WebGPUProfiler>(res.device);return true;
 }
 struct Target:WebGPUCanvas {using WebGPUCanvas::WebGPUCanvas;using WebGPUCanvas::readPixels;};
+static void checkCanvasBatching(WebGPUContextResources &res){
+  using namespace s2prof;
+  Target target(&res,128,96,BBCanvas::CANVAS_TEX_VIDMEM);
+  Target pages[2]={{&res,8,8,BBCanvas::CANVAS_TEX_VIDMEM},{&res,8,8,BBCanvas::CANVAS_TEX_VIDMEM}};
+  for(int page=0;page<2;++page){
+    std::vector<unsigned char> rgba(8*8*4);
+    for(int i=0;i<64;++i){
+      rgba[i*4]=i%3?40+page*140:255;rgba[i*4+1]=i%3?180:0;
+      rgba[i*4+2]=i%3?70:255;rgba[i*4+3]=i%2?255:0;
+    }
+    pages[page].uploadRGBA(rgba.data(),8,8);pages[page].setMask(0xffff00ff);
+  }
+  for(bool mixed:{false,true}){
+    std::vector<unsigned char> reference;
+    uint64_t referenceDraws=0;
+    for(bool isolated:{true,false}){
+      target.setViewport(0,0,128,96);target.setScale(1,1);
+      target.setClsColor(0xff183040);target.cls();res.flush();
+      recorder().boundary(now());uint64_t id=recorder().frameId();
+      const int count=mixed?120:5000;
+      for(int i=0;i<count;++i){
+        if(mixed){
+          target.setViewport(i%2?3:0,2,120,90);target.setScale(i%3?1.f:1.25f,0.75f);
+          pages[(i/10)%2].setMask(i%4?0xffff00ff:0xff28b446);
+        }
+        target.blit((i%32)*4-2,(i/32%24)*4-1,&pages[mixed?(i/10)%2:0],(i%2)*4,0,4,4,mixed&&i%7==0);
+        if(isolated)res.flushPendingDraw();
+        if(mixed){
+          target.setColor(i%2?0xffc02060:0xff2060c0);
+          target.rect(i%110,i%80,9,7,i%3==0);
+          if(isolated)res.flushPendingDraw();
+        }
+      }
+      res.endPass();
+      if(!mixed&&!isolated)expect(res.uniform_used==256,"5000 glyphs use one uniform slot without arena overflow");
+      std::vector<unsigned char> pixels;target.readPixels(pixels);
+      recorder().boundary(now());uint64_t draws=recorder().find(id)->graphics[TwoD].draws;
+      uint64_t hash=14695981039346656037ull;
+      for(auto byte:pixels){hash^=byte;hash*=1099511628211ull;}
+      std::printf("Canvas mixed=%d isolated=%d draws=%llu pixels=%016llx\n",mixed,isolated,
+                  (unsigned long long)draws,(unsigned long long)hash);
+      if(isolated){reference=pixels;referenceDraws=draws;}
+      else{
+        expect(pixels==reference,"batching preserves GPU pixels across overlap, keys, pages, scale, scissor and outlines");
+        if(!mixed)expect(draws==1&&referenceDraws==5000,"5000 consecutive glyph draws merge into one encoded draw");
+      }
+    }
+  }
+  target.setViewport(0,0,128,96);target.setScale(1,1);target.cls();res.flush();
+  recorder().boundary(now());uint64_t id=recorder().frameId();
+  target.setColor(0xff80c040);
+  for(int i=0;i<200;++i)target.rect(i%120,i%88,8,8,true);
+  for(int i=0;i<200;++i)target.rect(i%120,i%88,8,8,false);
+  res.flush();recorder().boundary(now());
+  expect(recorder().find(id)->graphics[TwoD].draws==2,"filled and outlined rectangles each batch, preserving topology boundaries");
+}
+static void checkCanvasViewLifetime(WebGPUContextResources &res){
+  Target image(&res,8,8,BBCanvas::CANVAS_TEX_VIDMEM),other(&res,8,8,BBCanvas::CANVAS_TEX_VIDMEM);
+  auto view=image.sampleView(),unrelated=other.sampleView();
+  auto keep=res.getBindGroup(unrelated,res.sampler_nearest);
+  res.getBindGroup(view,res.sampler_linear);
+  res.bound_group=res.getBindGroup(view,res.sampler_nearest);
+  int notifications=0;
+  WebGPUCanvasListener listener={};listener.ctx=&notifications;
+  listener.view_gone=[](void *ctx,WGPUTextureView){++*static_cast<int*>(ctx);};
+  res.addListener(listener);
+  res.invalidateBindGroupsFor(view);
+  expect(res.bound_group==nullptr&&res.bind_groups.count({view,res.sampler_linear})==0&&
+         res.bind_groups.count({view,res.sampler_nearest})==0&&res.getBindGroup(unrelated,res.sampler_nearest)==keep,
+         "view invalidation removes every sampler variant and keeps unrelated groups");
+  expect(notifications==1,"ordinary view invalidation still notifies scene caches");
+  // Supply an owned offscreen view to the surface lifecycle without a window.
+  res.surface_view=view;wgpuTextureViewAddRef(view);
+  res.releaseSurfaceTexture();
+  expect(notifications==1,"unsampled presentation view skips cache invalidation");
+  struct Surface:Target{using Target::Target;void enable(){is_surface=true;}};
+  Surface surface(&res,8,8,BBCanvas::CANVAS_TEX_VIDMEM);surface.enable();
+  res.surface_view=view;wgpuTextureViewAddRef(view);
+  res.getBindGroup(surface.sampleView(),res.sampler_nearest);
+  res.releaseSurfaceTexture();
+  expect(notifications==2&&res.bind_groups.count({view,res.sampler_nearest})==0,
+         "sampled presentation view invalidates groups before release");
+  res.surface_view=view;wgpuTextureViewAddRef(view);res.releaseSurfaceTexture();
+  expect(notifications==2,"surface sampling flag resets for the following frame");
+  res.removeListener(&notifications);
+}
 static void render(WebGPUContextResources &res,Target &target){
   target.setClsColor(0xff183040);target.cls();
   target.setColor(0xffb0a080);for(int i=0;i<60;++i)target.rect(0,0,target.getWidth(),target.getHeight(),true);
@@ -108,5 +194,6 @@ int main(){
   WebGPUContextResources unsupported;if(!device(unsupported,false))return 2;
   {Target target(&unsupported,32,32,BBCanvas::CANVAS_TEX_VIDMEM);recorder().boundary(now());uint64_t id=recorder().frameId();render(unsupported,target);recorder().boundary(now());
     expect(recorder().find(id)->gpu==GpuStatus::Unsupported && recorder().find(id)->graphics[TwoD].draws>0,"device without timestamp feature retains draw statistics");}
+  checkCanvasBatching(unsupported);checkCanvasViewLifetime(unsupported);
   unsupported.destroy();recorder().capture(false);return failures?1:0;
 }

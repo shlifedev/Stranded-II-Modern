@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"c7c16a040ba0263eba4be493d1615a123dc9633794e9d25449b39bd0cfd24881"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"52907ca1a3526874d3613b4c97d031cade25e355a23482210e39e4a46495d7ec"} -->
 
 # Stranded II's wgpu/WebGPU cross-platform renderer migration
 
@@ -20,7 +20,7 @@ This document follows the actual C++, WGSL and Blitz sources in this repository 
 | Dawn | Native WebGPU implementation handling backends, validation and shaders | Windows D3D12 and macOS Metal |
 | Tint | Dawn's shader processing layer | Implementation internals processing WGSL for a backend |
 | Rust `wgpu` | A separate Rust WebGPU implementation/library ecosystem | Not a dependency of the current runtime |
-| Emscripten `emdawnwebgpu` | Connects WASM C API calls to browser WebGPU | Web and Studio builds |
+| Emscripten `emdawnwebgpu` | Connects WASM C API calls to browser WebGPU | Web builds |
 
 The `wgpu` function prefix alone does not identify the implementation. The [module CMake file](../src/blitz3d/src/modules/bb/graphics.webgpu/CMakeLists.txt) selects `dawn::webgpu_dawn` or `--use-port=emdawnwebgpu`; the [toolchain configuration](../config/blitz3d-toolchain.json) pins the native Dawn revision.
 
@@ -48,9 +48,8 @@ flowchart TD
 | Windows | LLVM-based native x64 executable | SDL window's `HWND` | Explicit `WGPUBackendType_D3D12` |
 | macOS | Native Apple Silicon ARM64 executable | Layer from an SDL Metal view | Explicit `WGPUBackendType_Metal` |
 | Web | Browser executes WASM as CPU code | HTML `#canvas` | Project does not fix a native API; the browser decides |
-| Studio 3D viewport | WASM running in Electron | Browser canvas | Electron's WebGPU implementation decides |
 
-Vulkan is a possible backend of a WebGPU implementation. **This does not establish a completed standalone native Linux/Vulkan game target in this repository.** `dev.py --platform` currently exposes `windows|web|macos`; web and Mac game builds accept only the base game. Both Windows editions use the same renderer sources. Studio's Extended scene execution is a separate development-tool route.
+Vulkan is a possible backend of a WebGPU implementation. **This does not establish a completed standalone native Linux/Vulkan game target in this repository.** `dev.py --platform` currently exposes `windows|web|macos`; web and Mac game builds accept only the base game. Both Windows editions use the same renderer sources.
 
 ## 2. Migrating rendering semantics from D3D7
 
@@ -491,6 +490,8 @@ Mesh culling uses the original test for the first view and reuses world-space bo
 
 `graphics.webgpu` implements `BBCanvas` screens, images and textures as `WebGPUCanvas`. A 2D position/UV vertex occupies **16 bytes** and render state occupies **64 bytes**. CPU staging accumulates vertices/uniforms; consecutive draws sharing pipeline, bind group, scissor and buffer are merged. Strip topologies use separate draws to avoid unintended connections between adjacent strips.
 
+`DrawImage`, `DrawImageRect`, `Rect` and `Plot` store destination coordinates in vertices and keep the `xywh` uniform at `{0,0,1,1}`. Consecutive calls differing only in position reuse a uniform slot, allowing glyphs from the same bitmap-font page to merge into one draw. Changes in page, colour, RGB key, copy mode, blend, scissor or topology split batches where needed while preserving draw order. Actual GPU regression checks compare individual and batched draw pixels, draw counts and uniform usage for long glyph runs.
+
 ### 14.1 Bitmap images and colour keys
 
 Original DirectDraw `DrawImage`/`DrawBlock` semantics differ from ordinary RGBA alpha blending. The 2D WGSL rounds sampled RGB to 8-bit integers and compares against the RGB key extracted from `image_mask`. Keyed mode discards matching fragments and copies the remaining pixels with `alpha=1`. Block/solid mode copies RGB without key rejection.
@@ -558,6 +559,8 @@ Readback is a CPU/GPU synchronization point and can change rendering throughput.
 ### 17.2 Releasing objects and invalidating caches
 
 Related bind-group caches are invalidated before texture views are released. Canvas-destruction listeners remove scene depth targets and texture references. Context destruction releases owned scene, pass, buffer, pipeline, sampler, texture, surface, queue, device, adapter and instance handles. The SDL window lifecycle also manages the Mac Metal view.
+
+The 2D bind-group cache is ordered by `(view, sampler)`, so invalidation starts at `lower_bound` and removes only that view's entries. A surface view used only for presentation never enters sampling caches, avoiding per-frame 2D/3D cache scans. If `sampleView()` exposes the surface for sampling, release performs the existing invalidation and listener notification, then resets the sampling flag for the next frame.
 
 Releasing a handle and completing GPU execution are separate events. The implementation retains internal resource references for submitted commands, but application caches must remove released handles themselves. Mesh generation changes also invalidate cached draw-buffer bindings.
 

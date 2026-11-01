@@ -29,7 +29,7 @@ Stranded II를 최신 Windows 환경에서 즐기기 위한 비공식 개선판�
  
 그 외 기술적 변경사항은 다음 문서들을 참고하세요. 
 
-[WebGPU 렌더러](docs/wgpu-migration-ko.md) · [웹 버전 구현 원리](docs/web-architecture-ko.md) · [macOS 구현 원리](docs/macos-architecture-ko.md) · [Studio](docs/studio-ko.md) · [개발 가이드](docs/development-ko.md) · [현지화 가이드](docs/localization-ko.md)
+[WebGPU 렌더러](docs/wgpu-migration-ko.md) · [웹 버전 구현 원리](docs/web-architecture-ko.md) · [macOS 구현 원리](docs/macos-architecture-ko.md) · [개발 가이드](docs/development-ko.md) · [현지화 가이드](docs/localization-ko.md)
 
 ## 필요한 안내 찾기
 

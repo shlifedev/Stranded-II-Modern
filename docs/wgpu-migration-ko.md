@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"5900dcb7e316f36a6e001b1f6353efe34236da27223071a6cf4e2d444b824912"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"df56c538333b58c1000b63ffebbb770a055f1645c567a46e70f24ced3d209fb1"} -->
 
 # Stranded II의 wgpu/WebGPU 크로스플랫폼 렌더러 마이그레이션
 
@@ -20,7 +20,7 @@
 | Dawn | 네이티브 WebGPU 구현체; 백엔드·검증·셰이더 처리를 담당 | Windows D3D12, macOS Metal |
 | Tint | Dawn의 셰이더 처리 계층 | WGSL을 백엔드용 표현으로 처리하는 구현체 내부 |
 | Rust `wgpu` | 별도의 Rust WebGPU 구현·라이브러리 생태계 | 현재 런타임의 의존성에 없음 |
-| Emscripten `emdawnwebgpu` | WASM의 C API 호출을 브라우저 WebGPU에 연결 | 웹·Studio 빌드 |
+| Emscripten `emdawnwebgpu` | WASM의 C API 호출을 브라우저 WebGPU에 연결 | 웹 빌드 |
 
 `wgpu`라는 함수 접두사만으로 구현체를 식별할 수는 없습니다. 실제 선택은 [모듈 CMake](../src/blitz3d/src/modules/bb/graphics.webgpu/CMakeLists.txt)의 `dawn::webgpu_dawn` 연결과 `--use-port=emdawnwebgpu`, 그리고 [툴체인 설정](../config/blitz3d-toolchain.json)의 Dawn 고정 리비전으로 확인합니다.
 
@@ -48,9 +48,8 @@ flowchart TD
 | Windows | LLVM 기반 x64 네이티브 실행 파일 | SDL 창의 `HWND` | `WGPUBackendType_D3D12` 명시 |
 | macOS | Apple Silicon ARM64 네이티브 실행 파일 | SDL Metal view의 레이어 | `WGPUBackendType_Metal` 명시 |
 | 웹 | WASM을 브라우저가 CPU 코드로 실행 | HTML `#canvas` | 프로젝트가 네이티브 API를 고정하지 않음; 브라우저가 결정 |
-| Studio의 3D 화면 | Electron에서 WASM 실행 | 브라우저형 canvas | Electron의 WebGPU 구현체가 결정 |
 
-Vulkan은 WebGPU 구현체가 사용할 수 있는 백엔드입니다. **이 저장소에 독립적인 Linux/Vulkan 네이티브 게임 타깃이 완성돼 있다는 뜻은 아닙니다.** 현재 `dev.py --platform`은 `windows|web|macos`를 제공하며 웹과 Mac 게임 빌드는 기본판만 허용합니다. Windows의 두 에디션은 같은 렌더러 소스를 사용합니다. Studio의 Extended 장면 실행은 별도 개발 도구 경로입니다.
+Vulkan은 WebGPU 구현체가 사용할 수 있는 백엔드입니다. **이 저장소에 독립적인 Linux/Vulkan 네이티브 게임 타깃이 완성돼 있다는 뜻은 아닙니다.** 현재 `dev.py --platform`은 `windows|web|macos`를 제공하며 웹과 Mac 게임 빌드는 기본판만 허용합니다. Windows의 두 에디션은 같은 렌더러 소스를 사용합니다.
 
 ## 2. D3D7에서 옮긴 것은 호출 이름보다 렌더링 의미입니다
 
@@ -493,6 +492,8 @@ CPU frustum 검사는 공통 [frustum 구현](../src/blitz3d/src/modules/bb/blit
 
 `graphics.webgpu`는 `BBCanvas`의 화면·이미지·texture를 `WebGPUCanvas`로 구현합니다. 2D 정점은 position/UV의 **16 byte**, render state는 **64 byte**입니다. 정점과 uniform을 CPU staging에 모으고 pipeline·bind group·scissor·buffer가 같은 연속 draw를 합칩니다. strip topology는 별도로 draw하여 인접 strip 사이에 의도하지 않은 연결이 생기지 않게 합니다.
 
+`DrawImage`·`DrawImageRect`·`Rect`·`Plot`은 목적지 좌표를 정점에 넣고 `xywh` uniform을 `{0,0,1,1}`로 유지합니다. 좌표만 다른 연속 호출은 같은 uniform 슬롯을 재사용하므로 같은 비트맵 글꼴 페이지의 글자도 한 draw로 합칠 수 있습니다. 페이지·색·RGB key·복사 모드·blend·scissor·topology가 바뀌면 필요한 경계에서 분리하며 원래 그리기 순서를 유지합니다. 실제 GPU 회귀 검사는 개별 draw와 병합 draw의 픽셀, 긴 글자열의 draw 수와 uniform 사용량을 비교합니다.
+
 ### 14.1 bitmap 이미지와 color key
 
 원래 DirectDraw의 `DrawImage`/`DrawBlock` 의미는 일반적인 RGBA alpha blending과 완전히 같지 않습니다. 2D WGSL은 sampled RGB를 8-bit 정수로 round하고 `image_mask`에서 꺼낸 RGB key와 비교합니다. keyed mode에서는 일치하는 fragment를 버리고, 나머지는 `alpha=1`로 복사합니다. block/solid mode는 key 없이 RGB를 복사합니다.
@@ -560,6 +561,8 @@ readback은 CPU/GPU 동기화 지점이며 실제 렌더링 throughput을 바꿀
 ### 17.2 객체 해제와 cache 무효화
 
 texture view를 해제하기 전에 관련 bind group cache를 제거합니다. canvas destruction listener는 scene의 depth target과 texture 참조를 정리합니다. context 종료에서는 scene·pass·buffer·pipeline·sampler·texture·surface·queue·device·adapter·instance 등의 소유 handle을 해제합니다. Mac Metal view의 수명도 SDL window와 함께 관리합니다.
+
+2D bind group 캐시는 `(view, sampler)` 순서로 정렬돼 있어 `lower_bound`부터 해당 view의 항목만 제거합니다. 화면 표시에만 쓰인 surface view는 sampling 캐시에 들어가지 않으므로 매 프레임 2D·3D 캐시를 검색하지 않습니다. `sampleView()`로 surface를 참조했다면 해제 전에 기존 무효화와 listener 알림을 수행하고, 다음 프레임을 위해 sampling 표시를 초기화합니다.
 
 handle release와 GPU 실행 완료는 별개입니다. 제출된 명령의 내부 리소스 참조는 구현체가 관리하지만, 애플리케이션 cache에 남은 해제된 handle은 직접 정리해야 합니다. mesh generation 변화도 draw의 buffer binding cache를 무효화합니다.
 

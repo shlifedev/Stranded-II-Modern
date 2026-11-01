@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"1c5109327645aed4d9d6f916d5395f12a05e9c9dbc95287abd2b277200945b65"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"800aa35af4925e3e1810f82c4d90bb4ae79bee1f335fe2efd08967172a0b4bd8"} -->
 
 # Development guide
 
@@ -88,7 +88,7 @@ Both editions share a Dear ImGui menu. Assign a shortcut under **Settings → Co
 
 Opening the menu keeps the game running and blocks game input. The Status tab's pause stays active after closing the menu. Tools include single-player cheats, an item icon grid, position/time changes, settings previews, and searchable/copyable logs. **Save** and **Revert to saved settings** are separate; changes are never saved automatically. Display mode, resolution, FPS limit and language require restarting after saving. Logs retain at most 2,048 entries / 2MiB; scrolling up stops following new messages.
 
-Shared game UI lives in `src/engine/includes/devmenu.bb`, native ImGui/SDL/WebGPU integration in `src/blitz3d/src/modules/bb/debugui/`, and browser IME integration in `src/web/debugui.js`. Windows editions, macOS, Web and Studio use the same implementation. On Windows, `python src/devtools/verify_engine.py --graphics --input` checks input ownership and window/context lifetimes. The `s2_debugui_check` CMake target accepts a prepared `core/locales/<code>/ui.ttf` path and checks Unicode glyphs, sliders and log following without a window. Check actual display, IME composition/paste and each platform's execution separately.
+Shared game UI lives in `src/engine/includes/devmenu.bb`, native ImGui/SDL/WebGPU integration in `src/blitz3d/src/modules/bb/debugui/`, and browser IME integration in `src/web/debugui.js`. Windows editions, macOS and Web use the same implementation. On Windows, `python src/devtools/verify_engine.py --graphics --input` checks input ownership and window/context lifetimes. The `s2_debugui_check` CMake target accepts a prepared `core/locales/<code>/ui.ttf` path and checks Unicode glyphs, sliders and log following without a window. Check actual display, IME composition/paste and each platform's execution separately.
 
 ### CPU/GPU profiler and performance test scene
 
@@ -123,7 +123,7 @@ Only the test copy continues rendering without focus; minimize it and the trial 
 
 All Python development commands accept `--platform windows|web|macos`, defaulting to `windows`. Web builds support the base game only. `--platform web --edition extended` returns an error; Extended CI remains disabled.
 
-`src/engine/StrandedIIWeb.bb` includes the shared game and browser services. Windows, web, macOS and Studio build the same editable engine in `src/blitz3d/`; the web target uses [Emscripten](../config/web-toolchain.json). Edit engine sources directly and rebuild. [How the web version works](web-architecture.md) explains WASM, WebGPU, JSPI and browser storage.
+`src/engine/StrandedIIWeb.bb` includes the shared game and browser services. Windows, web and macOS build the same editable engine in `src/blitz3d/`; the web target uses [Emscripten](../config/web-toolchain.json). Edit engine sources directly and rebuild. [How the web version works](web-architecture.md) explains WASM, WebGPU, JSPI and browser storage.
 
 Web development also needs Git. Preparation downloads pinned dependencies into `deps/blitz3d/`, `deps/emsdk/` and `deps/ffmpeg-web/`; the first build takes time and disk space. Complete Windows setup first, then run:
 
@@ -204,12 +204,6 @@ Release repository Secrets are `APPLE_CERTIFICATE` (Base64 of a P12 containing t
 
 Test the DMG on another Apple Silicon Mac, especially macOS 15: open it, drag the app to Applications, eject the image, launch/relaunch, and check data preservation after replacing the app. IME composition, fullscreen/app switching and input recovery, music/effects, and a 30-minute session followed by save/quit/reload require manual checks. Default local builds and manual CI with `notarize=false` are ad hoc signed and not notarized. The development-menu marker, `development.flag`, stays in the local development runtime and is excluded from apps and DMGs. Native movies/raw TCP/UDP, Intel, and native Extended are unsupported.
 
-## Extended authoring app
-
-[Stranded II Studio](studio.md) edits content and maps through a standalone GUI and JSON CLI. It provides a 3D viewport using the actual Blitz/Extended engine, undo, validation and native resource exports. Use `python src/devtools/studio.py` for its commands. `scripts/Studio.cmd` on Windows or `sh ./scripts/Studio.sh` on Apple Silicon macOS automatically prepares dependencies and the engine before launching the app. Follow the Studio guide for details. Engine outputs stay under `build/studio/` and app outputs under `src/studio/dist/`; ordinary game, CI and release edition selection remain unchanged.
-
-Studio uses the same iframe and Blitz engine for editing and play. `src/studio/engine/studio.js` waits for pending scene ACKs and checks the latest saved map; `studio_load` in `src/engine/studio/runtime.bb` reloads that map while retaining the engine and definitions. Resource changes require explicit **Apply resources** initialization. Stop restores the authoring map in the in-memory filesystem and the editor camera without writing to the project. Changes to this path require Studio builds/checks; changes to the shared engine also require both editions' builds/checks and relevant game verification.
-
 ## Where to make changes
 
 **Implement game features in `src/engine/` and compiler/runtime changes in `src/blitz3d/`.** `build/` contains executables and check results, not authoritative sources. The paths and commands below are for Stranded II. See the [next section](#stranded-ii-and-extended) for Extended paths.
@@ -227,8 +221,7 @@ edit non-translation resources in resources/ → setup command → refresh resou
 | `resources/locales/` | Per-language translations, names, font settings, and legacy text-number mappings | Included |
 | `resources/` | Original-text-to-key mappings and edited resources | Included |
 | `scripts/` | Shell, PowerShell and CMD launchers | Included |
-| `src/devtools/` | Python preparation, build, verification and Studio tools | Included |
-| `src/studio/` | Studio UI, Electron shell and app tests | Included |
+| `src/devtools/` | Python preparation, build and verification tools | Included |
 | `src/tests/` | Integration tests and native/web fixtures | Included |
 | `AGENTS.md`, `docs/reference/AGENTS-ko.md` | Agent instructions and Korean reading copy | Included |
 | `config/` | Game defaults/versions, build/dependency settings and verification hashes, document translation settings, legacy reference declarations | Included |

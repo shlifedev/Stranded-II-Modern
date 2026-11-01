@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"23660aa09389bedc8196c3a4ffb2c76164ad6dd917c3aa70bbd872c066882d5a"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"5684012f2733496aee370d50e5be9e12585b4336adfba6743a600a993f7ecc3b"} -->
 
 # macOS 구현 원리
 
@@ -54,7 +54,7 @@ flowchart LR
 
 ## 3. 웹 버전과 공유하는 부분, 달라지는 부분
 
-Windows·웹·macOS·Studio는 WebGPU 렌더러를 포함한 `src/blitz3d/`를 공유합니다. 플랫폼 선택에 따라 네이티브 Dawn/D3D12, 브라우저 WebGPU, 네이티브 Dawn/Metal을 사용하며 엔진 변경은 이 소스에 직접 작성합니다.
+Windows·웹·macOS는 WebGPU 렌더러를 포함한 `src/blitz3d/`를 공유합니다. 플랫폼 선택에 따라 네이티브 Dawn/D3D12, 브라우저 WebGPU, 네이티브 Dawn/Metal을 사용하며 엔진 변경은 이 소스에 직접 작성합니다.
 
 | 항목 | 웹 버전 | macOS 앱 |
 | --- | --- | --- |

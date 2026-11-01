@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"9357acb6586a4fc9907d6580c594f7a28f19395e573d56da47ba35aec4228cd6"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"dc07030375b310e224ff942ee513f22d458bee1f2b49f31cb9ced155eb6973cc"} -->
 
 # How the web version works
 
@@ -21,7 +21,7 @@ flowchart LR
     Linker --> Output["game.wasm + game.js"]
 ```
 
-The editable [embedded Blitz3D engine](../src/blitz3d/) is shared by Windows, web, macOS and Studio. [Pinned external SDKs/libraries](../config/blitz3d-toolchain.json) and Emscripten build it with the game as **WebAssembly (WASM)**. Edit the engine sources directly; setup never overlays patches. The browser executes gameplay on the local CPU; JavaScript handles loading and browser integration.
+The editable [embedded Blitz3D engine](../src/blitz3d/) is shared by Windows, web and macOS. [Pinned external SDKs/libraries](../config/blitz3d-toolchain.json) and Emscripten build it with the game as **WebAssembly (WASM)**. Edit the engine sources directly; setup never overlays patches. The browser executes gameplay on the local CPU; JavaScript handles loading and browser integration.
 
 The distribution files have these roles:
 

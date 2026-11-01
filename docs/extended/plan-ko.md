@@ -1,10 +1,10 @@
-<!-- dev-docs-ai-translation: {"document":"docs/extended/plan.md","language":"ko","syncedHash":"a93d04f9059bd92594eb4f294f33d8e988caede7a6a161a44cb55e98340a1c4c"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/extended/plan.md","language":"ko","syncedHash":"d16cb235724d8e4c2cb5acab6b20cdb3679461f18c6c0e53e86117da3503d304"} -->
 
 # Extended 개발 구상
 
 [English](plan.md) · [한국어](plan-ko.md)
 
-[현재 에디션 차이](../extend-features-ko.md) · [Studio](../studio-ko.md) · [개발 가이드](../development-ko.md)
+[현재 에디션 차이](../extend-features-ko.md) · [개발 가이드](../development-ko.md)
 
 Extended는 현재 로컬 개발용이며 전용 게임플레이·콘텐츠는 아직 없습니다. 아래는 확정된 기능이나 구현 완료 목록이 아닌 개발 구상입니다. 다섯 가지 QOL은 이미 기본판과 공유하며 에디션별 기본값만 다릅니다.
 
@@ -17,7 +17,7 @@ Extended는 현재 로컬 개발용이며 전용 게임플레이·콘텐츠는 �
 | 구상 | 현재 범위 |
 | --- | --- |
 | 음식 산패 | 새 게임 규칙으로 검토할 항목입니다. |
-| 플레이 중 지형 수정 | 게임플레이 확장 구상입니다. Studio의 기존 지형 편집 기능과 구분합니다. |
+| 플레이 중 지형 수정 | 게임플레이 확장 구상입니다. |
 | 하우징 | 기존 건축을 확장하는 별도 시스템은 아직 설계·구현되지 않았습니다. |
 | 대형 월드 | 2048×2048 규모와 이동에 따른 청크 로딩·해제를 검토합니다. 청크 스트리밍은 미구현이며 성능 향상도 검증되지 않았습니다. |
 

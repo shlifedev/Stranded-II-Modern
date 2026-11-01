@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"3db2d705896e9d1ab5a74fa9defa8c97efa551456eef979778fb585d3ae5ded3"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"b6f66ac7abf7cc24dc3701fb81d763d5da628f6a97b51ad2004c0b90db6b7675"} -->
 
 # 개발 가이드
 
@@ -88,7 +88,7 @@ Python으로 직접 실행할 수도 있습니다.
 
 메뉴를 열어도 게임은 진행되며 게임 입력은 차단됩니다. 상태 탭의 일시정지는 메뉴를 닫아도 유지됩니다. 싱글 플레이 치트, 아이템 아이콘 격자, 좌표·시간 이동, 설정 미리 적용, 검색·복사 가능한 로그를 제공합니다. 설정은 **저장**과 **저장된 설정으로 되돌리기**를 구분하며 자동 저장하지 않습니다. 화면 모드·해상도·FPS 제한·언어는 저장 후 재시작이 필요합니다. 로그는 최대 2,048건 / 2MiB이며 위로 스크롤하면 최신 로그 따라가기를 멈춥니다.
 
-공유 게임 UI는 `src/engine/includes/devmenu.bb`, 네이티브 ImGui·SDL 입력·WebGPU 출력 연결은 `src/blitz3d/src/modules/bb/debugui/`, 브라우저 IME 연결은 `src/web/debugui.js`에 있습니다. Windows 두 에디션, macOS, Web 및 Studio가 같은 구현을 사용합니다. Windows에서 `python src/devtools/verify_engine.py --graphics --input`은 입력 소유권과 창·컨텍스트 수명을 검사합니다. `s2_debugui_check` CMake 타깃은 준비된 `core/locales/<code>/ui.ttf` 경로를 인수로 받아 유니코드 글리프·슬라이더·로그 따라가기를 창 없이 검사합니다. 실제 화면, 한글 조합·붙여넣기와 각 플랫폼 실행은 별도로 확인합니다.
+공유 게임 UI는 `src/engine/includes/devmenu.bb`, 네이티브 ImGui·SDL 입력·WebGPU 출력 연결은 `src/blitz3d/src/modules/bb/debugui/`, 브라우저 IME 연결은 `src/web/debugui.js`에 있습니다. Windows 두 에디션, macOS 및 Web이 같은 구현을 사용합니다. Windows에서 `python src/devtools/verify_engine.py --graphics --input`은 입력 소유권과 창·컨텍스트 수명을 검사합니다. `s2_debugui_check` CMake 타깃은 준비된 `core/locales/<code>/ui.ttf` 경로를 인수로 받아 유니코드 글리프·슬라이더·로그 따라가기를 창 없이 검사합니다. 실제 화면, 한글 조합·붙여넣기와 각 플랫폼 실행은 별도로 확인합니다.
 
 ### CPU·GPU 프로파일러와 성능 테스트 장면
 
@@ -123,7 +123,7 @@ Windows에서 선택한 에디션의 실행 환경을 준비한 뒤 격리된 �
 
 모든 Python 개발 명령은 `--platform windows|web|macos`를 받으며 기본값은 `windows`입니다. 웹은 기본판만 빌드합니다. `--platform web --edition extended`는 오류를 반환하며 Extended CI는 계속 비활성 상태입니다.
 
-`src/engine/StrandedIIWeb.bb`는 공통 게임과 브라우저 서비스를 포함합니다. Windows·웹·macOS·Studio가 모두 `src/blitz3d/`의 수정 가능한 엔진을 빌드하며 웹 타깃은 [Emscripten](../config/web-toolchain.json)을 사용합니다. 엔진 소스를 직접 수정한 뒤 다시 빌드합니다. WASM·WebGPU·JSPI·브라우저 저장은 [웹 버전 구현 원리](web-architecture-ko.md)를 참고하세요.
+`src/engine/StrandedIIWeb.bb`는 공통 게임과 브라우저 서비스를 포함합니다. Windows·웹·macOS가 모두 `src/blitz3d/`의 수정 가능한 엔진을 빌드하며 웹 타깃은 [Emscripten](../config/web-toolchain.json)을 사용합니다. 엔진 소스를 직접 수정한 뒤 다시 빌드합니다. WASM·WebGPU·JSPI·브라우저 저장은 [웹 버전 구현 원리](web-architecture-ko.md)를 참고하세요.
 
 웹 개발에는 Git도 필요합니다. 준비 과정은 `deps/blitz3d/`, `deps/emsdk/`, `deps/ffmpeg-web/`에 고정 의존성을 받으므로 첫 빌드에는 시간과 디스크 공간이 필요합니다. 먼저 Windows 준비를 마친 뒤 실행합니다.
 
@@ -204,12 +204,6 @@ python3 -m venv .venv
 
 테스트 DMG는 별도 Apple Silicon Mac, 특히 macOS 15에서 열고 앱을 Applications로 드래그한 뒤 이미지를 꺼내세요. 실행·재실행과 앱 교체 후 데이터 보존을 확인하세요. 한글 조합 입력, 전체 화면·앱 전환 후 입력 복귀, 배경음·효과음과 30분 플레이 후 저장·종료·재불러오기는 수동 검사 대상입니다. 기본 로컬 빌드와 `notarize=false`인 수동 CI는 임시 서명이며 공증하지 않습니다. 개발 메뉴용 `development.flag`는 로컬 개발 실행 폴더에만 유지하고 앱·DMG에서는 제외합니다. 네이티브 동영상·원시 TCP/UDP, Intel과 네이티브 Extended는 지원하지 않습니다.
 
-## Extended 제작 앱
-
-[Stranded II Studio](studio-ko.md)는 독립 GUI와 JSON CLI로 콘텐츠·맵을 편집합니다. 실제 Blitz/Extended 엔진을 사용하는 3D 화면, 실행 취소, 검증, 네이티브 리소스 내보내기를 제공합니다. 전용 명령은 `python src/devtools/studio.py`이며, Windows는 `scripts/Studio.cmd`, Apple Silicon macOS는 `sh ./scripts/Studio.sh`로 의존성·엔진 준비부터 앱 실행까지 자동 처리합니다. 자세한 사용법은 Studio 가이드를 따릅니다. 엔진 산출물은 `build/studio/`, 앱 산출물은 `src/studio/dist/`에 저장하고 일반 게임·CI·릴리스 에디션 선택은 변경하지 않습니다.
-
-Studio는 편집·플레이에 동일한 iframe과 Blitz 엔진을 사용합니다. `src/studio/engine/studio.js`가 기존 차분 ACK를 기다린 뒤 최신 저장 맵을 확인하고, `src/engine/studio/runtime.bb`의 `studio_load`가 엔진·정의를 유지한 채 맵을 다시 불러옵니다. 리소스 변경은 명시적인 **리소스 적용**으로 초기화합니다. 정지는 메모리 파일 시스템의 편집 맵 원본과 카메라를 복원하며 프로젝트에는 쓰지 않습니다. 이 경로를 수정하면 Studio 빌드·검사를 실행하고, 공통 엔진도 수정했다면 두 판의 빌드·검사와 관련 게임 검증을 추가합니다.
-
 ## 어디를 수정하나요?
 
 **게임 기능은 `src/engine/`, 컴파일러·런타임 변경은 `src/blitz3d/`에서 구현합니다.** `build/`는 실행 파일·검사 결과가 생기는 곳이며 원본 소스는 아닙니다. 아래 경로와 명령은 기본판 기준입니다. 확장판 경로는 [다음 절](#기본판과-확장판)을 참고하세요.
@@ -227,8 +221,7 @@ resources/의 번역 외 리소스 수정 → setup 명령 → build/runtime/의
 | `resources/locales/` | 언어별 번역·이름·폰트 설정과 기존 문구 번호 대응 | 포함 |
 | `resources/` | 원본 문구의 번역 키 대응, 수정할 리소스 | 포함 |
 | `scripts/` | 셸·PowerShell·CMD 실행 파일 | 포함 |
-| `src/devtools/` | Python 준비·빌드·검증·Studio 도구 | 포함 |
-| `src/studio/` | Studio UI·Electron 실행부·앱 테스트 | 포함 |
+| `src/devtools/` | Python 준비·빌드·검증 도구 | 포함 |
 | `src/tests/` | 통합 테스트와 네이티브·웹 검증 자료 | 포함 |
 | `AGENTS.md`, `docs/reference/AGENTS-ko.md` | 에이전트 지침과 한국어 보기용 번역 | 포함 |
 | `config/` | 게임 기본값·버전, 빌드·의존성 설정과 검증 해시, 문서 번역 설정, 구버전 비교용 선언 | 포함 |

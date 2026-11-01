@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"ko","syncedHash":"6a12300e2fbe57af5c0c6cc6a77d06d2b0e8e7ee28c91993a30a55cb60566fd9"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"ko","syncedHash":"fd0d9d50e78efc8435ef58c8e688d5780b4e3d3309ee2d3a08e11e9efbb84a00"} -->
 
 # Stranded II 개발 지침
 
@@ -13,7 +13,7 @@
 - `main`/`dev`는 안정판/개발판 채널이다. CI는 기본 게임만 빌드·검사하며, `main` 푸시는 성공 후 안정판을 자동 발행한다. 개발판 출시는 수동 워크플로의 `publish=true`로 실행한다. Extended는 당분간 로컬 개발용이며 CI의 판 선택·빌드·배포 경로는 주석 처리한다. 요청 없이 릴리스나 이를 유발하는 푸시를 실행하지 않는다.
 - 기본 게임의 공개 이름과 릴리스 제목에는 판 이름을 붙이지 않는다. `classic`은 기존 명령·경로·메타데이터의 내부 식별자로만 유지한다.
 
-- 셸·PowerShell·CMD 실행 파일은 `scripts/`, Python 개발 도구는 `src/devtools/`, Studio는 `src/studio/`, 통합 테스트는 `src/tests/`, 게임 카탈로그는 `resources/locales/`에 둔다. 루트 `AGENTS.md`가 지침 진입점이며 `docs/reference/AGENTS-ko.md`는 한국어 보기용 번역이다.
+- 셸·PowerShell·CMD 실행 파일은 `scripts/`, Python 개발 도구는 `src/devtools/`, 통합 테스트는 `src/tests/`, 게임 카탈로그는 `resources/locales/`에 둔다. 루트 `AGENTS.md`가 지침 진입점이며 `docs/reference/AGENTS-ko.md`는 한국어 보기용 번역이다.
 - 직접 편집하는 엔진은 `src/engine/**/*.bb`다. Git에 포함하며 생성물로 취급하지 않는다. `src/ko-full`의 옛 생성기를 새 엔진에 실행하지 않는다.
 - 명령과 폴더 구조는 `docs/development.md`의 `src/devtools/dev.py setup|localize|build|run|check`를 따른다. Python은 준비·글꼴·검증만 담당하며 엔진 코드를 재생성하지 않는다.
 - 공통 Blitz 컴파일러·런타임은 `src/blitz3d/`에서 직접 수정한다. 업스트림 소스 복원이나 패치 덮어쓰기를 하지 않는다. 외부 SDK·라이브러리 고정 버전은 `config/blitz3d-toolchain.json`, 생성 파일은 `build/engine/`에 둔다.
@@ -35,7 +35,7 @@
 ## 커스텀 엔진 구조와 호환성
 
 - `src/engine/`는 Blitz 게임 로직, `src/blitz3d/`는 커스텀 LLVM 기반 Blitz 컴파일러·공통 런타임이다. 런타임의 `graphics.webgpu`는 장치·텍스처·2D/UI·화면 출력, `blitz3d.webgpu`는 3D 장면·메시·재질·그리기를 담당한다.
-- 렌더러는 C++의 `webgpu.h` / `wgpu*` API와 WGSL 셰이더를 사용한다. Rust `wgpu` 크레이트는 사용하지 않는다. Windows는 Dawn → D3D12, macOS는 Dawn → Metal, 웹·Studio는 Emscripten `emdawnwebgpu` → 브라우저 WebGPU 경로다.
+- 렌더러는 C++의 `webgpu.h` / `wgpu*` API와 WGSL 셰이더를 사용한다. Rust `wgpu` 크레이트는 사용하지 않는다. Windows는 Dawn → D3D12, macOS는 Dawn → Metal, 웹은 Emscripten `emdawnwebgpu` → 브라우저 WebGPU 경로다.
 - `runtime.opengl.static`, `bbCreateOpenGLRuntime` 같은 기존 이름이 남아 있다. 실제 렌더링 경로는 연결한 모듈과 백엔드 선택으로 확인한다.
 - 네이티브 타깃은 Blitz 정수·실수를 32비트로 유지하고 내부 포인터는 64비트로 처리한다. 게임에 노출하는 리소스 핸들은 32비트 ID다. 포인터를 Blitz 정수로 직접 변환하지 않으며 `s2Handle`·`s2Pointer`와 해제 시 매핑 제거 규칙을 유지한다.
 - 네이티브 핸들 래퍼는 `commands.decls`와 `legacy32.py`에서 생성한다. 선언·생성기를 수정하고 빌드 생성물은 직접 고치지 않는다. 원작의 숫자 연산·바이너리·저장 의미를 유지한다.

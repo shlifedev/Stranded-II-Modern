@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"b15ad072306547e4e4e97bbcf542278a5c47bab481660245f72f836fcd3225c3"} -->
+<!-- dev-docs-ai-translation: {"document":"README.md","language":"en","syncedHash":"70e378edd260271d6892801b55afc1f7fd80137da1c15450fb27fc3afb3a93f9"} -->
 
 # Stranded II : Modern
 
@@ -29,7 +29,7 @@ The main technical changes are as follows.
 
 For other technical changes, see the following documents.
 
-[WebGPU renderer](docs/wgpu-migration.md) · [Web architecture](docs/web-architecture.md) · [macOS architecture](docs/macos-architecture.md) · [Studio](docs/studio.md) · [Development guide](docs/development.md) · [Localization guide](docs/localization.md)
+[WebGPU renderer](docs/wgpu-migration.md) · [Web architecture](docs/web-architecture.md) · [macOS architecture](docs/macos-architecture.md) · [Development guide](docs/development.md) · [Localization guide](docs/localization.md)
 
 ## Find the right guide
 
