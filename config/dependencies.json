@@ -19,6 +19,14 @@
       "license_sha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6",
       "notice": "licenses/NotoSansSC-NOTICE.txt",
       "notice_sha256": "e72208edb7db6a5c895007fbd4882fb69105ff6fb678b545d9d5e2f76b75b790"
+    },
+    "deps/fonts/NotoSansJP[wght].ttf": {
+      "url": "https://raw.githubusercontent.com/google/fonts/4efc2774c63917927efe769ca845def6bd6debae/ofl/notosansjp/NotoSansJP%5Bwght%5D.ttf",
+      "sha256": "c2f3b4d463500a2ddcd3849cded1fceeb9fd6d1c32e6cbecd568453ba50fc68f",
+      "license": "licenses/NotoSansJP-OFL.txt",
+      "license_sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9",
+      "notice": "licenses/NotoSansJP-NOTICE.txt",
+      "notice_sha256": "b199eb25105e59fe90e4632bb39b2ff8b7d552fe1af5f82f79aca99737be038c"
     }
   }
 }
