@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"c7c16a040ba0263eba4be493d1615a123dc9633794e9d25449b39bd0cfd24881"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"becafb180950864d9270b25a0ccc46ee197e533a45ad31d4f1d21bae186fe71e"} -->
 
 # Stranded II's wgpu/WebGPU cross-platform renderer migration
 
@@ -561,7 +561,7 @@ Related bind-group caches are invalidated before texture views are released. Can
 
 Releasing a handle and completing GPU execution are separate events. The implementation retains internal resource references for submitted commands, but application caches must remove released handles themselves. Mesh generation changes also invalidate cached draw-buffer bindings.
 
-Uncaptured-error and device-loss callbacks log causes. Failure to acquire a surface texture triggers configuration and one retry. This does not constitute a completed automatic recovery path rebuilding every device/resource and restoring game state after arbitrary device loss.
+Uncaptured errors are logged. The device-loss callback ignores notifications from device release and instance teardown and records only a real loss (`Unknown`) of the current device. A lost Dawn device keeps handing out surface textures, accepts draws, submissions and presentation without error, and can complete a map that was pending at the loss as successful. `flip()` and every `readbackInto()` therefore check that record and, before the next frame or any readback result is used, show one message and end the game through the normal runtime exit path. `GraphicsLost()` reports the same state. Failure to acquire a surface texture triggers configuration and one retry. There is still no automatic recovery path that rebuilds every device/resource and restores game state after device loss, and GPU-only data such as the terrain colour map cannot be read back after the loss.
 
 ## 18. Framebuffer presentation and frame timing
 

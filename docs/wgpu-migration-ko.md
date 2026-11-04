@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"5900dcb7e316f36a6e001b1f6353efe34236da27223071a6cf4e2d444b824912"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"e93e2c8cc0b94823af9281f3b47f3b9233521cbf77af429401c793ccc6ae2264"} -->
 
 # Stranded II의 wgpu/WebGPU 크로스플랫폼 렌더러 마이그레이션
 
@@ -563,7 +563,7 @@ texture view를 해제하기 전에 관련 bind group cache를 제거합니다. 
 
 handle release와 GPU 실행 완료는 별개입니다. 제출된 명령의 내부 리소스 참조는 구현체가 관리하지만, 애플리케이션 cache에 남은 해제된 handle은 직접 정리해야 합니다. mesh generation 변화도 draw의 buffer binding cache를 무효화합니다.
 
-uncaptured error와 device loss callback은 원인을 로그에 남깁니다. surface texture 획득 실패 시 configure하고 한 번 다시 시도합니다. 이것을 모든 device loss 이후 장치·리소스·게임 상태를 자동 복구하는 완성된 경로라고 설명하면 안 됩니다.
+uncaptured error는 원인을 로그에 남깁니다. device loss callback은 장치 해제·instance 종료로 오는 알림을 무시하고 현재 장치의 실제 손실(`Unknown`)만 기록합니다. 손실된 Dawn 장치는 surface texture를 계속 내주고 draw·submit·present도 오류 없이 받으며, 손실 시점에 대기 중이던 map을 성공으로 끝낼 수도 있습니다. 그래서 `flip()`과 모든 `readbackInto()`가 이 기록을 확인하고, 다음 프레임이나 readback 결과를 쓰기 전에 메시지를 한 번 보여 준 뒤 일반 런타임 종료 경로로 게임을 끝냅니다. `GraphicsLost()`도 같은 상태를 반환합니다. surface texture 획득 실패 시 configure하고 한 번 다시 시도합니다. device loss 이후 모든 장치·리소스와 게임 상태를 자동 복구하는 경로는 여전히 없으며, 지형 색상 맵처럼 GPU에만 있는 데이터는 손실 후 다시 읽을 수 없습니다.
 
 ## 18. framebuffer presentation과 프레임 시간
 

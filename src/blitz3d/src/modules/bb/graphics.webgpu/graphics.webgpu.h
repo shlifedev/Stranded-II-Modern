@@ -66,6 +66,8 @@ struct WebGPUContextResources{
 #endif
 	WGPUAdapter adapter=0;
 	WGPUDevice device=0;
+	uint32_t device_serial=0;
+	bool device_loss_reported=false;
 	std::unique_ptr<WebGPUProfiler> profiler;
 	bool profile_finish=false;
 	WGPUQueue queue=0;
@@ -161,6 +163,9 @@ struct WebGPUContextResources{
 	void addListener( const WebGPUCanvasListener &l );
 	void removeListener( void *ctx );
 	void notifyCanvasDestroyed( WebGPUCanvas *canvas );
+
+	bool deviceLost()const;
+	void endIfDeviceLost( bool after_failure=false );
 
 	void destroy();
 };

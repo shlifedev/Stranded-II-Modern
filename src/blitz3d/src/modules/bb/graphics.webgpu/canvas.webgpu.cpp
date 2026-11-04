@@ -329,6 +329,9 @@ bool WebGPUCanvas::readbackInto( unsigned char *dst ){
 	cb.userdata1=&req;
 	wgpuBufferMapAsync( buf,WGPUMapMode_Read,0,size,cb );
 	bbWebGPUWait( res,&req.done );
+	// Dawn can still report success for a map that was pending when the device
+	// was lost, over contents the GPU never wrote, so check either way.
+	res->endIfDeviceLost( !req.ok );
 
 	if( !req.ok ){
 		wgpuBufferRelease( buf );
