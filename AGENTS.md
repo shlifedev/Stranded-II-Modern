@@ -1,10 +1,10 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"acffaaa1b047d5f2b2f04845c4d67ee16ff3b5a81b40b6883e545cd8c663ae24"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"f4d7152b28bc125d80961e333e3f55157681f240936c0e32789c5a52f30e61c6"} -->
 
 # Stranded II development instructions
 
 [English](AGENTS.md) · [한국어](docs/reference/AGENTS-ko.md)
 
-The architecture has Stranded II and Extended editions using a shared engine, edition-specific resources, and language packs selected at launch (EN/KO/DE/ZH-CN bundled). Communicate with the user in Korean.
+The architecture has Stranded II and Extended editions using a shared engine, edition-specific resources, and language packs selected at launch (EN/KO/DE/ZH-CN/JA bundled). Communicate with the user in Korean.
 
 - Both editions provide individual Settings > QOL controls for recipe browsing, storage transfers, closing emptied corpses, display sorting, and held construction input. Defaults are OFF in Stranded II and ON in Extended; preserve saved selections. Keep their implementation and supporting resources shared. Extended remains available for future separate gameplay and content; Extended-only changes must not alter Stranded II. Verify shared engine changes in both editions.
 - The entrypoints are `src/engine/StrandedII.bb` and `src/engine/StrandedIIExtended.bb`. Select implementations in `editions/<edition>/modules.bb`. When Extended behavior diverges, separate only the required modules rather than copying the whole engine.
