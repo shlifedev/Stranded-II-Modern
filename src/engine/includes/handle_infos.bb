@@ -3,6 +3,8 @@
 
 ;### Set Info
 Function set_info(id=-1,typ,x#,y#,z#)
+	TCinfo.Tinfo=Null
+
 	;Invalid typ? Cancel
 	If Len(Dinfo_name$(typ))=0 Then Return -1
 	

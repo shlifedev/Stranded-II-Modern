@@ -306,16 +306,20 @@ Function load_map(path$,pw$)
 		xp#=ReadFloat(stream)											;X
 		yp#=ReadFloat(stream)											;Y
 		zp#=ReadFloat(stream)											;Z
-		set_info(id,typ,xp#,yp#,zp#)									;SET
-		pitch#=ReadFloat(stream)										;Pitch
-		yaw#=ReadFloat(stream)											;Yaw
-		RotateEntity TCinfo\h,pitch#,yaw#,0								;ROTATE
-		TCinfo\vars$=ReadString(stream)									;Vars
-		info_stv()														;String to Vars
-		Select typ
-			Case 5 info_setupsprite(TCinfo)
-			Case 47 info_setuploudspeaker(TCinfo)
-		End Select
+		If set_info(id,typ,xp#,yp#,zp#)<>-1 Then							;SET
+			pitch#=ReadFloat(stream)									;Pitch
+			yaw#=ReadFloat(stream)										;Yaw
+			RotateEntity TCinfo\h,pitch#,yaw#,0							;ROTATE
+			TCinfo\vars$=ReadString(stream)								;Vars
+			info_stv()													;String to Vars
+			Select typ
+				Case 5 info_setupsprite(TCinfo)
+				Case 47 info_setuploudspeaker(TCinfo)
+			End Select
+		Else
+			ReadFloat(stream):ReadFloat(stream):ReadString(stream)
+			con_add("Unable to create info "+id+" of undefined type "+typ,Cbmpf_red)
+		EndIf
 	Next
 	serialpeak_info()
 	;Debug
