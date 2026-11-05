@@ -9,6 +9,7 @@ import argparse
 
 import macos_build as build
 import macos_toolchain
+import blitz3d_toolchain as engine
 from editions import source_hashes
 from locales import validate
 from verify_timing import function
@@ -45,6 +46,10 @@ def check_abi(output):
     lifetime = output / 'lifetime'
     build.compile_source(compiler, ROOT / 'src/tests/macos_lifetime.bb', lifetime, 's2console', cwd=output)
     execute(lifetime, output, output / 'lifetime.log')
+    directory = engine.BUILD / 'macos-console/cmake'
+    engine.run(['cmake', '--build', directory, '--target', 's2_stream_check', '-j', '8'],
+               env=engine.environment())
+    execute(directory / 's2_stream_check', output, output / 'stream.log')
     return {'bytes_equal_to_blitz_1_118': len(expected), 'type_reuse': 'pass'}
 
 
@@ -161,7 +166,6 @@ def main(suite='full'):
             build.compile_source(compiler, ROOT / 'src/tests/macos_graphics.bb', graphics, 's2macos', cwd=output)
             execute(graphics, output, output / 'graphics.log')
             results['metal_render_and_readback'] = 'pass'
-            import blitz3d_toolchain as engine
             directory = engine.BUILD / 'macos-game/cmake'
             engine.run(['cmake', '--build', directory, '--target', 's2_profiler_check',
                         's2_profiler_gpu_check', 's2_benchmark_check', '-j', '8'], env=engine.environment())

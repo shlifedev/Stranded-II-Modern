@@ -70,11 +70,18 @@ BBStr * BBCALL bbReadString( BBStream *s ){
 	if( !s ) return str;
 	int len=0;
 	if( s->read( (char*)&len,4 )==4 && len>0 ){
-		char *buff=d_new char[len];
-		if( s->read( buff,len ) ){
-			*str=std::string( buff,len );
+		// Lengths come from files and network streams. Grow only as bytes are
+		// received, so a damaged length cannot allocate gigabytes up front or
+		// expose an uninitialized tail after a short read.
+		char buff[4096];
+		while( len>0 ){
+			int want=len<(int)sizeof(buff) ? len : (int)sizeof(buff);
+			int count=s->read( buff,want );
+			if( count<=0 ) break;
+			str->append( buff,count );
+			len-=count;
+			if( count<want ) break;
 		}
-		delete[] buff;
 	}
 	return str;
 }

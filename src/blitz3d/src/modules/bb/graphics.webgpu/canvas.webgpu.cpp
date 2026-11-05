@@ -156,7 +156,8 @@ void WebGPUCanvas::getClsColorf( float col[4] )const{
 void WebGPUCanvas::uploadData(){
 	blit_snapshot_valid=false;
 	if( !res->device ) return;
-	if( wide_format ){
+	if( wide_format && (!pixels || !pixels_modified ||
+	    locked_wide_pixels.size()!=(size_t)width*height) ){
 		dirty=false;
 		return;
 	}
@@ -165,7 +166,9 @@ void WebGPUCanvas::uploadData(){
 	const void *data=0;
 
 	if( pixels ){
-		data=pixels;
+		// Keep the original ten-bit texels from LockBuffer: converting the
+		// entire RGBA8 readback would quantize pixels the caller never wrote.
+		data=wide_format?(const void*)locked_wide_pixels.data():pixels;
 	}else if( pixmap && pixmap->bits ){
 		if( (flags&CANVAS_TEXTURE) && (flags&CANVAS_TEX_MASK) ){
 			pm=d_new BBPixmap;
@@ -343,12 +346,15 @@ bool WebGPUCanvas::readbackInto( unsigned char *dst ){
 	}
 
 	bool bgra=( fmt==WGPUTextureFormat_BGRA8Unorm );
+	bool retain_wide=fmt==WGPUTextureFormat_RGB10A2Unorm && dst==pixels;
+	if( retain_wide ) locked_wide_pixels.resize((size_t)width*height);
 	for( int y=0;y<height;y++ ){
 		const unsigned char *in=mapped+(size_t)y*bpr;
 		unsigned char *out=dst+(size_t)y*width*4;
 		if(fmt==WGPUTextureFormat_RGB10A2Unorm){
 			for(int x=0;x<width;++x){
 				uint32_t value;memcpy(&value,in+x*4,4);
+				if( retain_wide ) locked_wide_pixels[(size_t)y*width+x]=value;
 				out[x*4+0]=((value&1023)*255+511)/1023;
 				out[x*4+1]=(((value>>10)&1023)*255+511)/1023;
 				out[x*4+2]=(((value>>20)&1023)*255+511)/1023;
@@ -379,7 +385,7 @@ void WebGPUCanvas::syncPixmapFromTexture(){
 }
 
 void WebGPUCanvas::downloadData(){
-	if( pixels && pixmap && pixmap->bits && !pixmap_stale &&
+	if( !wide_format && pixels && pixmap && pixmap->bits && !pixmap_stale &&
 	    pixmap->bpp==4 && pixmap->width==width && pixmap->height==height ){
 		memcpy( pixels,pixmap->bits,(size_t)width*height*4 );
 		return;
@@ -1121,6 +1127,8 @@ bool WebGPUCanvas::rect_collide( int x,int y,int rect_x,int rect_y,int rect_w,in
 
 bool WebGPUCanvas::lock(){
 	if( lock_count++ ) return true;
+	pixels_modified=false;
+	locked_wide_pixels.clear();
 	pixels=new unsigned char[(size_t)width*height*4];
 	downloadData();
 	return true;
@@ -1141,6 +1149,14 @@ void WebGPUCanvas::setPixelFast( int x,int y,unsigned argb ){
 	p[1]=UC( (argb>>8)&0xff );
 	p[2]=UC( argb&0xff );
 	p[3]=UC( (argb>>24)&0xff );
+	pixels_modified=true;
+	if( wide_format && locked_wide_pixels.size()==(size_t)width*height ){
+		locked_wide_pixels[(size_t)y*width+x]=
+			((uint32_t(p[0])*1023+127)/255) |
+			(((uint32_t(p[1])*1023+127)/255)<<10) |
+			(((uint32_t(p[2])*1023+127)/255)<<20) |
+			(((uint32_t(p[3])*3+127)/255)<<30);
+	}
 }
 
 void WebGPUCanvas::copyPixel( int x,int y,BBCanvas *src,int src_x,int src_y ){
@@ -1171,6 +1187,8 @@ void WebGPUCanvas::unlock(){
 	hit_valid=false;
 	uploadData();
 	delete[] pixels;pixels=0;
+	locked_wide_pixels.clear();
+	pixels_modified=false;
 }
 
 

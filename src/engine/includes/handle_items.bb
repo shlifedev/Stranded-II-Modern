@@ -495,15 +495,18 @@ Function combine_item(parentclass,parentid,forceid=-1)
 End Function
 
 
-;### Exchange Item (TCitem)
-Function exchange_item(class,id,count)
+;### Check the current source amount and both storage capacities.
+Function exchange_item_count(class,id,count)
 	;con_add("EXCHANGE: "+Ditem_name(TCitem\typ)+"x"+count+" -> "+class+"#"+id)
 
+	If TCitem=Null Then Return 0
 	;Check Count
 	If count>TCitem\count Then
 		count=TCitem\count
 	EndIf
 	
+	If count<=0 Then Return 0
+
 	;Check Capacity of current Destination
 	Local creq=Ditem_weight(TCitem\typ)*count
 	Local cfree=0
@@ -513,11 +516,11 @@ Function exchange_item(class,id,count)
 		cok=0
 		Select TCitem\parent_class
 			Case Cclass_object
-				con_object(TCitem\parent_id)
+				If con_object(TCitem\parent_id)=0 Then Return 0
 				cfree=capacity(TCitem\parent_class,TCitem\parent_id,TCobject\typ)
 				If cfree>=Abs(creq) Then cok=1
 			Case Cclass_unit
-				con_unit(TCitem\parent_id)
+				If con_unit(TCitem\parent_id)=0 Then Return 0
 				cfree=capacity(TCitem\parent_class,TCitem\parent_id,TCunit\typ)
 				If cfree>=Abs(creq) Then cok=1
 			Case Cclass_info cok=1
@@ -530,11 +533,11 @@ Function exchange_item(class,id,count)
 	cok=0
 	Select class
 		Case Cclass_object
-			con_object(id)
+			If con_object(id)=0 Then Return 0
 			cfree=capacity(class,id,TCobject\typ)
 			If cfree>=creq Then cok=1
 		Case Cclass_unit
-			con_unit(id)
+			If con_unit(id)=0 Then Return 0
 			cfree=capacity(class,id,TCunit\typ)
 			If cfree>=creq Then cok=1
 		Case Cclass_info cok=1
@@ -550,13 +553,38 @@ Function exchange_item(class,id,count)
 		If count<=0 Then Return 0
 	EndIf
 	
+	Return count
+End Function
+
+; Scripts can replace TCitem or consume/move the selected item. Resolve its ID
+; after every callback before using any fields or continuing the transfer.
+Function exchange_item_source(itemid,typ,parentclass,parentid)
+	If con_item(itemid)=0 Then Return False
+	Return TCitem\typ=typ And TCitem\parent_class=parentclass And TCitem\parent_id=parentid
+End Function
+
+;### Exchange Item (TCitem)
+Function exchange_item(class,id,count)
+	count=exchange_item_count(class,id,count)
+	If count<=0 Then Return count
+	Local sourceid=TCitem\id,sourcetype=TCitem\typ
+	Local sourceclass=TCitem\parent_class,sourceparent=TCitem\parent_id,scripted
+
 	;Drop Event?
 	p_skipevent=0
 	If TCitem\parent_class=Cclass_unit Then
 		If TCitem\parent_id=g_player Then
 			;Drop Event!
-			If set_parsecache(Cclass_item,TCitem\id,"drop") Then parse()
+			If set_parsecache(Cclass_item,sourceid,"drop") Then
+				scripted=True
+				parse_sel(Cclass_item,sourceid,"drop")
+				If exchange_item_source(sourceid,sourcetype,sourceclass,sourceparent)=0 Then
+					If p_skipevent=1 Then Return -2
+					Return 0
+				EndIf
+			EndIf
 			If Instr(Ditem_scriptk$(TCitem\typ),"drop") Then
+				scripted=True
 				parse_env(Cclass_item,TCitem\id,"drop")
 				loadstring_parsecache(Ditem_script(TCitem\typ))
 				parse()
@@ -565,6 +593,12 @@ Function exchange_item(class,id,count)
 	EndIf
 	
 	If p_skipevent=1 Then Return -2
+	If scripted Then
+		If exchange_item_source(sourceid,sourcetype,sourceclass,sourceparent)=0 Then Return 0
+		; A drop script may consume items, fill the target or delete its entity.
+		count=exchange_item_count(class,id,count)
+		If count<=0 Then Return count
+	EndIf
 	
 	;Store!
 	If TCitem\count=count Then

@@ -39,6 +39,61 @@ static bool device(WebGPUContextResources &res,bool timestamps){
   res.profiler=std::make_unique<WebGPUProfiler>(res.device);return true;
 }
 struct Target:WebGPUCanvas {using WebGPUCanvas::WebGPUCanvas;using WebGPUCanvas::readPixels;};
+static std::vector<uint32_t> readWideNative(WebGPUContextResources &res,Target &target){
+  res.flush();
+  const uint32_t pitch=(target.getWidth()*4+255)&~255u;
+  WGPUBufferDescriptor desc={};desc.size=pitch*target.getHeight();
+  desc.usage=WGPUBufferUsage_CopyDst|WGPUBufferUsage_MapRead;
+  auto buffer=wgpuDeviceCreateBuffer(res.device,&desc);
+  WGPUTexelCopyTextureInfo source={};source.texture=target.texture;source.aspect=WGPUTextureAspect_All;
+  WGPUTexelCopyBufferInfo dest={};dest.buffer=buffer;dest.layout.bytesPerRow=pitch;
+  dest.layout.rowsPerImage=target.getHeight();
+  WGPUExtent3D extent={uint32_t(target.getWidth()),uint32_t(target.getHeight()),1};
+  wgpuCommandEncoderCopyTextureToBuffer(res.ensureEncoder(),&source,&dest,&extent);res.flush();
+  struct Request{volatile bool done=false;bool ok=false;} request;
+  WGPUBufferMapCallbackInfo callback={};callback.mode=BB_WGPU_CALLBACK_MODE;callback.userdata1=&request;
+  callback.callback=[](WGPUMapAsyncStatus status,WGPUStringView,void *ctx,void*){
+    auto &r=*static_cast<Request*>(ctx);r.ok=status==WGPUMapAsyncStatus_Success;r.done=true;
+  };
+  wgpuBufferMapAsync(buffer,WGPUMapMode_Read,0,desc.size,callback);bbWebGPUWait(&res,&request.done);
+  std::vector<uint32_t> pixels;
+  if(request.ok){
+    auto *bytes=static_cast<const unsigned char*>(wgpuBufferGetConstMappedRange(buffer,0,desc.size));
+    if(bytes){pixels.resize(size_t(target.getWidth())*target.getHeight());
+      for(int y=0;y<target.getHeight();++y)std::memcpy(pixels.data()+y*target.getWidth(),bytes+y*pitch,target.getWidth()*4);
+    }
+    wgpuBufferUnmap(buffer);
+  }
+  wgpuBufferRelease(buffer);return pixels;
+}
+static void checkWidePixelWrites(WebGPUContextResources &res){
+  Target target(&res,7,3,BBCanvas::CANVAS_TEX_VIDMEM);
+  target.useWideFormat();target.setClsColor(0xff183040);target.cls();
+  target.lock();target.setPixelFast(2,1,0xffc86432);target.unlock();
+  expect(target.getPixel(2,1)==0xffc86432,"WritePixelFast updates the RGB10A2 framebuffer");
+  expect(target.getPixel(0,0)==0xff183040,"framebuffer pixel writes retain surrounding pixels and pending clears");
+  target.lock();target.lock();target.setPixelFast(6,2,0x55123456);target.unlock();
+  expect(target.getPixelFast(6,2)==0x55123456,"nested locks retain the pending pixel edit");
+  target.unlock();
+  expect(target.getPixel(6,2)==0x55123456,"the final unlock uploads nested RGB10A2 edits and two-bit alpha");
+  target.setPixel(0,2,0xaa765432);
+  target.copyPixel(1,2,&target,0,2);
+  expect(target.getPixel(1,2)==0xaa765432,"WritePixel and CopyPixel update wide framebuffers");
+
+  // These values cannot round-trip through RGBA8. Read-only locks and an edit
+  // elsewhere must leave every untouched ten-bit texel bit-for-bit intact.
+  std::vector<uint32_t> native(21);
+  for(size_t i=0;i<native.size();++i)native[i]=uint32_t((17+i*41)|((239+i*17)<<10)|((601+i*11)<<20)|(3u<<30));
+  WGPUTexelCopyTextureInfo dst={};dst.texture=target.texture;dst.aspect=WGPUTextureAspect_All;
+  WGPUTexelCopyBufferLayout layout={};layout.bytesPerRow=7*4;layout.rowsPerImage=3;
+  WGPUExtent3D extent={7,3,1};res.flush();
+  wgpuQueueWriteTexture(res.queue,&dst,native.data(),native.size()*4,&layout,&extent);
+  target.lock();target.unlock();
+  expect(readWideNative(res,target)==native,"read-only locks preserve all ten-bit framebuffer precision");
+  target.setPixel(3,1,0xffc86432);
+  native[10]=((200u*1023+127)/255)|(((100u*1023+127)/255)<<10)|(((50u*1023+127)/255)<<20)|(3u<<30);
+  expect(readWideNative(res,target)==native,"pixel edits preserve the native bits of every untouched texel");
+}
 static void render(WebGPUContextResources &res,Target &target){
   target.setClsColor(0xff183040);target.cls();
   target.setColor(0xffb0a080);for(int i=0;i<60;++i)target.rect(0,0,target.getWidth(),target.getHeight(),true);
@@ -108,5 +163,6 @@ int main(){
   WebGPUContextResources unsupported;if(!device(unsupported,false))return 2;
   {Target target(&unsupported,32,32,BBCanvas::CANVAS_TEX_VIDMEM);recorder().boundary(now());uint64_t id=recorder().frameId();render(unsupported,target);recorder().boundary(now());
     expect(recorder().find(id)->gpu==GpuStatus::Unsupported && recorder().find(id)->graphics[TwoD].draws>0,"device without timestamp feature retains draw statistics");}
+  checkWidePixelWrites(unsupported);
   unsupported.destroy();recorder().capture(false);return failures?1:0;
 }

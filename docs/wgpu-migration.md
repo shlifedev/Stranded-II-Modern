@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"c7c16a040ba0263eba4be493d1615a123dc9633794e9d25449b39bd0cfd24881"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"f4782833fd85bd5eb9e15e44f7b2c04250583d7a9082d129b2bd00a77cac3d78"} -->
 
 # Stranded II's wgpu/WebGPU cross-platform renderer migration
 
@@ -550,6 +550,8 @@ size_t readback_size = bytes_per_row * height;
 ```
 
 At width 300, an RGBA row contains 1,200 bytes but the copy buffer's row pitch is 1,280 bytes. After `mapAsync` completes, the CPU copy removes padding. `BGRA8Unorm` requires R/B exchange; `RGB10A2Unorm` requires conversion from 10/10/10/2-bit values into 8-bit RGBA.
+
+For `LockBuffer` on an `RGB10A2Unorm` framebuffer, the canvas also retains the native packed texels. `WritePixel`/`WritePixelFast` and pixel copies update only the selected texels; the final `UnlockBuffer` uploads those edits while preserving every untouched texel's ten-bit values. Read-only locks do not upload or quantize the framebuffer.
 
 This pitch restriction applies to encoded texture-to-buffer copies. It does not mean every `wgpuQueueWriteTexture()` upload needs 256-byte padding. Current RGBA uploads use `width*4` and R8 atlas uploads use `width` as bytesPerRow.
 

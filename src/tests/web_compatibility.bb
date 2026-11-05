@@ -313,8 +313,81 @@ Function compat_script_safety()
  Dunit_script$(2)=unit_script$:Dunit_scriptk$(2)=unit_events$
 End Function
 
+
+; Transfers run real definition/instance scripts which can change the current item.
+Function compat_exchange_safety()
+ Local quote$=Chr(34),script$=Ditem_script$(1),keys$=Ditem_scriptk$(1)
+ Local weight1=Ditem_weight(1),weight2=Ditem_weight(2),limit=Dobject_maxweight(181)
+ Local target.Tobject,source.Titem,custom.Tx,sourceid,targetid,decoyid,result
+ Ditem_weight(1)=100:Ditem_weight(2)=100:Dobject_maxweight(181)=10000
+ For sample=0 To 7
+  set_object(-1,181,0,0):target=TCobject:targetid=target\id
+  set_item(-1,1,0,0,0,5,1):source=TCitem:sourceid=source\id
+  source\parent_class=Cclass_unit:source\parent_id=g_player
+  Ditem_scriptk$(1)=Chr(31)+"drop"
+  Select sample
+   Case 0
+    Ditem_script$(1)="on:drop { $compat_exchange_decoy=create("+quote$+"item"+quote$+",2,0,0,1); }"
+   Case 1
+    Ditem_script$(1)="on:drop { free "+quote$+"self"+quote$+"; }"
+   Case 2
+    Ditem_script$(1)="on:drop { free "+quote$+"self"+quote$+",3; }"
+   Case 3
+    Ditem_script$(1)="on:drop { store "+quote$+"self"+quote$+","+quote$+"object"+quote$+","+targetid+"; }"
+   Case 4
+    Ditem_script$(1)="on:drop { skipevent; }"
+   Case 5
+    Ditem_script$(1)="on:drop { free "+quote$+"object"+quote$+","+targetid+"; }"
+   Case 6
+    Ditem_script$(1)="on:drop { $compat_exchange_decoy=create("+quote$+"item"+quote$+",2,0,0,98); store $compat_exchange_decoy,"+quote$+"object"+quote$+","+targetid+"; }"
+   Case 7
+    Ditem_script$(1)="on:drop { $compat_exchange_definition=1; }"
+    custom=New Tx:custom\mode=0:custom\parent_class=Cclass_item:custom\parent_id=sourceid
+    custom\key$=Chr(31)+"drop":custom\value$="on:drop { skipevent; }"
+    var_set("compat_exchange_definition","0")
+  End Select
+  var_set("compat_exchange_decoy","0")
+  TCitem=source:result=exchange_item(Cclass_object,targetid,5)
+  compat_check(p_error=0,"exchange callback parser "+sample)
+  Select sample
+   Case 0
+    compat_check(result=1 And source\parent_class=Cclass_object And source\parent_id=targetid And source\count=5,"creating another item cannot redirect transfer")
+    decoyid=Int(var_get$("compat_exchange_decoy"))
+    compat_check(con_item(decoyid),"drop creates decoy")
+    If con_item(decoyid) Then compat_check(TCitem\typ=2 And TCitem\count=1 And TCitem\parent_class=0,"decoy is neither duplicated nor negative")
+    free_item(decoyid)
+   Case 1
+    compat_check(result=0 And con_item(sourceid)=0,"deleted source cancels transfer")
+   Case 2
+    compat_check(result=1 And source\count=2 And source\parent_class=Cclass_object And source\parent_id=targetid,"consumed source quantity is rechecked")
+   Case 3
+    compat_check(result=0 And source\count=5 And source\parent_class=Cclass_object And source\parent_id=targetid,"script-moved source is not transferred twice")
+   Case 4
+    compat_check(result=-2 And source\count=5 And source\parent_class=Cclass_unit,"definition veto preserves source")
+   Case 5
+    compat_check(result=0 And source\count=5 And source\parent_class=Cclass_unit,"deleted target cancels transfer")
+   Case 6
+    compat_check(result=2 And source\count=3 And source\parent_class=Cclass_unit,"capacity filled by callback is rechecked")
+    compat_check(capacity(Cclass_object,targetid,181)=0,"callback transfer does not overfill storage")
+   Case 7
+    compat_check(result=-2 And source\count=5 And source\parent_class=Cclass_unit,"instance veto runs before transfer")
+    compat_check(Int(var_get$("compat_exchange_definition"))=1,"definition callback still runs after instance veto")
+    Local queued=0
+    For task.Tpt=Each Tpt
+     If task\class=Cclass_item And task\id=sourceid And task\event$="drop" Then queued=queued+1
+    Next
+    compat_check(queued=0,"instance callback does not remain queued for later execution")
+  End Select
+  free_item(sourceid):free_object(targetid)
+ Next
+ var_free("compat_exchange_decoy"):var_free("compat_exchange_definition")
+ Ditem_script$(1)=script$:Ditem_scriptk$(1)=keys$
+ Ditem_weight(1)=weight1:Ditem_weight(2)=weight2:Dobject_maxweight(181)=limit
+End Function
+
 compat_phase$=""
 compat_script_safety()
+compat_exchange_safety()
 
 WriteLine compat_report,"FAILURES "+compat_failures
 CloseFile compat_report
