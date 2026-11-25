@@ -54,7 +54,7 @@ def fields(text):
 
 def records(path, text):
     filename = path.rsplit('/',1)[-1]
-    kind = next((k for k, prefix in PREFIXES.items() if filename.startswith(prefix) and filename.endswith('.inf')), None)
+    kind = next((k for k, prefix in PREFIXES.items() if filename.startswith(prefix) and filename[-4:].lower() == '.inf'), None)
     if not kind:
         return []
     parsed = list(fields(text))
