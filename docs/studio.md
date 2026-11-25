@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"1e4aa210ec67ef45f07b657f541705a6963515f023052fb35843a29b8dc23bbe"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"6f25806ae28a788bbf48b48b2ca3fa216a7d5218a8e390d6ca932a6ff5989021"} -->
 
 # Stranded II Studio
 
@@ -109,11 +109,11 @@ python src/devtools/studio.py export build/studio-example --out build/studio-exa
 
 `preview PROJECT --map NAME` returns full files and a `token`. Passing `--since TOKEN` then returns a binary `patch` between that token’s scene and the current saved state, the latest native map, and pending-resource status. Advance the baseline token only after the engine acknowledges application. Deltas exclude definitions, assets and language files; scenes requiring new definitions report `resourcesRequired`. Expired/damaged tokens and engine application failures never trigger an automatic reload; use **Apply resources** to reconnect explicitly.
 
+Give maps and imported assets distinct output names across case and Unicode normalization. For example, `Island` and `island` occupy the same map slot on a case-insensitive filesystem. To replace an imported asset, reuse its exact resource path.
+
 Definition IDs and map instance IDs are separate. Cloning a definition allocates a free ID and rejects exhausted limits. Recipe identifiers use `path#index`. Building names come from their resulting object/unit; recipe names use `genname` or their resulting items. Use `content.create` for new definitions/recipes, string arrays for repeated properties, and `null` to remove a property. Terrain coordinates are samples; world coordinates are `(sample-size/2)*64`.
 
 ## Projects and exports
-
-Give maps and imported assets distinct output names across case and Unicode normalization. For example, `Island` and `island` occupy the same map slot on a case-insensitive filesystem. To replace an imported asset, reuse its exact resource path.
 
 `project.json` stores definition changes, map-edit commands, file bindings and undo baseline snapshots. `sources/` stores original maps and assets named by their hashes. The `.s2s` files in `scripts/` are the authoritative script sources; preserve all three paths together. `.studio/` holds the last 100 undo entries, locks, font caches and recent preview-token caches. Interrupted file transactions recover on the next open without overwriting new external edits. Base resources are read-only. The `base` in `project.json` is usually relative; adjust it to the prepared resources when moving to another computer.
 

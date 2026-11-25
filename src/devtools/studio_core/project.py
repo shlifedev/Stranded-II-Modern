@@ -431,9 +431,6 @@ class Project:
         issues = []
         def error(code, message, location):
             issues.append({'severity': 'error', 'code': code, 'message': message, 'location': location})
-        for group in ('maps', 'assets'):
-            for name, message in resource_name_collisions(self.data[group]):
-                error('resource-name-collision', message, name)
         catalog = self.catalog()
         indices = {}
         for record in catalog:
@@ -495,6 +492,9 @@ class Project:
                     error('player-start', 'A playable map needs a player start (info type 1)', name)
             except (ValueError, KeyError) as exc:
                 error('invalid-map', str(exc), name)
+        for group in ('maps', 'assets'):
+            for name, message in resource_name_collisions(self.data[group]):
+                error('resource-name-collision', message, name)
         issues.extend(scripts.workspace(self)['diagnostics'])
         return issues
 
