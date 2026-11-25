@@ -100,6 +100,10 @@ class WebBoundaries(TestCase):
             aliases = root/'mods/Stranded II/sys/ko_aliases.dat'
             aliases.parent.mkdir(parents=True)
             aliases.write_bytes(bytes(4))
+            for filename in ('core/modern.ini', 'core/version.json', 'core/version.txt', 'core/locales/languages.dat'):
+                path = root / filename
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.touch()
             custom = root/name
             custom.parent.mkdir(parents=True)
             custom.write_bytes(b'custom font')
