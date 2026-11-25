@@ -225,7 +225,12 @@ def analyze(text, path):
         code.append(c);i+=1;col+=1
     for c,row,col in stack: issue('Unclosed '+c,row,col)
     code=''.join(code)
-    events=[{'name':m[1],'line':code.count('\n',0,m.start())+1} for m in re.finditer(r'\bon\s*:\s*([A-Za-z_][\w]*)',code)]
+    events = []
+    line, previous = 1, 0
+    for event in re.finditer(r'\bon\s*:\s*([A-Za-z_][\w]*)', code):
+        line += code.count('\n', previous, event.start())
+        events.append({'name':event[1], 'line':line})
+        previous = event.start()
     refs=[{**q,'path':'scripts/'+q['value'].replace('\\','/')[len(PREFIX):]} for q in quoted
           if q['value'].replace('\\','/').startswith(PREFIX) and q['value'].endswith('.s2s')]
     return {'events':events,'references':refs,'diagnostics':issues}
