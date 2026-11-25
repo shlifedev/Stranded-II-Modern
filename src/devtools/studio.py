@@ -33,7 +33,7 @@ SCHEMA = {
         'terrain.brush': {'map': 'map-name', 'x': 'terrain sample X', 'z': 'terrain sample Z', 'radius': 2, 'strength': .005, 'mode': 'raise|lower|flatten|smooth'},
         'map.script': {'map': 'map-name', 'text': 'on:start {\n msg "Hello";\n}'},
         'asset.import': {'path': 'local file', 'destination': 'mods/Stranded II/gfx/custom.b3d'},
-        'locale.set': {'language': 'en|ko|de', 'key': 'studio.house.name', 'text': 'House'},
+        'locale.set': {'language': 'code from languages', 'key': 'studio.house.name', 'text': 'House'},
     },
     'notes': ['apply accepts one operation or an array; a batch is atomic',
               'Use expectRevision to reject concurrent GUI/agent changes',
@@ -52,7 +52,8 @@ def dispatch(request):
         raise ValueError('Request must be a JSON object')
     command = request['command']
     if command == 'schema':
-        return SCHEMA
+        from locales import languages
+        return {**SCHEMA, 'languages': list(languages(ROOT))}
     if command == 'commands':
         from locales import catalog
         base = ROOT/'build/studio/runtime'

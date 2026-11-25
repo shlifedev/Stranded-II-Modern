@@ -13,6 +13,8 @@ import os
 import re
 import tempfile
 
+from locales import languages
+
 from . import content, scripts
 from .maps import EditableMap, new_map, number, CLASSES
 
@@ -335,8 +337,7 @@ class Project:
             return {'asset': relative}
         if op == 'locale.set':
             code, key, value = operation['language'], operation['key'], operation['text']
-            registered = [p.stem for p in (ROOT/'resources/locales').glob('*.json')]
-            if code not in registered or not re.fullmatch(r'[A-Za-z0-9_.-]+', key) or not isinstance(value, str):
+            if code not in languages(ROOT) or not re.fullmatch(r'[A-Za-z0-9_.-]+', key) or not isinstance(value, str):
                 raise ValueError('Use a registered language, a fixed localization key and text')
             self.data['locales'].setdefault(code, {})[key] = value
             return {'key': key, 'language': code}
@@ -420,6 +421,13 @@ class Project:
                 error('duplicate-id', f'Duplicate {record.kind} ID {record.identifier}', record.path)
             indices[key] = record
         translations = self.translations('en')
+        if self.data['locales']:
+            registered = languages(ROOT)
+            for code, entries in self.data['locales'].items():
+                if code not in registered:
+                    error('unknown-language', f'Unregistered translation language: {code}', f'locales/{code}')
+                for key in sorted(entries.keys() - translations.keys()):
+                    error('missing-translation', f'English fallback is missing: {key}', f'locales/{code}/{key}')
         for record in catalog:
             props, location = record.properties, f'{record.kind}/{record.identifier}'
             changed = record.path in self.data['files']
