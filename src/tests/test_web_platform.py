@@ -29,7 +29,8 @@ class WebBoundaries(TestCase):
             runtime = root / 'runtime'
             files = ('mods/Stranded II/maps/adventure/map01.s2', 'core/modern.ini',
                      'mods/Stranded II/sys/controls.cfg', 'core/locales/ko/glyphs.dat',
-                     'core/locales/ko/0_0.bmp', 'core/locales/ko.tsv', 'licenses/license.txt')
+                     'core/locales/ko/0_0.bmp', 'core/locales/ko.tsv', 'licenses/license.txt',
+                     'mods/Stranded II/sys/ko_aliases.dat')
             private = ('mods/Stranded II/saves/personal.sav', 'preserved/old.cfg',
                        'mods/Stranded II/screen_001.bmp', 'core/modern.log',
                        'core/locales/fonts-report.json', 'personal.cfg', 'StrandedII.exe')
@@ -43,8 +44,12 @@ class WebBoundaries(TestCase):
                  mock.patch.object(web_build, 'languages', return_value={'ko': {}}), \
                  mock.patch.object(web_build, 'override_files', return_value={}):
                 packed = {target.removeprefix('/game/') for _, target in web_build.asset_files()}
-            self.assertEqual(packed, set(files))
-            self.assertFalse(packed.intersection(private))
+                self.assertEqual(packed, set(files))
+                self.assertFalse(packed.intersection(private))
+
+                (runtime / 'mods/Stranded II/sys/ko_aliases.dat').unlink()
+                with self.assertRaisesRegex(ValueError, 'ko_aliases.dat'):
+                    web_build.asset_files()
 
     def test_web_setup_rejects_generated_resources_as_input(self):
         for relative in ('build/runtime', 'build/extended/runtime', 'build/web/runtime',

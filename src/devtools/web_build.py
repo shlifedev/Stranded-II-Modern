@@ -109,6 +109,10 @@ def asset_files():
     """Allowlist official/prepared assets; never enumerate player-data folders."""
     names = set(read(ROOT / 'config/game-files.json'))
     names.update(override_files(ROOT, 'classic'))
+    aliases = 'mods/Stranded II/sys/ko_aliases.dat'
+    if not (RUNTIME / aliases).is_file():
+        raise ValueError(f'Missing display aliases: {aliases}. Run setup to regenerate them.')
+    names.add(aliases)
     names.update(('core/modern.ini', 'core/version.json', 'core/version.txt', 'core/locales/languages.dat'))
     if (RUNTIME / 'core/development.flag').is_file():names.add('core/development.flag')
     for code in languages(ROOT):
