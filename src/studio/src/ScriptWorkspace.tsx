@@ -13,26 +13,36 @@ export function ScriptWorkspace({project,snapshot,target,inline,onChanged,comman
   const current=useRef(files);current.current=files;
   const binding=snapshot.scripts.bindings.find(b=>sameTarget(b.target,target));
   const key=(path:string)=>'studio.file:'+project+':'+path;
-  const generation=useRef(0);
-  useEffect(()=>{generation.current++;setFiles({});setActive('');setError('');},[project]);
+  const navigation=useRef(0);
+  function selectTab(path:string){
+    navigation.current++;
+    setActive(path);
+  }
+  useEffect(()=>{
+    setFiles({});
+    selectTab('');
+    setError('');
+    return ()=>{navigation.current++;};
+  },[project]);
   useEffect(()=>{onDirty(Object.values(files).some(f=>f.dirty));},[files]);
   async function read(path:string){
     const value=await request<ScriptWorkspaceInfo&{file:{text:string;hash:string}}>({command:'scripts',project,path});return value.file;
   }
   async function open(path:string,at=1){
-    const gen=generation.current;
+    const requestId=++navigation.current;
     try{
       if(!current.current[path]){
-        const value=await read(path);if(gen!==generation.current)return;
+        const value=await read(path);
+        if(requestId!==navigation.current)return;
         let draft:{text:string;hash:string}|null=null;
         try{draft=JSON.parse(window.studio.storage.getItem(key(path))||'null');}catch{}
         setFiles(old=>({...old,[path]:{text:draft?.text??value.text,hash:draft?.hash??value.hash,remoteHash:value.hash,dirty:!!draft}}));
       }
       setActive(path);setLine({line:at,serial:Date.now()});setError('');
-    }catch(e){setError(String(e));}
+    }catch(e){if(requestId===navigation.current)setError(String(e));}
   }
+  useEffect(()=>{if(binding)void open(binding.path);else selectTab('');},[project,JSON.stringify(target),binding?.path]);
   useEffect(()=>{if(location)void open(location.path,location.line);},[location?.serial]);
-  useEffect(()=>{if(binding)void open(binding.path);else setActive('');},[JSON.stringify(target),binding?.path]);
   useEffect(()=>{
     let alive=true;
     for(const path of Object.keys(current.current)){
@@ -75,12 +85,15 @@ export function ScriptWorkspace({project,snapshot,target,inline,onChanged,comman
     window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);
   },[active,files,busy,snapshot.revision]);
   async function newFile(copy=false){
+    const previous=navigation.current;
     const path=await ask(copy?'초안을 새 파일에 보관':'새 스크립트 경로','scripts/new_script.s2s');if(!path)return;
-    if(await apply([{op:'script.write',path,text:copy?current.current[active]?.text||'':'on:start {\n}\n',expectedHash:null}]))await open(path);
+    if(await apply([{op:'script.write',path,text:copy?current.current[active]?.text||'':'on:start {\n}\n',expectedHash:null}])&&previous===navigation.current)await open(path);
   }
   async function extract(){
-    if(!target)return;const path=await ask('기존 스크립트를 분리할 파일','scripts/'+('map' in target?target.map:target.kind+'_'+target.id)+'.s2s');if(!path)return;
-    if(await apply([{op:'script.extract',path,target}]))await open(path);
+    if(!target)return;
+    const previous=navigation.current;
+    const path=await ask('기존 스크립트를 분리할 파일','scripts/'+('map' in target?target.map:target.kind+'_'+target.id)+'.s2s');if(!path)return;
+    if(await apply([{op:'script.extract',path,target}])&&previous===navigation.current)await open(path);
   }
   async function reload(){
     const path=active;try{const value=await read(path);window.studio.storage.removeItem(key(path));setFiles(old=>({...old,[path]:{text:value.text,hash:value.hash,remoteHash:value.hash,dirty:false}}));}catch(e){setError(String(e));}
@@ -94,7 +107,7 @@ export function ScriptWorkspace({project,snapshot,target,inline,onChanged,comman
         {active===f.path&&f.events.map((e,i)=><button className="script-event" key={i} onClick={()=>void open(f.path,e.line)}>on:{e.name} · {e.line}</button>)}
       </div>)}
     </aside>
-    <div className="script-workbench"><div className="script-file-tabs"><button className={!active?'active':''} onClick={()=>setActive('')}>선택 대상</button>{Object.keys(files).map(path=><button key={path} className={active===path?'active':''} onClick={()=>setActive(path)}>{path.split('/').pop()} {files[path].dirty?'●':''}<span title="탭 닫기" onClick={e=>{e.stopPropagation();if(files[path].dirty){setError('초안을 저장하거나 버린 뒤 탭을 닫으세요.');return;}setFiles(old=>{const next={...old};delete next[path];return next;});if(active===path)setActive('');}}> ×</span></button>)}</div>
+    <div className="script-workbench"><div className="script-file-tabs"><button className={!active?'active':''} onClick={()=>selectTab('')}>선택 대상</button>{Object.keys(files).map(path=><button key={path} className={active===path?'active':''} onClick={()=>selectTab(path)}>{path.split('/').pop()} {files[path].dirty?'●':''}<span title="탭 닫기" onClick={e=>{e.stopPropagation();if(files[path].dirty){setError('초안을 저장하거나 버린 뒤 탭을 닫으세요.');return;}setFiles(old=>{const next={...old};delete next[path];return next;});if(active===path)selectTab('');}}> ×</span></button>)}</div>
       {error&&<div className="notice">{error}</div>}
       {active&&file?<><div className="script-toolbar"><span title={info?.runtimePath}>{active} {file.dirty?'· 미저장 초안':''}</span><button disabled={busy||!file.dirty||conflict} onClick={()=>void save()}>파일 저장</button><button disabled={busy||!file.dirty} onClick={()=>void reload()}>초안 버리기</button><button disabled={busy||!target} onClick={()=>void apply([{op:'script.bind',path:active,target}])}>선택 대상에 연결</button><button disabled={busy||!file.dirty} onClick={()=>void newFile(true)}>다른 파일로 저장</button></div>
         {conflict&&<div className="notice">외부 파일이 바뀌었습니다. 초안을 다른 파일에 보관하거나 버리고 최신 파일을 여세요. <button onClick={()=>void reload()}>초안 버리고 다시 읽기</button></div>}
