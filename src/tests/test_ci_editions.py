@@ -7,7 +7,8 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'src/devtools'))
 from editions import Edition, override_files, source_hashes
-from locales import catalog_text, validate
+from locales import catalog_text, prepare, validate
+from verify import verify_resource_references
 from versioning import make_info, select_version, validate_info
 
 
@@ -77,6 +78,42 @@ class EditionTests(unittest.TestCase):
         validate(self.root)
         with self.assertRaisesRegex(ValueError, 'duplicate'):
             validate(self.root, 'extended')
+
+    def test_only_official_and_edition_resources_are_localized_and_checked(self):
+        mod = 'mods/Stranded II/'
+        stock = mod + 'sys/items.inf'
+        commands = 'core/scriptcommands.inf'
+        self.put('config/game-files.json', json.dumps(dict.fromkeys((stock, commands), 'fixture')))
+        self.put('resources/source-keys.json', json.dumps({'Original axe': 'item.axe'}))
+        self.put('resources/help-terms.json', '{}')
+        self.put('game/' + stock, 'name=Original axe\n')
+        self.put('game/' + commands, '')
+        self.put('game/' + mod + 'maps/draft.s2', 'unfinished source map')
+        self.put('game/' + mod + 'sys/settings.inf', 'private settings')
+        self.put('game/' + mod + 'sys/notes.txt', 'source notes')
+        personal = self.put('runtime/' + mod + 'sys/notes.txt', 'existing runtime notes')
+        draft = self.put('runtime/' + mod + 'maps/draft.s2', 'unfinished runtime map')
+        runtime = self.root / 'runtime'
+        (runtime/'core').mkdir()
+
+        catalogs, report = prepare(self.root, self.root/'game', runtime)
+        self.assertEqual(report['maps_roundtrip'], 0)
+        self.assertIn('[[loc:item.axe]]', (runtime/stock).read_text())
+        self.assertEqual(personal.read_text(), 'existing runtime notes')
+        self.assertEqual(draft.read_text(), 'unfinished runtime map')
+        self.assertFalse((runtime/mod/'sys/settings.inf').exists())
+
+        extra = mod + 'sys/extended.s2s'
+        self.put('resources/editions/extended/overrides/' + extra, '[[loc:item.axe]]')
+        self.put('runtime/' + extra, '[[loc:unknown]]')
+        self.assertEqual(verify_resource_references(self.root, runtime, 'classic', catalogs['en']), 1)
+        with self.assertRaisesRegex(ValueError, 'extended.s2s.*unknown'):
+            verify_resource_references(self.root, runtime, 'extended', catalogs['en'])
+        self.put('runtime/' + extra, '[[loc:item.axe]]')
+        self.assertEqual(verify_resource_references(self.root, runtime, 'extended', catalogs['en']), 2)
+        (runtime/stock).unlink()
+        with self.assertRaises(FileNotFoundError):
+            verify_resource_references(self.root, runtime, 'classic', catalogs['en'])
 
     def test_runtime_and_defaults_are_separate(self):
         classic, extended = Edition('classic'), Edition('extended')
