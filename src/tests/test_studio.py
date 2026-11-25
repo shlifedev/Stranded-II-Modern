@@ -285,6 +285,29 @@ class Projects(TestCase):
         restored = self.project.preview('island', since=full['token'])
         self.assertFalse(restored['resourcesPending'])
 
+    def test_inline_map_and_entity_text_marks_new_font_characters_pending(self):
+        from studio_core import fonts
+        from fonts import repertoire
+        known = set(repertoire({}, {})) | {ord('섬')}
+        self.project.apply([{'op':'map.create','name':'island','size':16}])
+        with mock.patch.object(fonts, 'base_glyphs', return_value=known), \
+             mock.patch.object(fonts, 'project_fonts', return_value={}):
+            full = self.project.preview('island')
+            def write(text, entity=False):
+                op = {'op':'entity.script','kind':'info','id':1} if entity else {'op':'map.script'}
+                self.project.apply([{**op,'map':'island','text':text}])
+
+            write('on:start { msg "섬"; }')
+            self.assertFalse(self.project.preview('island', since=full['token'])['resourcesPending'])
+            write('on:use { msg "힣"; }', entity=True)
+            delta = self.project.preview('island', since=full['token'])
+            self.assertTrue(delta['resourcesPending'])
+            refreshed = self.project.preview('island')
+            self.assertEqual(delta['resourcesVersion'], refreshed['resourcesVersion'])
+            self.assertNotEqual(full['resourcesVersion'], refreshed['resourcesVersion'])
+            write('on:start { msg "힣힣"; }')
+            self.assertFalse(self.project.preview('island', since=refreshed['token'])['resourcesPending'])
+
     def test_preview_rejects_wrong_or_missing_baseline_without_modifying_project(self):
         self.project.apply([{'op':'map.create','name':'one','size':16},{'op':'map.create','name':'two','size':16}])
         full = self.project.preview('one')

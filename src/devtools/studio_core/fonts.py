@@ -9,6 +9,25 @@ import sys
 import tempfile
 
 
+def map_literals(model):
+    return '\n'.join(field.data.decode('utf8') for field in model.source.fields if field.kind != 'attachment')
+
+
+def base_glyphs(project):
+    glyphfile = project.base/'core/locales/ko/glyphs.dat'
+    if not glyphfile.is_file():
+        return None  # CLI-only projects can use a minimal prepared base.
+    return {code for (code,) in struct.iter_unpack('<i24x', glyphfile.read_bytes()[16:])}
+
+
+def extra_map_glyphs(project, model):
+    from fonts import repertoire
+    known = base_glyphs(project)
+    if known is None:
+        return []
+    return sorted(repertoire({'en': {'map': map_literals(model)}}, {}).keys() - known)
+
+
 def project_fonts(project):
     from fonts import make_fonts, repertoire
     from locales import languages
@@ -19,15 +38,11 @@ def project_fonts(project):
     literals = '\n'.join(resources(project).values())
     for name in project.data['maps']:
         from .maps import EditableMap
-        literals += '\n'.join(f.data.decode('utf8') for f in EditableMap(project.map_bytes(name)).source.fields if f.kind != 'attachment')
+        literals += map_literals(EditableMap(project.map_bytes(name)))
     catalogs['en']['studio.literal-characters'] = literals
     chars = sorted(repertoire(catalogs, packs))
-    glyphfile = project.base/'core/locales/ko/glyphs.dat'
-    if not glyphfile.is_file():
-        return {}  # CLI-only projects can use a minimal prepared base.
-    data = glyphfile.read_bytes()
-    known = {struct.unpack_from('<i',data,offset)[0] for offset in range(16,len(data),28)}
-    if set(chars) <= known:
+    known = base_glyphs(project)
+    if known is None or set(chars) <= known:
         return {}
     report = json.loads((project.base/'core/locales/fonts-report.json').read_text('utf8'))
     font = Path(report['ko']['font'])
