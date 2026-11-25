@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"3db2d705896e9d1ab5a74fa9defa8c97efa551456eef979778fb585d3ae5ded3"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"1367de84b2de06a88271ef3136929acc400137d54a39a71c573f8b80db696b04"} -->
 
 # 개발 가이드
 
@@ -140,7 +140,7 @@ Windows에서 선택한 에디션의 실행 환경을 준비한 뒤 격리된 �
 
 웹 출력은 `build/web/site/`, 준비된 리소스는 `build/web/runtime/`입니다. 리소스는 검증한 공식 원본과 공통 언어팩에서 준비하며 Windows 실행 폴더의 저장·설정을 복사하지 않습니다. CI는 의존성 ZIP을 `build/ci/deps/game`에 풀어 사용하며 웹 준비 단계에서 리소스·글꼴 해시를 다시 검사합니다. 생성된 실행 폴더는 리소스 입력으로 사용할 수 없습니다. 번역·폰트 수정은 `localize --platform web` 뒤 `build --platform web`로 다시 패키징합니다.
 
-웹에서 지원하지 않는 WAV 인코딩은 해시를 검증한 FFmpeg로 `build/web/audio/`에 PCM 변환하고 웹 패키지에만 반영합니다. 파일 경로·샘플레이트·채널 수를 유지하며 원본 리소스는 수정하지 않습니다. FFmpeg는 준비 도구이며 배포 파일에 포함하지 않습니다.
+웹에서 지원하지 않는 WAV 인코딩은 해시를 검증한 FFmpeg로 `build/web/audio/`에 PCM 변환하고 웹 패키지에만 반영합니다. 파일 경로·샘플레이트·채널 수를 유지하며 원본 리소스는 수정하지 않습니다. 모노·스테레오 8/16비트 PCM WAV는 포맷 청크 앞뒤에 패딩을 포함한 메타데이터 청크가 있어도 원본 바이트를 유지합니다. FFmpeg는 준비 도구이며 배포 파일에 포함하지 않습니다.
 
 저장·설정은 브라우저의 IndexedDB에 기본판 전용으로 보관합니다. 저장 교체와 백업은 기록 완료를 기다리며, 설정은 첫 실행 때만 기본값을 적용합니다. 같은 브라우저·프로필·주소·포트로 접속해야 같은 저장소를 사용합니다. 사이트 데이터를 지우면 저장도 삭제됩니다. 같은 주소에서 두 탭이 동시에 저장소를 사용하지 못하도록 잠급니다.
 

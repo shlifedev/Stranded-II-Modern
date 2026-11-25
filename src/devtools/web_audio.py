@@ -57,13 +57,32 @@ def tool_identity():
 
 
 def supported_wav(path):
-    """The runtime requires a PCM fmt chunk immediately after the RIFF header."""
+    """Match the OpenAL WAV reader without decoding or copying PCM samples."""
     with path.open('rb') as stream:
-        head = stream.read(36)
-    return (len(head) == 36 and head[:4] == b'RIFF' and head[8:16] == b'WAVEfmt '
-            and struct.unpack_from('<H', head, 20)[0] == 1
-            and struct.unpack_from('<H', head, 22)[0] in (1, 2)
-            and struct.unpack_from('<H', head, 34)[0] in (8, 16))
+        head = stream.read(12)
+        if head[:4] != b'RIFF' or head[8:] != b'WAVE':
+            return False
+        end = os.fstat(stream.fileno()).st_size
+        have_format = False
+        while len(header := stream.read(8)) == 8:
+            tag, size = struct.unpack('<4sI', header)
+            start = stream.tell()
+            if size > end - start:
+                return False
+            if tag == b'fmt ':
+                if size < 16:
+                    return False
+                fmt = stream.read(16)
+                if len(fmt) != 16:
+                    return False
+                encoding, channels, rate, _, _, bits = struct.unpack('<HHIIHH', fmt)
+                if encoding != 1 or channels not in (1, 2) or not rate or bits not in (8, 16):
+                    return False
+                have_format = True
+            elif tag == b'data':
+                return have_format
+            stream.seek(start + size + (size & 1))
+    return False
 
 
 def prepare(files, output):

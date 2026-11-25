@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"1c5109327645aed4d9d6f916d5395f12a05e9c9dbc95287abd2b277200945b65"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"c110075495e4dd55a35c06ad301d6892d7424f899b2a5de31f8241745d746e38"} -->
 
 # Development guide
 
@@ -140,7 +140,7 @@ Use the Full screen button or `Alt+Enter` to toggle fullscreen. When the browser
 
 Web output goes into `build/web/site/`, with prepared resources in `build/web/runtime/`. Resources come from verified official inputs and shared language packs; Windows runtime saves and settings are never copied. CI uses the dependency ZIP extracted to `build/ci/deps/game`, checking the resource and font hashes again during web setup. Generated runtime directories cannot be used as resource inputs. After translation or font changes, run `localize --platform web`, then `build --platform web` to repack.
 
-WAV encodings unsupported by the web runtime are converted to PCM in `build/web/audio/` using hash-verified FFmpeg and included only in the web package. File paths, sample rates, and channel counts are preserved; source resources remain unchanged. FFmpeg is a preparation tool and is not distributed with the game.
+WAV encodings unsupported by the web runtime are converted to PCM in `build/web/audio/` using hash-verified FFmpeg and included only in the web package. File paths, sample rates, and channel counts are preserved; source resources remain unchanged. Mono and stereo 8/16-bit PCM WAV files can include padded metadata chunks before or after the format chunk and retain their original bytes. FFmpeg is a preparation tool and is not distributed with the game.
 
 Saves and settings use a separate base-game store in the browser's IndexedDB. Save replacement and backups wait for persistence to finish; settings defaults are seeded only on first use. Keep the same browser, profile, address, and port to access the same store. Clearing site data deletes these saves. A lock prevents two tabs at the same address from using the store simultaneously.
 
