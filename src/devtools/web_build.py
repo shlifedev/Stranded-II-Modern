@@ -145,14 +145,37 @@ def pack_assets(env):
     for old in package.rglob('*') if package.exists() else ():
         if old.is_file() and old.relative_to(package).as_posix() not in expected:
             old.unlink()
+    font_sources = {}
+    font_copies = []
     for path, target in allowed:
         destination = package / target.removeprefix('/game/')
         destination.parent.mkdir(parents=True, exist_ok=True)
+        if target.startswith('/game/core/locales/') and (path.suffix.lower() in ('.bmp', '.ttf') or path.name == 'glyphs.dat'):
+            original = font_sources.setdefault(digest(path), target)
+            if original != target:
+                # Keep the package path, directory and permissions. The loader
+                # fills it from the first copy before the application starts.
+                destination.write_bytes(b'')
+                font_copies.append((original, target))
+                continue
         shutil.copy2(audio.get(target, path), destination)
     # Emscripten uses @ as its source/destination separator. Escape actual @ in
     # checkout paths, otherwise e.g. /work/@src would select the parent folder.
     command += [str(package).replace('@', '@@') + '@/game']
     web_toolchain.run(command, env=env)
+    if font_copies:
+        # WebPlay, Studio and browser probes load assets.js before their WASM
+        # module. Restore independent files before handing control to each app.
+        with (SITE / 'assets.js').open('a', encoding='utf8', newline='\n') as loader:
+            loader.write("""\n((ready, copies) => {
+  Module['onRuntimeInitialized'] = function (...args) {
+    const fs = Module['FS'];
+    for (const [source, target] of copies) {
+      fs.writeFile(target, fs.readFile(source), {canOwn: true});
+    }
+    return ready?.apply(this, args);
+  };
+})(Module['onRuntimeInitialized'], """ + json.dumps(font_copies) + ");\n")
     writable = [target for path, target in allowed
                 if path.suffix.lower() == '.cfg' or path.name in ('modern.ini', 'settings.inf')]
     writable.extend(('/game/mods/Stranded II/sys/settings.cfg', '/game/core/settings.inf'))
