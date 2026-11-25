@@ -17,12 +17,20 @@
   #fullscreen { position: absolute; top: .75rem; right: .75rem; z-index: 3; padding: .5rem .8rem; font-size: .85rem }
   #input-hint { position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); max-width: 80%; margin: 0; padding: .45rem .8rem; background: #101b20c9; border-radius: .3rem; text-align: center; font-size: .85rem; pointer-events: none }
   #warning { position: absolute; bottom: .5rem; left: 1rem; right: 1rem; color: #fff; background: #812d24; padding: .7rem; z-index: 4 }
+  #screenshots { top: .75rem; left: .75rem; bottom: auto; right: auto; padding: .45rem .7rem; background: #101b20e8; border-radius: .3rem }
+  #screenshots select { max-width: 52vw; margin: .5rem .5rem 0 0 }
+  #screenshots a { color: #cedab0 }
   #search { position: absolute; box-sizing: border-box; background: #eee; color: #111; border: 1px solid #777; font: 16px system-ui; z-index: 2 }
   details { position: absolute; right: 1rem; bottom: .5rem; font-size: .75rem; z-index: 3 }
   pre { max-height: 12rem; max-width: 70vw; overflow: auto; text-align: left; background: #000e; padding: .5rem; white-space: pre-wrap }
 </style>
 <main>
   <canvas id="canvas" width="1280" height="720" tabindex="0" aria-label="Stranded II"></canvas>
+  <details id="screenshots" hidden>
+    <summary>Screenshots</summary>
+    <select id="screenshot-file" aria-label="Captured screenshot"></select>
+    <a id="screenshot-download">Download BMP</a>
+  </details>
   <input id="search" hidden aria-label="Recipe search" maxlength="128" autocomplete="off" spellcheck="false">
   <section id="cover">
     <p id="status" role="status">Preparing the game…</p>

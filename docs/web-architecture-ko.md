@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"e43b8ffc3bd5d71c518c4ac3c0a3ffa3ae637d696550aa34f86b8c9f4f62899a"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"7ce6a9d5fb9c015cf3a7c795e8a6c9c92c8b8ae63736898e705f3a1df0085b6e"} -->
 
 # 웹 버전 구현 원리
 
@@ -104,6 +104,7 @@ Web Locks API를 사용할 수 있는 환경에서는 같은 사이트의 저장
 | 포커스·일시정지 | 탭의 표시 상태, 창 포커스, 마우스 잠금·검색 입력 상태를 공통 게임에 전달합니다. |
 | 전체화면 | Fullscreen API로 페이지를 전환합니다. 지원·허용되는 환경에서는 Keyboard Lock으로 짧은 `Esc`를 게임에 전달합니다. |
 | 검색 입력창 | HTML `input`을 게임의 검색창 위치에 배치해 브라우저의 문자 입력을 사용합니다. |
+| 화면 캡처 | 플레이 중 F1을 누르면 게임 화면을 캡처합니다. 마우스 잠금을 풀고 **Screenshots**에서 캡처를 선택한 뒤 탭을 닫기 전에 **Download BMP**로 저장하세요. |
 | 시간 측정 | `performance.now()`를 공통 게임의 시간 측정 함수에 연결합니다. |
 | 소리 | Web Audio로 출력하며, 사용자 클릭 시 중지된 오디오 컨텍스트를 재개합니다. |
 

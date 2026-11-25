@@ -6,6 +6,11 @@ const statusText = document.getElementById('status');
 const search = document.getElementById('search');
 const fullscreen = document.getElementById('fullscreen');
 const inputHint = document.getElementById('input-hint');
+const capturePanel = document.getElementById('screenshots');
+const captureFile = document.getElementById('screenshot-file');
+const captureDownload = document.getElementById('screenshot-download');
+const captures = new Set();
+let captureURL;
 const shellURL = new URL(document.currentScript.src, document.baseURI);
 const deployment = shellURL.searchParams.get('v');
 let debugUiOpen = false;
@@ -128,9 +133,13 @@ async function prepareStorage() {
   const close = FS.close.bind(FS);
   FS.close = stream => {
     const path = stream.path;
-    const writable = (stream.flags & 3) !== 0 && path.startsWith('/persist/');
+    const writable = (stream.flags & 3) !== 0;
     close(stream);
-    if (writable) { timestamp(path); changed(); }
+    if (!writable) return;
+    if (path.startsWith('/persist/')) { timestamp(path); changed(); }
+    else if (/^\/game\/mods\/Stranded II\/screen_\d{5,}\.bmp$/i.test(path) && FS.stat(path).size >= 54) {
+      addCapture(path);
+    }
   };
   const unlink = FS.unlink.bind(FS);
   FS.unlink = path => {
@@ -143,6 +152,37 @@ async function prepareStorage() {
   log('Persistent storage ready (classic; independent of Windows saves).');
 }
 
+function updateCaptureLink() {
+  if (captureURL) {
+    URL.revokeObjectURL(captureURL);
+    captureURL = undefined;
+    captureDownload.removeAttribute('href');
+  }
+  const path = captureFile.value;
+  if (!capturePanel.open || !captures.has(path)) return;
+  try {
+    const bytes = Module.FS.readFile(path);
+    captureURL = URL.createObjectURL(new Blob([bytes], {type: 'image/bmp'}));
+    captureDownload.download = path.slice(path.lastIndexOf('/') + 1);
+    captureDownload.href = captureURL;
+  } catch (error) { fail(error); }
+}
+
+function addCapture(path) {
+  if (!captures.has(path)) {
+    captures.add(path);
+    const name = path.slice(path.lastIndexOf('/') + 1);
+    captureFile.add(new Option(name, path));
+  }
+  captureFile.value = path;
+  updateCaptureLink();
+  refreshInput();
+}
+
+capturePanel.addEventListener('toggle', () => { updateCaptureLink(); refreshInput(); });
+captureFile.addEventListener('change', updateCaptureLink);
+for (const type of ['keydown', 'keypress', 'keyup']) capturePanel.addEventListener(type, event => event.stopPropagation());
+
 function focused() {
   return started && !document.hidden && document.hasFocus() &&
     (debugUiOpen || menuActive || document.pointerLockElement === canvas || document.activeElement === search);
@@ -151,12 +191,15 @@ function focused() {
 function refreshInput() {
   const locked = document.pointerLockElement === canvas;
   // Focus loss pauses the shared engine, but never covers the running game.
+  capturePanel.hidden = !captures.size || locked || debugUiOpen;
+  if (capturePanel.hidden) capturePanel.open = false;
   if (started) cover.hidden = true;
   fullscreen.hidden = !document.fullscreenEnabled || (started && locked);
   fullscreen.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen';
   fullscreen.setAttribute('aria-pressed', String(Boolean(document.fullscreenElement)));
   fullscreen.title = 'Toggle full screen (Alt+Enter)';
   inputHint.hidden = debugUiOpen || !started || locked || document.activeElement === search || document.hidden || !document.hasFocus();
+  if (capturePanel.open) inputHint.hidden = true;
   inputHint.textContent = escapeLocked
     ? 'Click to enable controls · Esc: game menu · Hold Esc: release · Alt+Enter: full screen'
     : 'Click to enable controls · Alt+Enter: full screen';
@@ -273,7 +316,7 @@ async function bridge(request) {
         const next = args[0] === 'menu';
         if (menuActive !== next) { menuActive = next; refreshInput(); }
       }
-      return focused() ? 1 : 0;
+      return !capturePanel.open && focused() ? 1 : 0;
     }
     case 'width': return Math.min(1920, Math.max(800, window.innerWidth));
     case 'height': return Math.min(1080, Math.max(600, window.innerHeight));
@@ -369,6 +412,9 @@ document.addEventListener('fullscreenchange', fullscreenChanged);
 fullscreen.addEventListener('click', toggleFullscreen);
 for (const type of ['keydown', 'keyup']) {
   window.addEventListener(type, event => {
+    if (event.code === 'F1' && started && !menuActive && !debugUiOpen && document.pointerLockElement === canvas) {
+      event.preventDefault(); // Deliver the shortcut to the game without opening browser help.
+    }
     if (!event.isComposing && event.altKey && event.code === 'Enter') {
       event.preventDefault(); event.stopImmediatePropagation();
       if (type === 'keydown' && !event.repeat) return toggleFullscreen();

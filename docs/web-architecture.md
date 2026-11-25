@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"9357acb6586a4fc9907d6580c594f7a28f19395e573d56da47ba35aec4228cd6"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"5d5e132cbd720c74ca653c41ef8126f2628d707ad6da23956e7759f499cbf98c"} -->
 
 # How the web version works
 
@@ -104,6 +104,7 @@ Where Web Locks is available, it prevents two tabs from using the same site's st
 | Focus and pause | Tab visibility, window focus, pointer lock, and search-field state are passed to the shared game. |
 | Fullscreen | The Fullscreen API switches the page. Where supported and allowed, Keyboard Lock passes short `Esc` presses to the game. |
 | Search field | An HTML `input` is positioned over the game's search area and uses browser text input. |
+| Screenshots | Press F1 during play to capture the game image. Release the mouse, open **Screenshots**, select a capture and choose **Download BMP** before closing the tab. |
 | Timing | `performance.now()` connects to the shared game's timing functions. |
 | Audio | Web Audio output, with a suspended audio context resumed on a user click. |
 
