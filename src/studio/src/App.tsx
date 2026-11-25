@@ -186,7 +186,7 @@ export function App(){
       if(data.type==='applied'){setEngineStatus('Blitz 연결됨');return;}
       if(data.type==='request-preview'){
         const identity=session.current;
-        void request<Preview>({command:'preview',project:state.project,map:state.activeMap,since:data.since,...(data.playId!==undefined?{expectRevision:playVersion.current?.revision,expectScriptsVersion:playVersion.current?.scriptsVersion}:{})}).then(value=>{
+        void request<Preview>({command:'preview',project:state.project,map:state.activeMap,since:data.since,includeSources:false,...(data.playId!==undefined?{expectRevision:playVersion.current?.revision,expectScriptsVersion:playVersion.current?.scriptsVersion}:{})}).then(value=>{
           if(identity===session.current)post('project',{preview:value,playId:data.playId});
         }).catch(reason=>{if(identity===session.current)post(data.playId===undefined?'sync-error':'play-error',{id:data.playId,message:String(reason)});});return;
       }

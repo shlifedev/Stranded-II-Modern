@@ -529,7 +529,7 @@ class Project:
             raise ValueError('Scripts changed during export; retry to a new empty directory')
         return {'directory': str(destination), **report}
 
-    def preview(self, map_name, engine_base=None, since=None, expected_revision=None, expected_scripts=None):
+    def preview(self, map_name, engine_base=None, since=None, expected_revision=None, expected_scripts=None, include_sources=True):
         """Only explicit project resources cross into the isolated WASM filesystem."""
         from .preview import preview
         with locked(self.root):
@@ -543,7 +543,7 @@ class Project:
             issues = self.validate()
             if any(i['severity'] == 'error' for i in issues):
                 raise ValueError('Preview blocked by validation errors: '+json.dumps(issues, ensure_ascii=False))
-            result = preview(self, map_name, since)
+            result = preview(self, map_name, since, include_sources)
             if scripts.scan(self) != self._script_originals:
                 raise ValueError('Scripts changed while preparing the test; retry')
             return result

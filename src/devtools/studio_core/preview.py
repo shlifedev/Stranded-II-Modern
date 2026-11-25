@@ -41,7 +41,7 @@ def encode_patch(before, after):
     return bytes(data), {'removed':len(removed), 'upserted':len(changed), 'heights':len(heights)}
 
 
-def preview(project, map_name, since=None):
+def preview(project, map_name, since=None, include_sources=True):
     from .project import MOD, atomic, encode, safe
     from .scripts import resources as script_resources, source_map, version
     cache = safe(project.root, '.studio/previews')
@@ -74,10 +74,12 @@ def preview(project, map_name, since=None):
         if path.stem not in (token,since):
             path.unlink(missing_ok=True)
     result = {'mode':'delta' if previous else 'full', 'token':token, 'baseToken':since,
-              'scriptsVersion':version(project.script_files), 'resourcesVersion':resources, 'sources':source_map(project,map_name),
+              'scriptsVersion':version(project.script_files), 'resourcesVersion':resources,
               'map':'maps/studio.s2', 'revision':project.data['revision'], 'available':available,
               'resourcesPending':resources != baseline, 'resourcesRequired':required,
               'files':{MOD+'maps/studio.s2':state['data']}}
+    if include_sources:
+        result['sources'] = source_map(project, map_name, model)
     if previous:
         before = EditableMap(base64.b64decode(previous['data']))
         if before.size != model.size:

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"a6287bb52fd19e13164cb43719df12b4ddb0dd681bf702be1eba59c5d5b7683f"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"af2a8c6077910cc620dc8970b7499145d233b0dc3186becc365c47362fb43d5c"} -->
 
 # Stranded II Studio
 
@@ -107,7 +107,7 @@ python src/devtools/studio.py export build/studio-example --out build/studio-exa
 
 `entities.move` accepts `selection: [{"kind":"unit","id":100}, ...]`, a world-space `delta: {"x":64,"y":0,"z":0}`, and optional `terrain: true`. Vertical movement is rejected when the group includes objects.
 
-`preview PROJECT --map NAME` returns full files and a `token`. Passing `--since TOKEN` then returns a binary `patch` between that token’s scene and the current saved state, the latest native map, and pending-resource status. Advance the baseline token only after the engine acknowledges application. Deltas exclude definitions, assets and language files; scenes requiring new definitions report `resourcesRequired`. Expired/damaged tokens and engine application failures never trigger an automatic reload; use **Apply resources** to reconnect explicitly.
+`preview PROJECT --map NAME` returns full files and a `token`. Use `--no-sources` to omit script source locations when a client only draws the scene. Passing `--since TOKEN` then returns a binary `patch` between that token’s scene and the current saved state, the latest native map, and pending-resource status. Advance the baseline token only after the engine acknowledges application. Deltas exclude definitions, assets and language files; scenes requiring new definitions report `resourcesRequired`. Expired/damaged tokens and engine application failures never trigger an automatic reload; use **Apply resources** to reconnect explicitly.
 
 Definition IDs and map instance IDs are separate. Cloning a definition allocates a free ID and rejects exhausted limits. Recipe identifiers use `path#index`. Building names come from their resulting object/unit; recipe names use `genname` or their resulting items. Use `content.create` for new definitions/recipes, string arrays for repeated properties, and `null` to remove a property. Terrain coordinates are samples; world coordinates are `(sample-size/2)*64`.
 
