@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"6994391aeb8e0cb5d63d88fe61bca19ba10065686743183891a6b61ec864a248"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"ko","syncedHash":"0936ffea9870ca505513d26287d4355d40f860666caf51a4bba1c015fbf9603d"} -->
 
 # 게임 번역하기
 
@@ -27,6 +27,7 @@ quest.example.greeting<TAB>$name님, 환영합니다!
 
 - 키와 `$1`, `$wood`, `$key_*`, `$img=...`, `!0`~`!6` 같은 변수·표식은 유지합니다.
 - 문구 안의 줄바꿈은 `\n`, 탭은 `\t`, 백슬래시는 `\\`로 적습니다.
+- `[[loc:key]]`로 문구를 참조할 때는 처음 키와 영어에서 가져오는 키를 모두 합쳐 여덟 개까지 연결할 수 있습니다.
 - 번역하지 않은 키는 행을 생략하면 영어로 표시됩니다. **탭 뒤를 비우면 빈 문구로 표시됩니다.**
 - 명령어·이벤트·ID·경로는 번역하지 않습니다. 일반 번역 작업은 TSV 안에서 진행하세요.
 

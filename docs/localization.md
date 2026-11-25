@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"1c4f160f1ae0b66cac11929fe2fa6731c990156ee58db2235252d42f4177996c"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/localization.md","language":"en","syncedHash":"751f1cc2b20eb776fee034be2e0011d5633043ccf8f2a4993ad47ecbc9925675"} -->
 
 # Translating the game
 
@@ -27,6 +27,7 @@ The first line is an example for the English file, the second for the Korean fil
 
 - Keep keys and variables/markers such as `$1`, `$wood`, `$key_*`, `$img=...`, and `!0`–`!6` unchanged.
 - Write line breaks as `\n`, tabs as `\t`, and backslashes as `\\` within text.
+- A `[[loc:key]]` reference can resolve through at most eight keys, counting the first key and any rows inherited from English.
 - Omit untranslated rows to display English instead. **Leaving the value after the tab empty displays an empty string.**
 - Do not translate commands, events, IDs, or paths. Keep ordinary translation edits in the TSV files.
 
