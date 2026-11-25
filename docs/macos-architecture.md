@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"80623e01f6d0698b2eea15ed1cc19ec82ca18b8ac1cddc613b0514ea4756e2a4"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"8c7a5ce02479f0c97d4702c2a2601178b863fd82c26fc8d94c95f67910b72031"} -->
 
 # How the macOS version works
 
@@ -89,7 +89,7 @@ Functions outside graphics use these layers:
 
 ### The app and player data are stored separately
 
-At launch, the app reads its bundled resource list and resource fingerprint, prepares the required resources in a writable data directory, and starts the game. The fingerprint is calculated from the hashes of the included files.
+At launch, the app reads its bundled resource list and resource fingerprint, prepares the required resources in a writable data directory, and starts the game. The fingerprint is calculated from the hashes of the included files. When two app launches share a data directory, the second waits for resource installation to finish before checking its fingerprint.
 
 | Purpose | Location |
 | --- | --- |

@@ -166,6 +166,23 @@ std::string strandedMacProperty(const std::string &request){
 void strandedMacError(const char *message);
 #include <filesystem>
 #include <fstream>
+#include <system_error>
+
+namespace {
+class AssetInstallLock {
+public:
+  explicit AssetInstallLock(const std::filesystem::path &directory){
+    do { fd=open(directory.c_str(),O_RDONLY|O_DIRECTORY|O_EXLOCK|O_CLOEXEC); }
+    while(fd<0 && errno==EINTR);
+    if(fd<0) throw std::system_error(errno,std::generic_category(),"Cannot lock the native data directory");
+  }
+  ~AssetInstallLock(){close(fd);}
+  AssetInstallLock(const AssetInstallLock &)=delete;
+  AssetInstallLock &operator=(const AssetInstallLock &)=delete;
+private:
+  int fd;
+};
+}
 
 std::string strandedMacAppDirectory(const std::string &executable){
  namespace fs=std::filesystem;
@@ -188,6 +205,9 @@ std::string strandedMacAppDirectory(const std::string &executable){
     if(!destination.is_absolute() || destination==destination.root_path())
       throw std::runtime_error("Native data directory must be an absolute application directory");
     fs::create_directories(destination);destination=fs::canonical(destination);
+    // Every launcher sharing the profile must see the preceding installer's
+    // finished files and fingerprint before deciding which assets to replace.
+    AssetInstallLock installLock(destination);
     std::string fingerprint=utf8(manifest[@"fingerprint"]),previous;
     std::ifstream(destination/".native-assets")>>previous;
     for(NSString *entry in manifest[@"files"]){
