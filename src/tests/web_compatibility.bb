@@ -134,6 +134,18 @@ Next
 FreeEntity frameCamera:FreeTexture frameTexture:ShowEntity cam
 ClsColor 0,0,0
 set_musicvolume#=0:set_fxvolume#=0
+; A padded metadata chunk may precede the PCM format in imported WAV files.
+Local pcmPath$=set_rootdir$+"compat-metadata.wav"
+Local pcmFile=WriteFile(pcmPath$)
+WriteInt pcmFile,$46464952:WriteInt pcmFile,52:WriteInt pcmFile,$45564157 ; RIFF, WAVE
+WriteInt pcmFile,$4B4E554A:WriteInt pcmFile,3:WriteInt pcmFile,0 ; JUNK and pad byte
+WriteInt pcmFile,$20746D66:WriteInt pcmFile,16 ; fmt
+WriteShort pcmFile,1:WriteShort pcmFile,1:WriteInt pcmFile,22050:WriteInt pcmFile,44100
+WriteShort pcmFile,2:WriteShort pcmFile,16
+WriteInt pcmFile,$61746164:WriteInt pcmFile,4:WriteInt pcmFile,0 ; data
+CloseFile pcmFile
+compat_sound(pcmPath$)
+DeleteFile pcmPath$
 ; AUDIO_CHECKS
 
 ; Generated worlds take a different path from scenarios with saved textures.

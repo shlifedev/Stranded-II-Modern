@@ -1,86 +1,47 @@
 
 #include "wav_stream.h"
-#include <string.h>
-#include <bb/blitz/app.h>
+#include <cstdint>
+#include <cstring>
 
 WAVAudioStream::WAVAudioStream( int buf_size):AudioStream( buf_size),data_end(0){
 }
 
+namespace {
+uint32_t little32( const unsigned char *p ){
+	return uint32_t(p[0]) | (uint32_t(p[1])<<8) | (uint32_t(p[2])<<16) | (uint32_t(p[3])<<24);
+}
+}
+
 bool WAVAudioStream::readHeader(){
-	read( buf, 4 );
-	if( buf[0]!='R' || buf[1]!='I' || buf[2]!='F' || buf[3]!='F' ){
-		LOGD( "%s","missing RIFF" );
-		return false;
-	}
+	unsigned char header[16];
+	if( read(header,12)!=12 || std::memcmp(header,"RIFF",4) || std::memcmp(header+8,"WAVE",4) ) return false;
+	in.seekg(0,std::ios_base::end);
+	const std::streamoff end=in.tellg();
+	in.seekg(12,std::ios_base::beg);
 
-	read( buf, 4 );
-
-	read( buf, 4 );
-	if( buf[0]!='W' || buf[1]!='A' || buf[2]!='V' || buf[3]!='E' ){
-		LOGD( "%s","missing WAVE" );
-		return false;
-	}
-
-	read( buf,4 );
-	if( buf[0]!='f' || buf[1]!='m' || buf[2]!='t' || buf[3]!=' ' ){
-		LOGD( "%s","missing 'fmt '" );
-		return false;
-	}
-
-	read( buf,4 );
-	unsigned int fmt_len=buf[0]|(buf[1]<<8)|(buf[2]<<16)|((unsigned int)buf[3]<<24);
-
-	read( buf,2 );
-	if( buf[1]!=0 || buf[0]!=1 ){
-		LOGD( "unsupported format type %i %i",buf[0],buf[1] );
-		return false;
-	}
-
-	read( buf,2 );
-	channels  = buf[1]<<8;
-	channels |= buf[0];
-
-	read( buf,4 );
-	frequency  = buf[3]<<24;
-	frequency |= buf[2]<<16;
-	frequency |= buf[1]<<8;
-	frequency |= buf[0];
-
-	read( buf,4 );
-
-	read( buf,2 );
-
-	read( buf,2 );
-	bits  = buf[1]<<8;
-	bits |= buf[0];
-
-	// The OpenAL path only has 8/16-bit mono/stereo formats; reject anything else here
-	// so LoadSound returns 0 instead of PlaySound raising a runtime error later.
-	if( (channels!=1 && channels!=2) || (bits!=8 && bits!=16) ){
-		LOGD( "unsupported PCM layout %u channels %u bits",channels,bits );
-		return false;
-	}
-
-	if( fmt_len>16 ) in.seekg( fmt_len-16,std::ios_base::cur );
-
-	for( int guard=0;;guard++ ){
-		if( read( buf,4 )<4 || guard>=64 ){
-			LOGD( "%s","missing 'data'" );
-			return false;
+	bool have_format=false;
+	while( read(header,8)==8 ){
+		const std::streamoff size=little32(header+4);
+		const std::streamoff start=in.tellg();
+		if( size>end-start ) return false;
+		if( !std::memcmp(header,"fmt ",4) ){
+			if( size<16 || read(header,16)!=16 ) return false;
+			if( header[0]!=1 || header[1]!=0 ) return false;
+			channels=header[2] | (header[3]<<8);
+			frequency=little32(header+4);
+			bits=header[14] | (header[15]<<8);
+			if( !frequency || (channels!=1 && channels!=2) || (bits!=8 && bits!=16) ) return false;
+			have_format=true;
+		}else if( !std::memcmp(header,"data",4) ){
+			if( !have_format ) return false;
+			samples=static_cast<unsigned int>(size)/(bits/8);
+			data_end=start+size;
+			return true;
 		}
-		bool is_data = buf[0]=='d' && buf[1]=='a' && buf[2]=='t' && buf[3]=='a';
-		read( buf,4 );
-		unsigned int size=buf[0]|(buf[1]<<8)|(buf[2]<<16)|((unsigned int)buf[3]<<24);
-		if( is_data ){
-			if( bits>=8 ) samples=size/(bits/8);
-			data_end=(std::streamoff)in.tellg()+(std::streamoff)size;
-			break;
-		}
-		if( size&1 ) size++;
-		in.seekg( size,std::ios_base::cur );
+		// All RIFF chunks, including extended fmt chunks, end on an even boundary.
+		in.seekg(start+size+(size&1),std::ios_base::beg);
 	}
-
-	return true;
+	return false;
 }
 
 void WAVAudioStream::seek( long pos ){
