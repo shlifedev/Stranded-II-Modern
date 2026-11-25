@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"9357acb6586a4fc9907d6580c594f7a28f19395e573d56da47ba35aec4228cd6"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"17d520668440c7a55cac4cfe7a33ddbd5b38b130f21e4916ee81b11bf765ab82"} -->
 
 # How the web version works
 
@@ -122,6 +122,8 @@ The current target is **desktop Chrome/Edge with WebGPU and JSPI support**. Run 
 | `check --platform web` | Artifacts, resources, audio, Windows/WASM numeric/string/binary parity, script processing, and CPU buffer behavior. It connects simulated storage transactions to the real Emscripten virtual filesystem and tests input/initialization with a simulated DOM. |
 | Browser `/checks/` | Compares glyphs, images, frame copies, audio decoding, and menu/intro/island scenarios using actual WebGPU. Game time advances synthetically. |
 | Manual gameplay | Actual FPS, audible sound, input, progression, save/load, recovery after refresh/browser restart, and focus/fullscreen recovery. |
+
+WebPlay and Studio record a SHA-256 digest for each prepared resource during packaging. If a required file is missing, run setup for that build. If a prepared file has changed since packaging, rebuild the affected package before checking it again.
 
 The table describes implemented checks. Passing automated checks does not verify actual GPU, IndexedDB, or full gameplay behavior. `/checks/` is a separately prepared local check page and is excluded from the public Pages deployment.
 
