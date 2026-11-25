@@ -41,6 +41,25 @@ class NativeMaps(TestCase):
         self.assertEqual(changed[pos+4:],raw[pos+4:])
         self.assertEqual(EditableMap(changed).entity('object',1)[2]['x'],64.5)
 
+    def test_group_move_matches_individual_edits_byte_for_byte(self):
+        raw = self.raw
+        selection = [{'kind': 'info', 'id': 1}]
+        for kind, identifier in [('object', 1), ('unit', 100), ('item', 1)]:
+            raw = EditableMap(raw).apply({'op': 'entity.add', 'type': 1, 'kind': kind, 'id': identifier})
+            selection.append({'kind': kind, 'id': identifier})
+        model = EditableMap(raw)
+        expected = raw
+        for selected in selection:
+            entity = model.entity(selected['kind'], selected['id'])[2]
+            values = {'x': entity['x'] + 320, 'z': entity['z'] - 64}
+            if selected['kind'] != 'object':
+                values['y'] = entity['y'] + (model.world_height(values['x'], values['z'])
+                                             - model.world_height(entity['x'], entity['z']))
+            expected = EditableMap(expected).apply({'op': 'entity.set', **selected, 'values': values})
+        moved = model.apply({'op': 'entities.move', 'selection': selection,
+                             'delta': {'x': 320, 'z': -64}, 'terrain': True})
+        self.assertEqual(moved, expected)
+
     def test_terrain_brush_preserves_every_other_section(self):
         model = EditableMap(self.raw)
         changed = model.apply({'op':'terrain.brush','x':8,'z':8,'radius':2,'strength':.02})

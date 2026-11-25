@@ -171,19 +171,21 @@ class EditableMap:
             selected = operation['selection']
             if not selected or len({(e['kind'], e['id']) for e in selected}) != len(selected):
                 raise ValueError('Move requires distinct selected entities')
-            entities = [self.entity(e['kind'], e['id'])[2] for e in selected]
-            if dy and any(e['kind'] == 'object' for e in entities):
+            records = [self.entity(e['kind'], e['id']) for e in selected]
+            if dy and any(entity['kind'] == 'object' for _, _, entity, _ in records):
                 raise ValueError('Objects do not store Y; group vertical movement is unavailable')
-            out = self.data
-            for e in entities:
-                x, z = e['x']+dx, e['z']+dz
-                values = {'x':x, 'z':z}
-                if e['kind'] != 'object':
-                    values['y'] = e['y']+dy
+            # Positions have fixed widths. Every recorded offset remains valid for the whole move.
+            out = bytearray(self.data)
+            for _, _, entity, offsets in records:
+                x, z = entity['x'] + dx, entity['z'] + dz
+                values = {'x': x, 'z': z}
+                if entity['kind'] != 'object':
+                    values['y'] = entity['y'] + dy
                     if operation.get('terrain'):
-                        values['y'] += self.world_height(x,z)-self.world_height(e['x'],e['z'])
-                out = EditableMap(out).apply({'op':'entity.set','kind':e['kind'],'id':e['id'],'values':values})
-            return out
+                        values['y'] += self.world_height(x, z) - self.world_height(entity['x'], entity['z'])
+                self.validate_values(entity['kind'], values)
+                self.write_fields(out, offsets, values)
+            return bytes(out)
         if op == 'terrain.brush':
             x = number(operation['x'], 'x', 0, self.size)
             z = number(operation['z'], 'z', 0, self.size)
@@ -248,15 +250,19 @@ class EditableMap:
         values = operation['values']
         self.validate_values(kind, values)
         out = bytearray(self.data)
+        self.write_fields(out, offsets, values)
+        if 'vars' in values:
+            pos = begin + 25
+            return bytes(out[:pos]) + string(values['vars']) + bytes(out[finish:])
+        return bytes(out)
+
+    @staticmethod
+    def write_fields(out, offsets, values):
         for name, value in values.items():
             if name == 'vars':
                 continue
             pos, code = offsets[name]
             struct.pack_into('<' + code, out, pos, value)
-        if 'vars' in values:
-            pos = begin + 25
-            return bytes(out[:pos]) + string(values['vars']) + bytes(out[finish:])
-        return bytes(out)
 
     @staticmethod
     def validate_values(kind, values):
