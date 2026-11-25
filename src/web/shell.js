@@ -6,11 +6,6 @@ const statusText = document.getElementById('status');
 const search = document.getElementById('search');
 const fullscreen = document.getElementById('fullscreen');
 const inputHint = document.getElementById('input-hint');
-const capturePanel = document.getElementById('screenshots');
-const captureFile = document.getElementById('screenshot-file');
-const captureDownload = document.getElementById('screenshot-download');
-const captures = new Set();
-let captureURL;
 const shellURL = new URL(document.currentScript.src, document.baseURI);
 const deployment = shellURL.searchParams.get('v');
 let debugUiOpen = false;
@@ -152,6 +147,12 @@ async function prepareStorage() {
   log('Persistent storage ready (classic; independent of Windows saves).');
 }
 
+const capturePanel = document.getElementById('screenshots');
+const captureFile = document.getElementById('screenshot-file');
+const captureDownload = document.getElementById('screenshot-download');
+const captures = new Set();
+let captureURL;
+
 function updateCaptureLink() {
   if (captureURL) {
     URL.revokeObjectURL(captureURL);
@@ -199,10 +200,10 @@ function refreshInput() {
   fullscreen.setAttribute('aria-pressed', String(Boolean(document.fullscreenElement)));
   fullscreen.title = 'Toggle full screen (Alt+Enter)';
   inputHint.hidden = debugUiOpen || !started || locked || document.activeElement === search || document.hidden || !document.hasFocus();
-  if (capturePanel.open) inputHint.hidden = true;
   inputHint.textContent = escapeLocked
     ? 'Click to enable controls · Esc: game menu · Hold Esc: release · Alt+Enter: full screen'
     : 'Click to enable controls · Alt+Enter: full screen';
+  if (capturePanel.open) inputHint.hidden = true;
 }
 
 function inputNotice(message) {
