@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"e43b8ffc3bd5d71c518c4ac3c0a3ffa3ae637d696550aa34f86b8c9f4f62899a"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"54dc5b4c67a2c6855ca85b3b1d7622fb7cbced3ba62cc6c064b32d6f938966e8"} -->
 
 # 웹 버전 구현 원리
 
@@ -95,6 +95,8 @@ flowchart LR
 **메모리에 파일을 썼다고 IndexedDB 기록이 끝난 것은 아닙니다.** 설정 파일을 닫으면 변경을 추적하고 동기화를 예약합니다. 중요한 저장 파일 교체는 `FS.syncfs`가 완료될 때까지 기다린 뒤 성공을 반환합니다. 동기화 요청은 순서대로 처리하고, 교체 중 동기화에 실패하면 메모리의 기존 저장 내용을 복원하고 실패를 게임에 알립니다.
 
 Web Locks API를 사용할 수 있는 환경에서는 같은 사이트의 저장소를 두 탭이 동시에 사용하는 것을 막습니다. 저장은 브라우저·프로필·사이트 주소(프로토콜·호스트·포트)에 묶입니다. 사이트 데이터를 지우면 세이브도 삭제되며, 다른 브라우저·로컬 개발 주소·Windows·macOS 앱으로 자동 이전되지 않습니다.
+
+전체화면 버튼 옆의 **Save files**에서 저장 슬롯을 선택해 `.sav` 파일로 내려받을 수 있습니다. 다른 WebPlay 프로필에서 **Import a WebPlay save as a new slot**으로 그 파일을 가져온 뒤 게임의 불러오기 메뉴를 다시 여세요. 가져오기 크기 한도는 128 MiB이며, 파일의 헤더와 끝 표시를 검사합니다. 같은 이름이 있으면 번호를 붙여 새 슬롯으로 저장합니다. 설정은 현재 프로필에 유지됩니다.
 
 ## 5. 입력·전체화면·소리를 브라우저 기능에 연결합니다
 

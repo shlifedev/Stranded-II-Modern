@@ -33,21 +33,26 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
       textContent: '', value: '', style: {}, parentElement: {style: {}}, hidden: false, width: 1280, height: 720,
       setAttribute(name, value) { this[name] = value; },
       focus() { context.document.activeElement = this; },
-      replaceChildren() {}, getBoundingClientRect: () => ({width: 1280, height: 720})
+      replaceChildren(...options) { this.options = options; this.value = options[0]?.value || ''; },
+      add(option) { this.options.push(option); },
+      getBoundingClientRect: () => ({width: 1280, height: 720})
     }));
     return elements.get(id);
   };
   const messages = [];
+  let downloaded;
+  const link = {click() { downloaded = {name: this.download, url: this.href}; }};
   // Load the real shared overlay bridge before the shell.
 
   const context = vm.createContext({
-    document: target({body:{append(){}},getElementById: element, createElement: () => element("textarea"), hasFocus: () => true,
+    document: target({body:{append(){}},getElementById: element, createElement: tag => tag === 'a' ? link : element("textarea"), hasFocus: () => true,
       exitPointerLock() { this.pointerLockElement = null; },
       baseURI: 'https://unit-test/Stranded-II-Modern/',
       currentScript: {src: 'https://unit-test/Stranded-II-Modern/shell.js?v=fixture'}}),
     window: target({innerWidth: 1920, innerHeight: 1080}), location: {hostname: 'unit-test'},
     navigator: {language: 'ko-KR', gpu: {requestAdapter: () => new Promise(() => {})}},
-    URL, WebAssembly, performance, setTimeout, clearTimeout,
+    URL, Blob, TextDecoder, Option: class { constructor(text, value) { Object.assign(this, {text, value}); } },
+    WebAssembly, performance, setTimeout, clearTimeout,
     console: {log: message => messages.push(message)},
     fetch: async () => ({ok: true, json: async () => ({files: [
       '/game/core/modern.ini', '/game/mods/Stranded II/sys/settings.cfg'
@@ -282,6 +287,53 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
   assert.deepEqual((await request('stamp', 'saves/test.sav')).split(sep).map(Number).map(Number.isInteger), [true, true]);
   FS.unlink('saves/test.sav'); await request('sync');
   assert.equal(durable.has('/persist/classic/saves/test.sav'), false);
+  const panel = element('save-files'), picker = element('save-import'), select = element('save-slot');
+  assert.equal(panel.hidden, false);
+  panel.open = true;
+  await panel.emit('toggle');
+  assert.equal(await request('focus', 'menu'), 0, 'pause while the player manages saves');
+  assert.equal(element('save-download').disabled, true, 'backup and staging files stay out of the list');
+  const save = Buffer.alloc(22000);
+  save.write('### Stranded II Mapfile\r\nversion\r\ndate\r\ntime\r\ndefault\r\nsav\r\n');
+  save.write('### EOF Map File\r\nwww.unrealsoftware.de', save.length - 50);
+  const importFile = async (name, bytes, size = bytes.length) => {
+    picker.files = [{name, size, arrayBuffer: async () => Uint8Array.from(bytes).buffer}];
+    await picker.emit('change');
+    assert.equal(picker.disabled, false);
+    return element('save-transfer-status').textContent;
+  };
+  const name = '섬.sav';
+  assert.match(await importFile(name, save), /Imported/);
+  assert.deepEqual(durable.get('/persist/classic/saves/' + name), save);
+  assert.equal(select.value, name);
+  await element('save-download').emit('click');
+  assert.equal(downloaded.name, name);
+  assert.deepEqual(Buffer.from(await (await fetch(downloaded.url)).arrayBuffer()), save);
+
+  const second = Buffer.from(save);
+  second[1000] = 123;
+  assert.match(await importFile('섬.SAV', second), /Imported/);
+  assert.equal(select.value, '섬 (2).sav');
+  assert.deepEqual(durable.get('/persist/classic/saves/' + name), save);
+  assert.deepEqual(durable.get('/persist/classic/saves/섬 (2).sav'), second);
+  for (const [invalid, bytes, length] of [
+    ['partial.sav', save.subarray(0, 100)],
+    ['wrong.sav', Buffer.alloc(save.length)],
+    ['too-large.sav', save, 128 * 1024 * 1024 + 1],
+    ['sub/folder.sav', save],
+    ['a.sav.tmp', save]
+  ]) assert.match(await importFile(invalid, bytes, length), /Import failed/);
+  const missingTrailer = Buffer.from(save);
+  missingTrailer.fill(0, missingTrailer.length - 80);
+  assert.match(await importFile('truncated.sav', missingTrailer), /Import failed/);
+  failNext = true;
+  assert.match(await importFile('retry.sav', save), /Import failed/);
+  assert.throws(() => FS.stat('saves/retry.sav'));
+  assert.equal(durable.has('/persist/classic/saves/retry.sav'), false);
+  assert.match(await importFile('retry.sav', save), /Imported/);
+  panel.open = false;
+  await panel.emit('toggle');
+  assert.equal(await request('focus', 'menu'), 1);
   exitGame(); await boot;
   assert.equal(element('cover').hidden, false);
   assert.equal(element('status').textContent, 'Game closed. Refresh this page to start again.');
