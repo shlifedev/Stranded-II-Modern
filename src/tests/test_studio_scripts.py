@@ -30,6 +30,21 @@ class ScriptWorkspace(TestCase):
     def bind(self,target=None):
         self.p.apply([{'op':'script.bind','path':self.path,'target':target or self.target}])
 
+    def test_workspace_reads_each_bound_map_once_and_reloads_after_external_edits(self):
+        other = {'scope': 'entity', 'map': 'island', 'kind': 'info', 'id': 1}
+        self.write('on:start {}')
+        self.bind()
+        self.bind(other)
+        with mock.patch.object(self.p, 'map_bytes', wraps=self.p.map_bytes) as read_map:
+            result = scripts.workspace(self.p)
+            read_map.assert_called_once_with('island')
+        self.assertEqual(result['diagnostics'], [])
+        (self.p.root/self.path).unlink()
+        self.p.load()
+        missing = scripts.workspace(self.p)['diagnostics']
+        self.assertEqual([issue['code'] for issue in missing], ['script-binding'] * 2)
+        self.assertEqual([issue['path'] for issue in missing], [self.path] * 2)
+
     def test_extract_preserves_native_map_and_external_edits_are_authoritative(self):
         body='on:start {\n msg "섬";\n}'
         self.p.apply([{'op':'map.script','map':'island','text':body}]);before=self.p.map_bytes('island')

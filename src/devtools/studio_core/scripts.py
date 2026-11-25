@@ -1,5 +1,6 @@
 """File-backed native scripts. No alternate script interpreter or code generation."""
 from copy import deepcopy
+from functools import cache
 from pathlib import Path
 import json
 import re
@@ -73,16 +74,27 @@ def target_key(target):
     return json.dumps(value, sort_keys=True, separators=(',', ':'))
 
 
-def target_text(project, target):
+def read_map_scripts(project, name):
     from .maps import EditableMap
+    summary = EditableMap(project.map_bytes(name)).summary()
+    entities = {}
+    for entity in summary['entities']:
+        entities.setdefault((entity['kind'], entity['id']), entity['script'])
+    return summary['script'], entities
+
+
+def target_text(project, target, read_map=read_map_scripts):
     scope = target['scope']
     if scope == 'definition':
         return project.find(target['kind'], target['id']).properties.get('script', [''])[0]
-    model = EditableMap(project.map_bytes(target['map']))
-    if scope == 'map': return model.summary()['script']
+    script, entities = read_map(project, target['map'])
+    if scope == 'map':
+        return script
     if scope == 'entity':
-        model.entity(target['kind'], target['id'])
-        return next(e['script'] for e in model.summary()['entities'] if e['kind'] == target['kind'] and e['id'] == target['id'])
+        key = target['kind'], target['id']
+        if key not in entities:
+            raise ValueError(f'Unknown entity: {key[0]}/{key[1]}')
+        return entities[key]
     raise ValueError('Unknown script target')
 
 
@@ -244,12 +256,13 @@ def workspace(project, query=''):
             for row,line in enumerate(text.splitlines(),1):
                 if query.casefold() in line.casefold() and len(matches)<500:
                     matches.append({'path':path,'line':row,'text':line[:300]})
+    read_map = cache(read_map_scripts)
     bindings=[]
     for key,path in project.data.get('scriptBindings',{}).items():
         target=json.loads(key);bindings.append({'target':target,'path':path})
         try:
             if path not in project.script_files: raise ValueError('Missing script: '+path)
-            target_text(project,target)
+            target_text(project, target, read_map)
         except (ValueError,KeyError) as exc:
             diagnostics.append({'severity':'error','code':'script-binding','message':str(exc),'location':path,'path':path,'line':1,'column':1})
     return {'version':version(project.script_files),'files':files,'bindings':bindings,'diagnostics':diagnostics,'matches':matches}
