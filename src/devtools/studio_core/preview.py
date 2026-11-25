@@ -3,13 +3,45 @@
 Only an explicit full preview advances the resource baseline. Deltas compare
 saved final states, so undo, redo and edits from another process work identically.
 """
+from contextlib import redirect_stdout
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import base64
 import hashlib
 import json
 import re
 import struct
+import subprocess
+import sys
 
 from .maps import CLASSES, FIELDS, EditableMap, string
+
+
+def preview_assets(assets):
+    import web_audio
+    with TemporaryDirectory() as directory:
+        staging = Path(directory)
+        wavs = []
+        names = {}
+        for name, data in assets:
+            if not name.lower().endswith('.wav') or web_audio.supported_wav_header(data[:36]):
+                yield name, data
+                continue
+            source = staging / str(len(wavs)) / Path(name).name
+            source.parent.mkdir()
+            source.write_bytes(data)
+            target = f'/game/{len(wavs)}.wav'
+            names[target] = name
+            wavs.append((source, target))
+        if wavs:
+            try:
+                # Studio's stdout carries the JSON protocol.
+                with redirect_stdout(sys.stderr):
+                    prepared = web_audio.prepare(wavs, staging / 'pcm')
+            except (subprocess.CalledProcessError, IndexError) as exc:
+                raise ValueError(f'Could not prepare imported WAV audio for preview: {exc}') from exc
+            for target, source in prepared.items():
+                yield names[target], source.read_bytes()
 
 
 def encode_patch(before, after):

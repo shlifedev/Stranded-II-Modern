@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"a6287bb52fd19e13164cb43719df12b4ddb0dd681bf702be1eba59c5d5b7683f"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"80e9a9b3770ef109677984a7af6885b1b3ad3462f253f325eaa86d2a5c88592b"} -->
 
 # Stranded II Studio
 
@@ -48,6 +48,8 @@ Create a project in an empty folder or open an existing project on the start scr
 Content icons fit a 64px tile and expand to at most 160px in the inspector, preserving their aspect ratio. Most originals are 40×40; enlargement does not add detail. Buildings show their completed result, and recipes show the first output item with `+N` for additional outputs. Map information uses the game's icon frames. Missing or unreadable images display a fallback symbol and a reason.
 
 Icons work without a map or the 3D engine. Imported project images take precedence, and icons refresh when saved definitions or assets change. Placement, movement, terrain edits and their undo/redo retain existing thumbnails. Unapplied drafts are excluded; icon updates are independent of the scene's **Apply resources** action.
+
+Studio converts imported mono or stereo WAV files such as 24-bit PCM to 16-bit PCM when a full preview needs it. Exports keep the original audio.
 
 The placement preview displays the currently applied item, object or unit model in green at 40% opacity. Buildings use their completed result model; map information uses a position marker. Preview and click placement share the same snapping, terrain height and alignment rules. The temporary model is never saved in the map and hides outside terrain or while looking with the right mouse button.
 

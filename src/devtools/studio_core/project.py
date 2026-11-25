@@ -550,8 +550,10 @@ class Project:
 
     def preview_resources(self):
         files = {path: base64.b64encode(text.encode('utf8')).decode('ascii') for path,text in scripts.resources(self).items()}
-        files.update({path: base64.b64encode(safe(self.root, source).read_bytes()).decode('ascii')
-                      for path,source in self.data['assets'].items()})
+        from .preview import preview_assets
+        assets = ((path, safe(self.root, source).read_bytes()) for path, source in self.data['assets'].items())
+        for path, data in preview_assets(assets):
+            files[path] = base64.b64encode(data).decode('ascii')
         from locales import catalog
         for language, entries in self.data['locales'].items():
             path = self.base/'core/locales'/f'{language}.tsv'
