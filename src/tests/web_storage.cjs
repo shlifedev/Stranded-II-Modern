@@ -287,11 +287,11 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
   assert.equal(element('status').textContent, 'Game closed. Refresh this page to start again.');
   await context.Module.onRuntimeInitialized();
   assert.equal(mainCalls, 1, 'exiting does not restart the engine in the same runtime');
-  const gallery = element('screenshots'), picker = element('screenshot-file'), download = element('screenshot-download');
+  const gallery = element('screenshots'), capturePicker = element('screenshot-file'), download = element('screenshot-download');
   context.Blob = Blob;
   context.Option = class { constructor(text, value) { Object.assign(this, {text, value}); } };
   const choices = [];
-  picker.add = option => choices.push(option);
+  capturePicker.add = option => choices.push(option);
   download.removeAttribute = name => { delete download[name]; };
   const bitmap = Buffer.alloc(58);
   bitmap.write('BM'); bitmap.writeUInt32LE(bitmap.length, 2); bitmap.writeUInt32LE(54, 10);
