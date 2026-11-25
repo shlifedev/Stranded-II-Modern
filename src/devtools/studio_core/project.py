@@ -102,8 +102,15 @@ class Project:
     def __init__(self, directory):
         self.root = Path(directory).resolve()
         self.path = self.root / 'project.json'
-        if (self.root/'.studio/script-transaction.json').exists():
-            with locked(self.root): scripts.recover(self.root)
+        pending = self.root/'.studio'
+        if (pending/'script-transaction.json').exists() or (pending/'history.pending.json').exists():
+            with locked(self.root):
+                self.reload_locked()
+        else:
+            self.load()
+
+    def reload_locked(self):
+        scripts.recover(self.root)
         self.load()
 
     @classmethod
@@ -357,15 +364,13 @@ class Project:
         history['head'] = digest(encode(self.data))
         for relative, data in self._blobs.items():
             atomic(safe(self.root, relative), data)
-        # Script writes use a recovery journal; manifest-only commits retain the
-        # existing atomic-file/history-head contract. Blob sources are immutable.
         scripts.commit_files(self, before, history)
 
     def apply(self, operations, expected=None, dry_run=False):
         if not isinstance(operations, list) or not operations or len(operations) > 1000:
             raise ValueError('Provide 1–1000 operations in an array')
         with locked(self.root):
-            self.load()
+            self.reload_locked()
             if expected is not None and expected != self.data['revision']:
                 raise ValueError(f'Revision conflict: expected {expected}, current {self.data["revision"]}; reload before editing')
             before, history = deepcopy(self.data), self.history()
@@ -386,7 +391,7 @@ class Project:
 
     def undo(self, redo=False, expected=None):
         with locked(self.root):
-            self.load()
+            self.reload_locked()
             if expected is not None and expected != self.data['revision']:
                 raise ValueError('Revision conflict; reload before undo/redo')
             before, history = deepcopy(self.data), self.history()
@@ -533,7 +538,7 @@ class Project:
         """Only explicit project resources cross into the isolated WASM filesystem."""
         from .preview import preview
         with locked(self.root):
-            self.load()
+            self.reload_locked()
             if expected_revision is not None and expected_revision != self.data['revision']:
                 raise ValueError('Project changed before test start; retry')
             if expected_scripts is not None and expected_scripts != scripts.version(self.script_files):

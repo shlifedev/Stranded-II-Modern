@@ -280,11 +280,22 @@ def commit_files(project, before, history):
         atomic(safe(project.root,'.studio/script-transaction.json'),encode(journal))
         recover(project.root)
     else:
-        atomic(project.root/'.studio/history.json',encode(history));atomic(project.path,encode(project.data))
+        # Keep the current undo stack until the manifest has switched revisions.
+        pending = safe(project.root, '.studio/history.pending.json')
+        atomic(pending, encode(history))
+        atomic(project.path, encode(project.data))
+        pending.replace(pending.with_name('history.json'))
 
 
 def recover(root):
     from .project import safe, atomic, encode, digest
+    pending = safe(root, '.studio/history.pending.json')
+    if pending.is_file():
+        manifest = json.loads((root/'project.json').read_bytes())
+        if json.loads(pending.read_bytes())['head'] == digest(encode(manifest)):
+            pending.replace(pending.with_name('history.json'))
+        else:
+            pending.unlink()
     journal=safe(root,'.studio/script-transaction.json')
     if not journal.exists(): return
     data=json.loads(journal.read_text('utf8'))

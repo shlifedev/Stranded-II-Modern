@@ -145,6 +145,42 @@ class Projects(TestCase):
         self.assertNotIn('const',self.project.find('item',identifier).properties)
         self.assertEqual(self.project.find('item',1).properties['name'],['Log'])
 
+    def test_interrupted_manifest_edit_preserves_previous_undo_history(self):
+        from studio_core.project import atomic
+        self.project.apply([{'op':'map.create','name':'first','size':16}])
+        self.project.apply([{'op':'map.create','name':'second','size':16}])
+
+        def interrupt(path, data):
+            if path == self.project.path:
+                raise OSError('interrupted before replacing project.json')
+            return atomic(path, data)
+
+        with mock.patch('studio_core.project.atomic', side_effect=interrupt), self.assertRaises(OSError):
+            self.project.apply([{'op':'map.create','name':'third','size':16}])
+        reopened = Project(self.project.root)
+        self.assertEqual(list(reopened.data['maps']), ['first','second'])
+        reopened.undo(expected=2)
+        self.assertEqual(list(reopened.data['maps']), ['first'])
+        reopened.undo(expected=3)
+        self.assertEqual(reopened.data['maps'], {})
+
+    def test_interrupted_undo_promotes_its_matching_redo_history(self):
+        self.project.apply([{'op':'map.create','name':'island','size':16}])
+        other = Project(self.project.root)
+        pending = self.project.root/'.studio/history.pending.json'
+        replace = Path.replace
+
+        def interrupt(path, destination):
+            if path == pending:
+                raise OSError('interrupted after replacing project.json')
+            return replace(path, destination)
+
+        with mock.patch.object(Path, 'replace', interrupt), self.assertRaises(OSError):
+            self.project.undo(expected=1)
+        other.undo(redo=True, expected=2)
+        self.assertEqual(list(other.data['maps']), ['island'])
+        self.assertFalse(pending.exists())
+
     def test_failed_batch_rolls_back_all_files_and_blobs(self):
         before=self.project.path.read_bytes()
         with self.assertRaises(ValueError):
