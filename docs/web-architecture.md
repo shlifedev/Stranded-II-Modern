@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"9357acb6586a4fc9907d6580c594f7a28f19395e573d56da47ba35aec4228cd6"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"00214fe3db90b917ea8706a7fa0e05da6bc3141fb43208a43748eb4a23435d15"} -->
 
 # How the web version works
 
@@ -109,7 +109,7 @@ Where Web Locks is available, it prevents two tabs from using the same site's st
 
 The main menu can appear without pointer lock. During play, switching windows or releasing pointer lock pauses the game through its shared focus handling. A click to return is consumed so it does not also trigger an attack or menu selection.
 
-Resizing the browser window scales the image proportionally with CSS. Game settings determine the actual drawing-buffer resolution. Unsupported original WAV encodings are converted to PCM WAV with FFmpeg during build preparation; original files are preserved and FFmpeg is not distributed.
+Resizing the browser window scales the image proportionally with CSS. Game settings determine the actual drawing-buffer resolution. During preparation, FFmpeg converts unsupported WAV files to 16-bit PCM at their original sample rate. Mono and stereo retain their channel count. Surround audio is mixed to stereo. The source files are preserved. The package runs without FFmpeg.
 
 ## 6. Static-file distribution and separate gameplay verification
 

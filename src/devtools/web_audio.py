@@ -6,6 +6,7 @@ import os
 import shutil
 import struct
 import subprocess
+import tempfile
 import urllib.request
 import wave
 import zipfile
@@ -66,6 +67,27 @@ def supported_wav(path):
             and struct.unpack_from('<H', head, 34)[0] in (8, 16))
 
 
+def convert_wav(source, destination, ffmpeg, ffprobe):
+    """Write PCM supported by the runtime and return its measured stream properties."""
+    probe = subprocess.check_output([str(ffprobe), '-v', 'error', '-select_streams', 'a:0',
+        '-show_entries', 'stream=codec_name,sample_rate,channels', '-of', 'json', str(source)], text=True)
+    info = json.loads(probe)['streams'][0]
+    channels = min(info['channels'], 2)
+    with tempfile.TemporaryDirectory(dir=destination.parent) as staged:
+        temporary = Path(staged) / 'audio.wav'
+        subprocess.run([str(ffmpeg), '-nostdin', '-hide_banner', '-loglevel', 'error', '-xerror', '-y',
+            '-i', str(source), '-map', '0:a:0', '-map_metadata', '-1', '-fflags', '+bitexact',
+            '-flags:a', '+bitexact', '-ac', str(channels), '-c:a', 'pcm_s16le', '-f', 'wav', str(temporary)],
+            check=True)
+        with wave.open(str(temporary), 'rb') as audio:
+            rate, frames = audio.getframerate(), audio.getnframes()
+            if (rate != int(info['sample_rate']) or audio.getnchannels() != channels or
+                    audio.getsampwidth() != 2 or frames <= 0 or not supported_wav(temporary)):
+                raise ValueError(f'Unsupported decoded audio: {source}')
+        os.replace(temporary, destination)
+    return {'input_codec': info['codec_name'], 'sample_rate': rate, 'channels': channels, 'frames': frames}
+
+
 def prepare(files, output):
     candidates = [(path, target) for path, target in files
                   if path.suffix.lower() == '.wav' and not supported_wav(path)]
@@ -85,23 +107,9 @@ def prepare(files, output):
                 and old.get('output_sha256') == digest(destination) and supported_wav(destination)):
             records[name] = old
         else:
-            info = json.loads(subprocess.check_output([str(ffprobe), '-v', 'error', '-select_streams', 'a:0',
-                '-show_entries', 'stream=codec_name,sample_rate,channels', '-of', 'json', str(source)], text=True))['streams'][0]
             destination.parent.mkdir(parents=True, exist_ok=True)
-            temporary = destination.with_suffix('.wav.tmp')
-            subprocess.run([str(ffmpeg), '-nostdin', '-hide_banner', '-loglevel', 'error', '-xerror', '-y',
-                '-i', str(source), '-map', '0:a:0', '-map_metadata', '-1', '-fflags', '+bitexact',
-                '-flags:a', '+bitexact', '-c:a', 'pcm_s16le', '-f', 'wav', str(temporary)], check=True)
-            with wave.open(str(temporary), 'rb') as decoded:
-                rate, channels, frames = decoded.getframerate(), decoded.getnchannels(), decoded.getnframes()
-                if (rate != int(info['sample_rate']) or channels != info['channels']
-                        or decoded.getsampwidth() != 2 or frames <= 0):
-                    raise ValueError(f'Web audio conversion changed format or produced no samples: {name}')
-            if not supported_wav(temporary):
-                raise ValueError(f'Web audio conversion is still unsupported: {name}')
-            os.replace(temporary, destination)
-            records[name] = {'input_sha256': source_hash, 'output_sha256': digest(destination),
-                'input_codec': info['codec_name'], 'sample_rate': rate, 'channels': channels, 'frames': frames}
+            properties = convert_wav(source, destination, ffmpeg, ffprobe)
+            records[name] = {'input_sha256': source_hash, 'output_sha256': digest(destination), **properties}
         replacements[target] = destination
     report_path.write_text(json.dumps({'tool': cfg, 'files': records}, indent=2) + '\n', encoding='utf8')
     print(f'Prepared {len(records)} web-only PCM audio files (source resources unchanged).', flush=True)
