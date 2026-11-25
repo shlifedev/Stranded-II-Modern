@@ -12,7 +12,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'src/devtools'))
 from studio_core import content
-from studio_core.maps import EditableMap, new_map
+from studio_core.maps import EditableMap, new_map, string
 from studio_core.project import Project, MOD, safe, resource_path
 from s2map import Map
 from locales import catalog
@@ -31,6 +31,22 @@ class NativeMaps(TestCase):
         self.assertEqual(model.size,16)
         self.assertEqual(model.entities[0]['type'],1)
         self.assertAlmostEqual(model.world_height(0,0),160,places=3)
+
+    def test_summary_uses_first_script_for_each_entity_class_and_id(self):
+        data = EditableMap(self.raw).apply({'op':'entity.add','kind':'item','type':1,'id':1})
+        model = EditableMap(data)
+        def extension(parent, mode, source):
+            return struct.pack('<BBii', 0, *parent, mode) + string(b'') + string(source) + string(b'')
+        records = [extension((4,1), 1, b'other mode'),
+                   extension((3,1), 0, b'item'),
+                   extension((4,1), 0, 'first\x1f한글'.encode()),
+                   extension((4,1), 0, b'later'),
+                   extension((3,99), 0, b'\xff')]
+        raw = (data[:model.extension_start] + struct.pack('<i', len(records)) +
+               b''.join(records) + data[model.extension_end:])
+        summary = EditableMap(raw).summary()
+        self.assertEqual([(e['kind'], e['id'], e['script']) for e in summary['entities']],
+                         [('item', 1, 'item'), ('info', 1, 'first\n한글')])
 
     def test_transform_only_changes_addressed_float_bytes(self):
         raw = EditableMap(self.raw).apply({'op':'entity.add','kind':'object','type':1})
