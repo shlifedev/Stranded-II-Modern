@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"61351b354e82de4fe0cc1ac904ce482e5b5eea1497582b91fc9607f69d126f78"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"2bfdffbbcf87953a1c16069fde2cf816778ba36ec69364d3ac69f5235459144c"} -->
 
 # Stranded II Studio
 
@@ -112,6 +112,8 @@ python src/devtools/studio.py export build/studio-example --out build/studio-exa
 정의 ID와 맵 개체 ID는 별개입니다. 정의 복제는 빈 ID를 할당하며 ID 한도를 넘으면 거부합니다. 레시피 식별자는 `경로#순번`입니다. 건축 이름은 결과 오브젝트/유닛에서, 레시피 이름은 `genname` 또는 결과 아이템에서 가져옵니다. 새 정의·레시피는 `content.create`, 반복 속성은 문자열 배열, 속성 제거는 `null`을 사용합니다. 지형 좌표는 샘플 단위이며 월드 좌표는 `(sample-size/2)*64`입니다.
 
 ## 프로젝트와 내보내기
+
+맵 이름과 가져온 에셋 경로는 대소문자와 유니코드 정규화를 적용한 뒤에도 서로 구분되어야 합니다. 예를 들어 대소문자를 구분하지 않는 파일 시스템에서는 `Island`와 `island`가 같은 맵 파일을 가리킵니다. 가져온 에셋을 교체하려면 기존 경로를 그대로 사용하세요.
 
 `project.json`에 정의 수정·맵 편집 명령·파일 연결·실행 취소 기준 스냅샷을, `sources/`에 해시로 이름 붙인 원본 맵·에셋을 저장합니다. `scripts/`의 `.s2s`가 파일 스크립트의 원본이며 이 세 경로를 함께 보관하세요. `.studio/`는 최근 100개 실행 취소 기록·잠금·폰트 캐시·최근 미리보기 토큰 캐시입니다. 파일 쓰기가 중단되면 다음 열기에서 트랜잭션을 복구하되 새 외부 변경은 덮어쓰지 않습니다. 원본 기본 리소스는 수정하지 않습니다. `project.json`의 `base`는 보통 상대 경로이며 다른 컴퓨터에서는 준비된 기본 리소스 위치에 맞추세요.
 
