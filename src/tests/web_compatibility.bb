@@ -134,6 +134,22 @@ Next
 FreeEntity frameCamera:FreeTexture frameTexture:ShowEntity cam
 ClsColor 0,0,0
 set_musicvolume#=0:set_fxvolume#=0
+; Empty PCM cannot prime a channel. Repeated attempts must leave playback available.
+Local emptySoundPath$=set_rootdir$+"compat-empty.wav"
+Local emptyFile=WriteFile(emptySoundPath$)
+WriteInt emptyFile,$46464952:WriteInt emptyFile,36:WriteInt emptyFile,$45564157 ; RIFF, WAVE
+WriteInt emptyFile,$20746D66:WriteInt emptyFile,16 ; fmt
+WriteShort emptyFile,1:WriteShort emptyFile,1:WriteInt emptyFile,8000:WriteInt emptyFile,16000
+WriteShort emptyFile,2:WriteShort emptyFile,16
+WriteInt emptyFile,$61746164:WriteInt emptyFile,0 ; data
+CloseFile emptyFile
+Local emptySound=LoadSound(emptySoundPath$)
+If emptySound<>0 Then
+ compat_check(PlaySound(emptySound)=0,"empty PCM returns no sound channel")
+ FreeSound emptySound
+EndIf
+compat_check(PlayMusic(emptySoundPath$)=0,"empty PCM returns no music channel")
+DeleteFile emptySoundPath$
 ; AUDIO_CHECKS
 
 ; Generated worlds take a different path from scenarios with saved textures.
