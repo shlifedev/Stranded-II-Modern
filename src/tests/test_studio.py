@@ -61,6 +61,26 @@ class NativeMaps(TestCase):
         self.assertEqual(model.source.fields[-1].data,b'hello')
         self.assertEqual(model.apply({'op':'map.script','text':''}),raw)
 
+    def test_map_edits_splice_only_selected_script_and_attachment_spans(self):
+        def attachment(name, body):
+            return (bytes(255 - b for b in name) + b'\r\n' + struct.pack('<i', len(body))
+                    + bytes(255 - b for b in body))
+        first = attachment(b'first.dat', bytes(range(256)))
+        last = attachment(b'last.dat', b'keep')
+        raw = self.raw + first + last
+        model = Map(raw)
+        script = next(field for field in model.fields if field.key == 'global_script')
+        text = '새 섬'.encode()
+        edited = model.write({'global_script': text, 'attachment/first.dat': b''})
+        expected = (self.raw[:script.start] + struct.pack('<i', len(text)) + text + self.raw[script.end:]
+                    + attachment(b'first.dat', b'') + last)
+        self.assertEqual(edited, expected)
+        self.assertEqual(Map(edited).write({'global_script': script.data,
+                                           'attachment/first.dat': bytes(range(256))}), raw)
+        self.assertEqual(model.write(), raw)
+        with self.assertRaises(AssertionError):
+            Map(raw[:-1])
+
     def test_entity_script_clear_restores_original_and_allows_delete(self):
         op = {'op':'entity.script','kind':'info','id':1,'text':'on:use {\n msg "hello";\n}'}
         changed = EditableMap(self.raw).apply(op)
