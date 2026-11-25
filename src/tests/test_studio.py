@@ -30,7 +30,22 @@ class NativeMaps(TestCase):
         self.assertEqual(Map(self.raw).write(),self.raw)
         self.assertEqual(model.size,16)
         self.assertEqual(model.entities[0]['type'],1)
-        self.assertAlmostEqual(model.world_height(0,0),160,places=3)
+        self.assertAlmostEqual(model.world_height(0,0),156.862793,places=3)
+        self.assertAlmostEqual(model.entities[0]['y'],model.world_height(0,0),places=3)
+
+    def test_ground_placement_matches_native_rounded_samples_and_wrapped_edges(self):
+        model = EditableMap(self.raw)
+        data = bytearray(self.raw)
+        for gx, gz, height in [(0, 0, .01), (16, 16, .12), (0, 7, .11),
+                               (16, 7, .91), (7, 0, .02), (7, 16, .88)]:
+            struct.pack_into('<f', data, model.heights_start + (gx * 17 + gz) * 4, height)
+        model = EditableMap(data)
+        # Values read from TerrainY with the game's load order, scale and floor.
+        for x, z, expected in [(-512, -512, -1223.529419), (-512, -64, 1311.372559),
+                               (-64, -512, 1210.980469), (512, -64, 1311.372559),
+                               (-768, -768, -1223.529419)]:
+            placed = model.apply({'op':'entity.add', 'kind':'unit', 'type':1, 'values':{'x':x,'z':z}})
+            self.assertAlmostEqual(EditableMap(placed).entity('unit',100)[2]['y'], expected, places=3)
 
     def test_transform_only_changes_addressed_float_bytes(self):
         raw = EditableMap(self.raw).apply({'op':'entity.add','kind':'object','type':1})
