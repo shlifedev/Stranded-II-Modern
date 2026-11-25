@@ -229,6 +229,14 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
   vm.runInContext('started = false; menuActive = true', context);
   assert.equal(vm.runInContext('words(4294967295)', context), '-1' + String.fromCharCode(31) + '0');
   assert.equal(vm.runInContext('words(4294967296)', context), '0' + String.fromCharCode(31) + '1');
+  let grantStorage;
+  if (!savedLanguage) {
+    context.navigator.locks = {request(name, hold) {
+      assert.equal(name, 'stranded-ii-classic-storage');
+      grantStorage = hold;
+      return new Promise(() => {});
+    }};
+  }
   context.Module.FS = FS;
   let mainCalls = 0, exitGame, mainReady;
   const mainStarted = new Promise(resolve => { mainReady = resolve; });
@@ -238,14 +246,6 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
     mainReady();
     return new Promise(resolve => { exitGame = resolve; });
   };
-  let grantStorage;
-  if (!savedLanguage) {
-    context.navigator.locks = {request(name, hold) {
-      assert.equal(name, 'stranded-ii-classic-storage');
-      grantStorage = hold;
-      return new Promise(() => {});
-    }};
-  }
   const beforeBootCaptures = captures;
   const boot = context.Module.onRuntimeInitialized();
   assert.equal(context.Module.onRuntimeInitialized(), boot, 'runtime initialization must start only once');

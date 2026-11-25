@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"9ef5057c1121eaae885e0224f4c5099ae003bdbdda5a3b1134c2874d829baad3"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"24a336885ea83c384016e636ed2a9fdbebbe1c7db47e6f1b563645db1cb13a53"} -->
 
 # How the web version works
 
@@ -67,7 +67,7 @@ Opening the page starts this sequence:
 
 1. Check `navigator.gpu`, `WebAssembly.Suspending`, and an available GPU adapter.
 2. Load `assets.js` and `game.js`, preparing the WASM runtime and resources.
-3. Restore existing IndexedDB data into the virtual filesystem and connect settings/save paths.
+3. In browsers with Web Locks, wait for any other WebPlay tab using this site’s saves to close. Then restore IndexedDB data into the virtual filesystem and connect settings/save paths.
 4. Automatically run the shared game with `Module.callMain([])`.
 
 There is no separate start button or web language-selection screen. Select a language in the original game's Settings and restart to apply it. The first canvas click enables mouse controls and audio.
@@ -94,7 +94,7 @@ The game's save and settings paths are connected to this storage area with symbo
 
 **Writing a file in memory does not mean its IndexedDB write has finished.** Closing a settings file tracks the change and schedules synchronization. Important save-file replacements wait for `FS.syncfs` to complete before returning success. Synchronization requests run in sequence; if synchronization fails during replacement, the previous in-memory save contents are restored and the game receives a failure result.
 
-With Web Locks, a second tab waits before loading settings and saves. Closing the first tab starts the waiting game automatically. Saves belong to a browser, profile, and site address (scheme, host, and port). Clearing site data deletes saves. They are not automatically transferred to another browser, a local development address, Windows, or the macOS app.
+Where Web Locks is available, it prevents two tabs from using the same site's storage simultaneously. Saves belong to a browser, profile, and site address (scheme, host, and port). Clearing site data deletes saves. They are not automatically transferred to another browser, a local development address, Windows, or the macOS app.
 
 ## 5. Input, fullscreen, and audio use browser facilities
 
