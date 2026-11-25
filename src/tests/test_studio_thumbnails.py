@@ -92,6 +92,33 @@ class Thumbnails(TestCase):
         self.project.undo(); self.project.undo(redo=True)
         self.assertEqual(self.query()['version'], initial['version'])
 
+    def test_changed_import_is_rejected_before_preview_or_export(self):
+        target = MOD + 'gfx/first.bmp'
+        imported = self.root / 'icon.png'
+        Image.new('RGB', (2, 2), 'red').save(imported)
+        original = imported.read_bytes()
+        self.project.apply([{'op': 'asset.import', 'path': str(imported), 'destination': target}])
+        source = self.project.root / self.project.data['assets'][target]
+        Image.new('RGB', (2, 2), 'blue').save(source)
+
+        diagnostics = studio.response({'command': 'validate', 'project': str(self.project.root)})['result']
+        self.assertFalse(diagnostics['valid'])
+        self.assertIn(target, [issue['location'] for issue in diagnostics['diagnostics']])
+        self.assertEqual(self.query()['status'], 'unavailable')
+        with self.assertRaisesRegex(ValueError, 'changed outside Studio'):
+            self.project.preview_resources()
+        output = self.root / 'out'
+        with self.assertRaisesRegex(ValueError, 'changed outside Studio'):
+            self.project.export(output)
+        self.assertFalse(output.exists())
+
+        source.write_bytes(original)
+        self.assertEqual(self.query()['status'], 'ready')
+        self.assertEqual(base64.b64decode(self.project.preview_resources()[target]), original)
+        report = self.project.export(output)
+        self.assertEqual((output/'overrides'/target).read_bytes(), original)
+        self.assertEqual(report['files'][target], source.stem)
+
     def test_missing_corrupt_and_invalid_references_are_local_failures(self):
         self.assertEqual(self.query(identifier=3)['reason'], 'no-icon')
         cases = [('gfx/absent.bmp', 'missing-file'), ('gfx/corrupt.bmp', 'unreadable-image')]

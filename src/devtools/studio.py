@@ -93,7 +93,7 @@ def dispatch(request):
         return project.apply(operations if isinstance(operations,list) else [operations],
                              request.get('expectRevision'), request.get('dryRun',False))
     if command == 'validate':
-        issues = project.validate()
+        issues = project.validate(check_assets=True)
         return {'valid': not any(i['severity']=='error' for i in issues), 'diagnostics': issues, 'revision': project.data['revision']}
     if command == 'export':
         return project.export(request['out'])

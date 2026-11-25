@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"61351b354e82de4fe0cc1ac904ce482e5b5eea1497582b91fc9607f69d126f78"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"12818b5f07ea928638a81a6f7a136aeb1e251004f2d0081b65a3d5f5bf27591c"} -->
 
 # Stranded II Studio
 
@@ -113,7 +113,7 @@ python src/devtools/studio.py export build/studio-example --out build/studio-exa
 
 ## 프로젝트와 내보내기
 
-`project.json`에 정의 수정·맵 편집 명령·파일 연결·실행 취소 기준 스냅샷을, `sources/`에 해시로 이름 붙인 원본 맵·에셋을 저장합니다. `scripts/`의 `.s2s`가 파일 스크립트의 원본이며 이 세 경로를 함께 보관하세요. `.studio/`는 최근 100개 실행 취소 기록·잠금·폰트 캐시·최근 미리보기 토큰 캐시입니다. 파일 쓰기가 중단되면 다음 열기에서 트랜잭션을 복구하되 새 외부 변경은 덮어쓰지 않습니다. 원본 기본 리소스는 수정하지 않습니다. `project.json`의 `base`는 보통 상대 경로이며 다른 컴퓨터에서는 준비된 기본 리소스 위치에 맞추세요.
+`project.json`에 정의 수정·맵 편집 명령·파일 연결·실행 취소 기준 스냅샷을, `sources/`에 해시로 이름 붙인 원본 맵·에셋을 저장합니다. 프로젝트를 옮기거나 복원한 뒤 `validate`로 가져온 에셋을 검사할 수 있습니다. 파일이 바뀌었다면 원본 내용을 복원하거나 편집한 파일을 새 버전으로 가져오세요. `scripts/`의 `.s2s`가 파일 스크립트의 원본이며 이 세 경로를 함께 보관하세요. `.studio/`는 최근 100개 실행 취소 기록·잠금·폰트 캐시·최근 미리보기 토큰 캐시입니다. 파일 쓰기가 중단되면 다음 열기에서 트랜잭션을 복구하되 새 외부 변경은 덮어쓰지 않습니다. 원본 기본 리소스는 수정하지 않습니다. `project.json`의 `base`는 보통 상대 경로이며 다른 컴퓨터에서는 준비된 기본 리소스 위치에 맞추세요.
 
 내보내기는 빈 폴더만 사용합니다. `overrides/`에는 네이티브 `.inf`·`.s2`·에셋, `locales/`에는 프로젝트 번역, `manifest.json`에는 버전·파일 해시를 만듭니다. 검토한 콘텐츠는 `resources/editions/extended/overrides/`, 번역은 `resources/locales/editions/extended/<code>.tsv`에 병합한 뒤 Extended를 준비·빌드합니다. 기존 파일이 있으면 통째로 덮어쓰지 말고 변경 내용을 병합하세요. 일반 빌드·CI·배포는 자동 실행하지 않습니다.
 
