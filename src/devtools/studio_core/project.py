@@ -506,7 +506,6 @@ class Project:
             raise ValueError('Use a new or empty export directory; existing resources are preserved')
         from .fonts import project_fonts
         fonts = project_fonts(self)
-        destination.mkdir(parents=True, exist_ok=True)
         files = {}
         for relative, text in scripts.resources(self).items():
             files[relative] = text.encode('utf8')
@@ -514,19 +513,34 @@ class Project:
             files[relative] = safe(self.root, source).read_bytes()
         for name in self.data['maps']:
             files[MOD+'maps/'+name+'.s2'] = self.map_bytes(name)
-        for relative, data in files.items():
-            atomic(safe(destination/'overrides', resource_path(relative)), data)
-        for language, entries in self.data['locales'].items():
-            atomic(safe(destination/'locales', language+'.tsv'), catalog_output(entries).encode('utf8'))
-        for relative, data in fonts.items():
-            atomic(safe(destination/'fonts', relative),data)
         report = {'format': FORMAT, 'edition': 'extended', 'revision': self.data['revision'],
                   'files': {path: digest(data) for path,data in sorted(files.items())},
                   'locales': {code+'.tsv':digest(catalog_output(entries).encode('utf8')) for code,entries in self.data['locales'].items()},
                   'fonts': {path:digest(data) for path,data in sorted(fonts.items())}}
-        atomic(destination/'manifest.json', encode(report))
-        if scripts.scan(self) != self._script_originals:
-            raise ValueError('Scripts changed during export; retry to a new empty directory')
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix='.studio-export-', dir=destination.parent) as temp:
+            stage = Path(temp)/'export'
+            stage.mkdir()
+            for relative, data in files.items():
+                atomic(safe(stage/'overrides', resource_path(relative)), data)
+            for language, entries in self.data['locales'].items():
+                atomic(safe(stage/'locales', language+'.tsv'), catalog_output(entries).encode('utf8'))
+            for relative, data in fonts.items():
+                atomic(safe(stage/'fonts', relative),data)
+            atomic(stage/'manifest.json', encode(report))
+            if scripts.scan(self) != self._script_originals:
+                raise ValueError('Scripts changed during export; retry')
+            # POSIX can replace an empty directory in one rename. Windows needs it removed first.
+            if os.name == 'nt' and destination.is_dir():
+                destination.rmdir()  # Refuses a concurrent writer's nonempty directory.
+                try:
+                    stage.rename(destination)
+                except OSError:
+                    if not destination.exists():
+                        destination.mkdir(exist_ok=True)
+                    raise
+            else:
+                stage.replace(destination)
         return {'directory': str(destination), **report}
 
     def preview(self, map_name, engine_base=None, since=None, expected_revision=None, expected_scripts=None):

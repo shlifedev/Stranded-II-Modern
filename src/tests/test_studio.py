@@ -183,6 +183,59 @@ class Projects(TestCase):
             self.project.export(self.root/'out')
         self.assertFalse((self.root/'out').exists())
 
+    def test_interrupted_export_can_retry_in_same_folder(self):
+        from studio_core.project import atomic
+        self.project.apply([{'op':'map.create','name':'island'}])
+        for existing in (False, True):
+            with self.subTest(existing=existing):
+                output = self.root / ('empty' if existing else 'new')
+                if existing:
+                    output.mkdir()
+                def fail_manifest(path, data):
+                    if path.name == 'manifest.json':
+                        raise OSError('Export disk full')
+                    atomic(path, data)
+                with mock.patch('studio_core.project.atomic', side_effect=fail_manifest):
+                    with self.assertRaisesRegex(OSError, 'disk full'):
+                        self.project.export(output)
+                self.assertEqual(output.exists(), existing)
+                if existing:
+                    self.assertEqual(list(output.iterdir()), [])
+                report = self.project.export(output)
+                map_path = MOD + 'maps/island.s2'
+                self.assertEqual(hashlib.sha256((output/'overrides'/map_path).read_bytes()).hexdigest(),
+                                 report['files'][map_path])
+
+    def test_script_edit_before_export_finishes_leaves_no_manifest(self):
+        from studio_core.project import atomic
+        output = self.root/'out'
+        source = self.project.root/'scripts/island.s2s'
+        def edit_script(path, data):
+            atomic(path, data)
+            if path.name == 'manifest.json':
+                source.parent.mkdir(exist_ok=True)
+                source.write_text('on:start {}', encoding='utf8')
+        with mock.patch('studio_core.project.atomic', side_effect=edit_script):
+            with self.assertRaisesRegex(ValueError, 'Scripts changed'):
+                self.project.export(output)
+        self.assertFalse(output.exists())
+        Project(self.project.root).export(output)
+        self.assertTrue((output/'manifest.json').is_file())
+
+    def test_export_preserves_files_added_by_another_writer(self):
+        from studio_core.project import atomic
+        output = self.root/'out'
+        output.mkdir()
+        def add_user_file(path, data):
+            atomic(path, data)
+            if path.name == 'manifest.json':
+                (output/'notes.txt').write_bytes(b'keep')
+        with mock.patch('studio_core.project.atomic', side_effect=add_user_file):
+            with self.assertRaises((ValueError, OSError)):
+                self.project.export(output)
+        self.assertEqual(list(output.iterdir()), [output/'notes.txt'])
+        self.assertEqual((output/'notes.txt').read_bytes(), b'keep')
+
     def test_native_export_and_preview_exclude_personal_data(self):
         self.project.apply([{'op':'map.create','name':'island'},{'op':'content.clone','kind':'item','source':1}])
         self.project.export(self.root/'out')
