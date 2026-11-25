@@ -266,11 +266,35 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
   assert.equal(durable.get('/persist/classic/saves/test.sav').toString(), 'new save');
   assert.equal(FS.readFile('SAVES/TEST.SAV', {encoding: 'utf8'}), 'new save');
   assert.equal(durable.get('/persist/classic/saves/test.sav.bak').toString(), 'previous save');
+  // A failure while taking the backup must leave both original files alone.
+  FS.writeFile('saves/test.sav.tmp', 'pending replacement');
+  const realReadFile = FS.readFile;
+  const beforeMove = FS.stat('saves/test.sav.tmp').mtime.getTime();
+  FS.readFile = (path, options) => {
+    if (path.endsWith('/saves/test.sav')) throw new Error('simulated backup read failure');
+    return realReadFile(path, options);
+  };
+  try {
+    assert.equal(await request('move', 'saves/test.sav.tmp', 'saves/test.sav'), 0);
+  } finally {
+    FS.readFile = realReadFile;
+  }
+  assert.equal(FS.readFile('saves/test.sav', {encoding: 'utf8'}), 'new save');
+  assert.equal(FS.readFile('saves/test.sav.tmp', {encoding: 'utf8'}), 'pending replacement');
+  assert.equal(FS.stat('saves/test.sav.tmp').mtime.getTime(), beforeMove);
+  await request('sync');
+  assert.equal(durable.get('/persist/classic/saves/test.sav').toString(), 'new save');
   FS.writeFile('saves/test.sav.tmp', 'failed replacement');
   failNext = true;
   assert.equal(await request('move', 'saves/test.sav.tmp', 'saves/test.sav'), 0);
   assert.equal(FS.readFile('saves/test.sav', {encoding: 'utf8'}), 'new save');
   assert.equal(durable.get('/persist/classic/saves/test.sav').toString(), 'new save');
+  assert.equal(FS.readFile('saves/test.sav.tmp', {encoding: 'utf8'}), 'failed replacement');
+  FS.writeFile('saves/first.sav.tmp', 'first save attempt');
+  failNext = true;
+  assert.equal(await request('move', 'saves/first.sav.tmp', 'saves/first.sav'), 0);
+  assert.throws(() => FS.stat('saves/first.sav'));
+  assert.equal(FS.readFile('saves/first.sav.tmp', {encoding: 'utf8'}), 'first save attempt');
   FS.writeFile('/game/core/modern.ini.tmp', 'language=de\nfps=120\n');
   assert.equal(await request('move', '/game/core/modern.ini.tmp', '/game/core/modern.ini'), 1);
   assert.equal(FS.readFile('/game/core/modern.ini', {encoding: 'utf8'}), 'language=de\nfps=120\n');
