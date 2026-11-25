@@ -11,7 +11,7 @@ import wave
 
 from editions import source_hashes, override_files
 from locales import prepare, validate, languages
-from language_pack import refresh
+from language_pack import prepared_font_files, refresh
 from versioning import development_marker, git, local_info, validate_info
 import macos_toolchain
 
@@ -168,9 +168,7 @@ def asset_names():
                   'core/locales/languages.dat', 'mods/Stranded II/sys/ko_aliases.dat'))
     for code in languages(ROOT):
         names.add(f'core/locales/{code}.tsv')
-        names.update(p.relative_to(RUNTIME).as_posix() for p in (RUNTIME / 'core/locales' / code).glob('*.bmp'))
-        names.add(f'core/locales/{code}/glyphs.dat')
-        names.update(p.relative_to(RUNTIME).as_posix() for p in (RUNTIME / 'core/locales' / code).glob('*.ttf'))
+        names.update(prepared_font_files(RUNTIME, code))
     names.update('licenses/' + name for name in license_sources())
     return sorted(name for name in names if Path(name).suffix.lower() not in
                   ('.exe', '.dll', '.sav', '.bak', '.tmp', '.log') and not any(

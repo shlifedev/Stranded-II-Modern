@@ -11,7 +11,7 @@ import sys
 
 from editions import source_hashes, override_files
 from locales import prepare, validate, languages
-from language_pack import refresh
+from language_pack import prepared_font_files, refresh
 from versioning import development_marker, local_info, validate_info
 import web_toolchain
 
@@ -113,10 +113,7 @@ def asset_files():
     if (RUNTIME / 'core/development.flag').is_file():names.add('core/development.flag')
     for code in languages(ROOT):
         names.add(f'core/locales/{code}.tsv')
-        directory = RUNTIME / 'core/locales' / code
-        names.update(path.relative_to(RUNTIME).as_posix() for path in directory.glob('*.bmp'))
-        names.add(f'core/locales/{code}/glyphs.dat')
-        names.update(p.relative_to(RUNTIME).as_posix() for p in directory.glob('*.ttf'))
+        names.update(prepared_font_files(RUNTIME, code))
     names.update(path.relative_to(RUNTIME).as_posix() for path in (RUNTIME / 'licenses').rglob('*') if path.is_file())
     result = []
     for name in sorted(names):
@@ -258,7 +255,7 @@ def run(args):
 
 def implementation_hashes():
     paths = [ROOT / name for name in ('src/devtools/web_build.py', 'src/devtools/web_toolchain.py',
-             'src/devtools/web_audio.py', 'config/web-toolchain.json', 'src/native/web/bridge.cpp', 'src/web/shell.js', 'src/web/debugui.js', 'src/web/index.html')]
+             'src/devtools/web_audio.py', 'src/devtools/language_pack.py', 'config/web-toolchain.json', 'src/native/web/bridge.cpp', 'src/web/shell.js', 'src/web/debugui.js', 'src/web/index.html')]
     return {**{path.relative_to(ROOT).as_posix(): digest(path) for path in paths}, **engine_toolchain.sources()}
 
 

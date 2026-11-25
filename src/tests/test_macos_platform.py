@@ -7,6 +7,7 @@ import hashlib
 import json
 import plistlib
 import subprocess
+import struct
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -115,6 +116,13 @@ class ResourceBoundaries(TestCase):
                 path = runtime / name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(b'fixture')
+            font = runtime / 'core/locales/ko'
+            (font / 'glyphs.dat').write_bytes(struct.pack('<4sIII', b'FNT2', 1, 16, 19) + bytes(28))
+            for name in ('ui.ttf', 'fallback.ttf', *(f'{style}_0.bmp' for style in range(1, 7))):
+                (font / name).write_bytes(b'font')
+            for name in ('old-atlas.bmp', 'unused.ttf'):
+                (font / name).write_bytes(b'local workspace file')
+                files.append('core/locales/ko/' + name)
             build.write(root / 'config/game-files.json', {files[0]: 'hash'})
             with mock.patch.multiple(build, ROOT=root, RUNTIME=runtime), \
                  mock.patch.object(build, 'languages', return_value={'ko': {}}), \

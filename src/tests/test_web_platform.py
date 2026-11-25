@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 from unittest import TestCase, mock
 import hashlib
 import json
+import struct
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -39,12 +40,39 @@ class WebBoundaries(TestCase):
                 path.write_text('fixture', encoding='utf8')
             (root / 'config').mkdir()
             (root / 'config/game-files.json').write_text(json.dumps({files[0]: '', files[2]: ''}), encoding='utf8')
+            font = runtime / 'core/locales/ko'
+            (font / 'glyphs.dat').write_bytes(struct.pack('<4sIII', b'FNT2', 1, 16, 19) + bytes(28))
+            for name in ('ui.ttf', 'fallback.ttf', *(f'{style}_0.bmp' for style in range(1, 7))):
+                (font / name).write_bytes(b'font')
+                files += ('core/locales/ko/' + name,)
+            (font / 'old-atlas.bmp').write_bytes(b'local workspace file')
+            (font / 'unused.ttf').write_bytes(b'local workspace file')
             with mock.patch.multiple(web_build, ROOT=root, RUNTIME=runtime), \
                  mock.patch.object(web_build, 'languages', return_value={'ko': {}}), \
                  mock.patch.object(web_build, 'override_files', return_value={}):
                 packed = {target.removeprefix('/game/') for _, target in web_build.asset_files()}
             self.assertEqual(packed, set(files))
             self.assertFalse(packed.intersection(private))
+
+    def test_packaged_atlases_require_every_page_of_each_style(self):
+        from language_pack import prepared_font_files
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            font = root / 'core/locales/en'
+            font.mkdir(parents=True)
+            (font / 'glyphs.dat').write_bytes(struct.pack('<4sIII', b'FNT2', 1025, 16, 19) + bytes(1025 * 28))
+            for name in ('ui.ttf', 'fallback.ttf', 'fallback-extra.ttf'):
+                (font / name).touch()
+            for style in range(7):
+                for page in range(2):
+                    (font / f'{style}_{page}.bmp').touch()
+            self.assertEqual(len(prepared_font_files(root, 'en')), 18)
+            (font / '6_1.bmp').unlink()
+            with self.assertRaisesRegex(ValueError, '6_1.bmp'):
+                prepared_font_files(root, 'en')
+            (font / 'glyphs.dat').write_bytes(b'FNT2')
+            with self.assertRaisesRegex(ValueError, 'Invalid font metadata'):
+                prepared_font_files(root, 'en')
 
     def test_web_setup_rejects_generated_resources_as_input(self):
         for relative in ('build/runtime', 'build/extended/runtime', 'build/web/runtime',
