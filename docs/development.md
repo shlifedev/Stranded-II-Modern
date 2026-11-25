@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"1c5109327645aed4d9d6f916d5395f12a05e9c9dbc95287abd2b277200945b65"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"1e8d492be66090105ef0f3a422e3c857666f4ab5d5d279418bc78d426962736d"} -->
 
 # Development guide
 
@@ -125,7 +125,7 @@ All Python development commands accept `--platform windows|web|macos`, defaultin
 
 `src/engine/StrandedIIWeb.bb` includes the shared game and browser services. Windows, web, macOS and Studio build the same editable engine in `src/blitz3d/`; the web target uses [Emscripten](../config/web-toolchain.json). Edit engine sources directly and rebuild. [How the web version works](web-architecture.md) explains WASM, WebGPU, JSPI and browser storage.
 
-Web development also needs Git. Preparation downloads pinned dependencies into `deps/blitz3d/`, `deps/emsdk/` and `deps/ffmpeg-web/`; the first build takes time and disk space. Complete Windows setup first, then run:
+Web development also needs Git. Preparation downloads pinned dependencies into `deps/blitz3d/`, `deps/emsdk/` and `deps/ffmpeg-web/`; the first build takes time and disk space. On Windows, complete the Windows setup first, then run the following commands. On Apple Silicon, use the macOS build prerequisites, including FFmpeg and ffprobe on your PATH. Run the same commands with `.venv/bin/python`, passing `--game PATH --font PATH` to the first web setup.
 
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py setup --platform web
@@ -144,7 +144,7 @@ WAV encodings unsupported by the web runtime are converted to PCM in `build/web/
 
 Saves and settings use a separate base-game store in the browser's IndexedDB. Save replacement and backups wait for persistence to finish; settings defaults are seeded only on first use. Keep the same browser, profile, address, and port to access the same store. Clearing site data deletes these saves. A lock prevents two tabs at the same address from using the store simultaneously.
 
-`check --platform web` checks artifact/source hashes, packaged-resource boundaries, converted audio, Windows/wasm numeric/string/binary parity, line splitting of the actual menu and intro scripts, and save replacement/failure recovery in the web filesystem. A CPU buffer fixture runs the actual terrain colour generator with fixed height bands, checking colours and limiting full-buffer transfers to prevent per-pixel GPU synchronization. A simulated DOM checks autostart, new English settings and preservation of existing Korean settings, and input/fullscreen transitions. Results are written to `build/web/verification.json`. CPU fixtures, simulated DOM and storage transactions do not verify a real GPU, browser or IndexedDB.
+`check --platform web` checks artifact/source hashes, packaged-resource boundaries, converted audio, numeric, string and binary parity between WASM and the native host (Windows in CI, macOS on Apple Silicon), line splitting of the actual menu and intro scripts, and save replacement/failure recovery in the web filesystem. A CPU buffer fixture runs the actual terrain colour generator with fixed height bands, checking colours and limiting full-buffer transfers to prevent per-pixel GPU synchronization. A simulated DOM checks autostart, new English settings and preservation of existing Korean settings, and input/fullscreen transitions. Results are written to `build/web/verification.json`. CPU fixtures, simulated DOM and storage transactions do not verify a real GPU, browser or IndexedDB.
 
 After building the web version, prepare an actual-engine comparison with the command below. It runs the Windows reference in a separate copy without using the current game or saves. Audio comparison uses the web-prepared files in both engines. Open `/checks/` on the web server and click the check button to compare the same scenario in WebGPU. This checks Korean bitmap glyphs and image colour keys, vertical orientation through frame copies and motion blur, audio decoding, editor and random-island initialization (including terrain colours, grass colours, player creation, and a 30-second limit per generated world), the menu camera loop, the original intro's ship/camera/events, transition to the first island, and skipping the intro. Synthetic sequence time does not verify real-time playback speed or FPS.
 

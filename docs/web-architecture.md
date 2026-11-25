@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"9357acb6586a4fc9907d6580c594f7a28f19395e573d56da47ba35aec4228cd6"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"026bcd61171094c772800401f548f0883e5e925e266aac2ebe18631787518379"} -->
 
 # How the web version works
 
@@ -119,7 +119,7 @@ The current target is **desktop Chrome/Edge with WebGPU and JSPI support**. Run 
 
 | Check | What it covers |
 | --- | --- |
-| `check --platform web` | Artifacts, resources, audio, Windows/WASM numeric/string/binary parity, script processing, and CPU buffer behavior. It connects simulated storage transactions to the real Emscripten virtual filesystem and tests input/initialization with a simulated DOM. |
+| `check --platform web` | Artifacts, resources, audio, numeric/string/binary parity between WASM and the native host (Windows or Apple Silicon macOS), script processing, and CPU buffer behavior. It connects simulated storage transactions to the real Emscripten virtual filesystem and tests input/initialization with a simulated DOM. |
 | Browser `/checks/` | Compares glyphs, images, frame copies, audio decoding, and menu/intro/island scenarios using actual WebGPU. Game time advances synthetically. |
 | Manual gameplay | Actual FPS, audible sound, input, progression, save/load, recovery after refresh/browser restart, and focus/fullscreen recovery. |
 
