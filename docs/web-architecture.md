@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"9357acb6586a4fc9907d6580c594f7a28f19395e573d56da47ba35aec4228cd6"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"f61633ea6a774ec0afacb98773539747526122afa282fd37ef56ea2723680d12"} -->
 
 # How the web version works
 
@@ -93,6 +93,8 @@ flowchart LR
 The game's save and settings paths are connected to this storage area with symbolic links. Defaults are copied only when the corresponding file is missing, retaining existing selections across visits and distribution updates.
 
 **Writing a file in memory does not mean its IndexedDB write has finished.** Closing a settings file tracks the change and schedules synchronization. Important save-file replacements wait for `FS.syncfs` to complete before returning success. Synchronization requests run in sequence; if synchronization fails during replacement, the previous in-memory save contents are restored and the game receives a failure result.
+
+Open **Game log & storage → Request persistent storage** to ask the browser to keep saves when storage runs low. The panel shows whether the browser grants the request.
 
 Where Web Locks is available, it prevents two tabs from using the same site's storage simultaneously. Saves belong to a browser, profile, and site address (scheme, host, and port). Clearing site data deletes saves. They are not automatically transferred to another browser, a local development address, Windows, or the macOS app.
 

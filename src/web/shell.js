@@ -90,6 +90,39 @@ function words(value) {
   return String(Number(BigInt.asIntN(32, n))) + separator + String(Number(BigInt.asIntN(32, n >> 32n)));
 }
 
+const storageStatus = document.getElementById('storage-status');
+const storageButton = document.getElementById('save-storage');
+
+async function checkStoragePersistence(request = false) {
+  storageButton.disabled = true;
+  try {
+    const storage = navigator.storage;
+    if (!storage?.persist || !storage.persisted) {
+      storageButton.hidden = true;
+      storageStatus.textContent = 'This browser manages storage for this site.';
+      return;
+    }
+    const granted = request ? await storage.persist() : await storage.persisted();
+    storageButton.hidden = granted;
+    if (granted) {
+      storageStatus.textContent = 'Persistent storage is on. Clearing site data still removes your saves.';
+    } else if (request) {
+      storageStatus.textContent = 'The browser declined the request. Saves still use ordinary browser storage.';
+    } else {
+      storageStatus.textContent = 'The browser may remove saves when device storage runs low.';
+    }
+  } catch {
+    storageStatus.textContent = 'Could not get a storage update from the browser.';
+    storageButton.hidden = false;
+  } finally {
+    storageButton.disabled = false;
+  }
+}
+
+storageButton.addEventListener('click', () => {
+  if (!storageButton.disabled && !storageButton.hidden) return checkStoragePersistence(true);
+});
+
 async function prepareStorage() {
   const FS = Module.FS;
   // A second tab must not restore an old snapshot and overwrite the first tab.
@@ -140,7 +173,8 @@ async function prepareStorage() {
   };
   FS.chdir('/game');
   await sync();
-  log('Persistent storage ready (classic; independent of Windows saves).');
+  log('Save and settings storage ready.');
+  checkStoragePersistence();
 }
 
 function focused() {

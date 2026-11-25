@@ -19,6 +19,8 @@
   #warning { position: absolute; bottom: .5rem; left: 1rem; right: 1rem; color: #fff; background: #812d24; padding: .7rem; z-index: 4 }
   #search { position: absolute; box-sizing: border-box; background: #eee; color: #111; border: 1px solid #777; font: 16px system-ui; z-index: 2 }
   details { position: absolute; right: 1rem; bottom: .5rem; font-size: .75rem; z-index: 3 }
+  details[open] { max-width: min(28rem, 90%); padding: .6rem .8rem; background: #101b20f2; border-radius: .3rem }
+  #save-storage { padding: .4rem .7rem }
   pre { max-height: 12rem; max-width: 70vw; overflow: auto; text-align: left; background: #000e; padding: .5rem; white-space: pre-wrap }
 </style>
 <main>
@@ -30,7 +32,12 @@
   <button id="fullscreen" type="button" aria-pressed="false" title="Alt+Enter" hidden>Full screen</button>
   <p id="input-hint" role="status" hidden></p>
   <p id="warning" role="alert" hidden></p>
-  <details><summary>Log</summary><pre id="log"></pre></details>
+  <details>
+    <summary>Game log &amp; storage</summary>
+    <p id="storage-status" role="status"></p>
+    <button id="save-storage" type="button" hidden>Request persistent storage</button>
+    <pre id="log"></pre>
+  </details>
 </main>
 <script src="debugui.js"></script>
 <script src="shell.js"></script>

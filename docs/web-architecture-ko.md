@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"e43b8ffc3bd5d71c518c4ac3c0a3ffa3ae637d696550aa34f86b8c9f4f62899a"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"ccc332ca7530677b4b1c73360180d141106866f20d708a46652f2d8ab21a65a7"} -->
 
 # 웹 버전 구현 원리
 
@@ -93,6 +93,8 @@ flowchart LR
 게임이 사용하는 세이브·설정 경로는 이 보관 영역에 심볼릭 링크로 연결합니다. 기본 설정은 아직 해당 파일이 없을 때만 복사해, 다시 접속하거나 배포본을 갱신해도 기존 선택을 유지합니다.
 
 **메모리에 파일을 썼다고 IndexedDB 기록이 끝난 것은 아닙니다.** 설정 파일을 닫으면 변경을 추적하고 동기화를 예약합니다. 중요한 저장 파일 교체는 `FS.syncfs`가 완료될 때까지 기다린 뒤 성공을 반환합니다. 동기화 요청은 순서대로 처리하고, 교체 중 동기화에 실패하면 메모리의 기존 저장 내용을 복원하고 실패를 게임에 알립니다.
+
+**Game log & storage → Request persistent storage**를 누르면 기기의 저장 공간이 부족해져도 세이브를 보관해 달라고 브라우저에 요청합니다. 브라우저의 허용 여부는 같은 패널에서 확인할 수 있습니다.
 
 Web Locks API를 사용할 수 있는 환경에서는 같은 사이트의 저장소를 두 탭이 동시에 사용하는 것을 막습니다. 저장은 브라우저·프로필·사이트 주소(프로토콜·호스트·포트)에 묶입니다. 사이트 데이터를 지우면 세이브도 삭제되며, 다른 브라우저·로컬 개발 주소·Windows·macOS 앱으로 자동 이전되지 않습니다.
 

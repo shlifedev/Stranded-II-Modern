@@ -238,6 +238,15 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
     mainReady();
     return new Promise(resolve => { exitGame = resolve; });
   };
+  let persistCalls = 0, finishRequest;
+  const storage = {
+    persisted: async () => Boolean(savedLanguage),
+    persist() {
+      ++persistCalls;
+      return new Promise(resolve => { finishRequest = resolve; });
+    }
+  };
+  context.navigator.storage = storage;
   const beforeBootCaptures = captures;
   const boot = context.Module.onRuntimeInitialized();
   assert.equal(context.Module.onRuntimeInitialized(), boot, 'runtime initialization must start only once');
@@ -245,6 +254,29 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
     throw new Error('Engine did not start: ' + warning.textContent);
   })]);
   assert.equal(mainCalls, 1);
+  const storageButton = element('save-storage'), storageStatus = element('storage-status');
+  assert.equal(persistCalls, 0, 'launch must not request permission');
+  assert.equal(storageButton.hidden, Boolean(savedLanguage));
+  if (!savedLanguage) {
+    const request = storageButton.emit('click');
+    assert.equal(storageButton.disabled, true);
+    await storageButton.emit('click');
+    assert.equal(persistCalls, 1, 'a pending request uses the same permission dialog');
+    finishRequest(false); await request;
+    assert.match(storageStatus.textContent, /declined/);
+    storage.persist = async () => { throw new Error('permission service unavailable'); };
+    await storageButton.emit('click');
+    assert.equal(storageButton.disabled, false);
+    assert.equal(warning.hidden, true, 'permission errors do not interrupt play');
+    storage.persist = async () => true;
+    await storageButton.emit('click');
+  }
+  assert.equal(storageButton.hidden, true);
+  assert.match(storageStatus.textContent, /Persistent storage is on/);
+  delete context.navigator.storage;
+  await vm.runInContext('checkStoragePersistence()', context);
+  assert.equal(storageButton.hidden, true);
+  assert.match(storageStatus.textContent, /browser manages storage/);
   assert.equal(captures, beforeBootCaptures, 'autostart does not request pointer lock');
   assert.equal(element('cover').hidden, true, 'the original loading/menu replaces the HTML loader');
   assert.equal(await context.Module.s2Bridge('focus\x1fmenu'), 1);
