@@ -12,6 +12,9 @@ import struct
 from .maps import CLASSES, FIELDS, EditableMap, string
 
 
+MAX_BASELINES = 128
+
+
 def encode_patch(before, after):
     old = {(e['kind'], e['id']): e for e in before.entities}
     new = {(e['kind'], e['id']): e for e in after.entities}
@@ -42,7 +45,7 @@ def encode_patch(before, after):
 
 
 def preview(project, map_name, since=None):
-    from .project import MOD, atomic, encode, safe
+    from .project import MOD, encode, safe
     from .scripts import resources as script_resources, source_map, version
     cache = safe(project.root, '.studio/previews')
     previous = None
@@ -66,13 +69,8 @@ def preview(project, map_name, since=None):
     baseline = previous['resources'] if previous else resources
     state = {'map':map_name, 'revision':project.data['revision'], 'resources':baseline,
              'available':available, 'data':base64.b64encode(raw).decode('ascii')}
-    token = hashlib.sha256(encode(state)).hexdigest()
-    atomic(cache/(token+'.json'), encode(state))
-    # Keep recent baselines without unbounded map copies. An expired token is an
-    # explicit error, never an excuse for an automatic viewport reload.
-    for path in sorted(cache.glob('*.json'), key=lambda p:p.stat().st_mtime, reverse=True)[128:]:
-        if path.stem not in (token,since):
-            path.unlink(missing_ok=True)
+    snapshot = encode(state)
+    token = hashlib.sha256(snapshot).hexdigest()
     result = {'mode':'delta' if previous else 'full', 'token':token, 'baseToken':since,
               'scriptsVersion':version(project.script_files), 'resourcesVersion':resources, 'sources':source_map(project,map_name),
               'map':'maps/studio.s2', 'revision':project.data['revision'], 'available':available,
@@ -86,4 +84,16 @@ def preview(project, map_name, since=None):
         result.update(patch=base64.b64encode(patch).decode('ascii'), changes=counts)
     else:
         result['files'].update(project.preview_resources())
-    return result
+    return result, snapshot
+
+
+def save_baseline(root, token, since, snapshot):
+    from .project import atomic, safe
+    cache = safe(root, '.studio/previews')
+    atomic(cache / (token + '.json'), snapshot)
+    # Keep the requested parent available until the caller applies the delta.
+    protected = {token, since} if since else {token}
+    others = (path for path in cache.glob('*.json') if path.stem not in protected)
+    newest = sorted(others, key=lambda path: path.stat().st_mtime_ns, reverse=True)
+    for path in newest[MAX_BASELINES - len(protected):]:
+        path.unlink(missing_ok=True)

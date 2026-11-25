@@ -531,7 +531,7 @@ class Project:
 
     def preview(self, map_name, engine_base=None, since=None, expected_revision=None, expected_scripts=None):
         """Only explicit project resources cross into the isolated WASM filesystem."""
-        from .preview import preview
+        from .preview import preview, save_baseline
         with locked(self.root):
             self.load()
             if expected_revision is not None and expected_revision != self.data['revision']:
@@ -543,9 +543,10 @@ class Project:
             issues = self.validate()
             if any(i['severity'] == 'error' for i in issues):
                 raise ValueError('Preview blocked by validation errors: '+json.dumps(issues, ensure_ascii=False))
-            result = preview(self, map_name, since)
+            result, snapshot = preview(self, map_name, since)
             if scripts.scan(self) != self._script_originals:
                 raise ValueError('Scripts changed while preparing the test; retry')
+            save_baseline(self.root, result['token'], since, snapshot)
             return result
 
     def preview_resources(self):

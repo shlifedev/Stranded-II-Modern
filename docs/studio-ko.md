@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"61351b354e82de4fe0cc1ac904ce482e5b5eea1497582b91fc9607f69d126f78"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"c8bc0598b4a77c3df63b0c03b66813e2cd5fedad1e30e91bf1a4d6d770bb9eac"} -->
 
 # Stranded II Studio
 
@@ -107,7 +107,7 @@ python src/devtools/studio.py export build/studio-example --out build/studio-exa
 
 `entities.move`는 `selection: [{"kind":"unit","id":100}, ...]`, 월드 단위 `delta: {"x":64,"y":0,"z":0}`, 선택적인 `terrain: true`를 받습니다. 오브젝트가 포함된 그룹의 Y 이동은 거부합니다.
 
-`preview PROJECT --map NAME`은 전체 파일과 `token`을 반환합니다. 이후 `--since TOKEN`을 전달하면 그 토큰의 장면과 현재 저장 상태 사이의 이진 `patch`, 최신 네이티브 맵, 리소스 대기 상태를 반환합니다. 엔진 적용 ACK 이후에만 기준 토큰을 교체하세요. 정의·에셋·언어 파일은 차분에 포함하지 않으며, 새 정의가 필요한 장면은 `resourcesRequired`로 표시됩니다. 토큰 만료·손상이나 엔진 반영 실패 시 자동 재로드하지 않으며 **리소스 적용**으로 명시적으로 다시 연결합니다.
+`preview PROJECT --map NAME`은 전체 파일과 `token`을 반환합니다. 이후 `--since TOKEN`을 전달하면 그 토큰의 장면과 현재 저장 상태 사이의 이진 `patch`, 최신 네이티브 맵, 리소스 대기 상태를 반환합니다. 엔진 적용 ACK 이후에만 기준 토큰을 교체하세요. 미리보기 준비에 실패하면 같은 토큰으로 다시 시도하세요. 정의·에셋·언어 파일은 차분에 포함하지 않으며, 새 정의가 필요한 장면은 `resourcesRequired`로 표시됩니다. 토큰 만료·손상이나 엔진 반영 실패 시 자동 재로드하지 않으며 **리소스 적용**으로 명시적으로 다시 연결합니다.
 
 정의 ID와 맵 개체 ID는 별개입니다. 정의 복제는 빈 ID를 할당하며 ID 한도를 넘으면 거부합니다. 레시피 식별자는 `경로#순번`입니다. 건축 이름은 결과 오브젝트/유닛에서, 레시피 이름은 `genname` 또는 결과 아이템에서 가져옵니다. 새 정의·레시피는 `content.create`, 반복 속성은 문자열 배열, 속성 제거는 `null`을 사용합니다. 지형 좌표는 샘플 단위이며 월드 좌표는 `(sample-size/2)*64`입니다.
 
