@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"a6287bb52fd19e13164cb43719df12b4ddb0dd681bf702be1eba59c5d5b7683f"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"fc2372552ee6f08668bf714462ed7a5b366c5c58fff65a5cbf7546ebf28a7e44"} -->
 
 # Stranded II Studio
 
@@ -34,7 +34,7 @@ Create a project in an empty folder or open an existing project on the start scr
 | Area | Usage |
 | --- | --- |
 | World | `+` creates a 32×32 island; `↥` imports a prepared UTF-8 `.s2` map. Other sizes are available through the CLI. |
-| Scene | Right-drag to look, WASD/QE to move, Shift to accelerate, wheel to zoom, F to frame the selection. |
+| Scene | Right-drag to look, WASD/QE to move, Shift to accelerate, wheel to zoom, F to frame the selection. If validation fails, the current map keeps its last preview. Switching to another map clears that preview until the selected map is ready. |
 | Placement | Drag content into the scene, or select it and click terrain with the **Placement** tool. A translucent green preview follows the cursor in placement mode; Esc cancels. New definitions become placeable after **Apply resources**. Shift selects multiple entities. |
 | Move | Drag the thick X/Z axes for directional movement or the center square to move along terrain. Y is available when the selection contains no objects. The last selected entity anchors snapping; Esc or lost pointer capture cancels the drag. |
 | Inspector | Edit coordinates, rotation, health and quantity, then **Apply**. Objects derive their height from terrain, as in the game. |

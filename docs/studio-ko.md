@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"61351b354e82de4fe0cc1ac904ce482e5b5eea1497582b91fc9607f69d126f78"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"29ec91d6d321dbafea36249cc4bbde9dc4ee62fd363f546fe47d72a9ed82fd09"} -->
 
 # Stranded II Studio
 
@@ -34,7 +34,7 @@ npm --prefix src/studio start
 | 영역 | 사용법 |
 | --- | --- |
 | 월드 | `+`로 32×32 섬 생성, `↥`로 준비된 UTF-8 `.s2` 가져오기. 다른 크기는 CLI에서 지정합니다. |
-| 장면 | 우클릭 드래그로 시점, WASD/QE로 이동, Shift로 가속, 휠로 줌, F로 선택 개체 보기. |
+| 장면 | 우클릭 드래그로 시점, WASD/QE로 이동, Shift로 가속, 휠로 줌, F로 선택 개체 보기. 검증 오류가 생기면 현재 맵의 마지막 미리보기를 유지합니다. 다른 맵을 선택하면 그 맵의 미리보기가 준비될 때까지 장면을 비웁니다. |
 | 배치 | 콘텐츠를 장면으로 드래그하거나 선택 후 **배치** 도구로 지형 클릭. 배치 모드에서는 초록색 반투명 미리보기가 커서를 따라가며 Esc로 취소합니다. 새 정의는 **리소스 적용** 후 배치할 수 있습니다. Shift로 여러 개체를 선택합니다. |
 | 이동 | 굵은 X/Z 축으로 방향 이동, 가운데 사각형으로 지형 위 이동. 오브젝트가 없는 선택은 Y 축도 표시합니다. 마지막 선택 개체가 스냅 기준이며, Esc 또는 포인터 캡처 상실로 취소합니다. |
 | 속성 | 좌표·방향·체력·수량을 수정하고 **적용**. 오브젝트의 높이는 게임처럼 지형에서 정해집니다. |
