@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"3db2d705896e9d1ab5a74fa9defa8c97efa551456eef979778fb585d3ae5ded3"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"20c33855b32a2e87510511893f9460f012fe4f2bc064824450463e08720555e3"} -->
 
 # 개발 가이드
 
@@ -152,7 +152,7 @@ Windows에서 선택한 에디션의 실행 환경을 준비한 뒤 격리된 �
 .\.venv\Scripts\python.exe -X utf8 src/devtools/verify_web_game.py
 ```
 
-WebGPU의 동일 버퍼 `CopyRect`는 임시 텍스처를 재사용하고, 앞선 쓰기와 겹치지 않는 원본 영역들을 묶어 물결·수중 효과의 복사와 그리기를 줄입니다. 겹치는 복사는 앞선 결과를 반영하며 확대·축소는 기존 경로를 사용합니다. `check --platform web`의 C++ CPU 검사에서는 실제 복사 함수를 실행해 픽셀·투명색·잘림·순서와 물결 갱신당 스냅샷 2회, 텍스처 재사용을 확인합니다. 실제 GPU 성능은 플레이로 확인해야 합니다.
+WebGPU의 동일 버퍼 `CopyRect`는 임시 텍스처를 재사용하고, 앞선 쓰기와 겹치지 않는 원본 영역들을 묶어 물결·수중 효과의 복사와 그리기를 줄입니다. 겹치는 복사는 앞선 결과를 반영하며 확대·축소는 기존 경로를 사용합니다. `check --platform web`의 C++ CPU 검사에서는 실제 복사 함수를 실행해 픽셀·투명색·잘림·순서와 물결 갱신당 스냅샷 2회, 텍스처 재사용을 확인합니다. CPU 검사만 실행하려면 `python -m unittest discover -s src/tests -p "test_web_self_blit.py"`를 사용하세요. 준비된 웹 SDK가 있으면 이를 사용하고, 없으면 네이티브 C++17 컴파일러를 사용합니다. 실제 GPU 성능은 플레이로 확인해야 합니다.
 
 프레임 드랍 비교는 `src/devtools/profile_web.py --serve`로 준비하고 Chrome/Edge에서 `http://127.0.0.1:8766/`를 열어 시작합니다. 실제 WebGPU와 실제 시계를 사용하는 별도 엔진 복사본이며 IndexedDB나 사용자 저장을 연결하지 않습니다. 섬 또는 메뉴 장면과 해상도를 선택하면 물 품질 6·3·0(144 FPS 제한), 물 품질 0(60 FPS 제한)을 준비 5초 후 각각 30초씩 3회 측정합니다. 조건마다 새 WASM 인스턴스를 사용하며 창이 포커스를 잃으면 해당 측정은 무효입니다. 장면당 약 7분 동안 창을 앞에 두세요.
 

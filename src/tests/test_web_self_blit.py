@@ -3,6 +3,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 import os
+import shutil
 import subprocess
 import sys
 
@@ -27,15 +28,34 @@ class WebSelfBlit(TestCase):
                         header.index('\n\tstd::vector<unsigned char> hit_mask;')]
         fixture = (ROOT / 'src/tests/web_self_blit.cpp').read_text('utf8')
         fixture = fixture.replace('// SNAPSHOT_FIELDS', fields).replace('// SELF_BLIT_METHODS', methods)
-        with TemporaryDirectory(prefix='self-blit-', dir=ROOT / 'build/web') as temporary:
+        with TemporaryDirectory(prefix='self-blit-') as temporary:
             output = Path(temporary)
-            (output / 'probe.cpp').write_text(fixture, encoding='utf8')
-            env = web_toolchain.environment()
-            compile_result = subprocess.run([sys.executable, str(sdk / 'upstream/emscripten/emcc.py'),
-                str(output / 'probe.cpp'), '-std=c++17', '-O2', '-sDEFAULT_TO_CXX', '-sASSERTIONS=1', '-sENVIRONMENT=node',
-                '-sEXIT_RUNTIME=1', '-o', str(output / 'probe.js')], env=env, text=True, capture_output=True)
-            self.assertEqual(compile_result.returncode, 0, compile_result.stdout + compile_result.stderr)
-            node = next((sdk / 'node').glob('*/node.exe' if os.name == 'nt' else '*/bin/node'))
-            result = subprocess.run([str(node), str(output / 'probe.js')], text=True, capture_output=True, timeout=30)
+            source_file = output / 'probe.cpp'
+            source_file.write_text(fixture, encoding='utf8')
+            emcc = sdk / 'upstream/emscripten/emcc.py'
+            if emcc.is_file():
+                js = output / 'probe.js'
+                compiler = [sys.executable, str(emcc), str(source_file), '-std=c++17', '-O2',
+                            '-sDEFAULT_TO_CXX', '-sASSERTIONS=1', '-sENVIRONMENT=node',
+                            '-sEXIT_RUNTIME=1', '-o', str(js)]
+                env = web_toolchain.environment()
+                node = next((sdk / 'node').glob('*/node.exe' if os.name == 'nt' else '*/bin/node'))
+                run_probe = [str(node), str(js)]
+            else:
+                executable = output / ('probe.exe' if os.name == 'nt' else 'probe')
+                cxx = shutil.which('c++') or shutil.which('clang++') or shutil.which('g++')
+                if cxx:
+                    compiler = [cxx, '-std=c++17', '-O2', str(source_file), '-o', str(executable)]
+                elif os.name == 'nt' and shutil.which('cl'):
+                    compiler = ['cl', '/nologo', '/EHsc', '/std:c++17', '/O2', str(source_file),
+                                '/Fe:' + str(executable)]
+                else:
+                    self.skipTest('The CPU self-blit fixture requires the web SDK or a native C++17 compiler')
+                env = None
+                run_probe = [str(executable)]
+
+            compiled = subprocess.run(compiler, cwd=output, env=env, text=True, capture_output=True)
+            self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)
+            result = subprocess.run(run_probe, cwd=output, text=True, capture_output=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn('2 snapshots per water update', result.stdout)

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"1c5109327645aed4d9d6f916d5395f12a05e9c9dbc95287abd2b277200945b65"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"0aa0b7079b0bbea94cb2dbd63878291135cd94a476d6bd724b134c3117af932f"} -->
 
 # Development guide
 
@@ -152,7 +152,7 @@ After building the web version, prepare an actual-engine comparison with the com
 .\.venv\Scripts\python.exe -X utf8 src/devtools/verify_web_game.py
 ```
 
-WebGPU reuses a temporary texture for same-buffer `CopyRect` operations and batches source regions unaffected by earlier writes, reducing copies and draws for water and underwater effects. Overlapping copies see earlier results; scaled copies keep the original path. The C++ CPU fixture in `check --platform web` runs the actual copy methods to check pixels, colour keys, clipping, ordering, two snapshots per water update, and texture reuse. Actual GPU performance requires gameplay verification.
+WebGPU reuses a temporary texture for same-buffer `CopyRect` operations and batches source regions unaffected by earlier writes, reducing copies and draws for water and underwater effects. Overlapping copies see earlier results; scaled copies keep the original path. The C++ CPU fixture in `check --platform web` runs the actual copy methods to check pixels, colour keys, clipping, ordering, two snapshots per water update, and texture reuse. For the standalone CPU check, run `python -m unittest discover -s src/tests -p "test_web_self_blit.py"`. It uses the prepared web SDK when available or a native C++17 compiler. Actual GPU performance requires gameplay verification.
 
 For frame-drop comparisons, prepare `src/devtools/profile_web.py --serve`, then open `http://127.0.0.1:8766/` in Chrome/Edge and start the comparison. It uses a separate engine copy with real WebGPU and real clocks, without mounting IndexedDB or player saves. Select the island or menu scene and resolution. Water qualities 6, 3 and 0 at a 144 FPS cap, and quality 0 at a 60 FPS cap, each run three times for 30 seconds after a 5-second warmup. Every trial uses a fresh WASM instance; losing window focus invalidates the trial. Keep the window foreground for about seven minutes per scene.
 
