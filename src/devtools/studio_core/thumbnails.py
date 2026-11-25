@@ -3,7 +3,6 @@ import base64
 from collections import OrderedDict
 from hashlib import sha256
 from io import BytesIO
-from pathlib import PurePosixPath
 
 from PIL import Image, ImageChops
 
@@ -106,19 +105,8 @@ def thumbnail(project, kind, identifier):
               'additionalResults': max(0, len(record.properties.get('gen', [])) - 1) if kind == 'recipe' else 0}
     try:
         relative, frame, mask = _image_source(project, record)
-        # Like load_res, follow a single sibling .inf resource link when absent.
-        try:
-            raw = _read(project, relative)
-        except FileNotFoundError:
-            link = str(PurePosixPath(relative).with_suffix('.inf'))
-            text = project.data['files'].get(link)
-            if text is None:
-                text = _read(project, link).decode('utf8')
-            lines = text.splitlines()
-            if not lines or not lines[0].strip():
-                raise Unavailable('missing-file')
-            relative = str(PurePosixPath(link).parent) + '/' + lines[0].strip().replace('\\', '/')
-            raw = _read(project, relative)
+        relative = project.resolve_asset(relative)
+        raw = _read(project, relative)
         result.update(_decode(raw, frame, mask), status='ready', source=relative)
     except Unavailable as exc:
         result['reason'] = str(exc)

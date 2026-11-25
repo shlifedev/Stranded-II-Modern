@@ -136,6 +136,35 @@ class Thumbnails(TestCase):
         (self.base / MOD / 'gfx/alias.inf').write_text('../../../../secret.png\n', encoding='utf8')
         self.assertEqual(self.query()['status'], 'unavailable')
 
+    def test_native_resource_links_validate_preview_and_export(self):
+        gfx = self.base / MOD / 'gfx'
+        (gfx / 'alias.inf').write_text('first.bmp\nsecond.png\n', encoding='utf8')
+        (gfx / 'alias.part.inf').write_text('second.png\n', encoding='utf8')
+        source = self.root / 'model.inf'
+        source.write_text('actual.b3d\n', encoding='utf8')
+        model = self.root / 'actual.b3d'
+        model.write_bytes(b'model fixture')
+        operations = [
+            {'op':'asset.import', 'path':str(source), 'destination':MOD+'models/model.inf'},
+            {'op':'asset.import', 'path':str(model), 'destination':MOD+'models/actual.b3d'},
+            {'op':'content.set', 'kind':'item', 'id':1,
+             'properties':{'icon':'gfx/alias.part.bmp', 'model':'models/model.x'}},
+            {'op':'map.create', 'name':'island', 'size':16},
+        ]
+        for dry_run in (True, False):
+            self.assertEqual(self.project.apply(operations, dry_run=dry_run)['diagnostics'], [])
+        self.assertEqual(self.query()['source'], MOD+'gfx/first.bmp')
+        self.assertIn(MOD+'models/model.inf', self.project.preview('island')['files'])
+        self.project.export(self.root/'out')
+        self.assertEqual((self.root/'out/overrides'/MOD/'models/model.inf').read_bytes(),source.read_bytes())
+        self.save_image('gfx/alias.part.bmp', Image.new('RGB', (11, 13), 'blue'))
+        self.assertEqual(self.query()['width'], 11)
+        (gfx/'alias.part.bmp').unlink()
+        (gfx/'alias.inf').write_text('missing.bmp\n', encoding='utf8')
+        (gfx/'missing.inf').write_text('first.bmp\n', encoding='utf8')
+        self.assertEqual(self.query()['reason'], 'missing-file')
+        self.assertIn('missing-asset', {issue['code'] for issue in self.project.validate()})
+
     def test_cli_and_json_service_use_same_contract_without_a_map(self):
         expected = studio.response({'command': 'thumbnail', 'project': str(self.project.root), 'kind': 'item', 'contentId': 1})
         output = subprocess.check_output([sys.executable, str(ROOT / 'src/devtools/studio.py'), 'thumbnail', str(self.project.root), '--kind', 'item', '--id', '1'], text=True, encoding='utf8')

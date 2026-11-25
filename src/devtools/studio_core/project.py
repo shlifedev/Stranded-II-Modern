@@ -198,6 +198,48 @@ class Project:
             data = EditableMap(data).apply(op)
         return scripts.overlay_map(self, name, data)
 
+    def resolve_asset(self, relative):
+        """Resolve one native load_res link after checking the direct resource."""
+        def exists(name):
+            resource_path(name)
+            if name in self.data['assets']:
+                return True
+            path = safe(self.base, name)
+            if path.is_dir():
+                raise IsADirectoryError(name)
+            return path.is_file()
+
+        if exists(relative):
+            return relative
+        prefix, dot, _ = relative[len(MOD):].partition('.')
+        if not dot:
+            raise FileNotFoundError(relative)
+        # Blitz uses the first dot in the mod-relative path, including directory names.
+        link = MOD + prefix + '.inf'
+        resource_path(link)
+        source = self.data['assets'].get(link)
+        if source is not None:
+            raw = self._blobs.get(source)
+            if raw is None:
+                raw = safe(self.root, source).read_bytes()
+            if digest(raw) != Path(source).stem:
+                raise ValueError(f'Imported resource link changed outside Studio: {link}')
+            line = raw.partition(b'\n')[0].decode('utf8')
+        elif link in self.data['files']:
+            line = self.data['files'][link].partition('\n')[0]
+        else:
+            with safe(self.base, link).open('rb') as stream:
+                line = stream.readline().decode('utf8')
+        target = line.strip().replace('\\', '/')
+        if not target:
+            raise FileNotFoundError(link)
+        # path$ returns the original filename when it contains no directory.
+        folder, slash, _ = link[len(MOD):].rpartition('/')
+        resolved = (MOD + folder + '/' if slash else link) + target
+        if not exists(resolved):
+            raise FileNotFoundError(resolved)
+        return resolved
+
     def translations(self, language='ko'):
         from locales import catalog
         result = {}
@@ -433,10 +475,8 @@ class Project:
                 for value in props.get(field, []):
                     relative = MOD+value.replace('\\','/')
                     try:
-                        exists = relative in self.data['assets'] or safe(self.base, relative).is_file()
-                    except ValueError:
-                        exists = False
-                    if not exists:
+                        self.resolve_asset(relative)
+                    except (OSError, ValueError):
                         error('missing-asset', f'{field}: {value}', location)
             for field, target in (('req','item'),('gen','item'),('objectid','object'),('unitid','unit'),('buildingsite','object'),('atobject','object')):
                 if record.kind not in ('recipe','building'):
