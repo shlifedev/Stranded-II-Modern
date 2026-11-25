@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"61351b354e82de4fe0cc1ac904ce482e5b5eea1497582b91fc9607f69d126f78"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"c0076898cda3164744275146c8f38ce12b233a206ded9fd36799ea43c1c1c8da"} -->
 
 # Stranded II Studio
 
@@ -11,6 +11,8 @@ Extended 콘텐츠를 만드는 독립 개발 앱입니다. Electron·React 화�
 3D 앱 빌드·실행에는 Windows x64 또는 Apple Silicon macOS, Python 3.12 이상, Node.js 22.12 이상, Git이 필요합니다. 현재 컴파일러 도구체인은 Linux와 Intel macOS 호스트를 지원하지 않습니다. macOS는 Xcode Command Line Tools와 PATH에 있는 FFmpeg/ffprobe, Windows는 MSVC C++ 빌드 도구와 Windows SDK가 필요합니다. 3D 화면은 Electron의 WebGPU와 JSPI 지원을 사용합니다. 현재 저장소에서 실행하는 개발 버전이며 설치 패키지는 제공하지 않습니다.
 
 Windows에서는 `scripts/` 폴더의 [Studio.cmd](../scripts/Studio.cmd)를 더블 클릭하고, Apple Silicon macOS에서는 `sh ./scripts/Studio.sh`로 [Studio.sh](../scripts/Studio.sh)를 실행합니다. 다른 폴더에서도 실행 파일의 경로를 지정해 호출할 수 있습니다. 두 파일은 [공통 실행 스크립트](../src/devtools/studio_launch.py)로 `.venv` 생성, 누락되거나 변경된 Python·Node 의존성 설치, 리소스 준비, 엔진 빌드·검증, 앱 빌드·실행을 순서대로 처리합니다. Windows 이외에서는 누락된 CMake·Ninja도 가상 환경에 설치합니다. 준비가 실패하면 앱을 열지 않습니다.
+
+Studio는 Extended의 리소스 오버라이드, 언어팩 수정 사항, 런타임 기본 설정을 사용해 언어팩과 리소스를 준비합니다.
 
 실행할 때마다 리소스와 엔진을 갱신하므로 엔진 명령을 따로 실행할 필요가 없습니다. 게임·폰트 경로는 기존 Studio·웹·Windows 준비 설정 순서로 찾고, 유효한 경로가 없으면 `deps/game`과 `deps/fonts/NotoSansKR[wght].ttf`를 사용합니다. 외부 경로는 실행 파일에 `--game PATH --font PATH`로 전달합니다. 공식 게임·고정 폰트 준비는 [개발 가이드](development-ko.md)를 참고하세요. 프로젝트와 개인 세이브는 초기화하지 않습니다.
 

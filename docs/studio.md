@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"a6287bb52fd19e13164cb43719df12b4ddb0dd681bf702be1eba59c5d5b7683f"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"03a60b41a11b5313d68b300cd696043e00d12c0bdbaca5ffed489639e8e82666"} -->
 
 # Stranded II Studio
 
@@ -13,6 +13,8 @@ Building and launching the 3D app requires Windows x64 or Apple Silicon macOS, P
 On Windows, double-click [Studio.cmd](../scripts/Studio.cmd) in the `scripts/` folder. On Apple Silicon macOS, run [Studio.sh](../scripts/Studio.sh) with `sh ./scripts/Studio.sh`. Both launchers also work from another directory when called by their path. The [shared launcher](../src/devtools/studio_launch.py) creates `.venv`, installs missing or changed Python/Node dependencies, prepares resources, builds and verifies the engine, then builds and starts the app. Outside Windows, missing CMake/Ninja tools are also installed in the virtual environment. Preparation failures prevent the app from opening.
 
 Resources and the engine are refreshed on every launch; no separate engine commands are needed. Game/font paths are found in existing Studio, web and Windows preparation settings, in that order, falling back to `deps/game` and `deps/fonts/NotoSansKR[wght].ttf` when no saved path is valid. Pass `--game PATH --font PATH` to the launcher for external inputs. See the [development guide](development.md) for official resources and the pinned font. Projects and personal saves are not reset.
+
+Studio runs setup with Extended’s Blitz resource overrides, language-pack edits and runtime defaults.
 
 Use `scripts/Studio.cmd --prepare-only` or `sh ./scripts/Studio.sh --prepare-only` to prepare everything without opening the app. To run individual steps manually, activate a Python virtual environment from the repository root and use:
 

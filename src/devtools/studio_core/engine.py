@@ -9,9 +9,8 @@ import sys
 
 import web_build
 import web_toolchain
-from editions import override_files, INCLUDE
-from locales import prepare, validate
-from language_pack import refresh
+from editions import INCLUDE
+from locales import validate
 from versioning import development_marker, local_info
 
 from .project import ROOT, atomic, encode
@@ -36,13 +35,7 @@ def setup(args):
     settings = {key: str(getattr(args,key).resolve()) if getattr(args,key,None) else previous.get(key) for key in ('game','font')}
     if not all(settings.values()):
         raise ValueError('Studio setup needs --game OFFICIAL_GAME --font PINNED_FONT on first use')
-    web_build.prepare_assets(settings)
-    validate(ROOT,'extended')
-    prepare(ROOT,Path(settings['game']),RUNTIME,'extended')
-    for relative,source in override_files(ROOT,'extended').items():
-        target=RUNTIME/relative;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source,target)
-    refresh(ROOT,RUNTIME,Path(settings['font']),'extended')
-    shutil.copy2(ROOT/'config/editions/extended/modern.ini',RUNTIME/'core/modern.ini')
+    web_build.prepare_assets(settings, 'extended')
     atomic(BUILD/'dependencies.local.json',encode(settings))
     if not (web_toolchain.paths()[1]/'.emscripten').is_file():
         web_toolchain.prepare()
@@ -98,12 +91,7 @@ def build(args):
         shutil.copy2(source,RUNTIME/'licenses'/name)
     web_toolchain.run([upstream.BLITZCC,'-target','emscripten','-o',SITE/'game',ENTRY],
                       cwd=ROOT/'src/engine',env=web_build.compiler_environment(env))
-    # Include Extended resources in the existing allowlisted packer without
-    # changing normal web/CI edition routing.
-    original=web_build.override_files
-    web_build.override_files=lambda root,edition='classic': original(root,'extended')
-    try:web_build.pack_assets(env)
-    finally:web_build.override_files=original
+    web_build.pack_assets(env, 'extended')
     for name in ('index.html','studio.js','gizmo.js'):
         shutil.copy2(ROOT/'src/studio/engine'/name,SITE/name)
     shutil.copy2(ROOT/'src/web/debugui.js',SITE/'debugui.js')
@@ -125,11 +113,7 @@ def check(args):
     validate(ROOT,'extended')
     loader=(SITE/'assets.js').read_text('utf8')
     metadata=json.loads(re.search(r'loadPackage\((\{"files":.*)\);',loader).group(1))
-    original=web_build.override_files
-    web_build.override_files=lambda root,edition='classic': original(root,'extended')
-    try:
-        allowed=web_build.asset_files()
-    finally:web_build.override_files=original
+    allowed = web_build.asset_files('extended')
     if {f['filename'] for f in metadata['files']}!={target for _,target in allowed}:
         raise ValueError('Studio archive differs from its allowlisted resources')
     from web_audio import verify
