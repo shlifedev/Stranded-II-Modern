@@ -238,9 +238,25 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
     mainReady();
     return new Promise(resolve => { exitGame = resolve; });
   };
+  let grantStorage;
+  if (!savedLanguage) {
+    context.navigator.locks = {request(name, hold) {
+      assert.equal(name, 'stranded-ii-classic-storage');
+      grantStorage = hold;
+      return new Promise(() => {});
+    }};
+  }
   const beforeBootCaptures = captures;
   const boot = context.Module.onRuntimeInitialized();
   assert.equal(context.Module.onRuntimeInitialized(), boot, 'runtime initialization must start only once');
+  if (!savedLanguage) {
+    assert.equal(mainCalls, 0);
+    assert.throws(() => FS.stat('/persist'), 'storage must not be mounted while another tab owns it');
+    context.Module.setStatus(''); // Emscripten clears its download status after runtime initialization.
+    assert.match(element('status').textContent, /another tab/);
+    assert.equal(warning.hidden, true);
+    grantStorage();
+  }
   await Promise.race([mainStarted, boot.then(() => {
     throw new Error('Engine did not start: ' + warning.textContent);
   })]);

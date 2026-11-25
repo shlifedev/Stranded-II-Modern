@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"9357acb6586a4fc9907d6580c594f7a28f19395e573d56da47ba35aec4228cd6"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"9ef5057c1121eaae885e0224f4c5099ae003bdbdda5a3b1134c2874d829baad3"} -->
 
 # How the web version works
 
@@ -94,7 +94,7 @@ The game's save and settings paths are connected to this storage area with symbo
 
 **Writing a file in memory does not mean its IndexedDB write has finished.** Closing a settings file tracks the change and schedules synchronization. Important save-file replacements wait for `FS.syncfs` to complete before returning success. Synchronization requests run in sequence; if synchronization fails during replacement, the previous in-memory save contents are restored and the game receives a failure result.
 
-Where Web Locks is available, it prevents two tabs from using the same site's storage simultaneously. Saves belong to a browser, profile, and site address (scheme, host, and port). Clearing site data deletes saves. They are not automatically transferred to another browser, a local development address, Windows, or the macOS app.
+With Web Locks, a second tab waits before loading settings and saves. Closing the first tab starts the waiting game automatically. Saves belong to a browser, profile, and site address (scheme, host, and port). Clearing site data deletes saves. They are not automatically transferred to another browser, a local development address, Windows, or the macOS app.
 
 ## 5. Input, fullscreen, and audio use browser facilities
 
