@@ -194,6 +194,28 @@ class AppValidation(TestCase):
         self.assertNotIn('core/development.flag', report['asset_sha256'])
         self.assertEqual(marker.read_bytes(), b'local development runtime\n')
 
+    def test_failed_signing_leaves_the_final_app_path_available_for_retry(self):
+        directory = self.root / 'output'
+        directory.mkdir()
+        unrelated = directory / 'notes.txt'
+        unrelated.write_bytes(b'keep')
+        build.subprocess.run.side_effect = subprocess.CalledProcessError(1, 'codesign')
+        with self.assertRaises(subprocess.CalledProcessError):
+            build.package_app(self.executable, parent=directory)
+        self.assertFalse((directory / 'Stranded II.app').exists())
+        self.assertFalse((directory / 'package-report.json').exists())
+        build.subprocess.run.side_effect = None
+        app = build.package_app(self.executable, parent=directory)
+        report = build.read(directory / 'package-report.json')
+        self.assertEqual(report['app'], str(app))
+        self.assertEqual(report['signed_executable_sha256'], build.digest(app / 'Contents/MacOS/StrandedII'))
+        self.assertEqual(unrelated.read_bytes(), b'keep')
+
+        self.payload['core/modern.ini'] = b'language=de\n'
+        with self.assertRaisesRegex(ValueError, 'Preserving'):
+            build.package_app(self.executable, parent=directory)
+        self.assertEqual((app / 'Contents/Resources/game/core/modern.ini').read_bytes(), b'language=en\n')
+
     def test_changed_executable_rejected(self):
         self.executable.write_bytes(b'changed')
         with self.assertRaisesRegex(ValueError, 'executable changed'):

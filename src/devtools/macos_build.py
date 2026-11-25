@@ -7,8 +7,10 @@ import os
 import plistlib
 import shutil
 import subprocess
+import tempfile
 import wave
 
+from file_lock import exclusive_lock
 from editions import source_hashes, override_files
 from locales import prepare, validate, languages
 from language_pack import refresh
@@ -204,22 +206,44 @@ def package_app(executable, parent=None):
     hashes = {name: hashlib.sha256(data).hexdigest() for name, data in payload.items()}
     fingerprint = hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest()
     recipe = digest(Path(__file__))[:8]
-    directory = parent or BUILD / 'apps' / (digest(executable)[:12] + '-' + fingerprint[:8] + '-' + recipe)
+    executable_hash = digest(executable)
+    directory = parent or BUILD / 'apps' / (executable_hash[:12] + '-' + fingerprint[:8] + '-' + recipe)
     app = directory / 'Stranded II.app'
-    if app.exists():
-        if not (directory / 'package-report.json').is_file():
-            raise ValueError(f'Preserving an existing, unrecognized app: {app}')
-        previous = read(directory / 'package-report.json')
-        if (previous.get('executable_sha256') != digest(executable) or
-                previous.get('signed_executable_sha256') != digest(app / 'Contents/MacOS/StrandedII')):
-            raise ValueError(f'Preserving a modified native app: {app}')
-        subprocess.run(['codesign', '--verify', '--deep', '--strict', str(app)], check=True)
-        return app
+    report = directory / 'package-report.json'
+    directory.mkdir(parents=True, exist_ok=True)
+    with exclusive_lock(directory / '.package.lock'):
+        if app.exists():
+            if not report.is_file():
+                raise ValueError(f'Preserving an existing, unrecognized app: {app}')
+            previous = read(report)
+            if (previous.get('asset_sha256') != hashes or
+                    previous.get('executable_sha256') != executable_hash or
+                    previous.get('signed_executable_sha256') != digest(app / 'Contents/MacOS/StrandedII')):
+                raise ValueError(f'Preserving a modified or different native app: {app}')
+            subprocess.run(['codesign', '--verify', '--deep', '--strict', str(app)], check=True)
+            return app
+        with tempfile.TemporaryDirectory(prefix='.package-', dir=directory) as temporary:
+            stage = Path(temporary)
+            candidate = stage / app.name
+            write_signed_app(candidate, executable, executable_hash, version, payload, fingerprint)
+            write(stage / report.name, {'app': str(app), 'executable_sha256': executable_hash,
+                  'signed_executable_sha256': digest(candidate / 'Contents/MacOS/StrandedII'),
+                  'asset_sha256': hashes, 'personal_data_included': False, 'signing': 'local ad hoc'})
+            # Once the signed app is visible, a complete report is already in place.
+            (stage / report.name).replace(report)
+            candidate.rename(app)
+    return app
+
+
+def write_signed_app(app, executable, executable_hash, version, payload, fingerprint):
     macos = app / 'Contents/MacOS'
     resources = app / 'Contents/Resources'
     macos.mkdir(parents=True)
     resources.mkdir()
-    shutil.copy2(executable, macos / 'StrandedII')
+    binary = macos / 'StrandedII'
+    shutil.copy2(executable, binary)
+    if digest(binary) != executable_hash:
+        raise ValueError(f'Executable changed while packaging: {executable}')
     for name, data in payload.items():
         destination = resources / 'game' / name
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -233,16 +257,13 @@ def package_app(executable, parent=None):
         'NSHighResolutionCapable': False, 'LSApplicationCategoryType': 'public.app-category.games',
     }))
     subprocess.run(['codesign', '--force', '--sign', '-', '--timestamp=none', str(app)], check=True)
-    write(directory / 'package-report.json', {'app': str(app), 'executable_sha256': digest(executable),
-          'signed_executable_sha256': digest(macos / 'StrandedII'),
-          'asset_sha256': hashes, 'personal_data_included': False, 'signing': 'local ad hoc'})
-    return app
 
 
 def implementation_hashes():
     paths = [ROOT / name for name in (
         'config/macos-toolchain.json', 'config/modern.ini', 'config/dependencies.json',
         'config/game-files.json', 'src/devtools/macos_toolchain.py', 'src/devtools/macos_build.py',
+        'src/devtools/file_lock.py',
         'src/devtools/locales.py', 'src/devtools/language_pack.py', 'src/devtools/web_audio.py',
         'src/devtools/editions.py', 'src/devtools/versioning.py')]
     paths += [p for p in (ROOT / 'src/native/macos').rglob('*') if p.is_file()]
