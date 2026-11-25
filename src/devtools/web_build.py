@@ -126,15 +126,29 @@ def asset_files():
         if relative.suffix.lower() in ('.exe', '.dll', '.sav', '.bak', '.bkp', '.tmp', '.log', '.cache'):
             continue
         path = RUNTIME / relative
-        if path.is_file():
-            result.append((path, '/game/' + relative.as_posix()))
+        if not path.is_file():
+            raise ValueError(f'Missing prepared web resource: {name}. Run setup before building.')
+        result.append((path, '/game/' + relative.as_posix()))
     return result
+
+
+def verify_asset_inputs(allowed, expected):
+    if expected is None:
+        raise ValueError('Missing prepared resource hashes. Rebuild the web or Studio package.')
+    current = {target for _, target in allowed}
+    if current != expected.keys():
+        changed = sorted(current.symmetric_difference(expected))[0]
+        raise ValueError(f'Prepared resource list changed: {changed}. Rebuild the package.')
+    for path, target in allowed:
+        if digest(path) != expected[target]:
+            raise ValueError(f'Prepared resource changed: {target}. Rebuild the package.')
 
 
 def pack_assets(env):
     sdk = web_toolchain.paths()[1]
     SITE.mkdir(parents=True, exist_ok=True)
     allowed = asset_files()
+    inputs = {target: digest(path) for path, target in allowed}
     from web_audio import prepare as prepare_audio
     audio = prepare_audio(allowed, BUILD / 'audio')
     command = [sys.executable, sdk / 'upstream/emscripten/tools/file_packager.py', SITE / 'assets.data',
@@ -158,6 +172,7 @@ def pack_assets(env):
     writable.extend(('/game/mods/Stranded II/sys/settings.cfg', '/game/core/settings.inf'))
     write(SITE / 'defaults.json', {'files': sorted(set(writable)),
           'languages': [{'code': code, 'name': metadata['name']} for code, metadata in languages(ROOT).items()]})
+    return inputs
 
 
 def build(args):
@@ -200,14 +215,14 @@ def build(args):
     env = compiler_environment(env)
     web_toolchain.run([upstream.BLITZCC, '-target', 'emscripten', '-o', SITE / 'game', ENTRY],
                       cwd=ROOT / 'src/engine', env=env)
-    pack_assets(env)
+    asset_inputs = pack_assets(env)
     (SITE / 'game.html').unlink() # The custom index owns storage and startup.
     for name in ('index.html', 'shell.js', 'debugui.js'):
         shutil.copy2(ROOT / 'src/web' / name, SITE / name)
     write(SITE / 'version.json', info)
     write(BUILD / 'build-report.json', dict(info, platform='web', toolchain=web_toolchain.config(),
           source_sha256=source_hashes(ROOT, 'classic', 'web'),
-          implementation_sha256=implementation_hashes(),
+          implementation_sha256=implementation_hashes(), asset_input_sha256=asset_inputs,
           files={name: digest(SITE / name) for name in SITE_FILES}))
     print('Built WebGPU preview:', SITE / 'index.html')
 
@@ -280,7 +295,9 @@ def check(args):
     subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', 'src/tests', '-p', 'test_web*.py'],
                    cwd=ROOT, check=True)
     from web_audio import verify as verify_audio
-    audio_count = verify_audio(asset_files(), BUILD / 'package', BUILD / 'audio')
+    allowed = asset_files()
+    verify_asset_inputs(allowed, report.get('asset_input_sha256'))
+    audio_count = verify_audio(allowed, BUILD / 'package', BUILD / 'audio')
     print('Verified converted web audio:', audio_count)
     from verify_web import verify_semantics
     semantics = verify_semantics()

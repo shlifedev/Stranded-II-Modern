@@ -102,14 +102,14 @@ def build(args):
     # changing normal web/CI edition routing.
     original=web_build.override_files
     web_build.override_files=lambda root,edition='classic': original(root,'extended')
-    try:web_build.pack_assets(env)
+    try:asset_inputs=web_build.pack_assets(env)
     finally:web_build.override_files=original
     for name in ('index.html','studio.js','gizmo.js'):
         shutil.copy2(ROOT/'src/studio/engine'/name,SITE/name)
     shutil.copy2(ROOT/'src/web/debugui.js',SITE/'debugui.js')
     (SITE/'game.html').unlink(missing_ok=True)
     report={'edition':'extended','entrypoint':ENTRY,'source_sha256':source_hashes(),
-            'implementation_sha256':implementation_hashes(),
+            'implementation_sha256':implementation_hashes(), 'asset_input_sha256':asset_inputs,
             'files':{n:web_build.digest(SITE/n) for n in ('game.js','game.wasm','assets.js','assets.data','index.html','studio.js','gizmo.js','debugui.js')}}
     atomic(BUILD/'build-report.json',encode(report))
     print('Built Blitz Studio engine:',SITE)
@@ -130,6 +130,7 @@ def check(args):
     try:
         allowed=web_build.asset_files()
     finally:web_build.override_files=original
+    web_build.verify_asset_inputs(allowed, report.get('asset_input_sha256'))
     if {f['filename'] for f in metadata['files']}!={target for _,target in allowed}:
         raise ValueError('Studio archive differs from its allowlisted resources')
     from web_audio import verify

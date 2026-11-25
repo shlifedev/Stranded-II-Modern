@@ -13,6 +13,22 @@ import web_build
 
 
 class WebBoundaries(TestCase):
+    def test_asset_input_validation_checks_content_and_membership(self):
+        with TemporaryDirectory() as directory:
+            asset = Path(directory) / 'island.s2'
+            asset.write_bytes(b'first')
+            target = '/game/maps/island.s2'
+            inputs = [(asset, target)]
+            report = {target: web_build.digest(asset)}
+            web_build.verify_asset_inputs(inputs, report)
+            asset.write_bytes(b'other')
+            with self.assertRaisesRegex(ValueError, 'changed: /game/maps/island.s2'):
+                web_build.verify_asset_inputs(inputs, report)
+            with self.assertRaisesRegex(ValueError, 'list changed: /game/maps/island.s2'):
+                web_build.verify_asset_inputs([], report)
+            with self.assertRaisesRegex(ValueError, 'Missing prepared resource hashes'):
+                web_build.verify_asset_inputs(inputs, None)
+
     def test_default_build_keeps_both_windows_include_graphs(self):
         for edition in ('classic', 'extended'):
             default = source_files(ROOT, edition)
@@ -30,6 +46,7 @@ class WebBoundaries(TestCase):
             files = ('mods/Stranded II/maps/adventure/map01.s2', 'core/modern.ini',
                      'mods/Stranded II/sys/controls.cfg', 'core/locales/ko/glyphs.dat',
                      'core/locales/ko/0_0.bmp', 'core/locales/ko.tsv', 'licenses/license.txt')
+            files += ('core/version.json', 'core/version.txt', 'core/locales/languages.dat')
             private = ('mods/Stranded II/saves/personal.sav', 'preserved/old.cfg',
                        'mods/Stranded II/screen_001.bmp', 'core/modern.log',
                        'core/locales/fonts-report.json', 'personal.cfg', 'StrandedII.exe')
@@ -43,6 +60,9 @@ class WebBoundaries(TestCase):
                  mock.patch.object(web_build, 'languages', return_value={'ko': {}}), \
                  mock.patch.object(web_build, 'override_files', return_value={}):
                 packed = {target.removeprefix('/game/') for _, target in web_build.asset_files()}
+                (runtime / files[0]).unlink()
+                with self.assertRaisesRegex(ValueError, 'map01.s2'):
+                    web_build.asset_files()
             self.assertEqual(packed, set(files))
             self.assertFalse(packed.intersection(private))
 
