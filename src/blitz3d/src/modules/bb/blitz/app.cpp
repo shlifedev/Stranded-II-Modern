@@ -40,7 +40,6 @@ BBApp BBCALL bbApp(){
 	return app;
 }
 
-// The optional overlay observes logs without replacing stdout/stderr.
 #include <cstdarg>
 #include <atomic>
 #include <vector>

@@ -375,12 +375,8 @@ void World::renderCubeMap( Camera *camera,BBCanvas *texture,float tween ){
 #ifdef BB_WEBGPU
 	s2prof::RenderGroup profileGroup(s2prof::Reflections);
 #endif
-	// This call owns all six views: no script can mutate the scene between
-	// them. Keep the prepared scene local to this capture, never across frames.
 	static const float angles[6][2]={ {0,90},{0,0},{0,-90},{0,180},{-90,0},{90,0} };
 	const float radians=0.01745329251994329577f;
-	// Camera children move with each face. Repeated tween preparation also
-	// has legacy semantics (notably Sprite), so retain it outside tween=1.
 	const bool reprepare=camera->children()!=0 || tween!=1;
 	BBCanvas *source=camera->getCanvas() ? camera->getCanvas() : gx_canvas;
 	for( int face=0;face<6;++face ){
@@ -388,8 +384,6 @@ void World::renderCubeMap( Camera *camera,BBCanvas *texture,float tween ){
 		camera->setLocalRotation( rotationQuat( angles[face][0]*radians,angles[face][1]*radians,0 ) );
 		if( face==0 || reprepare ) prepareRender( tween );
 		camera->beginRender( tween );
-		// A cubemap capture uses only its selected camera, even if other
-		// cameras are visible. Per-view culling, fading and sorting still run.
 		while( !cam_que.empty() ) cam_que.pop();
 		cam_que.push( camera );
 		renderPrepared();
@@ -401,8 +395,6 @@ void World::renderPlanar( Camera *camera,BBCanvas *texture,float height,float tw
 #ifdef BB_WEBGPU
 	s2prof::RenderGroup profileGroup(s2prof::Reflections);
 #endif
-	// A dedicated capture renders only this view, without moving the caller's
-	// camera or its children. Keep the source camera's projection/aspect ratio.
 	prepareRender( tween );
 	camera->beginRender( tween );
 	if( !bbScene->begin( _lights ) ) return;
@@ -425,7 +417,6 @@ void World::renderPlanar( Camera *camera,BBCanvas *texture,float height,float tw
 	bbScene->end();
 	texture->unset();gx_canvas=saved;
 	if( saved ) saved->set();
-	// Queues and culling caches belong to this preparation only.
 	while( !cam_que.empty() ) cam_que.pop();
 }
 
@@ -457,7 +448,6 @@ void World::renderShadows( Camera *camera,Light *light,float distance,float twee
 		Vector center=eye*Vector(0,0,(start+end)*0.5f);
 		float radius=sqrtf(end*end*(hx*hx+hy*hy)+(end-start)*(end-start)*0.25f);
 		radius=ceilf(radius/16)*16;
-		// Stable texel-sized translation reduces shimmering during camera motion.
 		Transform light_frame(basis);
 		Vector local=(-light_frame)*center;
 		const float texel=radius*2/1024;
@@ -474,7 +464,6 @@ void World::renderShadows( Camera *camera,Light *light,float distance,float twee
 		bbScene->setZMode(BBScene::ZMODE_NORMAL);
 		RenderContext rc(cam_tform,Frustum::orthographic(1,depth*2,radius*2,radius*2),false);
 		for( Model *mod:unord_mods ){
-			// Preserve player-distance fading, even though the shadow camera is distant.
 			if( mod->doAutoFade(eye.v) ) render(mod,rc,true);
 		}
 		flushOpaque();
@@ -555,7 +544,6 @@ void World::renderPrepared( bool antialias ){
 	}
 
 	bbScene->end();
-	// Captures call renderPrepared() without this final, pre-UI screen pass.
 	if( antialias && rendered_main ) bbScene->applyAntialias( org_canvas );
 	bbScene->setAntialiasTarget( nullptr );
 
@@ -626,8 +614,6 @@ void World::render( Model *mod,const RenderContext &rc,bool defer ){
 	}
 
 	if( trans || mod->queueSize( Model::QUEUE_TRANSPARENT ) ){
-		// Distance is constant while this camera's queue is drained. Keep the
-		// same heap/order, computing it once rather than for every comparison.
 		TransparentDraw draw={ mod,cam_tform.v.distance( mod->getRenderTform().v ) };
 		transparents.push( draw );
 	}

@@ -1,4 +1,3 @@
-;Action
 Select TCunit\ai_mode
 	Case ai_idle
 		TCunit\ai_timer=0
@@ -11,7 +10,6 @@ Select TCunit\ai_mode
 		ai_dosani()
 End Select
 
-;Set Mode
 If (gt-TCunit\ai_timer)>TCunit\ai_duration Then
 	ai_mode(ai_idle)
 EndIf

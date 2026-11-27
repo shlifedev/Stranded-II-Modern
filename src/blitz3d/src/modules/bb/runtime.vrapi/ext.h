@@ -14,7 +14,6 @@
 #define EGL_OPENGL_ES3_BIT_KHR 0x0040
 #endif
 
-// EXT_texture_border_clamp
 #ifndef GL_CLAMP_TO_BORDER
 #define GL_CLAMP_TO_BORDER 0x812D
 #endif

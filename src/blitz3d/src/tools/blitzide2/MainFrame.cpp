@@ -163,7 +163,6 @@ MainFrame::MainFrame( const wxString& title )
 #endif
 
   CreateStatusBar();
-  // SetStatusText( "" );
 
   splitter = new wxSplitterWindow( this,wxID_ANY,wxDefaultPosition,wxDefaultSize,wxSP_3D|wxSP_LIVE_UPDATE );
   splitter->SetSashGravity( 1.0 );
@@ -268,7 +267,6 @@ void MainFrame::EnumerateDevices(){
 			dev.name=line.BeforeLast('(').Trim(true).Trim(false);
 			dev.emulator=false;
 
-			// a little bit of a hack...
 			if( devices.size()==0 ){
 				dev.name="macOS";
 				dev.platform="macos";

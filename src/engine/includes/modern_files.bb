@@ -1,4 +1,3 @@
-; Same-directory staging and checked replacement. Never truncate a live save.
 Global modern_file_error
 
 Function modern_flush_file(path$)
@@ -19,13 +18,10 @@ Function modern_commit_file(path$,staged$,backup=1)
   If modern_flush_file(path$+".bak.tmp")=0 Then Return False
   If modern_file_move(path$+".bak.tmp",path$+".bak",9)=0 Then modern_file_error=modern_last_error():Return False
  EndIf
- ; MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH, on the same volume.
  If modern_file_move(staged$,path$,9)=0 Then modern_file_error=modern_last_error():Return False
  Return True
 End Function
 
-; Release archives carry initial settings under .default names. Copy one into place
-; only when the player has none, so extracting an update keeps personal settings.
 Function modern_seed_file(path$,defaults$)
  If FileType(path$)<>0 Or FileType(defaults$)<>1 Then Return False
  If modern_file_copy(defaults$,path$+".tmp",0)=0 Then modern_file_error=modern_last_error():Return False
@@ -40,7 +36,6 @@ Function modern_stamp(path$,infoBank)
 End Function
 
 Function modern_stamp_newer(low,high,otherlow,otherhigh)
- ; FILETIME consists of two unsigned DWORDs. Compare without float rounding.
  If high<>otherhigh Then Return (high Xor $80000000)>(otherhigh Xor $80000000)
  Return (low Xor $80000000)>(otherlow Xor $80000000)
 End Function

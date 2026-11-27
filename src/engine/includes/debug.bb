@@ -1,40 +1,21 @@
-;############################################ Debug Outputs
-
-
-;### Normal Debug Output
 Function debug()
 	If set_debug Then
 		debugtime=MilliSecs()
 		
-		;AI
 		draw_units_debug()
 		
-		;FPS
 		bmpf_txt_r(set_scrx-3,0,fps+" FPS",5)
-		;FPS Factor
 		bmpf_txt_r(set_scrx-3,12,Left(f#,5)+" Factor",5)
 		
 		
-		;Pitch	
-		;bmpf_txt_r(set_scrx-3,y,Int(EntityPitch(cam)))
-		
-		;Jump
-		;If con_unit(g_player)
-		;bmpf_txt_r(set_scrx-3,20, TCunit\phy_jump#+" Jump",5)
-		;bmpf_txt_r(set_scrx-3,30, (ms-TCunit\phy_ft)+" Last Col.",5)
-		;EndIf
-				
-		;UDP
 		y=450
 		For Tudp_con.Tudp_con=Each Tudp_con
 			bmpf_txt_r(set_scrx-3,y,DottedIP(Tudp_con\ip)+":"+Tudp_con\port)
 			y=y+15
 		Next
 		
-		;Y for Outputs
 		y=25
 		
-		;Debug Times
 		If set_debug_rt Then
 			bmpf_txt_r(set_scrx-3,y,set_debug_rt_objects$,5):y=y+12
 			bmpf_txt_r(set_scrx-3,y,set_debug_rt_units$,5):y=y+12
@@ -50,7 +31,6 @@ Function debug()
 		EndIf
 
 		
-		;Debug Sequences
 		If set_debug_seq Then
 			bmpf_txt_r(set_scrx-3,y,"SEQ T: "+(modern_clock()-seq_start)+" CAM: "+seq_cpoint,5):y=y+12
 			i=0
@@ -62,20 +42,16 @@ Function debug()
 			Next
 		EndIf
 		
-		;Cam Position
 		bmpf_txt_r(set_scrx-3,y,"cam: "+Int(EntityX(cam))+"|"+Int(EntityY(cam))+"|"+Int(EntityZ(cam)),5):y=y+12
-		;Cam Rotation
 		bmpf_txt_r(set_scrx-3,y,"pitch: "+Int(EntityPitch(cam))+" yaw: "+Int(EntityYaw(cam)),5):y=y+12
 	
 	EndIf
 	
-	;Testmap
 	If set_debug_testmap=1 Then
 		If m_section=Csection_game_sp Then
 			If set_drawinterface=1 Then
 				bmpf_txt_c(set_scrx/2,set_scry-20,se$(204),in_cursor)
 			EndIf
-			;F12 -> Testmap
 			If KeyHit(88) Then
 				editor_ini()
 				m_section=Csection_editor
@@ -96,24 +72,15 @@ Function debug()
 End Function
 
 
-;### Debug Map
 Function debug_map()
-	;Scale Factor
 	sc#=0.3
-	;Back
-	;Color 0,0,0
-	;Rect 236,63,537,509,1
-	;Set Bounds
 	Local bx=537/2
 	Local bz=509/2
-	;Set Center
 	Local cx=236+bx
 	Local cz=63+bz
-	;Calc Center Pos
 	Local x,z
 	Local camx#=EntityX(cam)
 	Local camz#=EntityZ(cam)
-	;Units
 	For Tunit.Tunit=Each Tunit
 		x=(camx#-EntityX(Tunit\h))*sc#
 		z=(camz#-EntityZ(Tunit\h))*sc#
@@ -128,13 +95,11 @@ Function debug_map()
 			EndIf
 		EndIf
 	Next
-	;Center
 	Color 255,0,0
 	Rect cx-1,cz-1,2,2,1
 End Function
 
 
-;### Debug Log
 Function dlog(txt$)
 	DebugUiLog "game",3,txt$
 	Local stream
@@ -150,7 +115,6 @@ Function dlog(txt$)
 End Function
 
 
-;### Debug Command
 Function dbugcmd(p1$,p2$="")
 	con_add()
 	con_add("*** Debug: "+p1$+" "+p2$+" ***",Cbmpf_red)
@@ -229,9 +193,7 @@ Function dbugcmd(p1$,p2$="")
 End Function
 
 
-;### Debug Childs
 Function dbugcmdchilds(class,id)
-	;Vars
 	con_add("* locals: ",Cbmpf_red)
 	For Tx.Tx=Each Tx
 		If Tx\mode=4 Then
@@ -246,7 +208,6 @@ Function dbugcmdchilds(class,id)
 			EndIf
 		EndIf
 	Next
-	;States
 	con_add("* states: ",Cbmpf_red)
 	For Tstate.Tstate=Each Tstate
 		If Tstate\parent_class=class Then
@@ -255,7 +216,6 @@ Function dbugcmdchilds(class,id)
 			EndIf
 		EndIf
 	Next
-	;Units Paths
 	If class=Cclass_unit
 		con_add("* unitpath: ",Cbmpf_red)
 		For Troot.Tup=Each Tup
@@ -273,7 +233,6 @@ Function dbugcmdchilds(class,id)
 			EndIf
 		Next
 	EndIf
-	;Items
 	If class<>Cclass_item
 		con_add("* items: ",Cbmpf_red)
 		For Titem.Titem=Each Titem
@@ -284,7 +243,6 @@ Function dbugcmdchilds(class,id)
 			EndIf
 		Next
 	EndIf
-	;Scripts
 	con_add("* script: ",Cbmpf_red)
 	For Tx.Tx=Each Tx
 		If Tx\mode=0 Then

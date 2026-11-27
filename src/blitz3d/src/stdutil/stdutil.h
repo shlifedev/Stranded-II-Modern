@@ -44,7 +44,6 @@ void _cdecl operator delete[]( void *q,const char *file,int line );
 void trackmem( bool enable );
 void checkmem( std::ostream &out );
 
-//some stuff that should be in std libs
 int atoi( const std::string &s );
 long atol( const std::string &s );
 double atof( const std::string &s );
@@ -58,7 +57,6 @@ std::string filenamepath( const std::string &t );
 std::string filenamefile( const std::string &t );
 std::string canonicalpath( const std::string &t );
 
-//lazy version of auto_ptr
 template<class T>
 class a_ptr{
 public:
@@ -74,13 +72,12 @@ private:
 	T *t;
 };
 
-//Speed-up for SLOW sstream
 class qstreambuf : public std::streambuf{
 public:
 	qstreambuf();
 	~qstreambuf();
-	int size();		//bytes unread
-	char *data();	//start of bytes unread
+	int size();
+	char *data();
 private:
 	char *buf;
 	int_type underflow();

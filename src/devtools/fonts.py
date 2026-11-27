@@ -30,7 +30,6 @@ class Font:
 
 
 def repertoire(catalogs,packs):
-    # Printable Latin-1 also covers original literal labels, key names and input.
     usage={c:'built-in Latin text/input' for c in (*range(32,127),*range(160,256))}
     for code,values in catalogs.items():
         for key,value in values.items():
@@ -68,8 +67,6 @@ def make_fonts(catalogs,packs,default_font,gfx,out,root):
             if font!=chain[0]:fallback[f'U+{c:04X}']={'character':chr(c),'font':str(font.path),'usage':usage[c]}
         if missing:
             raise ValueError(f'{code}: no font covers '+', '.join(missing[:25])+f' ({len(missing)} missing). Add a suitable language-pack font.')
-        # Share a baseline and fit actual ink into the old row height. Retain
-        # negative left bearings and uncapped advance widths.
         metrics=[];scales=[]
         for size,height in enumerate((19,16)):
             boxes={c:assigned[c].sizes[size].getbbox(chr(c),anchor='ls') for c in chars}

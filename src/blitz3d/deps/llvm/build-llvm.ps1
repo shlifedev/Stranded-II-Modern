@@ -10,7 +10,6 @@ if (-not(Test-Path -Path $ARCHIVE -PathType Leaf)) {
 }
 
 if (-not(Test-Path -Path llvm-project-llvmorg-$LLVM_VERSION)) {
-  # Expand-Archive seems slow so use 7zip if available
   if (Get-Command "7z.exe" -ErrorAction SilentlyContinue) {
     7z x $ARCHIVE
   } else {

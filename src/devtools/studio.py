@@ -113,7 +113,6 @@ def response(request):
 
 
 def serve():
-    # One newline-delimited JSON request / response, including caller-provided ID.
     for line in sys.stdin:
         request = {}
         try:

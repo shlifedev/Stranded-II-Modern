@@ -40,7 +40,6 @@ levels(i)\name = "Intro"
 Expect levels(i)\name = "Intro", "Level 4 is Intro"
 
 Function FillTiles()
-	; make sure array global/type info available in codegen before dim
 	tiles(1,2) = 3
 	tiles(2,2) = 4
 End Function

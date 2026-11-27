@@ -1,9 +1,6 @@
 #include "select.h"
 #include "../var/decl_var.h"
 
-////////////////////////
-// A select statement //
-////////////////////////
 json CaseNode::toJSON( Environ *e ){
 	json tree;tree["@class"]="CaseNode";
 	tree["exprs"]=exprs->toJSON( e );
@@ -16,7 +13,6 @@ void SelectNode::semant( Environ *e ){
 	Type *ty=expr->sem_type;
 	if( ty->structType() ) ex( "Select cannot be used with objects" );
 
-	//we need a temp var
 	Decl *d=e->decls->insertDecl( genLabel(),expr->sem_type,DECL_LOCAL );
 	sem_temp=d_new DeclVarNode( d );
 

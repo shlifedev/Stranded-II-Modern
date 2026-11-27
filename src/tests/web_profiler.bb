@@ -1,4 +1,3 @@
-; Real browser WebGPU timestamps and draws, with no game assets or player data.
 Graphics3D 640,480,32,2
 SetBuffer BackBuffer()
 Global camera=CreateCamera(),sun=CreateLight(1),cube=CreateCube()
@@ -19,7 +18,6 @@ For frame=1 To 36
  Flip False
  DebugUiProfileBoundary()
 Next
-; Allow pending readbacks to finish without recording additional frames.
 For frame=1 To 8:Flip False:Next
 WriteStdout DebugUiProfileSnapshot()+Chr(10)+"PROFILER_FIXTURE_DONE"+Chr(10)
 DebugUiBenchmarkBegin "browser trial","fixture=browser shadows=0",0,1,80

@@ -1,6 +1,3 @@
-; Studio owns its frame loop; standard game/editor entrypoints are unchanged.
-; Project mutations are committed by the common CLI/UI core. The engine picks,
-; renders and plays those native maps, and applies transient drag previews.
 Global studio_playing,studio_loaded,studio_class,studio_id,studio_handle
 Global studio_firstframe
 Global studio_command$,studio_path$="maps\studio.s2"
@@ -75,7 +72,6 @@ Function studio_load(play=0,keepcamera=0)
   Else
    editor_resetcam()
   EndIf
-  ; All supported entity classes are pickable at once.
   For o.Tobject=Each Tobject
    EntityPickMode o\h,2,1
   Next
@@ -91,8 +87,6 @@ Function studio_load(play=0,keepcamera=0)
   studio_handle=studio_find(studio_class,studio_id)
  EndIf
  modern_reset_clock()
- ; Present the loaded game once before waiting for mouse capture. Keep the
- ; engine and its resource definitions alive across editor/play transitions.
  If play Then blackframe=0:studio_firstframe=1
  web_service("studio-event","loaded"+Chr(31)+play+Chr(31)+ter_size)
 End Function
@@ -115,7 +109,6 @@ End Function
 
 Function studio_terrain_pick(x#,y#)
  editor_picking(0)
- ; Units have a separate pickable visual model below their collision pivot.
  For pu.Tunit=Each Tunit
   EntityPickMode pu\mh,0
  Next
@@ -166,7 +159,6 @@ Function studio_process(command$)
   Case "load"
    studio_load(0,Int(studio_arg(command$,1)))
   Case "play"
-   ; Capture the exact editor pose before replacing the world with gameplay.
    studio_process("pose")
    studio_load(1)
   Case "stop"
@@ -231,7 +223,6 @@ Function studio_render()
  p_update()
 End Function
 
-; The host supplies the immutable authoring snapshot before callMain starts.
 m_section=Csection_editor
 m_menu=0
 editor_defaultmapsettings()

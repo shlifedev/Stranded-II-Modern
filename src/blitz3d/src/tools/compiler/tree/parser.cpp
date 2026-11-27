@@ -150,8 +150,6 @@ void Parser::parseStmtSeq( StmtSeqNode *stmts,int scope ){
 
 				inc=fullfilename( inc );
 #ifdef WIN32
-				// TODO: find out why this was originally done. not good outside of
-				// windows
 				inc=tolower( inc );
 #endif
 
@@ -218,10 +216,8 @@ void Parser::parseStmtSeq( StmtSeqNode *stmts,int scope ){
 				toker->next();std::string tag=parseTypeTag();
 				if( arrayDecls.find(ident)==arrayDecls.end()
 					&& toker->curr()!='=' && toker->curr()!='\\' && toker->curr()!='[' ){
-					//must be a function
 					ExprSeqNode *exprs;
 					if( toker->curr()=='(' ){
-						//ugly lookahead for optional '()' around statement params
 						int nest=1,k;
 						for( k=1;;++k ){
 							int c=toker->lookAhead( k );
@@ -239,7 +235,6 @@ void Parser::parseStmtSeq( StmtSeqNode *stmts,int scope ){
 					CallNode *call=d_new CallNode( ident,tag,exprs );
 					result=d_new ExprStmtNode( call );
 				}else{
-					//must be a var
 					a_ptr<VarNode> var( parseVar( ident,tag ) );
 					if( toker->curr()!='=' ) exp( "variable assignment" );
 					toker->next();ExprNode *expr=parseExpr( false );
@@ -322,7 +317,6 @@ void Parser::parseStmtSeq( StmtSeqNode *stmts,int scope ){
 					from=parseExpr( false );
 					if( toker->curr()!=TO ) exp( "'TO'" );
 					toker->next();to=parseExpr( false );
-					//step...
 					if( toker->curr()==STEP ){
 						toker->next();step=parseExpr( false );
 					}else step=d_new IntConstNode( 1 );
@@ -833,14 +827,12 @@ ExprNode *Parser::parsePrimary( bool opt ){
 		ident=toker->text();
 		toker->next();tag=parseTypeTag();
 		if( toker->curr()=='(' && arrayDecls.find(ident)==arrayDecls.end() ){
-			//must be a func
 			toker->next();
 			a_ptr<ExprSeqNode> exprs( parseExprSeq() );
 			if( toker->curr()!=')' ) exp( "')'" );
 			toker->next();
 			result=d_new CallNode( ident,tag,exprs.release() );
 		}else{
-			//must be a var
 			VarNode *var=parseVar( ident,tag );
 			result=d_new VarExprNode( var );
 		}

@@ -66,7 +66,6 @@ void initLibs(){
 	linker_ver=version( vers,"linker" );
 	runtime_ver=version( vers,"runtime" );
 
-	//generate keywords!
 	std::string kws=execProc( prefs.homeDir+"/bin/blitzcc.exe +k" );
 
 	if( !kws.size() ){

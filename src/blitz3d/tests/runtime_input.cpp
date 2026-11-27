@@ -9,8 +9,6 @@
 #include <cstring>
 #include <cmath>
 
-// Override capture state only: the real SDL queue, runtime polling and Blitz
-// input commands still run, without requiring a window or capturing OS input.
 class RelativeInputDriver : public BBInputDriver{
     BBInputDriver *original;
 public:
@@ -22,8 +20,6 @@ public:
     bool usesRelativeMouse()const override{ return true; }
 };
 
-// Substitute only the cursor query and capture state. No window, OS input or
-// clock hook is installed; the production queue, polling and commands run.
 class AbsoluteInputDriver : public RelativeInputDriver{
 public:
     bool available=false,relative=false;
@@ -41,8 +37,6 @@ public:
 
 static Uint32 messageTime,warpTime;
 static int skewedWarpFilter(void *,SDL_Event *event){
-    // Model SDL's Windows pre-queue cutoff with real message time and an
-    // accelerated warp timestamp retained after returning to 1x.
     return event->type!=SDL_MOUSEMOTION || SDL_TICKS_PASSED(messageTime,warpTime+1);
 }
 static int physicalMoves=0;
@@ -69,7 +63,6 @@ static void character(SDL_Scancode scancode,int expected){
     bbFlushKeys();
     key(SDL_KEYDOWN,scancode);
     key(SDL_KEYUP,scancode);
-    // GetKey must pump pending input itself, without waiting for a Flip.
     expect(SDL_GetScancodeName(scancode),bbGetKey(true),expected);
     expect("one character per press",bbGetKey(true),0);
 }
@@ -92,7 +85,6 @@ static void absoluteCursorChecks(BBInputDriver *original){
         SDL_Event dropped={};dropped.type=SDL_MOUSEMOTION;
         dropped.motion.x=423;dropped.motion.y=325;
         expect("future warp cutoff drops SDL motion",SDL_PushEvent(&dropped),0);
-        // Negative control: without the query, the original cursor is stuck.
         expect("event-only cursor remains stuck horizontally",bbMouseX(),400);
         expect("event-only cursor remains stuck vertically",bbMouseY(),300);
         absolute.available=true;absolute.x=423;absolute.y=325;
@@ -104,7 +96,6 @@ static void absoluteCursorChecks(BBInputDriver *original){
         expect("absolute vertical speed remains physical",bbMouseYSpeed(),25);
         expect("queried horizontal speed consumed once",bbMouseXSpeed(),0);
         expect("queried vertical speed consumed once",bbMouseYSpeed(),0);
-        // Time is still behind the cutoff, but further movement cannot stall.
         messageTime+=10;
         expect("next SDL motion is still rejected",SDL_PushEvent(&dropped),0);
         absolute.x=419;absolute.y=328;
@@ -165,7 +156,6 @@ int main(){
     character(SDL_SCANCODE_ESCAPE,27);
     character(SDL_SCANCODE_HOME,1);
     character(SDL_SCANCODE_END,2);
-    // A distribution starts with no developer-menu binding.
     character(SDL_SCANCODE_INSERT,3);
     bbDebugUiOpen(0);bbRuntimeIdle();
     character(SDL_SCANCODE_DELETE,4);
@@ -211,8 +201,6 @@ int main(){
     gx_input=&relative;
     bbMoveMouse(400,300);
     bbMouseXSpeed();bbMouseYSpeed();
-    // getinput reads mouse speed first, then polls keys. A single count can
-    // arrive during those key reads, just before game's MoveMouse recenter.
     motion(401,299);
     bbKeyDown(17);
     bbMoveMouse(400,300);
@@ -221,7 +209,6 @@ int main(){
     expect("preserved horizontal count consumed once",bbMouseXSpeed(),0);
     expect("preserved vertical count consumed once",bbMouseYSpeed(),0);
 
-    // Polling Y can receive another X count after X was already read.
     motion(401,301);
     expect("vertical count read before recenter",bbMouseYSpeed(),1);
     bbMoveMouse(400,300);
@@ -260,13 +247,12 @@ int main(){
     bbDebugUiHotkey(0);
     key(SDL_KEYDOWN,SDL_SCANCODE_INSERT);bbRuntimeIdle();
     expect("None disables developer shortcut",bbDebugUiOpen(-1),0);bbFlushKeys();
-    bbDebugUiHotkey(63); // F5
+    bbDebugUiHotkey(63);
     key(SDL_KEYDOWN,SDL_SCANCODE_F5);bbRuntimeIdle();
     expect("configured F5 opens developer menu",bbDebugUiOpen(-1),1);
     key(SDL_KEYDOWN,SDL_SCANCODE_F5);bbRuntimeIdle();
     expect("configured F5 closes developer menu",bbDebugUiOpen(-1),0);
     bbDebugUiHotkey(210);
-    // The overlay exclusively owns input, and transitions release held keys.
     key(SDL_KEYDOWN,SDL_SCANCODE_W);expect("held before overlay",bbKeyDown(17),1);
     key(SDL_KEYDOWN,SDL_SCANCODE_INSERT);bbRuntimeIdle();
     expect("Insert opens overlay",bbDebugUiOpen(-1),1);
@@ -286,8 +272,6 @@ int main(){
     expect("fresh press resumes input",bbKeyDown(17),1);bbFlushKeys();
 
 
-    // The actual rotation commands must retain the game's smallest sensitivity
-    // increment (0.02 degrees) through repeated Euler/quaternion conversions.
     Entity *camera=bbCreatePivot(nullptr);
     for(int step=1;step<=240;++step){
         bbRotateEntity(camera,0,bbEntityYaw(camera,0)+0.02f,0,0);

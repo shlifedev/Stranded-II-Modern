@@ -29,7 +29,6 @@ GLYPH = r'''Function ko_glyph(c,id,x,y)
  test_trace$=test_trace$+c+":"+id+"@"+x+","+y+";"
 End Function'''
 
-# The walk the cache replaced: localize and decode the whole string on each call.
 REFERENCE = r'''
 Function ref_txt(x,y,txt$,id=0)
 	txt$=ko_localize(txt$)
@@ -130,7 +129,6 @@ End Function
 '''
 
 FIXTURE = r'''
-; Only loc_bind reads script variables; these layouts carry no bindings to capture.
 Function var_get$(key$)
  Return ""
 End Function
@@ -171,7 +169,6 @@ Function same_layout(txt$,label$)
  For id=0 To 5 Step 5
   For kind=0 To 5
    expected$=ref_layout(kind,txt$,id)
-   ; The second pass is served from the cached run.
    For pass=1 To 2
     check(run_layout(kind,txt$,id)=expected$,label$+" kind="+kind+" font="+id+" pass="+pass)
    Next
@@ -206,7 +203,6 @@ test_samples$(5)="Alias source"
 test_samples$(6)="[[loc:missing.key]]"
 test_samples$(7)=Chr(200)+"x"+Chr(128)+Chr(233)+Chr(128)+"y"+Chr(240)+Chr(159)+Chr(152)+Chr(128)+"z"
 test_samples$(8)=String("가나다 abc ",12)
-; Same length and tail: one hash bucket holds both runs.
 test_samples$(9)="xx12345678"
 test_samples$(10)="yy12345678"
 test_samples$(11)=" leading and trailing  "
@@ -222,14 +218,12 @@ For editing=0 To 1
 Next
 ko_editing=0
 
-; Catalog changes after a run was cached must reach the next draw.
 width_before=bmpf_len("[[loc:test.label]]",0)
 loc_put("test.label","a considerably longer replacement label")
 check(bmpf_len("[[loc:test.label]]",0)=ref_len("[[loc:test.label]]",0),"catalog change re-resolves cached run")
 check(bmpf_len("[[loc:test.label]]",0)<>width_before,"catalog change alters cached width")
 same_layout("Alias source","alias after catalog change")
 
-; Unique per-frame texts are bounded by the cache limit.
 For i=1 To Cko_run_limit+904
  bmpf_len("unique "+i,0)
  If ko_run_entries>Cko_run_limit Then Exit
@@ -252,11 +246,9 @@ def main():
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
-    # Missing catalog keys are logged under core/, as in the game runtime.
     (output / 'core').mkdir()
     includes = engine.ROOT / 'src/engine/includes'
     unicode = (includes / 'ko_unicode.bb').read_text('utf8')
-    # Font pages need a graphics context; widths are synthetic and glyphs recorded.
     unicode = unicode.replace(function(unicode, 'ko_font_load'), '')
     unicode = unicode.replace(function(unicode, 'ko_glyph'), GLYPH)
     fonts = (includes / 'load_bmpf.bb').read_text('utf8')

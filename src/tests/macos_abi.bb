@@ -1,6 +1,3 @@
-; Appended to web_semantics.bb by verify_macos.py before closing its output.
-; Keep this fixture runnable by the original Windows Blitz3D compiler too.
-
 Restore native_abi_data
 Read abiInteger,abiFloat#,abiString$,abiLast
 WriteInt output,abiInteger

@@ -118,7 +118,6 @@ For qmask=0 To 31
  For qi=0 To 4:qcheck(qol_enabled(qi)=((qmask Shr qi) And 1),"persisted option value "+qmask+":"+qi):Next
  qcheck(qol_inventory_enabled()=((qmask Shr Cqol_sort) And 1),"inventory view follows sorting option")
 Next
-; Exercise shared features with all five enabled after checking both edition defaults.
 For qi=0 To 4:qol_enabled(qi)=1:Next
 qol_settings_reset()
 If loc_language$="ko" Then
@@ -219,7 +218,6 @@ get_stored_item(26,Cclass_unit,g_player):Global vetocount=TCitem\count
 qcheck(qol_move(TCitem\id,1)=0,"drop script can veto quick transfer")
 qcheck(qol_count(26,Cclass_unit,g_player)=vetocount,"veto preserves quantity")
 Ditem_script$(26)=oldscript$:Ditem_scriptk$(26)=oldkeys$
-; Hold scheduling runs on game time, independently of frame frequency.
 set_object(-1,set_buildplaceid,EntityX(cam),EntityZ(cam))
 Global site=TCobject\id
 set_state(Cstate_buildplace,Cclass_object,site):TCstate\value=181

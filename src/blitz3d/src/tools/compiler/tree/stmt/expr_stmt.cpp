@@ -1,8 +1,5 @@
 #include "expr_stmt.h"
 
-//////////////////////////
-// Expression statement //
-//////////////////////////
 void ExprStmtNode::semant( Environ *e ){
 	expr=expr->semant( e );
 }

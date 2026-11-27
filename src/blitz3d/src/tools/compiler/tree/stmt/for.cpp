@@ -2,9 +2,6 @@
 #include "../expr/const.h"
 #include "../var/node.h"
 
-///////////////////
-// For/Next loop //
-///////////////////
 ForNode::ForNode( VarNode *var,ExprNode *from,ExprNode *to,ExprNode *step,StmtSeqNode *ss,int np )
 :var(var),fromExpr(from),toExpr(to),stepExpr(step),stmts(ss),nextPos(np){
 }
@@ -42,7 +39,6 @@ void ForNode::translate( Codegen *g ){
 
 	TNode *t;Type *ty=var->sem_type;
 
-	//initial assignment
 	g->code( var->store( g,fromExpr->translate( g ) ) );
 
 	std::string cond=genLabel();
@@ -51,13 +47,11 @@ void ForNode::translate( Codegen *g ){
 	g->label( loop );
 	stmts->translate( g );
 
-	//execute the step part
 	debug( nextPos,g );
 	int op=ty==Type::int_type ? IR_ADD : IR_FADD;
 	t=d_new TNode( op,var->load( g ),stepExpr->translate( g ) );
 	g->code( var->store( g,t ) );
 
-	//test for loop cond
 	g->label( cond );
 	op=stepExpr->constNode()->floatValue()>0 ? '>' : '<';
 	t=compare( op,var->load( g ),toExpr->translate( g ),ty );
@@ -76,11 +70,9 @@ void ForNode::translate2( Codegen_LLVM *g ){
 	auto loop=llvm::BasicBlock::Create( *g->context,"for_loop",func );
 	auto cont=llvm::BasicBlock::Create( *g->context,"for_cont",func );
 
-	//initial assignment
 	var->store2( g,fromExpr->translate2( g ) );
 	g->builder->CreateBr( cond );
 
-	//the loop
 	g->builder->SetInsertPoint( loop );
 
 	auto oldBreakBlock=g->breakBlock;
@@ -88,13 +80,11 @@ void ForNode::translate2( Codegen_LLVM *g ){
 	stmts->translate2( g );
 	g->breakBlock=oldBreakBlock;
 
-	//execute the step part
 	auto bop=ty==Type::int_type ? llvm::Instruction::BinaryOps::Add : llvm::Instruction::BinaryOps::FAdd;
 	t=g->builder->CreateBinOp( bop,var->load2( g ),stepExpr->translate2( g ) );
 	var->store2( g,t );
 	g->builder->CreateBr( cond );
 
-	//test for loop cond
 	g->builder->SetInsertPoint( cond );
 	char op=stepExpr->constNode()->floatValue()>0 ? '>' : '<';
 	t=compare2( op,var->load2( g ),toExpr->translate2( g ),ty,g );

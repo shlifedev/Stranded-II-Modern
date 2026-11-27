@@ -2,8 +2,6 @@ import type {ScriptSources} from './api';
 export type RuntimeRecord={kind:'event'|'error'|'variables';event?:string;info?:string;message?:string;code?:string;script?:string;class:number;id:number;row?:number;column?:number;values?:[string,string,string][]};
 export type RuntimeEntry=RuntimeRecord&{path?:string;line?:number};
 
-// The parser's row counts omit blank lines. Only expose a file position when
-// the saved source provides an unambiguous match; dynamic scripts keep context.
 export function locateRuntime(record:RuntimeRecord,sources?:ScriptSources):{path:string;line:number}|undefined{
   if(!sources||record.kind!=='error'||!record.script||!record.row)return;
   const parsed=record.script.split('\x1f').map(s=>s.trim());

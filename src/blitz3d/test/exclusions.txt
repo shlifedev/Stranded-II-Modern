@@ -1,6 +1,3 @@
-# This is a list of files that we DO NOT want to include in the automated
-# testing.
-
 _release/Games/TunnelRun/functions.bb
 _release/Games/TunnelRun/globs.bb
 _release/Games/wing_ring/menus.bb

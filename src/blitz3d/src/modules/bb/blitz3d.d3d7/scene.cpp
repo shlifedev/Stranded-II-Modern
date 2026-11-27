@@ -28,39 +28,31 @@ target(t),dir3d(d),dir3dDev(dd),n_texs(0),tris_drawn(0){
 	memset( d3d_rs,0x55,sizeof(d3d_rs) );
 	memset( d3d_tss,0x55,sizeof(d3d_tss) );
 
-	//nomalize normals
 	setRS( D3DRENDERSTATE_NORMALIZENORMALS,TRUE );
 
-	//vertex coloring
 	setRS( D3DRENDERSTATE_COLORVERTEX,FALSE );
 	setRS( D3DRENDERSTATE_DIFFUSEMATERIALSOURCE,D3DMCS_COLOR1 );
 	setRS( D3DRENDERSTATE_AMBIENTMATERIALSOURCE,D3DMCS_COLOR1 );
 	setRS( D3DRENDERSTATE_EMISSIVEMATERIALSOURCE,D3DMCS_MATERIAL );
 	setRS( D3DRENDERSTATE_SPECULARMATERIALSOURCE,D3DMCS_MATERIAL );
 
-	//Alpha test
 	setRS( D3DRENDERSTATE_ALPHATESTENABLE,false );
 	setRS( D3DRENDERSTATE_ALPHAFUNC,D3DCMP_GREATER );
 	setRS( D3DRENDERSTATE_ALPHAREF,128 );
 
-	//source/dest blending modes
 	setRS( D3DRENDERSTATE_SRCBLEND,D3DBLEND_SRCALPHA );
 	setRS( D3DRENDERSTATE_DESTBLEND,D3DBLEND_INVSRCALPHA );
 
-	//suss out caps
 	can_wb=false;
 	hw_tex_stages=1;
 	D3DDEVICEDESC7 devDesc={0};
 	if( dir3dDev->GetCaps( &devDesc )>=0 ){
 		DWORD caps=devDesc.dpcTriCaps.dwRasterCaps;
-		//texture stages
 		hw_tex_stages=devDesc.wMaxSimultaneousTextures;
-		//depth buffer mode
 		if( (caps & D3DPRASTERCAPS_WBUFFER) ){
 			DDPIXELFORMAT zbuffFmt;
 			if( target->getZBufferFormat( zbuffFmt ) && zbuffFmt.dwRGBBitCount==16 ) can_wb=true;
 		}
-		//fog mode
 		if( (caps&D3DPRASTERCAPS_FOGTABLE)&&(caps&D3DPRASTERCAPS_WFOG) ){
 			setRS( D3DRENDERSTATE_FOGVERTEXMODE,D3DFOG_NONE );
 			setRS( D3DRENDERSTATE_FOGTABLEMODE,D3DFOG_LINEAR );
@@ -76,7 +68,6 @@ target(t),dir3d(d),dir3dDev(dd),n_texs(0),tris_drawn(0){
 		caps_level=110;
 	}
 
-	//default texture states
 	for( int n=0;n<hw_tex_stages;++n ){
 		setTSS( n,D3DTSS_COLORARG1,D3DTA_TEXTURE );
 		setTSS( n,D3DTSS_COLORARG2,D3DTA_CURRENT );
@@ -88,16 +79,13 @@ target(t),dir3d(d),dir3dDev(dd),n_texs(0),tris_drawn(0){
 	}
 	setHWMultiTex( true );
 
-	//ATI lighting hack
 	dir3dDev->LightEnable( 0,true );
 	dir3dDev->LightEnable( 0,false );
 
-	//globals
 	sphere_mat._11=.5f;sphere_mat._22=-.5f;sphere_mat._33=.5f;
 	sphere_mat._41=.5f;sphere_mat._42=.5f;sphere_mat._43=.5f;
 	nullmatrix._11=nullmatrix._22=nullmatrix._33=nullmatrix._44=1;
 
-	//set null renderstate
 	memset(&material,0,sizeof(material));
 	shininess=0;blend=BLEND_REPLACE;fx=0;
 	for( int k=0;k<MAX_TEXTURES;++k ) memset( &texstate[k],0,sizeof(texstate[k]) );
@@ -119,7 +107,6 @@ target(t),dir3d(d),dir3dDev(dd),n_texs(0),tris_drawn(0){
 	viewmatrix=nullmatrix;setViewMatrix( 0 );
 	worldmatrix=nullmatrix;setWorldMatrix( 0 );
 
-	//set default renderstate
 	blend=fx=~0;shininess=1;
 	RenderState state;memset(&state,0,sizeof(state));
 	state.color[0]=state.color[1]=state.color[2]=state.alpha=1;
@@ -132,7 +119,6 @@ gxScene::~gxScene(){
 }
 
 void gxScene::restore(){
-	//restore all meshes (b3d surfaces)
 	std::set<BBMesh*>::iterator mesh_it;
 	for( mesh_it=mesh_set.begin();mesh_it!=mesh_set.end();++mesh_it ){
 		((gxMesh*)(*mesh_it))->restore();
@@ -144,43 +130,39 @@ void gxScene::setTexState( int n,const TexState &state,bool tex_blend ){
 	int flags=state.canvas->getFlags();
 	int tc_index=state.flags & TEX_COORDS2 ? 1 : 0;
 
-	//set canvas
 	dir3dDev->SetTexture( n,state.canvas->getTexSurface() );
 
-	//set filtering
 	setTSS( n,D3DTSS_MINFILTER,(flags & gxCanvas::CANVAS_TEX_NOFILTERING) ? D3DTFN_POINT : D3DTFN_LINEAR );
 	setTSS( n,D3DTSS_MAGFILTER,(flags & gxCanvas::CANVAS_TEX_NOFILTERING) ? D3DTFG_POINT : D3DTFG_LINEAR );
 
-	//set addressing modes
 	setTSS( n,D3DTSS_ADDRESSU,(flags & gxCanvas::CANVAS_TEX_CLAMPU) ? D3DTADDRESS_CLAMP : D3DTADDRESS_WRAP );
 	setTSS( n,D3DTSS_ADDRESSV,(flags & gxCanvas::CANVAS_TEX_CLAMPV) ? D3DTADDRESS_CLAMP : D3DTADDRESS_WRAP );
 
-	//texgen
 	switch( flags&(
 		gxCanvas::CANVAS_TEX_SPHERE|
 		gxCanvas::CANVAS_TEX_CUBE) ){
 
 	case gxCanvas::CANVAS_TEX_SPHERE:
-		setTSS( n,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_CAMERASPACENORMAL );//|tc_index );
+		setTSS( n,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_CAMERASPACENORMAL );
 		setTSS( n,D3DTSS_TEXTURETRANSFORMFLAGS,D3DTTFF_COUNT2 );
 		dir3dDev->SetTransform( (D3DTRANSFORMSTATETYPE)(D3DTRANSFORMSTATE_TEXTURE0+n),&sphere_mat );
 		break;
 	case gxCanvas::CANVAS_TEX_CUBE:
 		switch( state.canvas->cubeMode() & 3 ){
 		case gxCanvas::CUBEMODE_NORMAL:
-			setTSS( n,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_CAMERASPACENORMAL );//|tc_index );
+			setTSS( n,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_CAMERASPACENORMAL );
 			break;
 		case gxCanvas::CUBEMODE_POSITION:
-			setTSS( n,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_CAMERASPACEPOSITION );//|tc_index );
+			setTSS( n,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_CAMERASPACEPOSITION );
 			break;
 		default:
-			setTSS( n,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR );//|tc_index );
+			setTSS( n,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR );
 			break;
 		}
 		if( state.canvas->cubeMode() & 4 ){
 			setTSS( n,D3DTSS_TEXTURETRANSFORMFLAGS,D3DTTFF_DISABLE );
 		}else{
-			setTSS( n,D3DTSS_TEXTURETRANSFORMFLAGS,D3DTTFF_COUNT3 );//COUNT4|D3DTTFF_PROJECTED );
+			setTSS( n,D3DTSS_TEXTURETRANSFORMFLAGS,D3DTTFF_COUNT3 );
 			dir3dDev->SetTransform( (D3DTRANSFORMSTATETYPE)(D3DTRANSFORMSTATE_TEXTURE0+n),&inv_viewmatrix );
 		}
 		break;
@@ -196,7 +178,6 @@ void gxScene::setTexState( int n,const TexState &state,bool tex_blend ){
 
 	if( !tex_blend ) return;
 
-	//blending
 	switch( state.blend ){
 	case BLEND_ALPHA:
 		setTSS( n,D3DTSS_COLOROP,D3DTOP_BLENDTEXTUREALPHA );
@@ -244,17 +225,14 @@ void gxScene::setZMode(){
 
 void gxScene::setLights(){
 	if( fx & FX_FULLBRIGHT ){
-		//no lights on
 		for( int n=0;n<_curLights.size();++n ) dir3dDev->LightEnable( n,false );
 	}else if( fx & FX_CONDLIGHT ){
-		//some lights on
 		for( int n=0;n<_curLights.size();++n ){
 			gxLight *light=(gxLight*)_curLights[n];
 			bool enable=light->d3d_light.dltType!=D3DLIGHT_DIRECTIONAL;
 			dir3dDev->LightEnable( n,enable );
 		}
 	}else{
-		//all lights on
 		for( int n=0;n<_curLights.size();++n ) dir3dDev->LightEnable( n,true );
 	}
 }
@@ -487,7 +465,6 @@ void gxScene::setRenderState( const RenderState &rs ){
 			setRS( D3DRENDERSTATE_FILLMODE,fx&FX_WIREFRAME ? D3DFILL_WIREFRAME : D3DFILL_SOLID );
 		}
 		if( t&FX_EMISSIVE ){
-			//Q3 Hack!
 			int n=fx & FX_EMISSIVE;
 			setRS( D3DRENDERSTATE_DIFFUSEMATERIALSOURCE,n ? D3DMCS_MATERIAL : D3DMCS_COLOR1 );
 			setRS( D3DRENDERSTATE_AMBIENTMATERIALSOURCE,n ? D3DMCS_MATERIAL : D3DMCS_COLOR1 );
@@ -512,7 +489,7 @@ void gxScene::setRenderState( const RenderState &rs ){
 		const RenderState::TexState &ts=rs.tex_states[k];
 		if( !ts.canvas || !ts.blend ) continue;
 		bool settex=false;
-		((gxCanvas*)ts.canvas)->getTexSurface();	//force mipmap rebuild
+		((gxCanvas*)ts.canvas)->getTexSurface();
 		if( ts.canvas!=hw->canvas ){ hw->canvas=(gxCanvas*)ts.canvas;settex=true; }
 		if( ts.blend!=hw->blend ){ hw->blend=ts.blend;settex=true; }
 		if( ts.flags!=hw->flags ){ hw->flags=ts.flags;settex=true; }
@@ -545,7 +522,6 @@ bool gxScene::begin( const std::vector<BBLightRep*> &lights ){
 
 	if( dir3dDev->BeginScene()!=D3D_OK ) return false;
 
-	//clear textures!
 	int n;
 	for( n=0;n<tex_stages;++n ){
 		texstate[n].canvas=0;
@@ -554,7 +530,6 @@ bool gxScene::begin( const std::vector<BBLightRep*> &lights ){
 		dir3dDev->SetTexture( n,0 );
 	}
 
-	//set light states
 	_curLights.clear();
 	for( n=0;n<8;++n ){
 		if( n<lights.size() ){
@@ -646,7 +621,6 @@ BBMesh *gxScene::createMesh( int max_verts,int max_tris,int flags ){
 
 	int vbflags=0;
 
-	//XP or less?
 	if( bbWindowsSystemDriver->isXPorLess() ){
 		vbflags|=D3DVBCAPS_WRITEONLY;
 	}

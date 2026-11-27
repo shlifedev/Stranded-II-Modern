@@ -1,6 +1,5 @@
 import type {Kind,Thumbnail} from './api';
 
-// id is reserved for the JSON Lines request/response envelope.
 export type ThumbnailRequest={command:'thumbnail';project:string;kind:Kind;contentId:number|string};
 type Listener=(value:Thumbnail)=>void;
 type Task={key:string;input:ThumbnailRequest;version:string;listeners:Set<Listener>;started:boolean};
@@ -9,7 +8,6 @@ export function thumbnailKey(input:ThumbnailRequest,version:string){
   return JSON.stringify([input.project,version,input.kind,String(input.contentId)]);
 }
 
-// Keep IPC traffic bounded so scrolling cannot fill the editing command queue.
 export function createThumbnailLoader(request:(input:ThumbnailRequest)=>Promise<Thumbnail>){
   const cache=new Map<string,Thumbnail>(),pending=new Map<string,Task>(),queue:Task[]=[];
   let active=0;

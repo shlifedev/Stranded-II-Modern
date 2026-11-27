@@ -1,8 +1,5 @@
 #include "call.h"
 
-///////////////////
-// Function call //
-///////////////////
 ExprNode *CallNode::semant( Environ *e ){
 	Type *t=e->findType( tag );
 	sem_decl=e->findFunc( ident );

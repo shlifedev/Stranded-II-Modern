@@ -1,5 +1,3 @@
-# Extended interaction guides. Gameplay scripts remain authoritative.
-
 guide=meat
 title=[[loc:qol.guide.meat]]
 source=sys/items_edible.inf#9:on:use

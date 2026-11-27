@@ -1,4 +1,3 @@
-;Stay?
 If TCunit\states=1
 	If TCunit\ai_mode<>ai_idle And TCunit\ai_mode<>ai_attack Then
 		If get_state(Cstate_ai_stick,Cclass_unit,TCunit\id)=1 Then
@@ -9,7 +8,6 @@ EndIf
 
 pitch=0
 
-;Action
 Select TCunit\ai_mode
 	Case ai_move
 		ai_movesound()
@@ -60,7 +58,6 @@ Select TCunit\ai_mode
 		ai_movesound()
 		ai_flee(1)
 	Case ai_idle
-		;Fly away
 		If in_t100go Then
 			For Tunit.Tunit=Each Tunit
 				If Tunit\id=g_player Then
@@ -74,12 +71,10 @@ Select TCunit\ai_mode
 		ai_dosani()
 End Select
 
-;Rotate
 If pitch=0 Then
 	RotateEntity TCunit\h,pitch,EntityYaw(TCunit\h),0
 EndIf
 
-;Set Mode
 If (gt-TCunit\ai_timer)>TCunit\ai_duration Then
 	If TCunit\ai_mode=ai_idle Then
 		x=Rand(10)

@@ -174,7 +174,6 @@ End
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'src/devtools/verify_visibility.py'),'--output',str(output/'visibility')],check=True)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'src/devtools/verify_lighting.py'),'--output',str(output/'lighting')],check=True)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'src/devtools/verify_text_runs.py'),'--output',str(output/'text-runs')],check=True)
-    # Check every emitted reference, including binary map string fields.
     refcount=0
     for p in runtime.rglob('*'):
         texts=[]
@@ -182,7 +181,7 @@ End
         if '/saves/' in p.as_posix():continue
         if p.suffix in ('.inf','.s2s','.txt') and p.is_file():
             try:texts=[p.read_text('utf8')]
-            except UnicodeError:continue  # third-party license originals
+            except UnicodeError:continue
         elif p.suffix=='.s2':texts=[f.data.decode('utf8') for f in Map(p.read_bytes()).fields if f.kind!='attachment']
         for text in texts:
             for key in REFERENCE.findall(text):

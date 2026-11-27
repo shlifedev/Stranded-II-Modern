@@ -1,9 +1,6 @@
 #include "prognode.h"
 #include "../libs.h"
 
-//////////////////
-// The program! //
-//////////////////
 Environ *ProgNode::semant( Environ *e ){
 
 	file_lab=genLabel();
@@ -31,24 +28,18 @@ void ProgNode::translate( Codegen *g,const std::vector<UserFunc> &usrfuncs ){
 
 	if( g->debug ) g->s_data( stmts->file,file_lab );
 
-	//enumerate locals
 	int size=enumVars( sem_env );
 
-	//'Main' label
 	g->enter( "__MAIN",size );
 
-	//reset data pointer
 	g->code( call( "__bbRestore",global( "__DATA" ) ) );
 
-	//load external libs
 	g->code( call( "__bbLoadLibs",global( "__LIBS" ) ) );
 
-	//call main program
 	g->code( jsr( sem_env->funcLabel+"_begin" ) );
 	g->code( jump( sem_env->funcLabel+"_leave" ) );
 	g->label( sem_env->funcLabel+"_begin" );
 
-	//create locals
 	TNode *t=createVars( sem_env );
 	if( t ) g->code( t );
 	if( g->debug ){
@@ -57,39 +48,29 @@ void ProgNode::translate( Codegen *g,const std::vector<UserFunc> &usrfuncs ){
 		g->code( call( "__bbDebugEnter",local(0),iconst((bb_int_t)sem_env),global(t) ) );
 	}
 
-	//no user funcs used!
 	usedfuncs.clear();
 
-	//program statements
 	stmts->translate( g );
 
-	//emit return
 	g->code( ret() );
 
-	//check labels
 	for( k=0;k<sem_env->labels.size();++k ){
 		if( sem_env->labels[k]->def<0 )	ex( "Undefined label '"+sem_env->labels[k]->name+"'",sem_env->labels[k]->ref,stmts->file );
 	}
 
-	//leave main program
 	g->label( sem_env->funcLabel+"_leave" );
 	t=deleteVars( sem_env );
 	if( g->debug ) t=d_new TNode( IR_SEQ,call( "__bbDebugLeave" ),t );
 	g->leave( t,0 );
 
-	//structs
 	structs->translate( g );
 
-	//non-main functions
 	funcs->translate( g );
 
-	//data
 	datas->translate( g );
 
-	//library functions
 	std::map<std::string,std::vector<int> > libFuncs;
 
-	//lib ptrs
 	g->flush();
 	g->align_data(4);
 	for( k=0;k<usrfuncs.size();++k ){
@@ -102,13 +83,11 @@ void ProgNode::translate( Codegen *g,const std::vector<UserFunc> &usrfuncs ){
 		g->i_data( 0,"_f"+fn.ident );
 	}
 
-	//LIBS chunk
 	g->flush();
 	g->label( "__LIBS" );
 	std::map<std::string,std::vector<int> >::const_iterator lf_it;
 	for( lf_it=libFuncs.begin();lf_it!=libFuncs.end();++lf_it ){
 
-		//lib name
 		g->s_data( lf_it->first );
 
 		const std::vector<int> &fns=lf_it->second;
@@ -116,7 +95,6 @@ void ProgNode::translate( Codegen *g,const std::vector<UserFunc> &usrfuncs ){
 		for( int j=0;j<fns.size();++j ){
 			const UserFunc &fn=usrfuncs[ fns[j] ];
 
-			//proc name
 			g->s_data( fn.proc );
 
 			g->p_data( "_f"+fn.ident );
@@ -125,14 +103,12 @@ void ProgNode::translate( Codegen *g,const std::vector<UserFunc> &usrfuncs ){
 	}
 	g->s_data( "" );
 
-	//DATA chunk
 	g->flush();
 	g->align_data( 4 );
 	g->label( "__DATA" );
 	datas->transdata( g );
 	g->i_data(0);
 
-	//Thats IT!
 	g->flush();
 }
 
@@ -177,7 +153,7 @@ json ProgNode::toJSON( Environ *e ){
 #include <llvm/IR/Verifier.h>
 
 void ProgNode::translate2( Codegen_LLVM *g,const std::vector<UserFunc> &userfuncs ){
-	std::string filepath=stmts->file; // TODO: should make this absolute
+	std::string filepath=stmts->file;
 	size_t slash_idx=filepath.find_last_of("/\\");
 	std::string filedir=filepath.substr( 0,slash_idx );
 	std::string filename=filepath.substr( slash_idx+1 );
@@ -254,7 +230,7 @@ void ProgNode::translate2( Codegen_LLVM *g,const std::vector<UserFunc> &userfunc
 		g->builder->CreateStore( asInt,slot );
 	}
 
-	g->restoreData( 0 ); // reset data pointer
+	g->restoreData( 0 );
 
 	createVars2( sem_env,g );
 	stmts->translate2( g );

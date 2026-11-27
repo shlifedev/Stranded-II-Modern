@@ -1,9 +1,6 @@
 #include "var_expr.h"
 #include "const.h"
 
-/////////////////////////
-// Variable expression //
-/////////////////////////
 ExprNode *VarExprNode::semant( Environ *e ){
 	var->semant( e );
 	sem_type=var->sem_type;

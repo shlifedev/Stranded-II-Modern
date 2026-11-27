@@ -37,10 +37,8 @@ int main( int argc,char **argv )
 		ExitProcess(-1);
 	}
 
-	//wait for BB to start
 	WaitForInputIdle( pi.hProcess,INFINITE );
 
-	// Close process and thread handles.
 	CloseHandle( pi.hProcess );
 	CloseHandle( pi.hThread );
 #else

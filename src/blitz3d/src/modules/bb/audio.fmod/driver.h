@@ -16,14 +16,13 @@ public:
 
 private:
 
-	/***** GX INTERFACE *****/
 public:
 	bool init();
 
 	BBSound *loadSound( const std::string &filename,bool use_3d );
 
-	void setPaused( bool paused );	//master pause
-	void setVolume( float volume );	//master volume
+	void setPaused( bool paused );
+	void setVolume( float volume );
 
 	void set3dOptions( float roll,float dopp,float dist );
 

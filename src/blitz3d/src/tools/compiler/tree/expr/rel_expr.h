@@ -3,7 +3,6 @@
 
 #include "node.h"
 
-//<,=,>,<=,<>,>=
 struct RelExprNode : public ExprNode{
 	int op;ExprNode *lhs,*rhs;
 	Type *opType;

@@ -16,7 +16,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <sys/prctl.h> // for prctl( PR_SET_NAME )
+#include <sys/prctl.h>
 #include <android_native_app_glue.h>
 
 #include <VrApi.h>
@@ -112,7 +112,6 @@ public:
 	    LOGD("        UseMultiview = %d", UseMultiview);
 
 	    for (int i = 0; i < TextureSwapChainLength; i++) {
-	        // Create the color buffer texture.
 	        const GLuint colorTexture =
 	            vrapi_GetTextureSwapChainHandle(ColorTextureSwapChain, i);
 	        GLenum colorTextureTarget = UseMultiview ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
@@ -126,13 +125,11 @@ public:
 	        GL(glBindTexture(colorTextureTarget, 0));
 
 	        if (UseMultiview) {
-	            // Create the depth buffer texture.
 	            GL(glGenTextures(1, &DepthBuffers[i]));
 	            GL(glBindTexture(GL_TEXTURE_2D_ARRAY, DepthBuffers[i]));
 	            GL(glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT24, width, height, 2));
 	            GL(glBindTexture(GL_TEXTURE_2D_ARRAY, 0));
 
-	            // Create the frame buffer.
 	            GL(glGenFramebuffers(1, &FrameBuffers[i]));
 	            GL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FrameBuffers[i]));
 	            if (multisamples > 1 && (glFramebufferTextureMultisampleMultiviewOVR != NULL)) {
@@ -140,33 +137,33 @@ public:
 	                    GL_DRAW_FRAMEBUFFER,
 	                    GL_DEPTH_ATTACHMENT,
 	                    DepthBuffers[i],
-	                    0 /* level */,
-	                    multisamples /* samples */,
-	                    0 /* baseViewIndex */,
-	                    2 /* numViews */));
+	                    0 ,
+	                    multisamples ,
+	                    0 ,
+	                    2 ));
 	                GL(glFramebufferTextureMultisampleMultiviewOVR(
 	                    GL_DRAW_FRAMEBUFFER,
 	                    GL_COLOR_ATTACHMENT0,
 	                    colorTexture,
-	                    0 /* level */,
-	                    multisamples /* samples */,
-	                    0 /* baseViewIndex */,
-	                    2 /* numViews */));
+	                    0 ,
+	                    multisamples ,
+	                    0 ,
+	                    2 ));
 	            } else {
 	                GL(glFramebufferTextureMultiviewOVR(
 	                    GL_DRAW_FRAMEBUFFER,
 	                    GL_DEPTH_ATTACHMENT,
 	                    DepthBuffers[i],
-	                    0 /* level */,
-	                    0 /* baseViewIndex */,
-	                    2 /* numViews */));
+	                    0 ,
+	                    0 ,
+	                    2 ));
 	                GL(glFramebufferTextureMultiviewOVR(
 	                    GL_DRAW_FRAMEBUFFER,
 	                    GL_COLOR_ATTACHMENT0,
 	                    colorTexture,
-	                    0 /* level */,
-	                    0 /* baseViewIndex */,
-	                    2 /* numViews */));
+	                    0 ,
+	                    0 ,
+	                    2 ));
 	            }
 
 	            GL(GLenum renderFramebufferStatus = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER));
@@ -180,15 +177,12 @@ public:
 	        } else {
 	            if (multisamples > 1 && glRenderbufferStorageMultisampleEXT != NULL &&
 	                glFramebufferTexture2DMultisampleEXT != NULL) {
-	                // Create multisampled depth buffer.
 	                GL(glGenRenderbuffers(1, &DepthBuffers[i]));
 	                GL(glBindRenderbuffer(GL_RENDERBUFFER, DepthBuffers[i]));
 	                GL(glRenderbufferStorageMultisampleEXT(
 	                    GL_RENDERBUFFER, multisamples, GL_DEPTH_COMPONENT24, width, height));
 	                GL(glBindRenderbuffer(GL_RENDERBUFFER, 0));
 
-	                // Create the frame buffer.
-	                // NOTE: glFramebufferTexture2DMultisampleEXT only works with GL_FRAMEBUFFER.
 	                GL(glGenFramebuffers(1, &FrameBuffers[i]));
 	                GL(glBindFramebuffer(GL_FRAMEBUFFER, FrameBuffers[i]));
 	                GL(glFramebufferTexture2DMultisampleEXT(
@@ -212,13 +206,11 @@ public:
 	                    return false;
 	                }
 	            } else {
-	                // Create depth buffer.
 	                GL(glGenRenderbuffers(1, &DepthBuffers[i]));
 	                GL(glBindRenderbuffer(GL_RENDERBUFFER, DepthBuffers[i]));
 	                GL(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height));
 	                GL(glBindRenderbuffer(GL_RENDERBUFFER, 0));
 
-	                // Create the frame buffer.
 	                GL(glGenFramebuffers(1, &FrameBuffers[i]));
 	                GL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FrameBuffers[i]));
 	                GL(glFramebufferRenderbuffer(
@@ -327,17 +319,13 @@ public:
 	void resize(){
 	}
 
-	// graphics
 	void backup(){}
 	bool restore(){ return true; }
 
-	//MANIPULATORS
 	void vwait(){}
 
-	//SPECIAL!
 	void copy( BBCanvas *dest,int dx,int dy,int dw,int dh,BBCanvas *src,int sx,int sy,int sw,int sh ){}
 
-  //NEW! Gamma control!
 	void setGamma( int r,int g,int b,float dr,float dg,float db ){
 		gamma_red[r&255]=dr*257.0f;
 		gamma_red[g&255]=dg*257.0f;
@@ -350,7 +338,6 @@ public:
 	void updateGamma( bool calibrate ){
 	}
 
-	//ACCESSORS
 	int getWidth()const{ return drawable_width; }
 	int getHeight()const{ return drawable_height; }
 	int getLogicalWidth()const{ return window_width; };
@@ -373,8 +360,8 @@ private:
 	void resize();
 
 	android_app *app;
-	int multi_view; // GL_OVR_multiview, GL_OVR_multiview2
-	int EXT_texture_border_clamp; // GL_EXT_texture_border_clamp, GL_OES_texture_border_clamp
+	int multi_view;
+	int EXT_texture_border_clamp;
 
 	ovrTracking2 tracking;
 public:
@@ -406,11 +393,8 @@ public:
 			EXT_texture_border_clamp = strstr(exts, "GL_EXT_texture_border_clamp") || strstr(exts, "GL_OES_texture_border_clamp");
 		}
 
-		// loadingIcon();
-
 		GL( glDisable(GL_FRAMEBUFFER_SRGB_EXT) );
 
-		// UseMultiview &= glExtensions.multi_view;
 		UseMultiview = false;
 
 		LOGD("AppState UseMultiview : %d", UseMultiview);
@@ -423,7 +407,6 @@ public:
 		g->init();
 		graphics=g;
 
-		// create eye buffers
 		bool multiview=false;
 		for ( int eye=0;eye<(multiview?1:VRAPI_FRAME_LAYER_EYE_MAX);eye++ ){
 			eyes.push_back( VRAPIEyeCanvas(&g->res) );
@@ -482,7 +465,6 @@ public:
 		if (Resumed != false && NativeWindow != NULL) {
 			if (Ovr == NULL) {
 				ovrModeParms parms = vrapi_DefaultModeParms(&java);
-				// No need to reset the FLAG_FULLSCREEN window flag when using a View
 				parms.Flags &= ~VRAPI_MODE_FLAG_RESET_WINDOW_FULLSCREEN;
 
 				parms.Flags |= VRAPI_MODE_FLAG_FRONT_BUFFER_SRGB;
@@ -493,7 +475,6 @@ public:
 
 				Ovr = vrapi_EnterVrMode(&parms);
 
-				// If entering VR mode failed then the ANativeWindow was not valid.
 				if (Ovr == NULL) {
 					LOGD("%s", "Invalid ANativeWindow!");
 					NativeWindow = NULL;
@@ -507,8 +488,6 @@ public:
 					vrapi_SetExtraLatencyMode( Ovr,VRAPI_EXTRA_LATENCY_MODE_ON );
 					vrapi_SetPropertyInt( &java,VRAPI_DYNAMIC_FOVEATION_ENABLED,true );
 					vrapi_SetDisplayRefreshRate( Ovr,120.0 );
-					// ovrHmdColorDesc color_desc={ VRAPI_COLORSPACE_P3 };
-					// vrapi_SetClientColorDesc( Ovr,&color_desc );
 				}
 			}
 		} else {
@@ -522,7 +501,6 @@ public:
 	void ovrApp_HandleVrApiEvents() {
 		ovrEventDataBuffer eventDataBuffer = {};
 
-		// Poll for VrApi events
 		for (;;) {
 			ovrEventHeader* eventHeader = (ovrEventHeader*)(&eventDataBuffer);
 			ovrResult res = vrapi_PollEvent(eventHeader);
@@ -553,22 +531,17 @@ public:
 	VRAPIRuntime( android_app *app );
 	~VRAPIRuntime();
 
-	// context driver
 	int numGraphicsDrivers(){
-		return 0; // TODO
+		return 0;
 	}
 	void graphicsDriverInfo( int driver,std::string *name,int *c ){
-		// TODO
 	}
 	int numGraphicsModes( int driver ){
-		// TODO
 		return 0;
 	}
 	void graphicsModeInfo( int driver,int mode,int *w,int *h,int *d,int *c ){
-		// TODO
 	}
 	void windowedModeInfo( int *c ){
-		// TODO
 	}
 
 	BBGraphics *openGraphics( int w,int h,int d,int driver,int flags ){return graphics;}
@@ -607,14 +580,8 @@ public:
 			return;
 		}
 
-		// This is the only place the frame index is incremented, right before
-		// calling vrapi_GetPredictedDisplayTime().
 		FrameIndex++;
 
-		// Get the HMD pose, predicted for the middle of the time period during which
-		// the new eye images will be displayed. The number of frames predicted ahead
-		// depends on the pipeline depth of the engine and the synthesis rate.
-		// The better the prediction, the less black will be pulled in at the edges.
 		const double predictedDisplayTime=vrapi_GetPredictedDisplayTime( Ovr,FrameIndex );
 		tracking=vrapi_GetPredictedTracking2( Ovr,predictedDisplayTime );
 
@@ -626,21 +593,17 @@ public:
 			ovrInputCapabilityHeader curCaps;
 
 			if (vrapi_EnumerateInputDevices(Ovr, deviceIndex, &curCaps) < 0) {
-				// LOGD( "Input - No more devices!" );
-				break; // no more devices
+				break;
 			}
 
 			ovrResult result = ovrError_NotInitialized;
 			switch (curCaps.Type) {
 			case ovrControllerType_Hand: {
-				// LOGD("VrHands - Hand connected, ID = %u", curCaps.DeviceID);
 
 				ovrInputHandCapabilities handCapabilities;
 				handCapabilities.Header = curCaps;
 
-				// LOGD("VrHands - calling get device caps");
 				result = vrapi_GetInputDeviceCapabilities(Ovr, &handCapabilities.Header);
-				// LOGD("VrHands - post calling get device caps %d", result);
 
 				struct Hand {
 					ovrDeviceID device_id=0;
@@ -661,14 +624,11 @@ public:
 							? VRAPI_HAND_LEFT
 							: VRAPI_HAND_RIGHT;
 
-						// LOGD("handedness = %u, left_hand=%u,right_hand=%u", handedness, left_hand.device_id,right_hand.device_id);
-
 						Hand *hand=handedness==VRAPI_HAND_LEFT?&left_hand:&right_hand;
 						if( hand->device_id==0 ){
 							hand->device_id=curCaps.DeviceID;
 
 							hand->root=bbCreatePivot( HMDHands() );
-							// hand->root->setLocalPosition( Vector(0,0,2) );
 
 
 							static MeshModel *bb=0;
@@ -717,19 +677,6 @@ public:
 								LOGD("%s", "VrHands - failed to get hand skeleton");
 							}
 
-							// {
-							//     std::unique_ptr<ovrHandMesh> mesh(new ovrHandMesh());
-							//     if (mesh) {
-							//         mesh->Header.Version = ovrHandVersion_1;
-							//         if (vrapi_GetHandMesh( Ovr,handedness,&(mesh.get()->Header) ) !=
-							//             ovrSuccess) {
-							//             LOGD("VrHands - failed to get hand mesh");
-							//         } else {
-							//             handDevice->InitFromSkeletonAndMesh(*this, &skeleton, mesh.get());
-							//         }
-							//     }
-							// }
-
 						}else{
 							ovrPosef HandPose;
 							ovrTracking Tracking;
@@ -756,30 +703,8 @@ public:
 								LOGD( "%s", "VrHands - failed to get hand pose");
 								continue;
 							} else {
-								// SampleConfiguration.HandScaleFactor = RealHandPose.HandScale;
-								// {
-								// 		VRMenuObject* scaleDisplay = IsLeftHand() ? HandScaleDisplayL : HandScaleDisplayR;
-								// 		std::ostringstream ss;
-								// 		ss << (IsLeftHand() ? "size L " : "size R ") << RealHandPose.HandScale;
-								// 		scaleDisplay->SetText(ss.str().c_str());
-								// }
-								//
-								// /// Get the root pose from the API
-								// HandPose = RealHandPose.RootPose;
-								// /// Pointer poses
-								// PointerPose = InputStateHand.PointerPose;
-								// /// update based on hand pose
-								// HandModel.Update(RealHandPose);
-								// UpdateSkeleton(HandPose);
-
-								// LOGD("update!!!!");
-
-								// RootPose
 
 								ovrPosef pose=RealHandPose.RootPose;
-
-								// LOGD( "hand=%f,%f,%f",pose.Translation.x,pose.Translation.y,-pose.Translation.z );
-								// LOGD( "%f",RealHandPose.HandScale );
 
 								hand->root->setLocalPosition( Vector( pose.Translation.x,pose.Translation.y,-pose.Translation.z ) );
 								hand->root->setLocalRotation( Quat( pose.Orientation.w,Vector(pose.Orientation.x,pose.Orientation.y,-pose.Orientation.z ) ) );
@@ -796,12 +721,10 @@ public:
 					break;
 				}
 				default: {
-					// LOGD("Unknown device connected!");
 				}
 			}
 		}
 
-		// Render eye images and setup the primary layer using ovrTracking2.
 		ovrMatrix4f eyeViewMatrixTransposed[2];
 		eyeViewMatrixTransposed[0] = ovrMatrix4f_Transpose(&tracking.Eye[0].ViewMatrix);
 		eyeViewMatrixTransposed[1] = ovrMatrix4f_Transpose(&tracking.Eye[1].ViewMatrix);
@@ -813,10 +736,7 @@ public:
 		ovrVector3f headPosition=tracking.HeadPose.Pose.Position;
 		ovrQuatf headOrientation=tracking.HeadPose.Pose.Orientation;
 
-		// Render the eye images.
 		for (int eye = 0; eye < eyes.size(); eye++) {
-			// NOTE: In the non-mv case, latency can be further reduced by updating the sensor
-			// prediction for each eye (updates orientation, not position)
 
 			ovrMatrix4f view=ovrMatrix4f_Inverse( &eyeViewMatrixTransposed[eye] );
 
@@ -870,11 +790,9 @@ public:
 		frameDesc.LayerCount = 1;
 		frameDesc.Layers = layers;
 
-		// Hand over the eye images to the time warp.
 		vrapi_SubmitFrame2(Ovr, &frameDesc);
 	}
 
-	// runtime
 	void asyncStop(){}
 	void asyncRun(){}
 	void asyncEnd(){
@@ -882,7 +800,6 @@ public:
 	}
 
 	bool idle(){
-		// Read all pending events.
 		for (;;) {
 			int events;
 			struct android_poll_source* source;
@@ -891,7 +808,6 @@ public:
 				break;
 			}
 
-			// Process this event.
 			if( source!=NULL ){
 				source->process(app, source);
 			}
@@ -899,10 +815,7 @@ public:
 			ovrApp_HandleVrModeChanges( );
 		}
 
-		// We must read from the event queue with regular frequency.
 		ovrApp_HandleVrApiEvents( );
-
-		// TODO: update controller/hand data
 
 		return app->destroyRequested==0;
 	}
@@ -965,7 +878,6 @@ BBRuntime *bbCreateOpenGLRuntime(){
 	java.Vm->AttachCurrentThread( &java.Env,NULL );
 	java.ActivityObject=_app->activity->clazz;
 
-	// Note that AttachCurrentThread will reset the thread name.
 	prctl( PR_SET_NAME,(long)"blitz3d",0,0,0 );
 
 	const ovrInitParms initParms = vrapi_DefaultInitParms(&java);

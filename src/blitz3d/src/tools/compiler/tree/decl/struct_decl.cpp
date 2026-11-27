@@ -1,8 +1,5 @@
 #include "struct_decl.h"
 
-//////////////////////
-// Type Declaration //
-//////////////////////
 void StructDeclNode::proto( DeclSeq *d,Environ *e ){
 	sem_type=d_new StructType( ident,d_new DeclSeq() );
 	if( !d->insertDecl( ident,sem_type,DECL_STRUCT ) ){
@@ -18,28 +15,23 @@ void StructDeclNode::semant( Environ *e ){
 
 void StructDeclNode::translate( Codegen *g ){
 
-	//translate fields
 	fields->translate( g );
 
-	//type ID
 	g->align_data( 4 );
 	g->i_data( 5,"_t"+ident );
 
-	//used and free lists for type
 	int k;
 	for( k=0;k<2;++k ){
 		std::string lab=genLabel();
-		g->i_data( 0,lab );	//fields
-		g->p_data( lab );	//next
-		g->p_data( lab );	//prev
-		g->i_data( 0 );		//type
-		g->i_data( -1 );	//ref_cnt
+		g->i_data( 0,lab );
+		g->p_data( lab );
+		g->p_data( lab );
+		g->i_data( 0 );
+		g->i_data( -1 );
 	}
 
-	//number of fields
 	g->i_data( sem_type->fields->size() );
 
-	//type of each field
 	for( k=0;k<sem_type->fields->size();++k ){
 		Decl *field=sem_type->fields->decls[k];
 		Type *type=field->type;
@@ -60,7 +52,7 @@ void StructDeclNode::translate2( Codegen_LLVM *g ){
 	std::vector<llvm::Constant*> template_types;
 	std::vector<llvm::Constant*> template_defs;
 	std::vector<llvm::Type*> fields;
-	fields.push_back( g->bbObj ); // base
+	fields.push_back( g->bbObj );
 	for( int k=0;k<sem_type->fields->size();++k ){
 		Decl *field=sem_type->fields->decls[k];
 		Type *type=field->type;
@@ -90,24 +82,24 @@ void StructDeclNode::translate2( Codegen_LLVM *g ){
 	ty->setBody( fields );
 
 	std::vector<llvm::Type*> templatefields;
-	templatefields.push_back( g->bbObjType ); // base
+	templatefields.push_back( g->bbObjType );
 	templatefields.push_back( template_typesary );
 	ty2->setBody( templatefields );
 
 	auto temp=(llvm::GlobalVariable*)sem_type->objty;
 
 	std::vector<llvm::Constant*> objdata;
-	objdata.push_back( llvm::ConstantPointerNull::get( llvm::PointerType::get( g->bbField,0 ) ) );   // fields
-	objdata.push_back( llvm::ConstantPointerNull::get( llvm::PointerType::get( g->bbObj,0 ) ) );     // next
-	objdata.push_back( llvm::ConstantPointerNull::get( llvm::PointerType::get( g->bbObj,0 ) ) );     // prev
-	objdata.push_back( llvm::ConstantPointerNull::get( llvm::PointerType::get( g->bbObjType,0 ) ) ); // type
-	objdata.push_back( llvm::ConstantInt::get( Type::int_type->llvmType( g->context.get() ),-1 ) );                  // ref_cnt
+	objdata.push_back( llvm::ConstantPointerNull::get( llvm::PointerType::get( g->bbField,0 ) ) );
+	objdata.push_back( llvm::ConstantPointerNull::get( llvm::PointerType::get( g->bbObj,0 ) ) );
+	objdata.push_back( llvm::ConstantPointerNull::get( llvm::PointerType::get( g->bbObj,0 ) ) );
+	objdata.push_back( llvm::ConstantPointerNull::get( llvm::PointerType::get( g->bbObjType,0 ) ) );
+	objdata.push_back( llvm::ConstantInt::get( Type::int_type->llvmType( g->context.get() ),-1 ) );
 	auto emptyobj=llvm::ConstantStruct::get( g->bbObj,objdata );
 
 	std::vector<llvm::Constant*> objtypedata;
-	objtypedata.push_back( llvm::ConstantInt::get( Type::int_type->llvmType( g->context.get() ),5 ) ); // type
+	objtypedata.push_back( llvm::ConstantInt::get( Type::int_type->llvmType( g->context.get() ),5 ) );
 
-	for( int k=0;k<2;++k ){ // used/free
+	for( int k=0;k<2;++k ){
 		std::vector<llvm::Value*> indices;
 		indices.push_back( llvm::ConstantInt::get( *g->context,llvm::APInt(32, 0) ) );
 		indices.push_back( llvm::ConstantInt::get( *g->context,llvm::APInt(32, 0) ) );
@@ -115,18 +107,17 @@ void StructDeclNode::translate2( Codegen_LLVM *g ){
 		auto objptr=llvm::ConstantExpr::getGetElementPtr( ty2,temp,indices );
 
 		std::vector<llvm::Constant*> objdata;
-		objdata.push_back( llvm::ConstantPointerNull::get( llvm::PointerType::get( g->bbField,0 ) ) );   // fields
-		objdata.push_back( objptr );     // next
-		objdata.push_back( objptr );     // prev
-		objdata.push_back( llvm::ConstantPointerNull::get( llvm::PointerType::get( g->bbObjType,0 ) ) ); // type
-		objdata.push_back( llvm::ConstantInt::get( Type::int_type->llvmType( g->context.get() ),-1 ) );                  // ref_cnt
+		objdata.push_back( llvm::ConstantPointerNull::get( llvm::PointerType::get( g->bbField,0 ) ) );
+		objdata.push_back( objptr );
+		objdata.push_back( objptr );
+		objdata.push_back( llvm::ConstantPointerNull::get( llvm::PointerType::get( g->bbObjType,0 ) ) );
+		objdata.push_back( llvm::ConstantInt::get( Type::int_type->llvmType( g->context.get() ),-1 ) );
 		auto defaultobj=llvm::ConstantStruct::get( g->bbObj,objdata );
 
 		objtypedata.push_back( defaultobj );
 	}
 
-	objtypedata.push_back( llvm::ConstantInt::get( Type::int_type->llvmType( g->context.get() ),sem_type->fields->size( ) ) ); // fieldCnt
-	// fieldTypes does not need to be accounted for.
+	objtypedata.push_back( llvm::ConstantInt::get( Type::int_type->llvmType( g->context.get() ),sem_type->fields->size( ) ) );
 
 	std::vector<llvm::Constant*> structfields;
 	structfields.push_back( llvm::ConstantStruct::get( g->bbObjType,objtypedata ) );

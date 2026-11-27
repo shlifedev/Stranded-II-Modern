@@ -37,7 +37,6 @@ FileView::FileView( wxString &path,wxWindow *parent,wxWindowID id ):path(path),c
 
 	LoadKeywords();
 
-	// Inconsolata, Monaco, Consolas, 'Courier New', Courier
 	wxFont font;
 #ifdef __WXMSW__
 	font = wxFontInfo(12).FaceName("Consolas");
@@ -67,8 +66,6 @@ FileView::FileView( wxString &path,wxWindow *parent,wxWindowID id ):path(path),c
 
 	wxColour rgb_white=wxColour( 0xff,0xff,0xff );
 
-	// text->StyleClearAll();
-
 	text->StyleSetBackground( wxSTC_STYLE_DEFAULT,rgb_bkgrnd );
 	text->StyleSetForeground( wxSTC_STYLE_DEFAULT,rgb_default );
 
@@ -77,11 +74,6 @@ FileView::FileView( wxString &path,wxWindow *parent,wxWindowID id ):path(path),c
 	text->SetCaretLineVisible( true );
 
 	text->SetTabWidth( 4 );
-
-	// text->SetWrapMode( wxSTC_WRAP_WORD );
-
-	// text->SetExtraAscent( 1 );
-	// text->SetExtraDescent( 1 );
 
 	text->SetMarginWidth( MARGIN_LINE_NUMBERS,25*2 );
 	text->SetMarginType( MARGIN_LINE_NUMBERS,wxSTC_MARGIN_NUMBER );
@@ -189,7 +181,6 @@ bool FileView::Save(){
 		wxString out=text->GetText();
 		stream.GetFile()->Write( out );
 
-		// TODO: make preference option
 		if( out[out.length()-1] != '\n' ){
 			stream.GetFile()->Write( '\n' );
 		}

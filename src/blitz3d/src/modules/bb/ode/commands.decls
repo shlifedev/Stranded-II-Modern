@@ -1,25 +1,20 @@
-;Initialization
 dInitODE():"_odeInitODE"
 dCloseODE():"_odeCloseODE"
 
-;World
 dWorldCreate%():"_odeWorldCreate"
 dWorldDestroy( world% ):"_odeWorldDestroy"
 dWorldSetGravity( world%,x#,y#,z# ):"_odeWorldSetGravity"
 dWorldQuickStep%( world%,stepsize# ):"_odeWorldQuickStep"
 dWorldSetAutoDisableFlag( world%,do_auto_disable% ):"_odeWorldSetAutoDisableFlag"
 
-;Space
 dHashSpaceCreate%( space% ):"_odeHashSpaceCreate"
 dSpaceDestroy( space% ):"_odeSpaceDestroy"
 
-;Body
 dBodySetAutoDisableFlag( body%,do_auto_disable% ):"_odeBodySetAutoDisableFlag"
 dBodyCreate%( world% ):"_odeBodyCreate"
 dBodySetPosition( body%,x#,y#,z# ):"_odeBodySetPosition"
 dBodySetRotation( body%,pitch#,yaw#,roll# ):"_odeBodySetRotation"
 
-;Geom
 dGeomSetBody( geom%,body% ):"_odeGeomSetBody"
 dGeomGetPositionX#( geom% ):"_odeGeomGetPositionX"
 dGeomGetPositionY#( geom% ):"_odeGeomGetPositionY"
@@ -31,15 +26,12 @@ dGeomGetRoll#( geom% ):"_odeGeomGetRoll"
 dCreateBox%( space%,lx#,ly#,lz# ):"_odeCreateBox"
 dCreatePlane%( space%,a#,b#,c#,d# ):"_odeCreatePlane"
 
-;Joints
 dJointGroupCreate%( max_size% ):"_odeJointGroupCreate"
 dJointGroupDestroy( group% ):"_odeJointGroupDestroy"
 dJointGroupEmpty( group% ):"_odeJointGroupEmpty"
 
-;Collision
 dSpaceCollide( space%,world%,group% ):"_odeSpaceCollide"
 
-;Contact
 dContactSetMaxContacts( max% ):"_odeContactSetMaxContacts"
 dContactGetMaxContacts%():"_odeContactGetMaxContacts"
 dContactSetMode( mode% ):"_odeContactSetMode"
@@ -67,10 +59,8 @@ dContactGetSlip1#():"_odeContactGetSlip1"
 dContactSetSlip2( slip# ):"_odeContactSetSlip2"
 dContactGetSlip2#():"_odeContactGetSlip2"
 
-;Blitz3D Helpers
 dGeomSyncEntity( geom%,entity.Entity ):"_odeGeomSyncEntity"
 
-;JV-ODE Compatibility
 dRegisterODE( key1%,key2%,key3%,key4% ):"_odeRegisterODE"
 dGetVersion#():"_odeGetVersion"
 dDemoTime%():"_odeDemoTime"

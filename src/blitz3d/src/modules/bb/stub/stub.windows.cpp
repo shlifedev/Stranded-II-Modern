@@ -4,10 +4,6 @@
 
 #include <string>
 
-// CommandLine() is the raw text after the program name, as in the original
-// runtime. Joining ANSI argv lost the spaces ("-fps 120" became "-fps120"),
-// the quotes around "-mod" names and any non-ANSI text. The program name ends
-// like CRT argv[0]: quotes toggle, the first unquoted space or tab ends it.
 static std::string commandTail(){
 	const wchar_t *p=GetCommandLineW();
 	bool quoted=false;

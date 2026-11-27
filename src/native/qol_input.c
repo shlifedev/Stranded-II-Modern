@@ -1,5 +1,3 @@
-/* Shared Unicode EDIT bridge for the legacy Blitz message loop.
- * Only the current thread and this one control are intercepted. */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <imm.h>
@@ -20,8 +18,6 @@ static LRESULT CALLBACK search_message(int code, WPARAM removed, LPARAM data) {
         MSG *queued = (MSG *)data;
         if (queued->hwnd == search_edit) {
             MSG message = *queued;
-            /* Blitz dispatches without TranslateMessage and uses DispatchMessageA.
-             * Consume this control's message exactly once through Unicode APIs. */
             queued->hwnd = NULL;
             queued->message = WM_NULL;
             queued->wParam = 0;

@@ -1,5 +1,3 @@
-// Compile the actual scene implementation so this fixture can supply an
-// offscreen device directly. No window, swapchain, OS input or game files.
 #include <webgpu/webgpu.h>
 static unsigned indexed_draws=0,drawn_instances=0;
 static void checkedDrawIndexed(WGPURenderPassEncoder pass,uint32_t count,uint32_t instances,
@@ -33,20 +31,18 @@ static void checkFrustum(){
     for(int i=0;i<12000;++i){
         Transform eye(yawMatrix(random(-3,3))*pitchMatrix(random(-1,1)),
                       Vector(random(-3000,3000),random(-500,500),random(-3000,3000)));
-        if(i&1) eye.m.j=-eye.m.j; // Reflected water/mirror camera.
+        if(i&1) eye.m.j=-eye.m.j;
         Frustum world(camera,eye);
         Box box(Vector(-random(1,50),-random(1,50),-random(1,50)),
                 Vector(random(1,50),random(1,50),random(1,50)));
         Matrix basis=yawMatrix(random(-3,3))*pitchMatrix(random(-3,3));
         basis.i*=random(0.2f,4);basis.j*=random(0.2f,4);basis.k*=random(0.2f,4);
         if(i&2) basis.i=-basis.i;
-        basis.j+=basis.i*random(-0.5f,0.5f); // Shear/non-uniform parent transforms.
+        basis.j+=basis.i*random(-0.5f,0.5f);
         Transform model(basis,eye*Vector(random(-2000,2000),random(-1500,1500),random(-100,1700)));
         Vector corners[8];for(int k=0;k<8;++k) corners[k]=box.corner(k);
         boxes&=world.cull(box)==world.cull(corners,8);
         for(int k=0;k<8;++k) corners[k]=model*box.corner(k);
-        // Independent eight-corner reference. Ignore only rounding at the
-        // boundary, where the optimized method intentionally keeps a sliver.
         float margin=1e30f;
         for(int p=0;p<6;++p){
             float furthest=-1e30f;
@@ -68,8 +64,6 @@ static void checkFrustum(){
     expect(camera.cull(Box(Vector(0,0,1)),Transform()),"touching near plane remains visible");
     expect(camera.cull(Box(Vector(0,0,1500)),Transform()),"touching far plane remains visible");
     expect(!camera.cull(Box(Vector(0,0,1501)),Transform()),"beyond far plane is culled");
-    // Test roundoff fallback at near/far/side planes, including flat bounds
-    // and large cancelling local coordinates and translations.
     bool boundaries=true;
     for(float offset:{0.0f,10000.0f,-10000.0f}) for(float delta:{-0.001f,0.0f,0.001f}){
         for(Vector position:{Vector(0,0,1+delta),Vector(0,0,1500+delta),Vector(10+delta,0,10)}){
@@ -79,8 +73,6 @@ static void checkFrustum(){
         }
     }
     expect(boundaries,"prepared bounds retain legacy decisions on touching and nearly touching planes");
-    // Directional shadow cameras have parallel sides, not an eye-centred cone.
-    // Check after world transformation too: RenderContext rebuilds the planes.
     const Frustum ortho=Frustum::orthographic(1,100,40,20);
     bool orthoInside=true,orthoOutside=true;
     for(float yaw:{0.0f,0.8f,-2.0f}) for(int flip:{0,1}){
@@ -191,7 +183,6 @@ static void checkRendering(WebGPUContextResources &res){
     state.color[0]=0.2f;state.color[1]=0.6f;state.color[2]=0.1f;
     state.alpha=1;state.fx=BBScene::FX_DOUBLESIDED;
     fillQuad(mesh,10,oblique);
-    // The old D3D7 material disables specular completely at shininess zero.
     expectPixel("matte green under oblique light",draw(scene,target,mesh,state,lights,ambient),26,77,13);
     state.tex_states[0].canvas=&texture;state.tex_states[0].blend=BBScene::BLEND_MULTIPLY;
     expectPixel("textured matte green",draw(scene,target,mesh,state,lights,ambient),13,58,3);
@@ -203,7 +194,6 @@ static void checkRendering(WebGPUContextResources &res){
     state.fx|=BBScene::FX_NOFOG;
     expectPixel("no-fog material",draw(scene,target,mesh,state,lights,ambient,BBScene::FOG_LINEAR),51,153,26);
 
-    // Real Model/Brush auto-fade: opaque up to 2000, half at 2150, culled at 2300.
     FadingModel model;model.setAutoFade(2000,2300);model.setColor(Vector(1,0,0));
     model.setFX(BBScene::FX_FULLBRIGHT|BBScene::FX_DOUBLESIDED);
     for(float distance:{100.0f,1250.0f,1999.0f,2000.0f,2150.0f,2299.0f,2300.0f,100.0f}){
@@ -217,8 +207,6 @@ static void checkRendering(WebGPUContextResources &res){
         expectPixel(label,draw(scene,target,mesh,model.applied.getRenderState(),noLights,dark),
                     (int)std::lround(255*alpha),0,(int)std::lround(255*(1-alpha)));
     }
-    // Shininess strength is independent of the diffuse light colour and is
-    // added after texture modulation, as configured by the D3D7 backend.
     bbMat4Identity(light.matrix);light.r=0.2f;light.g=0.4f;light.b=0.6f;
     fillQuad(mesh,1000,front);
     state.fx=BBScene::FX_DOUBLESIDED;state.shininess=0.5f;
@@ -258,8 +246,6 @@ static void checkBatchedRendering(WebGPUContextResources &res){
     WebGPUCanvas copy(&res,32,32,BBCanvas::CANVAS_TEX_VIDMEM);
     WebGPUScene scene(&res);BBMesh *mesh=scene.createMesh(8,4,0);
 
-    // Two sprites occupy separate ranges of one mesh. The second upload must
-    // not split the command batch or replace the first sprite's vertices.
     beginTarget(scene,target);
     fillRegion(mesh,0,0,-1,0);drawRegion(scene,mesh,0,4,0,0xff0000);
     unsigned before=scene.submit_marker;
@@ -269,8 +255,6 @@ static void checkBatchedRendering(WebGPUContextResources &res){
     expectPixel("shared mesh left",target.getPixel(8,16),255,0,0);
     expectPixel("shared mesh right",target.getPixel(24,16),0,255,0);
 
-    // A subsequent camera has new frame/brush uniforms, but the previous
-    // camera and CopyRect must keep theirs until both are submitted.
     beginTarget(scene,target);drawRegion(scene,mesh,0,4,0,0xff0000);scene.end();
     before=scene.submit_marker;
     copy.blit(0,0,&target,0,0,32,32,true);
@@ -280,8 +264,6 @@ static void checkBatchedRendering(WebGPUContextResources &res){
     expectPixel("CopyRect before next camera",copy.getPixel(8,16),255,0,0);
     expectPixel("next camera uniforms",second.getPixel(8,16),0,0,255);
 
-    // Rewriting a used range gets another buffer version without submission.
-    // Pixels must retain each draw's original vertices and indices.
     beginTarget(scene,target);drawRegion(scene,mesh,0,4,0,0xff0000);
     before=scene.submit_marker;
     fillRegion(mesh,0,0,0,1);drawRegion(scene,mesh,0,4,0,0x00ff00);
@@ -300,8 +282,6 @@ static void checkBatchedRendering(WebGPUContextResources &res){
     expectPixel("old triangle indices",target.getPixel(8,16),255,0,0);
     expectPixel("new triangle indices",target.getPixel(24,16),0,255,0);
 
-    // Flushes caused by 2D arenas/readback must also retire 3D offsets and
-    // mesh hazards, even when the scene itself did not initiate the flush.
     beginTarget(scene,target);drawRegion(scene,mesh,0,8,0,0xff0000);
     res.flush();before=scene.submit_marker;
     fillRegion(mesh,0,0,-1,0);drawRegion(scene,mesh,0,4,0,0x0000ff);
@@ -310,8 +290,6 @@ static void checkBatchedRendering(WebGPUContextResources &res){
     expectPixel("uniforms after external flush",target.getPixel(8,16),0,0,255);
     expectPixel("draw before external flush",target.getPixel(24,16),255,0,0);
 
-    // Repeated cameras exercise the finite uniform arena, including a flush
-    // while pushing the next draw's uniforms. Every earlier draw must survive.
     beginTarget(scene,target);before=scene.submit_marker;
     for(int i=0;i<6000;++i){
         scene.setOrthoProj(0.1f,100+(i&1),-1,1,1,-1);
@@ -329,8 +307,6 @@ static void checkMeshVersions(WebGPUContextResources &res){
     } target(&res,32,32,BBCanvas::CANVAS_TEX_VIDMEM);
     WebGPUScene scene(&res);
     auto mesh=static_cast<WebGPUMesh*>(scene.createMesh(4,2,0));
-    // More edits than the pool can hold must submit safely. Later frames
-    // reuse those versions, including poses from before the last submission.
     for(int cycle=0;cycle<3;++cycle){
         beginTarget(scene,target);unsigned marker=scene.submit_marker;
         for(int i=0;i<32;++i){
@@ -353,8 +329,6 @@ static void checkMeshVersions(WebGPUContextResources &res){
     scene.freeMesh(mesh);
     expect(mesh_version_bytes==initialBytes,"mesh destruction releases version budget");
 
-    // A partial index update must copy the unchanged high-index vertices
-    // into its new buffers, including the 32-bit index path.
     mesh=static_cast<WebGPUMesh*>(scene.createMesh(65540,2,0));
     fillRegion(mesh,0,0,-1,0);fillRegion(mesh,65536,0,0,1);
     beginTarget(scene,target);drawRegion(scene,mesh,0,65540,0,0xff0000);
@@ -369,8 +343,6 @@ static void checkMeshVersions(WebGPUContextResources &res){
     mesh=static_cast<WebGPUMesh*>(scene.createMesh(4,2,0));
     beginTarget(scene,target);fillRegion(mesh,0,0,-1,0);drawRegion(scene,mesh,0,4,0,0xff0000);
     marker=scene.submit_marker;
-    // Substitute only budget accounting to exercise the exhausted-budget
-    // path without allocating 32 MiB just for this fallback test.
     size_t previousBytes=mesh_version_bytes;mesh_version_bytes=MAX_MESH_VERSION_BYTES;
     fillRegion(mesh,0,0,0,1);drawRegion(scene,mesh,0,4,0,0x0000ff);
     mesh_version_bytes=previousBytes;scene.end();
@@ -419,7 +391,6 @@ static void checkInstancing(WebGPUContextResources &res){
     expectPixel("first instance material",target.getPixel(8,16),255,0,0);
     expectPixel("second instance material",target.getPixel(24,16),0,255,0);
 
-    // Texture handles can change without any change to material uniform bytes.
     BBScene::RenderState state={};
     state.color[0]=state.color[1]=state.color[2]=1;state.alpha=1;
     state.fx=BBScene::FX_FULLBRIGHT|BBScene::FX_DOUBLESIDED;
@@ -451,7 +422,6 @@ static void checkInstancing(WebGPUContextResources &res){
     expectPixel("first instance camera",target.getPixel(8,16),255,0,0);
     expectPixel("second instance camera",target.getPixel(24,16),255,0,0);
 
-    // A partial clear must execute after pending instances, not before them.
     beginTarget(scene,target);scene.setZMode(BBScene::ZMODE_NORMAL);
     drawRegion(scene,mesh,0,4,0,0xff0000);scene.setViewport(16,0,16,32);
     const float green[3]={0,1,0};scene.clear(green,1,1,true,true);scene.end();
@@ -473,7 +443,6 @@ static void checkInstancing(WebGPUContextResources &res){
     scene.end();expect(indexed_draws-calls==1,"adjacent transparent copies share one instanced draw");
     expectPixel("overlapping transparent copies",target.getPixel(16,16),192,0,0);
 
-    // Copies in one draw still need their own normal matrices for lighting.
     WebGPULight light;light.type=Light::LIGHT_DISTANT;light.r=light.g=light.b=0.5f;
     beginTarget(scene,target);scene.begin({&light});scene.setZMode(BBScene::ZMODE_NORMAL);
     state.blend=BBScene::BLEND_REPLACE;state.alpha=1;state.color[1]=state.color[2]=1;
@@ -487,8 +456,6 @@ static void checkInstancing(WebGPUContextResources &res){
     expectPixel("front-lit instance normal",target.getPixel(8,16),128,128,128);
     expectPixel("back-lit instance normal",target.getPixel(24,16),0,0,0);
 
-    // The instance arena fills independently of cached material uniforms.
-    // Keep all but the two visible copies offscreen to avoid excessive overdraw.
     beginTarget(scene,target);scene.setZMode(BBScene::ZMODE_NORMAL);
     calls=indexed_draws;instances=drawn_instances;marker=scene.submit_marker;
     setInstance(scene,0.5f,-0.5f);drawRegion(scene,mesh,0,4,0,0x00ff00);
@@ -512,8 +479,6 @@ static void checkTransparentInstances(WebGPUContextResources &res){
     state.blend=BBScene::BLEND_ALPHA;
     const float opacity[3]={0.5f,0.25f,0.75f};
 
-    // The world already sorted these models. Instance order must preserve
-    // non-commutative blending even when each tint and fade value differs.
     for(int reverse=0;reverse<2;++reverse){
         beginTarget(scene,target);scene.setZMode(BBScene::ZMODE_CMPONLY);
         unsigned calls=indexed_draws,instances=drawn_instances;
@@ -528,8 +493,6 @@ static void checkTransparentInstances(WebGPUContextResources &res){
         else expectPixel("forward transparent order",target.getPixel(16,16),24,16,191);
     }
 
-    // A different texture between copies must split their batches, without
-    // gathering the matching first and last copies across the middle one.
     const unsigned char white[4]={255,255,255,255};texture.uploadRGBA(white,1,1);
     beginTarget(scene,target);scene.setZMode(BBScene::ZMODE_CMPONLY);
     unsigned calls=indexed_draws;
@@ -543,8 +506,6 @@ static void checkTransparentInstances(WebGPUContextResources &res){
     scene.end();expect(indexed_draws-calls==3,"interleaved material keeps three ordered batches");
     expectPixel("transparent order across material changes",target.getPixel(16,16),32,64,128);
 
-    // Alpha-tested foliage retains the same silhouette as it fades. The
-    // threshold is 128*entityAlpha, not the unfaded or preceding copy's value.
     state.fx|=BBScene::FX_ALPHATEST;
     state.tex_states[0].canvas=&texture;
     for(int coverage:{192,96}){
@@ -561,7 +522,6 @@ static void checkTransparentInstances(WebGPUContextResources &res){
         expectPixel("faded alpha-test coverage",target.getPixel(24,16),coverage>128?48:0,0,0);
     }
 
-    // Transparent draws test opaque depth but must never write their own.
     beginTarget(scene,target);scene.setZMode(BBScene::ZMODE_NORMAL);
     drawRegion(scene,mesh,0,4,0,0x0000ff);
     scene.setZMode(BBScene::ZMODE_CMPONLY);state.tex_states[0]={};
@@ -615,8 +575,6 @@ public:
         BBCanvas::CANVAS_TEXTURE|BBCanvas::CANVAS_TEX_RGB|BBCanvas::CANVAS_TEX_CUBE){}
     void blit(int x,int y,BBCanvas *src,int sx,int sy,int w,int h,bool solid) override{
         WebGPUCanvas::blit(x,y,src,sx,sy,w,h,solid);
-        // Read each completed face before the next copy. This tests all six
-        // views independently of the backend's cubemap storage/sampling.
         std::vector<unsigned char> rgba;
         readPixels(rgba);
         std::vector<unsigned> pixels;
@@ -726,7 +684,6 @@ static void checkCubeCapture(WebGPUContextResources &res){
         compare("six capture views match legacy pixels, including transparent fade/order",1,1);
         expectPixel("capture right-face orientation",reference.faces[0][16*32+16],255,0,0);
         expectPixel("capture bottom-face orientation",reference.faces[5][16*32+16],0,255,255);
-        // Every call must rebuild the scene; no snapshot survives a mutation.
         models[0]->setColor(Vector(0.2f,0.4f,0.8f));group.setLocalPosition(Vector(1,0,0));
         boundsMesh.setLocalScale(Vector(-2,0.5f,1));
         boundsCopy.setLocalRotation(rotationQuat(0,0.7f,0));
@@ -734,7 +691,6 @@ static void checkCubeCapture(WebGPUContextResources &res){
         customBoundsMesh.setTestBounds(Box(Vector(3,-1,-0.1f),Vector(5,1,0.1f)));
         models[2]->setVisible(false);nearModel.setLocalPosition(Vector(0,0,12));
         compare("next capture observes transform, visibility and material changes",1,1);
-        // Rotating the capture camera moves its children on every face.
         CaptureModel child(mesh);child.setParent(&camera);child.setLocalPosition(Vector(0,0,6));
         boundsCopy.setParent(&camera);boundsCopy.setLocalPosition(Vector(5.9f,0,6));
         child.setColor(Vector(0.6f,0.3f,0.1f));child.setAlpha(0.5f);
@@ -750,8 +706,6 @@ static void checkCubeCapture(WebGPUContextResources &res){
     }
     scene.freeMesh(mesh);bbScene=nullptr;gx_canvas=nullptr;
 }
-// Exercise the real terrain tessellator and renderer without adding a testing
-// interface to TerrainRep. The reference recomputes the pre-cache formula.
 class NormalTerrain : public Model{
 public:
     TerrainRep terrain{4};
@@ -830,7 +784,7 @@ static void checkTerrainNormals(WebGPUContextResources &res){
         expect(std::any_of(initial.begin(),initial.end(),[](unsigned char c){return c!=0 && c!=255;}),
                "terrain pixel comparison contains lit geometry");
         first.terrain.setHeight(8,8,0.1f,false);
-        first.terrain.setHeight(7,8,0.9f,false); // Already-invalid LOD errors must not skip normal invalidation.
+        first.terrain.setHeight(7,8,0.9f,false);
         auto edited=compare("batched height edits refresh all affected normals");
         expect(edited!=initial,"height edit changes rendered terrain");
         first.terrain.setHeight(8,7,0.3f,true);
@@ -911,8 +865,6 @@ static void checkRemaster(WebGPUContextResources &res){
     scene.setShadowLight(nullptr,depth,0,0);fillQuad(mesh,10,normal);
     expectPixel("disabling sun shadows removes stale captures",draw(scene,target,mesh,state,{&light},ambient),179,179,179);
 
-    // Game noon values for env_col=(255,255,255), independently checked by
-    // verify_lighting.py. Keep the original 200/255 flat-ground brightness.
     const float noonAmbient[3]={145.62153f/255,146.52784f/255,147.88730f/255};
     const float up[3]={0,1,0},towardSun[3]={0,0.9063078f,-0.4226183f};
     light.r=60.0f/255;light.g=59.0f/255;light.b=57.5f/255;
@@ -929,8 +881,6 @@ static void checkRemaster(WebGPUContextResources &res){
     expectPixel("budgeted sun shadow retains ambient",draw(scene,target,mesh,state,{&light},noonAmbient),146,147,148);
     scene.setShadowLight(nullptr,depth,0,0);
     expectPixel("budgeted noon after shadow removal",draw(scene,target,mesh,state,{&light},noonAmbient),200,200,200);
-    // With both options off, the game's original vertical sun does not light
-    // upward terrain; the ambient value and legacy shader must remain intact.
     scene.setRenderEffects(false,false,0);bbMat4Identity(light.matrix);
     light.r=light.g=light.b=50.0f/255;
     const float originalAmbient[3]={200.0f/255,200.0f/255,200.0f/255};
@@ -990,8 +940,6 @@ static void checkRotatingVisibility(WebGPUContextResources &res){
             patches[i]->setAutoFade(5,30);
         }
         bool same=true,visible=true,bounds=true;
-        // Rapid changes include pitch, reversal and the -pi/pi wrap. Compare
-        // the main view to itself without intervening shadow/reflection views.
         for(int heading:{0,3,7,4,1,6,2,5,0}) for(float pitch:{-0.15f,0.15f}){
             camera.setLocalRotation(rotationQuat(pitch,heading*0.78539816339f,0));
             std::vector<unsigned char> expected,actual;
@@ -1040,7 +988,6 @@ static void checkOffscreenShadows(WebGPUContextResources &res){
             outside&=!view.cull(caster.getBox(),caster.getWorldTform());
             const Vector p=(-camera.getWorldTform())*receiver;
             const int x=int(64+128*p.x/p.z),y=int(64-128*p.y/p.z);
-            // Legacy object culling leaves either a hidden mesh or an alpha-zero collider.
             caster.setVisible(!hidden);caster.setEnabled(!hidden);caster.setAlpha(hidden?1.0f:0.0f);
             world.renderShadows(&camera,&sun,80,1);world.render(1);
             const int missing=target.getPixel(x,y)&255;
@@ -1137,8 +1084,6 @@ static void checkAntialias(WebGPUContextResources &res){
     expect(alpha,"FXAA preserves source alpha");
     expectPixel("FXAA preserves flat black",target.getPixel(1,1),0,0,0);
     expectPixel("FXAA preserves flat white",target.getPixel(62,62),255,255,255);
-    // A one-pixel bitmap/HUD stroke is drawn after AA, then copied. The
-    // reused snapshot must not return pixels from before the HUD draw.
     target.setColor(0xffabcdef);target.rect(2,2,1,15,true);
     target.blit(40,1,&target,2,2,1,15,true);
     expectPixel("post-FXAA one-pixel HUD remains sharp",target.getPixel(2,5),171,205,239);
@@ -1166,7 +1111,6 @@ static void checkAntialias(WebGPUContextResources &res){
         world.renderShadows(&camera,nullptr,0,1);
         expect(scene.aaCalls==1,"reflection and shadow captures bypass screen FXAA");
         scene.setAntialiasSamples(4);
-        // Cube capture leaves the source camera on its last (upward) face.
         camera.setLocalRotation(rotationQuat(0,0,0));
         camera.setProjMode(Camera::PROJ_ORTHO);
         camera.setClsColor(Vector(0,0,0));

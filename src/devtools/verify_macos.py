@@ -18,8 +18,6 @@ ROOT, BUILD = build.ROOT, build.BUILD
 
 
 def execute(executable, cwd, log, timeout=30, env=None):
-    # Only these newly compiled, self-terminating fixtures are timeout-bound.
-    # Never attach to or stop a user's running game.
     with log.open('w', encoding='utf8') as output:
         subprocess.run([str(executable)], cwd=cwd, stdout=output,
                        stderr=subprocess.STDOUT, check=True, timeout=timeout, env=env)
@@ -38,7 +36,6 @@ def check_abi(output):
     build.compile_source(compiler, fixture, executable, 's2console', cwd=output)
     execute(executable, output, output / 'abi.log')
     actual = (output / 'semantics.bin').read_bytes()
-    # Captured from the hash-verified original Blitz3D 1.118 compiler/runtime.
     expected = bytes.fromhex((ROOT / 'src/tests/macos_abi.golden.hex').read_text('ascii'))
     if actual != expected:
         raise AssertionError(f'Native/Blitz3D 1.118 binary mismatch: {output / "semantics.bin"}')

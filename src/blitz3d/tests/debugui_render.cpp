@@ -1,5 +1,3 @@
-// Actual D3D12 ImGui output, using a hidden SDL window and offscreen canvas.
-// No swapchain presentation, OS input, game resources or player data.
 #include <bb/debugui/debugui.h>
 #include <bb/graphics.webgpu/canvas.webgpu.h>
 #include "imgui.h"
@@ -43,7 +41,6 @@ struct Target:WebGPUCanvas{
 static void iconPixels(WebGPUCanvas &icon,int red,int blue){
   std::vector<unsigned char> pixels(8*8*4);
   for(size_t i=0;i<pixels.size();i+=4){pixels[i]=red;pixels[i+2]=blue;pixels[i+3]=255;}
-  // A color-key hole must show the button underneath rather than a black square.
   pixels[0]=pixels[2]=0;icon.uploadRGBA(pixels.data(),8,8);icon.setMask(0);
 }
 static void frame(const char *font,BBCanvas *icon){
@@ -78,7 +75,7 @@ int main(int argc,char **argv){
     auto *font=ImGui::GetIO().FontDefault->GetFontBaked(17.0f);
     auto *glyph=font->FindGlyphNoFallback(0xd55c);
     expect(glyph && glyph->Visible && glyph->U1>glyph->U0,"Korean glyph rasterized into dynamic atlas");
-    icon->~WebGPUCanvas(); // Draw data must remain usable until presentation.
+    icon->~WebGPUCanvas();
     auto pixels=render(res,target);
     expect(colored(pixels,false)>1000,"icon survives source release before rendering");
     icon=new(slot) WebGPUCanvas(&res,8,8,BBCanvas::CANVAS_TEX_VIDMEM);

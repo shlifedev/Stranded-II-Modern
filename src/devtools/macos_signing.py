@@ -22,7 +22,6 @@ TRANSIENT_NETWORK_ERROR = re.compile(
 
 
 def private_run(command):
-    # Never include argv or tool output in exceptions: both can contain credentials.
     result = subprocess.run(command, capture_output=True, text=True)
     if result.returncode:
         raise ValueError(f'{Path(command[0]).name} {command[1]} failed (exit {result.returncode}).')

@@ -1,23 +1,15 @@
-;############################################ Handle Infos
-
-
-;### Set Info
 Function set_info(id=-1,typ,x#,y#,z#)
-	;Invalid typ? Cancel
 	If Len(Dinfo_name$(typ))=0 Then Return -1
 	
-	;Add at End
 	If id=-1 Then
 		info_serial=info_serial+1
 		id=info_serial
 	EndIf
 
-	;Create
 	Tinfo.Tinfo=New Tinfo
 	Tinfo\id=id
 	Tinfo\typ=typ	
 	
-	;Adjust
 	If m_section=Csection_editor Then
 		Tinfo\h=CreateCube()
 		ScaleEntity Tinfo\h,5,5,5
@@ -30,31 +22,26 @@ Function set_info(id=-1,typ,x#,y#,z#)
 		HideEntity Tinfo\h
 	EndIf
 	
-	;Sprite Info
 	If typ=5 Then
-		Tinfo\strings[0]=""				;Path
-		Tinfo\floats[0]=1.				;X Size
-		Tinfo\floats[1]=1.				;Y Size
-		Tinfo\ints[0]=255				;R
-		Tinfo\ints[1]=255				;G
-		Tinfo\ints[2]=255				;B
-		Tinfo\floats[2]=1.				;Alpha
-		Tinfo\strings[1]=0				;Blend
-		Tinfo\strings[2]=0				;Fix
+		Tinfo\strings[0]=""
+		Tinfo\floats[0]=1.
+		Tinfo\floats[1]=1.
+		Tinfo\ints[0]=255
+		Tinfo\ints[1]=255
+		Tinfo\ints[2]=255
+		Tinfo\floats[2]=1.
+		Tinfo\strings[1]=0
+		Tinfo\strings[2]=0
 	EndIf
 		
-	;Position
 	PositionEntity Tinfo\h,x#,y#,z#
 	
-	;Defvars
 	If tmp_loading=0 Then defvar_oncreate(Cclass_info,id,typ)
 	
-	;Okay
 	TCinfo.Tinfo=Tinfo
 End Function
 
 
-;### Get Info ID by Handle
 Function get_info(searchhandle)
 	For Tinfo.Tinfo=Each Tinfo
 		If Tinfo\h=searchhandle Then 
@@ -66,7 +53,6 @@ Function get_info(searchhandle)
 End Function
 
 
-;### Set Info Container
 Function con_info(id)
 	For Tinfo.Tinfo=Each Tinfo
 		If Tinfo\id=id Then TCinfo.Tinfo=Tinfo:Return 1
@@ -75,24 +61,18 @@ Function con_info(id)
 End Function
 
 
-;### Free Info
 Function free_info(id)
 	For Tinfo.Tinfo=Each Tinfo	
 		If Tinfo\id=id Then
-			;Childs
 			free_childs(Cclass_info,id)
-			;Delete
 			If Tinfo\h<>0 Then FreeEntity Tinfo\h
-			;Loudspeaker
 			If Tinfo\typ=47
 				If Tinfo\ints[0]<>0 Then FreeSound Tinfo\ints[0]
 				If Tinfo\ints[1]<>0 Then
 					StopChannel Tinfo\ints[1]
 				EndIf
 			EndIf
-			;Delete
 			Delete Tinfo
-			;Ok
 			Return 1
 		EndIf
 	Next
@@ -100,33 +80,23 @@ Function free_info(id)
 End Function
 
 
-;### Draw Infos
 Function draw_info()
 	For Tinfo.Tinfo=Each Tinfo
-		;In View
 		If EntityInView(Tinfo\h,cam) Then
 			dist=EntityDistance(Tinfo\h,cam)
-			;Distance
 			If dist<1500 Then
-				;Icon
 				CameraProject(cam,EntityX(Tinfo\h),EntityY(Tinfo\h),EntityZ(Tinfo\h))
 				DrawImage gfx_icons,ProjectedX()-16,ProjectedY()-16,Dinfo_frame(Tinfo\typ)
 				If in_opt(0)=4 Then
-					;Details
 					If dist<1000 Then
-						;Text
 						bmpf_txt_c(ProjectedX(),ProjectedY()-30,"#"+Tinfo\id+" "+Dinfo_name$(Tinfo\typ),Cbmpf_tiny)
-						;Special
 						Select Tinfo\typ
-							;Trigger Range
 							Case 10
 								editor_range(EntityX(Tinfo\h),EntityY(Tinfo\h),EntityZ(Tinfo\h),Tinfo\floats#[0])
-							;Map Indication
 							Case 36
 								If Tinfo\ints[1]=1 Or in_cursor=1
 									DrawImage gfx_arrows,ProjectedX(),ProjectedY()+18,Tinfo\ints[0]
 								EndIf
-							;Areas
 							Case 41,42,43,44,45,46,47
 								editor_range(EntityX(Tinfo\h),EntityY(Tinfo\h),EntityZ(Tinfo\h),Tinfo\floats#[0])
 						End Select
@@ -138,41 +108,34 @@ Function draw_info()
 End Function
 
 
-;### Update Info
 Function update_info()
 	Local c,t
 	Select TCinfo\typ
-		;Trigger Range
 		Case 10
-			;Check Range Condition
 			If Int(TCinfo\floats[1])=1 Then
 				c=ha_inrange(TCinfo\h,TCinfo\floats#[0],TCinfo\ints[0],TCinfo\ints[1])
 				t=0
 				Select Int(TCinfo\floats[2])
-					Case 0 If c=TCinfo\ints[2] Then t=1			;=
-					Case 1 If c>TCinfo\ints[2] Then t=1			;>
-					Case 2 If c<TCinfo\ints[2] Then t=1			;<
-					Case 3 If c>=TCinfo\ints[2] Then t=1		;>=
-					Case 4 If c<=TCinfo\ints[2] Then t=1		;<=
-					Case 5 If c<>TCinfo\ints[2] Then t=1		;<>
+					Case 0 If c=TCinfo\ints[2] Then t=1
+					Case 1 If c>TCinfo\ints[2] Then t=1
+					Case 2 If c<TCinfo\ints[2] Then t=1
+					Case 3 If c>=TCinfo\ints[2] Then t=1
+					Case 4 If c<=TCinfo\ints[2] Then t=1
+					Case 5 If c<>TCinfo\ints[2] Then t=1
 				End Select
 				If t=1 Then
 					set_parsecache(Cclass_info,TCinfo\id,"trigger","triggered")
 				EndIf
 			EndIf
-		;Trigger Time
 		Case 11
-			;Check Time Condition
 			If Int(TCinfo\floats[1])=1 Then
 				Select TCinfo\ints[0]
-					;Every X Seconds
 					Case 0
 						TCinfo\timer=TCinfo\timer+1
 						If TCinfo\timer>=TCinfo\ints[1] Then
 							TCinfo\timer=0
 							set_parsecache(Cclass_info,TCinfo\id,"trigger","triggered (every x seconds)")
 						EndIf
-					;Every X Game Minutes
 					Case 1
 						If map_timeupdate Then
 							c=(map_day*24*60)+(map_hour*60)+map_minute
@@ -183,39 +146,29 @@ Function update_info()
 								set_parsecache(Cclass_info,TCinfo\id,"trigger","triggered (every x game minutes)")
 							EndIf
 						EndIf
-					;At Special Gametime
 					Case 2
 						If map_timeupdate Then
 							If intime(TCinfo\ints[1],TCinfo\ints[2],Int(TCinfo\floats[0])) Then
-								;Only triggered once - so deactivate!
 								TCinfo\floats[1]=0
 								info_vts()
-								;Script
 								set_parsecache(Cclass_info,TCinfo\id,"trigger","triggered (at defined time)")
 							EndIf
 						EndIf
-					;Daily at defined Time
 					Case 3
 						If map_timeupdate Then
 							If indailytime(TCinfo\ints[1],TCinfo\ints[2]) Then
 								set_parsecache(Cclass_info,TCinfo\id,"trigger","triggered (daily at defined time)")
 							EndIf
 						EndIf
-					;Sleep
-					;Case 4
-						;Removed
 				End Select
 			EndIf
-		;Trigger Item Count
 		Case 12
-			;Check Count
 			If Int(TCinfo\floats[1])=1 Then
 				If TCinfo\ints[0]=0 Then
 					c=countstored_items(Cclass_unit,g_player,TCinfo\ints[2])
 				Else
 					c=countstored_items(TCinfo\ints[0],TCinfo\ints[1],TCinfo\ints[2])
 				EndIf
-				;DebugLog "Itemcount "+c+" need to be "+Int(TCinfo\floats[0])
 				t=0
 				Select Int(TCinfo\floats[2])
 					Case 0 If c=Int(TCinfo\floats[0]) Then t=1
@@ -229,9 +182,7 @@ Function update_info()
 					set_parsecache(Cclass_info,TCinfo\id,"trigger","triggered")
 				EndIf
 			EndIf
-		;Fishing Area
 		Case 43
-			;Spawn Bubbles
 			If (dist#(EntityX(TCinfo\h),EntityZ(TCinfo\h),EntityX(cam),EntityZ(cam))-TCinfo\floats[0])<500 Then
 				dir=Rand(360)
 				dist#=Rnd(TCinfo\floats[0])
@@ -246,22 +197,15 @@ Function update_info()
 					p_add(nx#,-Rnd(5,50),nz#,10,Rnd(1,3))
 				Next
 			EndIf
-		;AI Area
 		Case 46
-			;Attract / Distract
 			Select TCinfo\ints[0]
-				;0 - Attract
 				Case 0 ai_signal(Cclass_info,TCinfo\id,ai_attract,TCinfo\floats[0])
-				;1 - Distract
 				Case 1ai_signal(Cclass_info,TCinfo\id,ai_distract,TCinfo\floats[0])
 			End Select
-		;Loudspeaker
 		Case 47
 			If TCinfo\ints[0]<>0 Then
-				;Play Everywhere
 				If Int(TCinfo\floats[0])=0.0 Then
 					If TCinfo\ints[1]=0 Then TCinfo\ints[1]=sfx(TCinfo\ints[0])
-				;Play Local
 				Else
 					dist#=EntityDistance(cam,TCinfo\h)
 					If dist#<=TCinfo\floats[0] Then
@@ -278,7 +222,6 @@ Function update_info()
 End Function
 
 
-;### Determine Serial Peak
 Function serialpeak_info()
 	Local peak=0
 	For Tinfo.Tinfo=Each Tinfo
@@ -288,14 +231,12 @@ Function serialpeak_info()
 End Function
 
 
-;### Vars to String
 Function info_vts()
 	TCinfo\vars$=TCinfo\ints[0]+""+TCinfo\ints[1]+""+TCinfo\ints[2]+""
 	TCinfo\vars$=TCinfo\vars$+TCinfo\floats#[0]+""+TCinfo\floats#[1]+""+TCinfo\floats#[2]+""
 	TCinfo\vars$=TCinfo\vars$+TCinfo\strings$[0]+""+TCinfo\strings$[1]+""+TCinfo\strings$[2]+""
 End Function
 
-;### String to Vars
 Function info_stv()
 	split$(TCinfo\vars$, "",8)
 	TCinfo\ints[0]=splits$(0)
@@ -309,38 +250,28 @@ Function info_stv()
 	TCinfo\strings$[2]=splits$(8)
 End Function
 
-;### Info Object in area of info typ
 Function info_area(typ,x#,z#)
 	For Tinfo.Tinfo=Each Tinfo
 		If Tinfo\typ=typ Then
-			;Check
 			If (dist#(EntityX(Tinfo\h),EntityZ(Tinfo\h),x#,z#)-Tinfo\floats[0])<=0. Then
-				;Is in!
 				Return 1
 			EndIf
 		EndIf
 	Next
-	;Failed
 	Return 0
 End Function
 
-;### Spawncontrol
 Function info_spawncontrol(Tinfo.Tinfo,force=0)
 	Local c=0
 	Local pc=0
 	If Tinfo\typ=45 Then
-		;Daytimer Stuff
 		Tinfo\strings[2]=Int(Tinfo\strings[2])+1
 		If Int(Tinfo\strings[2])>=Int(Tinfo\strings[1]) Or force=1 Then
-			;Reset
 			Tinfo\strings[2]=0
-			;Partial Count
 			pc=Int(Tinfo\strings[0])
-			;Active?
 			If Int(Tinfo\floats[1])=1 Or force=1 Then
 				c=0
 				Select Tinfo\ints[0]
-					;Spawn Objects
 					Case Cclass_object
 						For Tobject.Tobject=Each Tobject
 							If Tobject\typ=Tinfo\ints[1] Then
@@ -359,14 +290,11 @@ Function info_spawncontrol(Tinfo.Tinfo,force=0)
 								zos#=Cos(a)*dist#
 								set_object(-1,Tinfo\ints[1],EntityX(Tinfo\h)+xos#,EntityZ(Tinfo\h)+zos#)
 								If TCobject<>Null Then
-									;Rotate
 									RotateEntity TCobject\h,0,Rnd(360),0
-									;Event
 									set_parsecache(Cclass_object,TCobject\id,"spawn")
 									If Instr(Dobject_scriptk$(TCobject\typ),"spawn") Then
 										parse_task(Cclass_object,TCobject\id,"spawn","",Dobject_script(TCobject\typ))
 									EndIf
-									;FX
 									If EntityInView(TCobject\h,cam) Then
 										If EntityDistance(TCobject\h,cam)<3000 Then
 											For fx=1 To 5+(set_effects*10)
@@ -377,7 +305,6 @@ Function info_spawncontrol(Tinfo.Tinfo,force=0)
 								EndIf
 							Next
 						EndIf
-					;Spawn Units
 					Case Cclass_unit
 						For Tunit.Tunit=Each Tunit
 							If Tunit\typ=Tinfo\ints[1] Then
@@ -396,15 +323,12 @@ Function info_spawncontrol(Tinfo.Tinfo,force=0)
 								zos#=Cos(a)*dist#
 								set_unit(-1,Tinfo\ints[1],EntityX(Tinfo\h)+xos#,EntityZ(Tinfo\h)+zos#)
 								If TCunit<>Null Then
-									;Rotate
 									RotateEntity TCunit\h,0,Rnd(360),0
 									ai_ini()
-									;Event
 									set_parsecache(Cclass_unit,TCunit\id,"spawn")
 									If Instr(Dunit_scriptk$(TCunit\typ),"spawn") Then
 										parse_task(Cclass_unit,TCunit\id,"spawn","",Dunit_script(TCunit\typ))
 									EndIf
-									;FX
 									If EntityInView(TCunit\h,cam) Then
 										If EntityDistance(TCunit\h,cam)<3000 Then
 											For fx=1 To 5+(set_effects*10)
@@ -415,7 +339,6 @@ Function info_spawncontrol(Tinfo.Tinfo,force=0)
 								EndIf
 							Next
 						EndIf
-					;Spawn Items
 					Case Cclass_item
 						For Titem.Titem=Each Titem
 							If Titem\typ=Tinfo\ints[1] Then
@@ -435,14 +358,11 @@ Function info_spawncontrol(Tinfo.Tinfo,force=0)
 								ypos#=e_tery(EntityX(Tinfo\h)+xos#,EntityZ(Tinfo\h)+zos#)
 								set_item(-1,Tinfo\ints[1],EntityX(Tinfo\h)+xos#,ypos#,EntityZ(Tinfo\h)+zos#)
 								If TCitem<>Null Then
-									;Rotate
 									RotateEntity TCitem\h,0,Rnd(360),0
-									;Event
 									set_parsecache(Cclass_item,TCitem\id,"spawn")
 									If Instr(Ditem_scriptk$(TCitem\typ),"spawn") Then
 										parse_task(Cclass_item,TCitem\id,"spawn","",Ditem_script(TCitem\typ))
 									EndIf
-									;FX
 									If EntityInView(TCitem\h,cam) Then
 										If EntityDistance(TCitem\h,cam)<3000 Then
 											For fx=1 To 5+(set_effects*10)
@@ -459,7 +379,6 @@ Function info_spawncontrol(Tinfo.Tinfo,force=0)
 	EndIf
 End Function
 
-;### Setup Info Sprite
 Function info_setupsprite(i.Tinfo)
 	Local x#=EntityX(i\h)
 	Local y#=EntityY(i\h)
@@ -469,7 +388,6 @@ Function info_setupsprite(i.Tinfo)
 	If i\Strings[0]<>"" Then
 		Local tex=load_res(i\strings[0],Cres_texture)
 		If tex<>0 Then
-			;Sprite
 			i\h=CreateSprite()
 			EntityTexture i\h,tex
 			ScaleSprite i\h,i\floats[0],i\floats[1]
@@ -482,7 +400,6 @@ Function info_setupsprite(i.Tinfo)
 				SpriteViewMode i\h,4
 			EndIf
 			EntityAutoFade i\h,(500.*set_viewfac#),(500.*set_viewfac#)+300
-			;Create Handle in order to make info clickable (Editor only)
 			Local temp=i\h
 			NameEntity temp,"model"
 			If m_section=Csection_editor Then
@@ -514,16 +431,12 @@ Function info_setupsprite(i.Tinfo)
 End Function
 
 
-;### Setup Info Loudspeaker
 Function info_setuploudspeaker(i.Tinfo)
 	If i\strings[0]<>"" Then
-		;Loadsound
 		If FileType(i\strings[0])=1 Then
 			i\ints[0]=LoadSound(i\strings[0])
 			If i\ints[0]<>0 Then
 				LoopSound(i\ints[0])
-				;Play?
-				;Play Everywhere
 				If i\floats[0]=0.0 Then
 					If i\ints[1]=0 Then i\ints[1]=sfx(i\ints[0])
 				EndIf
@@ -531,7 +444,6 @@ Function info_setuploudspeaker(i.Tinfo)
 		EndIf
 	Else
 		If tmp_loading=0 Then
-			;Stopsound
 			If i\ints[1]<>0 Then StopChannel i\ints[1]
 			i\ints[0]=0
 			i\ints[1]=0
@@ -540,11 +452,9 @@ Function info_setuploudspeaker(i.Tinfo)
 End Function
 
 
-;### Frap Routine
 Function frap_info()
 	Tinfo.Tinfo=TCinfo
 	
-	;Setup
 	Local h=Tinfo\h
 	Local size#=20.
 	Local piv=CreatePivot()
@@ -566,7 +476,6 @@ Function frap_info()
 		If rx2d>(in_editor_sidebar*210) Then
 			If ry2d>0 Then
 				
-				;(1) Red Pitch
 				Color 255,0,0
 				PositionEntity piv,rx#,ry#,rz#
 				MoveEntity piv,size#,0,0
@@ -624,7 +533,6 @@ Function frap_info()
 					EndIf
 				EndIf
 					
-				;(2) Green Yaw
 				Color 0,255,0
 				PositionEntity piv,rx#,ry#,rz#
 				MoveEntity piv,0,size#,0
@@ -682,7 +590,6 @@ Function frap_info()
 					EndIf
 				EndIf
 				
-				;(3) Blue Roll
 				Color 0,0,255
 				PositionEntity piv,rx#,ry#,rz#
 				MoveEntity piv,0,0,size#
@@ -742,7 +649,6 @@ Function frap_info()
 					EndIf
 				EndIf
 					
-				;(4) Green Center Position
 				px=rx2d
 				py=ry2d
 				DrawImage gfx_ey,px,py
@@ -791,23 +697,19 @@ Function frap_info()
 					EndIf
 				EndIf
 				
-				;Name
 				If in_frapdown=0 Then
 					CameraProject(cam,EntityX(Tinfo\h),EntityY(Tinfo\h),EntityZ(Tinfo\h))
 					bmpf_txt_c(ProjectedX(),ProjectedY()-30,"#"+Tinfo\id+" "+Dinfo_name$(Tinfo\typ),Cbmpf_tiny)
 				EndIf
 				
-				;Info
 				in_edoverinfo$=ss$(se$(197),Dinfo_name$(Tinfo\typ))
 				
 			EndIf
 		EndIf			
 	EndIf
 					
-	;Free
 	If KeyHit(211) Then free_info(Tinfo\id):in_fraph=0
 		
-	;Leave FRAP Mode
 	If KeyHit(57) Then in_fraph=0
 		
 End Function

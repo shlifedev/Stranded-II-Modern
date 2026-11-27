@@ -1,4 +1,3 @@
-;Stay?
 If TCunit\states=1
 	If TCunit\ai_mode<>ai_idle And TCunit\ai_mode<>ai_attack Then
 		If get_state(Cstate_ai_stick,Cclass_unit,TCunit\id)=1 Then
@@ -7,7 +6,6 @@ If TCunit\states=1
 	EndIf
 EndIf
 
-;Action
 Select TCunit\ai_mode
 	Case ai_idle
 		TCunit\ai_timer=0
@@ -48,7 +46,6 @@ Select TCunit\ai_mode
 		ai_dosani()
 End Select
 
-;Set Mode
 If (gt-TCunit\ai_timer)>TCunit\ai_duration Then
 	x=Rand(0,10)
 	Select x

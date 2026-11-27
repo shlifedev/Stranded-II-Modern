@@ -83,7 +83,7 @@ BEGIN_MESSAGE_MAP( MainFrame,CFrameWnd )
 	ON_UPDATE_COMMAND_UI( ID_ESCAPE,updateCmdUI )
 	ON_UPDATE_COMMAND_UI( ID_QUICKHELP,updateCmdUI )
 	ON_UPDATE_COMMAND_UI_RANGE( 333,343,updateCmdUIRange )
-	ON_UPDATE_COMMAND_UI_RANGE( 8888,8888+100,updateRuntimeCmdUI ) // NASTY: should fix this...
+	ON_UPDATE_COMMAND_UI_RANGE( 8888,8888+100,updateRuntimeCmdUI )
 END_MESSAGE_MAP()
 
 enum{
@@ -172,7 +172,6 @@ int MainFrame::OnCreate( LPCREATESTRUCT lpCreateStruct ){
 	prefs.win_notoolbar=!prefs.win_notoolbar;
 	escape();
 
-	//create recent file list
 	CMenu menu;
 	menu.CreatePopupMenu();
 	for( int k=0;k<prefs.recentFiles.size();++k ){
@@ -335,7 +334,6 @@ void MainFrame::helpTitleChange( HelpView *help,const std::string &title ){
 }
 
 void MainFrame::insertRecent( const std::string &file ){
-	//check recent files
 	if( CMenu *list=GetMenu()->GetSubMenu(  0 )->GetSubMenu( 12 ) ){
 		std::vector<std::string>::iterator it;
 		std::vector<std::string> &f=prefs.recentFiles;
@@ -343,12 +341,10 @@ void MainFrame::insertRecent( const std::string &file ){
 			if( tolower( *it )==tolower( file ) ) break;
 		}
 		if( it!=f.end() ){
-			//move to top
 			std::string t=*it;
 			f.erase( it );
 			f.insert( f.begin(),t );
 		}else{
-			//insert
 			if( f.size()==10 ){
 				f.pop_back();
 				list->RemoveMenu( 9,MF_BYPOSITION );
@@ -356,7 +352,6 @@ void MainFrame::insertRecent( const std::string &file ){
 			f.insert( f.begin(),file );
 			list->InsertMenu( 0,MF_BYPOSITION|MF_ENABLED,333,file.c_str() );
 		}
-		//renumber menu items
 		for( int k=0;k<f.size();++k ){
 			list->ModifyMenu( k,MF_BYPOSITION|MF_ENABLED,333+k,f[k].c_str() );
 		}
@@ -432,7 +427,6 @@ bool MainFrame::open( const std::string &f ){
 		return false;
 	}
 
-	//is file already open?
 	int k;
 	for( k=0;k<tabber.size();++k ){
 		if( Editor *e=getEditor( k ) ){
@@ -442,7 +436,6 @@ bool MainFrame::open( const std::string &f ){
 			}
 		}
 	}
-	//open new file
 	std::ifstream in( file.c_str() );
 	if( !in.good() ){
 		std::string e="Error reading file \""+f+"\"";
@@ -492,7 +485,6 @@ bool MainFrame::save( int n ){
 		e->setName( t );
 		insertRecent( t );
 	}
-	//Do backups!
 	if( prefs.edit_backup ){
 		for( int k=prefs.edit_backup;k>1;--k ){
 			CopyFile( (t+"_bak"+itoa(k-1)).c_str(),(t+"_bak"+itoa(k)).c_str(),false );
@@ -641,14 +633,13 @@ void MainFrame::compile( const std::string &cmd ){
 
 	std::string line,err;
 
-	//OK....here we go!
 	for(;;){
 		char buff;
 		unsigned long sz;
 		int n=ReadFile( rd,&buff,1,&sz,0 );
 
-		if( n && !sz ) break;	//EOF!
-		if( !n && GetLastError()==ERROR_BROKEN_PIPE ) break;	//PROC END!
+		if( n && !sz ) break;
+		if( !n && GetLastError()==ERROR_BROKEN_PIPE ) break;
 		if( !n ){ err="Internal Error";break; }
 
 		if( buff=='\r' ) continue;
@@ -682,7 +673,6 @@ void MainFrame::compile( const std::string &cmd ){
 		}
 
 		if( line.find( "Executing" )==0 ){
-			//OK, we're running!
 			break;
 		}
 
@@ -979,7 +969,6 @@ static std::string commandURL( const std::string &t ){
 
 void MainFrame::quick_Help(){
 	if( Editor *e=getEditor() ){
-		//look for keyword at cursor...
 		std::string t=e->getKeyword();if( !t.size() ) return;
 		statusBar.SetPaneText( 0,quickHelp( t ).c_str() );
 		if( t!=last_quick_help ){

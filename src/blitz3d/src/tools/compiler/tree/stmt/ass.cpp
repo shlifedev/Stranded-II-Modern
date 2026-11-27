@@ -1,8 +1,5 @@
 #include "ass.h"
 
-////////////////
-// Assignment //
-////////////////
 void AssNode::semant( Environ *e ){
 	var->semant( e );
 	if( var->sem_type->constType() ) ex( "Constants can not be assigned to" );

@@ -123,7 +123,7 @@ class Thumbnails(TestCase):
         try:
             linked.symlink_to(secret)
         except OSError:
-            return  # Windows may not grant symlink creation to this account.
+            return
         self.project.put_text(self.items, 'id=1\nicon=gfx/link.png\n')
         self.assertEqual(self.query()['status'], 'unavailable')
 

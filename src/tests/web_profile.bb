@@ -1,4 +1,3 @@
-; One fresh WASM instance per trial. All timings use the real production clock.
 Function profile(operation$)
  Return Int(web_service("profile",operation$))
 End Function

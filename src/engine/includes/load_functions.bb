@@ -1,8 +1,3 @@
-;######################################################################################################
-
-;############################################ FUNCTIONS
-
-;### Load Image
 Function load_image(path$,masked=1)
 	If set_debug Then con_add("Loading Image: "+path$)
 	Local image=LoadImage(path$)
@@ -11,7 +6,6 @@ Function load_image(path$,masked=1)
 	Return image
 End Function
 
-;### Load Anim Image
 Function load_animimage(path$,w,h,f,masked=1)
 	If set_debug Then con_add("Loading animated Image: "+path$)
 	Local image=LoadAnimImage(path$,w,h,0,f)
@@ -20,7 +14,6 @@ Function load_animimage(path$,w,h,f,masked=1)
 	Return image
 End Function
 
-;### Load Texture
 Function load_texture(path$,mode=1)
 	If set_debug Then con_add("Loading Texture: "+path$)
 	Local image=LoadTexture(path$,mode)
@@ -28,7 +21,6 @@ Function load_texture(path$,mode=1)
 	Return image
 End Function
 
-;### Load Mesh
 Function load_mesh(path$)
 	If set_debug Then con_add("Loading Mesh: "+path$)
 	Local mesh
@@ -37,7 +29,6 @@ Function load_mesh(path$)
 	Return mesh
 End Function
 
-;### Load Animmesh
 Function load_animmesh(path$)
 	If set_debug Then con_add("Loading animated Mesh: "+path$)
 	Local mesh
@@ -46,7 +37,6 @@ Function load_animmesh(path$)
 	Return mesh
 End Function
 
-;### Load Mesh Primitives
 Function mesh_primitives(path$)
 	p=Instr(path$,":")
 	DebugLog Right(Left(path$,p-1),9)
@@ -64,8 +54,6 @@ Function mesh_primitives(path$)
 	Return 0
 End Function
 
-
-;############################################ PROGRESS
 
 Global load_objects_c
 Global load_units_c

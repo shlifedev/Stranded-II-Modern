@@ -17,10 +17,8 @@ struct ConstNode;
 struct Node{
 	virtual ~Node(){}
 
-	//used user funcs...
 	static std::set<std::string> usedfuncs;
 
-	//helper funcs
 	static void ex();
 	static void ex( const std::string &e );
 	static void ex( const std::string &e,int pos );

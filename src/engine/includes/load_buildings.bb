@@ -1,6 +1,3 @@
-;############################################ Load Buildings
-
-;### Load Buildings
 Function load_buildings()
 	Local in$,var$,val$
 	Local i,equal
@@ -25,7 +22,7 @@ Function load_buildings()
 					var$=Trim(Left(in$,equal-1))
 					val$=trimspace(Mid(in$,equal+1,-1))
 					Select var$
-						Case "name" ;Skip (for Editor)
+						Case "name"
 						Case "id"
 							Tbui_serial=Tbui_serial+1
 							i=Int(val$)
@@ -125,12 +122,10 @@ Function load_buildings()
 							Tbui\id=i
 							Tbui\mode=0
 							split$(val$,",",1)
-							;Typ
 							Tbui\typ=Int(Trim(splits$(0)))
 							If ha_typeexists(Cclass_item,Tbui\typ)=0 Then
 								RuntimeError("Invalid REQ ITEM ID for BUILDING ("+Tbui\typ+")")
 							EndIf
-							;Count
 							splits$(1)=Trim(splits$(1))
 							If Int(splits$(1))<=0 Then splits$(1)=1
 							Tbui\count=Int(splits$(1))

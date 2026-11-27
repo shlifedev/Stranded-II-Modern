@@ -89,7 +89,6 @@ def guides(notarized):
 
 
 def summary(report, verification, app=None):
-    # Allowlist public metadata. Local dependency paths and fixture logs stay local.
     app = verification['app'] if app is None else app
     game = verification['game']
     if isinstance(game, dict):
@@ -163,13 +162,11 @@ def package(notarize=False):
             subprocess.run(['ditto', str(mounted / app.name), str(installed)], check=True)
             if validate_app(installed, package_report) != final_facts:
                 raise ValueError('Copied native app differs from the verified app.')
-        # Recheck the originals after the DMG round-trip to detect concurrent changes.
         if verified_build() != (report, verification):
             raise ValueError('Native build or verification changed during packaging.')
         if destination.exists() or destination.is_symlink():
             if destination.is_symlink() or not destination.is_file():
                 raise ValueError(f'Preserving an existing, different DMG: {destination}')
-            # DMG filesystem UUIDs/timestamps need not be byte-reproducible.
             with dmg.mounted_image(destination) as mounted:
                 if dmg.payload_records(mounted) != records:
                     raise ValueError(f'Preserving an existing, different DMG: {destination}')

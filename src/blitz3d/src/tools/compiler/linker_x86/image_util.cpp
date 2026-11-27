@@ -37,9 +37,9 @@ struct DDir{
 
 struct Sect{
 	char name[8];
-	int virt_size,virt_addr;	//in mem
-	int data_size,data_addr;	//on disk
-	int relocs,lines;			//file ptrs
+	int virt_size,virt_addr;
+	int data_size,data_addr;
+	int relocs,lines;
 	short num_relocs,num_lines;
 	int chars;
 };
@@ -67,7 +67,6 @@ struct Rsrc{
 
 	Rsrc( int id,Rsrc *p ):id(id),data(0),data_sz(0){
 		if( p ) p->kids.push_back( this );
-//		cout<<"res id:"<<dec<<id<<hex<<endl;
 	}
 
 	~Rsrc(){
@@ -109,11 +108,10 @@ static void openRsrcDir( Section *s,int off,Rsrc *p ){
 	Rent *ent=(Rent*)(dir+1);
 	for( int k=0;k<dir->num_ids;++ent,++k ){
 		Rsrc *r=d_new Rsrc( ent->id,p );
-		if( ent->data<0 ){	//a node - offset is another dir
+		if( ent->data<0 ){
 			openRsrcDir( s,ent->data&0x7fffffff,r );
-		}else{				//a leaf
+		}else{
 			Rdat *dat=(Rdat*)( data+ent->data );
-//			cout<<"dat addr:"<<dat->addr<<" size:"<<dat->size<<endl;
 			int sz=dat->size;
 			void *src=dat->addr-s->sect.virt_addr+data;
 			void *dest=d_new char[sz];
@@ -149,12 +147,10 @@ static void closeRsrcDir( Section *s,int off,Rsrc *p ){
 	dir->num_ids=p->kids.size();
 	Rent *ent=(Rent*)(dir+1);
 
-	//to end of dir...
 	off+=sizeof(Rdir)+sizeof(Rent)*p->kids.size();
 
 	t=off;
 
-	//write entries
 	for( k=0;k<p->kids.size();++ent,++k ){
 		Rsrc *r=p->kids[k];
 		ent->id=r->id;
@@ -165,7 +161,6 @@ static void closeRsrcDir( Section *s,int off,Rsrc *p ){
 
 	t=off;
 
-	//write kids...
 	for( k=0;k<p->kids.size();++k ){
 		Rsrc *r=p->kids[k];
 		if( !r->data ){
@@ -242,28 +237,23 @@ static void loadImage( std::istream &in ){
 
 	int k;
 
-	//read stub
 	in.seekg( 0x3c );
 	in.read( (char*)&stub_sz,4 );
 	stub_sz+=4;stub=d_new char[stub_sz];
 	in.seekg( 0 );in.read( stub,stub_sz );
 
-	//read head
 	head=d_new Head;
 	head_sz=sizeof(Head);
 	in.read( (char*)head,head_sz );
 
-	//read opts
 	opts=d_new Opts;
 	opts_sz=sizeof(Opts);
 	in.read( (char*)opts,opts_sz );
 
-	//read data dirs
 	ddir_sz=opts->dir_entries * sizeof(DDir);
 	ddir=(DDir*)d_new char[ddir_sz];
 	in.read( (char*)ddir,ddir_sz );
 
-	//read sects...
 	for( k=0;k<head->num_sects;++k ){
 		Section *s=d_new Section;
 		in.read( (char*)&s->sect,sizeof(Sect) );
@@ -274,8 +264,7 @@ static void loadImage( std::istream &in ){
 		Section *s=sections[k];
 		if( !s->sect.data_addr ) continue;
 		int data_sz=s->sect.data_size;
-		s->data=d_new char[data_sz];//char[s->sect.virt_size];
-		//memset( s->data,0,s->sect.virt_size );
+		s->data=d_new char[data_sz];
 		in.seekg( s->sect.data_addr );
 		in.read( s->data,data_sz );
 	}
@@ -298,14 +287,11 @@ static void saveImage( std::ostream &out ){
 	for( k=0;k<head->num_sects;++k ){
 		Section *s=sections[k];
 		if( !s->sect.data_addr ) continue;
-		//assumes sect data is in order!!!!!
 		while( out.tellp()<s->sect.data_addr ) out.put( (char)0xbb );
 		out.seekp( s->sect.data_addr );
 		out.write( s->data,s->sect.data_size );
 	}
 }
-
-/********************** PUBLIC STUFF ***********************/
 
 bool openImage( const char *img ){
 	img_file=img;
@@ -319,10 +305,9 @@ bool openImage( const char *img ){
 bool makeExe( int entry ){
 	if( !img_file ) return false;
 
-	head->chars|=0x0002;		//executable
-	head->chars&=~0x2000;		//not Dll
+	head->chars|=0x0002;
+	head->chars&=~0x2000;
 	opts->entry=entry;
-//	opts->image_base=0x400000;	//have to deal to fix-ups to do this properly.
 	return true;
 }
 

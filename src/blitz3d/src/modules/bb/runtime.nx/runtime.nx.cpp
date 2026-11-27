@@ -27,12 +27,9 @@ public:
 	}
 
 	void afterCreate(){
-		// consoleInit( 0 );
 
 		romfsInit();
 
-		// BBContextDriver::change( "gl" );
-		// bbDefaultGraphics();
 	}
 
 	void asyncStop(){}

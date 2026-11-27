@@ -36,7 +36,6 @@ WebGPUProfiler::~WebGPUProfiler(){
 void WebGPUProfiler::pass(WGPURenderPassDescriptor &desc,int group){
   auto &rec=s2prof::recorder();uint64_t frame=rec.frameId();if(!supported || !frame || frame==skippedFrame)return;
   if(current && current->frame!=frame){
-    // An abandoned presentation must not reuse unresolved query indices.
     s2prof::recorder().gpuResult(current->frame,{},s2prof::GpuStatus::Skipped);
     current->alive=false;for(auto &slot:slots)if(slot==current)slot.reset();current.reset();
   }

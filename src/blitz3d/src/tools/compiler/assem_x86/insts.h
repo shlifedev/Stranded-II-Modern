@@ -2,7 +2,6 @@
 #ifndef INSTS_H
 #define INSTS_H
 
-//operand addressing modes
 enum{
 	REG=0x0001,REG8=0x0002,REG16=0x0004,REG32=0x0008,
 	IMM=0x0010,IMM8=0x0020,IMM16=0x0040,IMM32=0x0080,
@@ -16,7 +15,6 @@ enum{
 	NONE=0x80000000
 };
 
-//flags
 enum{
 	O16=0x001,O32=0x0002,OW_OD=0x0004,
 	PLUSREG=0x0008,PLUSCC=0x0010,
@@ -25,11 +23,10 @@ enum{
 	IB=0x4000,IW=0x8000,ID=0x10000,RW_RD=0x20000
 };
 
-//an instruction
 struct Inst{
-	const char *name;	//0, then same as last.
-	unsigned int lmode,rmode,flags;	//left mode,right mode,flags
-	const char *bytes;	//the bytes.
+	const char *name;
+	unsigned int lmode,rmode,flags;
+	const char *bytes;
 };
 
 extern Inst insts[];

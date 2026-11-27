@@ -101,7 +101,6 @@ fn fs_main( v : BBPerVertex ) -> @location(0) vec4<f32> {
       let rgb = vec3<u32>(round(clamp(c.rgb, vec3<f32>(0.0), vec3<f32>(1.0))*255.0));
       let key = vec3<u32>((RS.image_mask>>16u)&255u, (RS.image_mask>>8u)&255u, RS.image_mask&255u);
       if( RS.image_mode==1u && all(rgb==key) ){ discard; }
-      // DirectDraw's DrawImage/DrawBlock copy RGB; the key is their only alpha.
       c.a = 1.0;
     }
     if( RS.texenabled==2 || RS.texenabled==3 ){

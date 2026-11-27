@@ -18,7 +18,6 @@ public:
 
 private:
 
-	/***** GX INTERFACE *****/
 public:
 
 	BBDevice *getJoystick( int port )const;

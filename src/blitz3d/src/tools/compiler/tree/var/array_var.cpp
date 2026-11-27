@@ -1,8 +1,5 @@
 #include "array_var.h"
 
-/////////////////
-// Indexed Var //
-/////////////////
 void ArrayVarNode::semant( Environ *e ){
 	exprs->semant( e );
 	exprs->castTo( Type::int_type,e );

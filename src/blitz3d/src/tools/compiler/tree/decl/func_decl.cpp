@@ -1,8 +1,5 @@
 #include "func_decl.h"
 
-//////////////////////////
-// Function Declaration //
-//////////////////////////
 void FuncDeclNode::proto( DeclSeq *d,Environ *e ){
 	Type *t=tagType( tag,e );if( !t ) t=Type::int_type;
 	a_ptr<DeclSeq> decls( d_new DeclSeq() );
@@ -30,13 +27,10 @@ void FuncDeclNode::semant( Environ *e ){
 
 void FuncDeclNode::translate( Codegen *g ){
 
-	//var offsets
 	int size=enumVars( sem_env );
 
-	//enter function
 	g->enter( "_f"+ident,size );
 
-	//initialize locals
 	TNode *t=createVars( sem_env );
 	if( t ) g->code( t );
 	if( g->debug ){
@@ -45,14 +39,12 @@ void FuncDeclNode::translate( Codegen *g ){
 		g->code( call( "__bbDebugEnter",local(0),iconst((bb_int_t)sem_env),global(t) ) );
 	}
 
-	//translate statements
 	stmts->translate( g );
 
 	for( int k=0;k<sem_env->labels.size();++k ){
 		if( sem_env->labels[k]->def<0 )	ex( "Undefined label",sem_env->labels[k]->ref );
 	}
 
-	//leave the function
 	g->label( sem_env->funcLabel+"_leave" );
 	t=deleteVars( sem_env );
 	if( g->debug ) t=d_new TNode( IR_SEQ,call( "__bbDebugLeave" ),t );

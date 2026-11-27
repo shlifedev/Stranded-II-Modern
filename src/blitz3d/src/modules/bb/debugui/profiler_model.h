@@ -40,7 +40,6 @@ class Recorder {
   std::string settings;
   double budget=0;
 public:
-  // The benchmark keeps its own samples before the display ring expires.
   std::function<void(const Frame&)> completed;
   std::function<void(uint64_t,const std::array<GpuSample,GpuCount>&,GpuStatus)> resolved;
   static constexpr size_t Capacity=2048;
@@ -64,7 +63,6 @@ public:
       if(depth){f->valid=false;depth=0;}
       f->ms=std::max(0.0,now-start);f->complete=true;
       if(completed)completed(*f);
-      // Keep the same completed-frame limit when recording is stopped.
       if(current>Capacity)if(auto *expired=find(current-Capacity))*expired=Frame{};
     }
     current=0;

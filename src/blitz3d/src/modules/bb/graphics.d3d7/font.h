@@ -23,7 +23,6 @@ private:
 	int width,height,begin_char,end_char,def_char;
 	int *offs,*widths;
 
-	/***** GX INTERFACE *****/
 public:
 	enum{
 		FONT_BOLD=1,
@@ -31,11 +30,10 @@ public:
 		FONT_UNDERLINE=4
 	};
 
-	//ACCESSORS
-	int getWidth()const;							//width of widest char
-	int getHeight()const;							//height of font
-	int getWidth( const std::string &text )const;	//width of string
-	bool isPrintable( int chr )const;				//printable char?
+	int getWidth()const;
+	int getHeight()const;
+	int getWidth( const std::string &text )const;
+	bool isPrintable( int chr )const;
 };
 
 #endif

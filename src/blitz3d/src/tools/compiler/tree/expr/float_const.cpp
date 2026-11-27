@@ -2,9 +2,6 @@
 
 #include <cmath>
 
-////////////////////
-// Float constant //
-////////////////////
 FloatConstNode::FloatConstNode( float f ):value(f){
 	sem_type=Type::float_type;
 }
@@ -14,7 +11,6 @@ TNode *FloatConstNode::translate( Codegen *g ){
 }
 
 int FloatConstNode::intValue(){
-// TODO: figure out a proper, cross platform implementation
 #ifdef BB_WIN32
 	float flt=value;
 	int temp;

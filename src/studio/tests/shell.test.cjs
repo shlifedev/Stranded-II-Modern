@@ -1,5 +1,4 @@
 'use strict';
-// Exercise the real server/backend/IPC with a window stub. No Electron or GUI starts.
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const vm=require('node:vm');

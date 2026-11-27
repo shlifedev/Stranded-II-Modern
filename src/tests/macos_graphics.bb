@@ -1,4 +1,3 @@
-; Native GPU smoke: a lit mesh, 2D overlay and GPU readback.
 AppTitle "Stranded II - native Metal verification"
 Graphics3D 640,480,32,2
 SetBuffer BackBuffer()

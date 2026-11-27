@@ -112,8 +112,6 @@ HTREEITEM DebugTree::insertVar( void *var,Decl *d,const std::string &name,HTREEI
 	return it ? GetNextSiblingItem( it ) : 0;
 }
 
-/******************************* CONSTS ***********************************/
-
 ConstsTree::ConstsTree(){
 }
 
@@ -134,8 +132,6 @@ void ConstsTree::reset( Environ *env ){
 		}
 	}
 }
-
-/******************************* GLOBALS **********************************/
 
 GlobalsTree::GlobalsTree():module(0),envron(0){
 }
@@ -164,8 +160,6 @@ void GlobalsTree::refresh(){
 		}
 	}
 }
-
-/******************************** LOCALS **********************************/
 
 LocalsTree::LocalsTree():envron(0){
 }

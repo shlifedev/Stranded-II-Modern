@@ -26,7 +26,6 @@ def main():
     shutil.copytree(ROOT/'build/extended/runtime',runtime,ignore=shutil.ignore_patterns('preserved','saves','*.log'))
     (runtime/MOD/'saves').mkdir(exist_ok=True)
     shutil.copytree(out/'export/overrides',runtime,dirs_exist_ok=True)
-    # The preview uses the same merged catalogs and generated fonts as export.
     for relative,encoded in project.preview_resources().items():
         if relative.startswith('core/'):
             p=runtime/relative;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(base64.b64decode(encoded))

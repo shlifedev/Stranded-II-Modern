@@ -37,12 +37,10 @@ private:
 	bool mesh_dirty;
 	dxVertex *locked_verts;
 
-	/***** GX INTERFACE *****/
 public:
 	bool lock( bool all );
 	void unlock();
 
-	//VERY NAUGHTY!!!!!
 	void setVertex( int n,const void *v ){
 		memcpy( locked_verts+n,v,sizeof(dxVertex) );
 	}

@@ -1,9 +1,6 @@
 #include "new.h"
 #include "../../ex.h"
 
-////////////////////
-// New expression //
-////////////////////
 ExprNode *NewNode::semant( Environ *e ){
 	sem_type=e->findType( ident );
 	if( !sem_type ) ex( "custom type name not found" );

@@ -1,10 +1,7 @@
-# External dependencies and local development output
 /deps/
 /build/
 /.venv/
 
-# Retired installs, patches and backups stay ignored if restored locally.
-# Active dependencies are in deps/; the canonical engine is src/engine/.
 /games/
 /dist/
 /archive/
@@ -23,6 +20,5 @@ __pycache__/
 Thumbs.db
 *.log
 
-# Studio dependencies and compiled UI (authoring sources remain tracked).
 /src/studio/node_modules/
 /src/studio/dist/

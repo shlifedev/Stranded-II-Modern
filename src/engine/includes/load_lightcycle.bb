@@ -1,9 +1,5 @@
-;############################################ Load Lightcycle
+Dim Dlightcycle(24,2)
 
-Dim Dlightcycle(24,2)					;Lightcycle Array (0-23), 24 as cache for current color
-
-
-;### Load Lighcycle
 
 Function load_lightcycle()
 	Dim Dlightcycle(24,2)

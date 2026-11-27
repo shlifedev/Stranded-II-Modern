@@ -3,22 +3,17 @@
 #include "codegen_x86.h"
 #include "tile.h"
 
-//reduce to 3 for stress test
 static const int NUM_REGS=6;
 
 static const std::string regs[]=
 {"???","eax","ecx","edx","edi","esi","ebx"};
 
-//array of 'used' flags
 static bool regUsed[NUM_REGS+1];
 
-//size of locals in function
 static int frameSize,maxFrameSize;
 
-//code fragments
 static std::vector<std::string> codeFrags,dataFrags;
 
-//name of function
 static std::string funcLabel;
 
 static void resetRegs(){
@@ -90,7 +85,6 @@ void Tile::label(){
 }
 
 int Tile::eval( int want ){
-	//save any hit registers
 	int spill=hits;
 	if( want_l ) spill|=1<<want_l;
 	if( want_r ) spill|=1<<want_r;
@@ -103,7 +97,6 @@ int Tile::eval( int want ){
 		}
 	}
 
-	//if tile needs an argFrame...
 	if( argFrame ){
 		codeFrags.push_back( "-"+itoa(argFrame) );
 	}
@@ -152,13 +145,9 @@ int Tile::eval( int want ){
 	freeReg( got_r );
 	if( want_l!=got_l ) moveReg( got_l,want_l );
 
-	//cleanup argFrame
 	if( argFrame ){
-		//***** Not needed for STDCALL *****
-//		codeFrags.push_back( "+"+itoa(argFrame) );
 	}
 
-	//restore spilled regs
 	if( spill ){
 		for( int n=NUM_REGS;n>=1;--n ){
 			if( spill&(1<<n) ) popReg( n );
@@ -222,7 +211,6 @@ void Codegen_x86::leave( TNode *cleanup,int pop_sz ){
 		if( t[0]=='+' ){
 			esp_off+=atoi(t.substr(1));
 		}else if( t[0]=='-' ){
-			//***** Still needed for STDCALL *****
 			esp_off-=atoi(t.substr(1));
 		}else{
 			if( esp_off ){

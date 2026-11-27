@@ -1,5 +1,3 @@
-/* Exercise the browser bridge against Emscripten's real virtual filesystem.
- * DOM and IndexedDB transactions are test doubles; this is NOT a browser test. */
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
@@ -38,7 +36,6 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
     return elements.get(id);
   };
   const messages = [];
-  // Load the real shared overlay bridge before the shell.
 
   const context = vm.createContext({
     document: target({body:{append(){}},getElementById: element, createElement: () => element("textarea"), hasFocus: () => true,

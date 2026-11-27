@@ -1,4 +1,3 @@
-/* The viewport hosts the actual Extended Blitz engine. No substitute renderer. */
 'use strict';
 const canvas=document.getElementById('canvas'),statusText=document.getElementById('status'),search=document.getElementById('search');
 const overlay=document.getElementById('gizmo');
@@ -24,7 +23,6 @@ function fail(error){
   send('error',{message:statusText.textContent});
 }
 function audioState(paused){
-  // The Blitz port uses OpenAL; SDL audio may also be present.
   const contexts=[Module.SDL2?.audioContext,...Object.values(typeof AL==='undefined'?{}:AL.contexts).map(context=>context.audioCtx)];
   return Promise.all([...new Set(contexts.filter(Boolean))].map(context=>context[paused?'suspend':'resume']()));
 }
@@ -76,7 +74,6 @@ function hoverPlacement(){
   return target&&point?[target.class,target.id,point.x,point.y,snap].join(SEP):'';
 }
 function pick(event,purpose,terrain=false,content=null,extra={}){
-  // Captured ground drags must finish even when released outside the canvas.
   const point=canvasPoint(event,purpose==='place');if(!point)return;
   const target=purpose==='place'?placementContent(content||placement):null;
   if(purpose==='place'&&!target)return;
@@ -96,7 +93,7 @@ async function bridge(request){
     case 'canvas-width':return canvas.width;
     case 'canvas-height':return canvas.height;
     case 'focus':return transition||firstFrame||(!document.hidden&&(debugUiOpen||!playing||document.pointerLockElement===canvas||document.activeElement===search))?1:0;
-    case 'sync':return 1; // Deliberately ephemeral; project persistence belongs to the shared core.
+    case 'sync':return 1;
     case 'copy':try{const dst=normalize(args[1]);if(Number(args[2])&&FS.analyzePath(dst).exists)return 0;FS.writeFile(dst,FS.readFile(normalize(args[0])));return 1;}catch{return 0;}
     case 'move':try{FS.rename(normalize(args[0]),normalize(args[1]));return 1;}catch{return 0;}
     case 'stamp':try{return words(FS.stat(normalize(args[0])).mtime.getTime()*10000);}catch{return '';}
@@ -107,16 +104,11 @@ async function bridge(request){
     case 'search-position':{const rect=canvas.getBoundingClientRect();Object.assign(search.style,{left:(rect.left+Number(args[0])*rect.width/canvas.width)+'px',top:(rect.top+Number(args[1])*rect.height/canvas.height)+'px',width:(Number(args[2])*rect.width/canvas.width)+'px',height:(Number(args[3])*rect.height/canvas.height)+'px'});return 1;}
     case 'search-focus':Number(args[0])===2?search.focus():canvas.focus();return 1;
     case 'control-focus':return document.activeElement===search?2:1;
-    // Read the latest pointer once per rendered frame; pointermove never queues
-    // picks or allocates map entities, so camera/patch commands cannot starve.
     case 'studio-hover':return hoverPlacement();
     case 'studio-poll':
       if(stopPending){
-        // Gameplay may write its MEMFS map. Restore the authoring snapshot only
-        // after the current game frame/load has finished, before loading editor.
         stopPending=false;applyFiles(initial.files);return 'stop';
       }
-      // Commands such as drag rollback run before a pending authoritative patch.
       if(!queue.length&&snapshotPending&&!drag&&!playing&&!inFlight){
         const next=snapshotPending;snapshotPending=null;
         if(next.mode!=='delta'||next.baseToken!==acknowledged){syncFailed=true;fail('미리보기 기준이 달라졌습니다. 리소스 적용으로 다시 연결하세요.');return '';}
@@ -241,8 +233,6 @@ function receive(message){
   }else if(message.type==='focus'&&message.selection&&!drag&&!playing&&!transition){command('focus',message.selection.class,message.selection.id);command('pose');}
   else if(message.type==='drag-result'){
     if(drag?.id===message.id){
-      // A successful gesture remains visible until its authoritative patch;
-      // studio_patch restores the baseline and applies the edit in one frame.
       if(!message.ok){transient=null;command('drag-cancel');}
       drag=null;send('drag-state',{active:false});wantSync=true;maybeSync();drawGizmo();
     }
@@ -307,7 +297,6 @@ function previewDrag(){
 function moveDrag(event,final=false){
   if(!drag||drag.finishing||event.pointerId!==drag.pointerId)return;
   if(drag.axis==='ground'){
-    // Keep only the latest terrain sample while the engine is busy.
     for(const [token,pending] of pendingPicks)if(pending.purpose==='drag-ground'){
       pendingPicks.delete(token);const index=queue.findIndex(c=>c.split(SEP)[3]===token&&c.startsWith('pick'+SEP));if(index>=0)queue.splice(index,1);
     }

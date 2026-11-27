@@ -6,7 +6,6 @@
 
 class Frustum{
 public:
-	// Camera-independent bounds, reusable while the box/transform stay fixed.
 	struct Bounds{
 		Box world;
 		Vector roundoff;

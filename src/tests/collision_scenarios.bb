@@ -1,4 +1,3 @@
-; Runs inside the actual engine, with disposable geometry and no GUI input.
 Global probe_report=WriteFile(set_rootdir$+"collision-smoke.txt"),probe_failures
 Global probe_elapsed#,probe_dt#,probe_floor_failures,probe_rejections
 Global probe_case$,probe_origin_x#,probe_origin_y#,probe_origin_z#
@@ -78,14 +77,11 @@ Function probe_box(x#,y#,z#,sx#,sy#,sz#)
  PositionEntity box,x#,y#,z#
  EntityType box,Cworld_col
  ResetEntity box
- ; Register with map cleanup, just like real scenery.
  Local obj.Tobject=New Tobject
  obj\h=box:obj\typ=63
  Return box
 End Function
 
-; The unmodified official rock contains repeated-vertex triangles. Sanitizing
-; a fresh load must remove them without changing vertices or changing again.
 probe_case$="mesh sanitation"
 probe_scene(0.)
 probe_raw=load_mesh(Dobject_model$(67))
@@ -119,7 +115,6 @@ For probe_rate=0 To 3
  probe_check(Abs(EntityX(g_cplayer\h)+40.)<0.1,"flat speed remains 80 units/second")
  probe_check(probe_floor_failures=0,"flat terrain floor")
 
- ; A steep hill meets an overhanging obstacle: lifting must not enter it.
  probe_scene(0.65)
  probe_box(0,276,0,32,10,80)
  probe_walk(4000.,1.6)
@@ -143,7 +138,6 @@ For probe_rate=0 To 3
  probe_check(EntityX(g_cplayer\h)<probe_origin_x#-100.,"retreat between two obstacles")
  probe_check(probe_floor_failures=0,"corridor stays above terrain")
 
- ; Original rock models/scales, several approach directions on a hill.
  For rocktyp=63 To 69
   For approach=0 To 2
    probe_scene(0.5,768.)
@@ -158,7 +152,6 @@ For probe_rate=0 To 3
    Next
    probe_check(probe_hit,"rock "+rocktyp+" approach "+approach+" reaches surface")
    probe_walk(500.,1.6)
-   ; Allow an airborne approach to finish landing before testing rest.
    probe_walk(500.,0.)
    probe_origin_x#=EntityX(g_cplayer\h)
    probe_origin_z#=EntityZ(g_cplayer\h)
@@ -172,7 +165,6 @@ For probe_rate=0 To 3
   Next
  Next
 
- ; A side wall cannot count as a floor or cancel upward movement.
  probe_scene(0.)
  probe_box(0,340,0,20,100,80)
  probe_place(-28.01,0,60.)
@@ -187,7 +179,6 @@ For probe_rate=0 To 3
  probe_walk(100.,1.6)
  probe_check(EntityY(g_cplayer\h)>probe_origin_y#+2.,"wall does not cancel jump ascent")
 
- ; Object support remains stable across many frames, including long frames.
  probe_scene(0.)
  probe_box(-100,280,0,60,10,60)
  probe_place(-100,0,90.)
@@ -205,7 +196,6 @@ For probe_rate=0 To 3
  probe_check(g_cplayer\phy_jump#<=gt,"ceiling cancels ascent")
  probe_check(EntityY(g_cplayer\h)<=285.1,"ceiling is not penetrated")
 
- ; Clearing history on intentional reposition prevents stale rollback.
  probe_scene(0.5)
  probe_walk(100.,1.6)
  probe_place(500,0)

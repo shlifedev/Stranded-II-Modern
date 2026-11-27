@@ -2,7 +2,6 @@ bb_start_runtime(test Test bbCreateConsoleRuntime)
 
 set(EXCLUDED_MODULES multiplay.directplay)
 
-# add all modules to test env
 set(MODULES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../modules)
 file(GLOB modules RELATIVE ${MODULES_DIR}/bb ${MODULES_DIR}/bb/*)
 foreach(module ${modules})

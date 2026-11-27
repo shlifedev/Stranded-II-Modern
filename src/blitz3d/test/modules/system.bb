@@ -7,7 +7,6 @@ Expect GetEnv( "PATH" )<>"", "PATH is present"
 Expect DPIScaleX()>0.0, "DPI is greater than 0"
 Expect DPIScaleY()>0.0, "DPI is greater than 0"
 
-; TODO: add a function to detect a display
 ScreenWidth()
 ScreenHeight()
 

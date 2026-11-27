@@ -1,4 +1,3 @@
-; Product build label. Cversion remains the original map/script compatibility version.
 Global modern_version$="development"
 
 Function modern_version_load()

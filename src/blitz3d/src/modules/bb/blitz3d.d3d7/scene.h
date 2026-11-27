@@ -23,9 +23,7 @@ public:
 
 	void restore();
 
-	/***** GX INTERFACE *****/
 public:
-	//state
 	int  hwTexUnits();
 	int  gfxDriverCaps3D();
 
@@ -49,20 +47,16 @@ public:
 	void setWorldMatrix( const Matrix *matrix );
 	void setRenderState( const RenderState &state );
 
-	//rendering
 	bool begin( const std::vector<BBLightRep*> &lights );
 	void clear( const float rgb[3],float alpha,float z,bool clear_argb,bool clear_z );
 	void render( BBMesh *mesh,int first_vert,int vert_cnt,int first_tri,int tri_cnt );
 	void end();
 
-	//lighting
 	BBLightRep *createLight( int flags );
 	void freeLight( BBLightRep *l );
 
-	//meshes
 	BBMesh *createMesh( int max_verts,int max_tris,int flags );
 
-	//info
 	int getTrianglesDrawn()const;
 
 private:

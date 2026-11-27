@@ -1,4 +1,3 @@
-; A Unicode child EDIT owns text/IME input; no ANSI GetKey text conversion.
 Global qol_search_hwnd,qol_search_buffer=CreateBank(1024),qol_search_rect=CreateBank(16)
 Global qol_query$,qol_search_previous$
 Global qol_search_client_width,qol_search_client_height
@@ -29,7 +28,6 @@ Function qol_search_open()
  If qol_search_hwnd Or modern_hwnd=0 Then Return
  Local classbank=CreateBank(10)
  PokeShort classbank,0,69:PokeShort classbank,2,68:PokeShort classbank,4,73:PokeShort classbank,6,84
- ; WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL.
  qol_search_hwnd=qol_win_create(0,classbank,qol_wide(qol_query$),$50800080,236,55,405,26,modern_hwnd,0,0,0)
  FreeBank classbank
  If qol_search_hwnd Then
@@ -38,7 +36,7 @@ Function qol_search_open()
   EndIf
  EndIf
  If qol_search_hwnd Then
-  qol_win_message(qol_search_hwnd,$C5,128,0) ; EM_LIMITTEXT
+  qol_win_message(qol_search_hwnd,$C5,128,0)
   qol_search_client_width=0:qol_search_client_height=0
   qol_present()
  Else
@@ -63,7 +61,6 @@ Function qol_search_update()
  If text$<>qol_query$ Then qol_query$=text$:qol_recipe_scroll=0
  If qol_win_getfocus()=qol_search_hwnd Then
   in_inputfocus=9
-  ; Enter/Escape/Tab and IME composition are handled by the native control.
   If in_mrelease(1) And (in_mx<236 Or in_mx>641 Or in_my<55 Or in_my>81) Then
    qol_win_focus(modern_hwnd):in_inputfocus=-1
   EndIf
@@ -81,7 +78,5 @@ Function qol_present()
    modern_win_position(qol_search_hwnd,0,236*w/set_scrx,55*h/set_scry,405*w/set_scrx,26*h/set_scry,$14)
    qol_search_client_width=w:qol_search_client_height=h
   EndIf
-  ; WS_CLIPCHILDREN protects the EDIT from the game's presentation blit.
-  ; Let Windows repaint only on changes; never erase it on every frame.
  EndIf
 End Function

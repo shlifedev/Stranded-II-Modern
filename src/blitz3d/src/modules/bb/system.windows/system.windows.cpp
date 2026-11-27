@@ -95,7 +95,6 @@ void WindowsSystemDriver::refreshSystemProperties(){
 	if( GetTempPath( MAX_PATH,buff ) )         bbSystemProperties["tempdir"]=toDir( buff );
 }
 
-// TODO: figure out if this is broken on x64.
 int callDll( const std::string &dll,const std::string &func,const void *in,int in_sz,void *out,int out_sz ){
 
 #ifndef BB_WIN32

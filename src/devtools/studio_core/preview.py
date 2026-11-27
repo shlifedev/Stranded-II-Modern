@@ -68,8 +68,6 @@ def preview(project, map_name, since=None):
              'available':available, 'data':base64.b64encode(raw).decode('ascii')}
     token = hashlib.sha256(encode(state)).hexdigest()
     atomic(cache/(token+'.json'), encode(state))
-    # Keep recent baselines without unbounded map copies. An expired token is an
-    # explicit error, never an excuse for an automatic viewport reload.
     for path in sorted(cache.glob('*.json'), key=lambda p:p.stat().st_mtime, reverse=True)[128:]:
         if path.stem not in (token,since):
             path.unlink(missing_ok=True)

@@ -1,5 +1,3 @@
-;############################################ Unreal Software
-
 Function unrealsoftware()
 	Local logotex=load_texture("sys\gfx\logo.bmp",256)
 	Local logo=CreateSprite()

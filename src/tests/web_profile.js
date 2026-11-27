@@ -1,4 +1,3 @@
-/* Isolated profiler. No shell.js, IndexedDB mount, or production settings. */
 'use strict';
 
 function profileStats(values) {
@@ -268,10 +267,8 @@ async function profileRunner(config, query) {
       if (op === 'walltime') return words(performance.now() * 10000);
       if (op === 'width' || op === 'canvas-width') return trial.width;
       if (op === 'height' || op === 'canvas-height') return trial.height;
-      // Focus loss aborts the measured trial instead of waiting indefinitely.
       if (op === 'focus' || op === 'sync' || op === 'control-focus') return 1;
       if (op.startsWith('search-')) return '';
-      // Script-triggered file operations stay in the disposable MEMFS.
       const path = value => value.replaceAll('\\', '/');
       if (op === 'copy' || op === 'move' || op === 'stamp') {
         try {

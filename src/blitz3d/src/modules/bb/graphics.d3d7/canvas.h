@@ -66,9 +66,7 @@ private:
 
 	void updateBitMask( const RECT &r );
 
-	/***** GX INTERFACE *****/
 public:
-	//MANIPULATORS
 	void setFont( BBFont *font );
 	void setMask( unsigned argb );
 	void setColor( unsigned argb );
@@ -105,7 +103,6 @@ public:
 	void setCubeMode( int mode );
 	void setCubeFace( int face );
 
-	//ACCESSORS
 	int getWidth()const;
 	int getHeight()const;
 	int getDepth()const;

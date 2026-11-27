@@ -1,5 +1,3 @@
-;############################################ RUNTIME
-
 menu_start()
 
 While Not m_performquit
@@ -7,7 +5,6 @@ While Not m_performquit
 	loopspeedlimit=MilliSecs()
 
 
-	;Stuff
 	Select m_section
 
 		Case Csection_menu
@@ -32,19 +29,13 @@ While Not m_performquit
 	End Select
 
 
-	;Everywhere
 	gframe=gframe+1
 	console()
-	;While (MilliSecs()-loopspeedlimit)<19
-	;	Delay 1
-	;Wend
 	modern_present()
 	qol_present()
 Wend
 
 
-
-;############################################ SHUTDOWN
 
 qol_shutdown()
 e_clear()

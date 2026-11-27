@@ -1,8 +1,5 @@
 #include "object_cast.h"
 
-/////////////////
-// Object cast //
-/////////////////
 ExprNode *ObjectCastNode::semant( Environ *e ){
 	expr=expr->semant( e );
 	expr=expr->castTo( Type::int_type,e );

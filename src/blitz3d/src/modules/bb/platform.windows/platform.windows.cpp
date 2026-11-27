@@ -26,8 +26,6 @@ void *buffer(bbBank *bank,size_t bytes){
     if(!bank || bank->size<0 || size_t(bank->size)<bytes) RTEX("Windows service buffer is too small");
     return bank->data;
 }
-// Match WriteFile/FileType: a stray byte from legacy text input must name the
-// same file there, and a clipboard copy must not raise a runtime error.
 std::wstring consume(BBStr *value){std::string text=*value;delete value;return bbWide(text);}
 std::string utf8(const wchar_t *value){
     int size=WideCharToMultiByte(CP_UTF8,0,value,-1,nullptr,0,nullptr,nullptr);
@@ -85,7 +83,6 @@ bb_int_t BBCALL s2WinHandleClose(bb_int_t id){int ok=result(CloseHandle(handle(i
 bb_int_t BBCALL s2WinFileFind(BBStr *name,bbBank *bank){
     auto path=consume(name);WIN32_FIND_DATAW data={};HANDLE file=FindFirstFileW(path.c_str(),&data);
     if(file==INVALID_HANDLE_VALUE){fileError=GetLastError();return -1;}
-    // The game reads the original 32-bit WIN32_FIND_DATA timestamps only.
     WIN32_FIND_DATAA legacy={};memcpy(&legacy,&data,44);memcpy(buffer(bank,sizeof(legacy)),&legacy,sizeof(legacy));
     fileError=0;return s2Handle(file);
 }
@@ -97,12 +94,7 @@ bb_int_t BBCALL s2WinBorderless(){
 #ifdef S2_WINDOWS_GRAPHICS
     SDL_Window *win=mainSDLWindow();
     if(!win)return 0;
-    // Keep SDL's fullscreen/windowed geometry in sync with the HWND. Raw
-    // SetWindowLong/SetWindowPos leaves SDL treating this as a decorated window
-    // during later size, DPI and restore events.
     if((SDL_GetWindowFlags(win)&SDL_WINDOW_FULLSCREEN_DESKTOP)==SDL_WINDOW_FULLSCREEN_DESKTOP)return 1;
-    // Match the game's primary-monitor desktop resolution selection. Let SDL
-    // use the full display bounds (not the taskbar work area) without a mode switch.
     SDL_SetWindowPosition(win,SDL_WINDOWPOS_CENTERED_DISPLAY(0),SDL_WINDOWPOS_CENTERED_DISPLAY(0));
     return SDL_SetWindowFullscreen(win,SDL_WINDOW_FULLSCREEN_DESKTOP)==0;
 #else

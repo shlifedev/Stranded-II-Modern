@@ -13,7 +13,7 @@
 void createApp( const std::string &bundlePath,const std::string &home,const BundleInfo &bundle,const Target &target ){
 	const bool ios=target.type=="ios"||target.type=="ios-sim";
 
-	std::string binaryPath=bundlePath.substr( 0,bundlePath.size()-4 ); // remove .app
+	std::string binaryPath=bundlePath.substr( 0,bundlePath.size()-4 );
 	std::string bundleid=bundle.identifier;
 	std::string appid=basename( (char*)binaryPath.c_str() );
 	std::string apptitle=bundle.appName;
@@ -29,7 +29,6 @@ void createApp( const std::string &bundlePath,const std::string &home,const Bund
 		iconPath=home+"/cfg/bbios.icns";
 	}
 
-	// TODO: a bit lazy...
 	if( system( ("cp "+iconPath+" "+bundlePath+"/"+appid+".icns").c_str() ) ){
 		exit( 1 );
 	}

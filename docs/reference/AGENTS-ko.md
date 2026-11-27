@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"ko","syncedHash":"53d8034993899b3cb9c52d1bec526d0b2435bd80e27281fc40ca3659a42704d7"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"ko","syncedHash":"55e81f5c5bd9643cb8d1032292df19a40d6d54cfd55a92bfb6f5c989d712dc43"} -->
 
 # Stranded II 개발 지침
 
@@ -6,6 +6,7 @@
 
 현재 구조는 공통 엔진을 사용하는 Stranded II와 확장판(Extended), 판별 리소스, 실행 시 선택하는 언어팩(기본 EN/KO/DE/ZH-CN/JA)이다. 사용자와 한국어로 소통한다.
 
+- 프로젝트에서 관리하는 모든 소스·테스트·스크립트·워크플로·설정에는 원칙적으로 주석을 쓰지 않는다. 출처 표기, 도구 동작, 코드로 표현할 수 없는 제약에 꼭 필요한 주석만 허용한다. 주석 한도는 프로젝트 전체를 합쳐 30줄이다. 코드 뒤의 주석도 한 줄로 세고 블록 주석은 차지하는 모든 줄을 센다. 외부 라이브러리·SDK 파일·튜토리얼·라이선스 원본은 보존한다. 검사기는 이러한 원본과 셔뱅, 문서·리소스 편집기의 필수 메타데이터를 집계에서 제외한다. 커밋 전에 `python src/devtools/check_comments.py`를 실행하고 새 소스 형식을 도입할 때는 검사기에도 추가한다.
 - 두 판 모두 설정의 QOL 탭에서 조합법 탐색, 보관함 이동, 시체 수집 후 닫기, 표시 정렬, 건축 연속 입력을 개별 설정한다. 기본값은 기본판 OFF, 확장판 ON이며 저장된 선택을 보존한다. 구현과 지원 리소스는 공통으로 관리한다. Extended는 향후 별도 게임 규칙·콘텐츠를 개발할 판으로 유지하며, 확장판 전용 변경으로 기본판을 바꾸지 않는다. 공통 엔진 수정은 두 판에서 검증한다.
 - 판별 진입점은 `src/engine/StrandedII.bb`와 `src/engine/StrandedIIExtended.bb`다. `editions/<판>/modules.bb`에서 구현을 선택한다. 확장판 동작이 달라질 때 필요한 모듈만 별도로 만들고 공통 엔진 전체를 복제하지 않는다.
 - 명령의 `--edition classic|extended`를 생략하면 기본판이다. 기본판은 `build/runtime`, 확장판은 `build/extended/runtime`을 사용한다. 설정·세이브를 공유하거나 자동 복사하지 않는다.

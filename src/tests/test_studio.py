@@ -91,7 +91,6 @@ class NativeMaps(TestCase):
             with self.subTest(map=path.name):
                 raw=path.read_bytes();model=EditableMap(raw)
                 self.assertEqual(model.source.write(),raw)
-                # Resetting a numeric field must not alter any map byte.
                 if model.entities:
                     e=model.entities[0]
                     self.assertEqual(model.apply({'op':'entity.set','kind':e['kind'],'id':e['id'],'values':{'x':e['x']}}),raw)
@@ -232,7 +231,6 @@ class Projects(TestCase):
         self.project.apply([{'op':'map.create','name':'island','size':16}])
         full = self.project.preview('island')
         self.project.apply([{'op':'entity.add','map':'island','kind':'object','type':1,'values':{'x':64}}])
-        # A fresh Project is the same path used by a separately launched CLI.
         other = Project(self.project.root)
         added = other.preview('island', since=full['token'])
         self.assertEqual(added['mode'],'delta')
@@ -245,7 +243,6 @@ class Projects(TestCase):
         removed = other.preview('island', since=added['token'])
         self.assertEqual(removed['changes'], {'removed':1,'upserted':0,'heights':0})
         other.undo(redo=True)
-        # Skipped intermediate changes must not manufacture delete/add operations.
         final = other.preview('island', since=added['token'])
         self.assertEqual(final['changes'], {'removed':0,'upserted':0,'heights':0})
         self.assertEqual(final['files'], added['files'])
@@ -280,8 +277,8 @@ class Projects(TestCase):
         self.assertFalse(applied['resourcesPending'])
         self.assertIn('object/2',applied['available'])
         self.assertTrue(any('objects_studio.inf' in name for name in applied['files']))
-        self.project.undo()  # undo placement
-        self.project.undo()  # undo definition: original resources again
+        self.project.undo()
+        self.project.undo()
         restored = self.project.preview('island', since=full['token'])
         self.assertFalse(restored['resourcesPending'])
 
@@ -309,7 +306,6 @@ class Projects(TestCase):
             self.assertAlmostEqual(a['y']-model.world_height(a['x'],a['z']),b['y']-moved.world_height(b['x'],b['z']),places=3)
         self.project.undo(expected=2)
         self.assertEqual(self.project.map_bytes('island'),before)
-        # A drag using the pre-undo revision must not overwrite another writer.
         with self.assertRaisesRegex(ValueError,'Revision conflict'):
             self.project.apply([{'op':'entities.move','map':'island','selection':selection,'delta':{'y':16}}],expected=1)
         self.assertEqual(self.project.map_bytes('island'),before)
@@ -333,7 +329,6 @@ class BuildBoundaries(TestCase):
                  mock.patch.object(web_build,'asset_files',return_value=[]), \
                  mock.patch('web_audio.prepare',return_value={}), \
                  mock.patch('web_toolchain.run') as run:
-                # pack_assets appends a runtime hook after the generated loader.
                 (build/'site').mkdir();(build/'site/assets.js').write_text('')
                 web_build.pack_assets({})
             argument=run.call_args.args[0][-1]

@@ -1,4 +1,3 @@
-// Browser OS services called by the shared Blitz game through SystemProperty.
 #include <emscripten.h>
 #include <cstdlib>
 #include <string>

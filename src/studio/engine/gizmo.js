@@ -1,4 +1,3 @@
-/* Projection and snapping shared by the overlay and non-graphical tests. */
 'use strict';
 const StudioGizmo={
   axis(origin,end,scaleX=1,scaleY=1){

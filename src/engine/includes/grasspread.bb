@@ -1,12 +1,5 @@
-;######################################################################################################
-
-;############################################ Initiale Grass Map
-;this function creates grass meshes and saves their handles in the grass_h array
-;furthermore it creates a color map (grass_rgb) array out of the terrain color texture
 Function grass_map()
-	;Delete old Grass
 	grass_free()
-	;Setup Properties by Settings (set_grass)
 	Local fade_start
 	Local alpha#
 	Select set_grass
@@ -16,7 +9,6 @@ Function grass_map()
 		Case 3 grass_c=40:grass_dist=21:fade_start=grass_dist*3:alpha=0.41
 		Case 4 grass_c=80:grass_dist=20:fade_start=grass_dist*5:alpha=0.39
 	End Select
-	;Fill Array with Meshes
 	Dim grass_h(grass_c,grass_c)
 	For x=0 To grass_c
 		For y=0 To grass_c
@@ -30,7 +22,6 @@ Function grass_map()
 			HideEntity grass_h(x,y)
 		Next
 	Next
-	;Generate Colormap Array (grass_rgb) out of the Terrain Color Texture (ter_tex_color)
 	grass_mapsize=TextureHeight(ter_tex_color)
 	Dim grass_rgb(grass_mapsize,grass_mapsize,3)
 	SetBuffer TextureBuffer(ter_tex_color)
@@ -46,16 +37,13 @@ Function grass_map()
 	Next
 	UnlockBuffer TextureBuffer(ter_tex_color)
 	SetBuffer BackBuffer()
-	;Calculate Value needed to get the Colormap Position
 	grass_f#=Float(Float(Float(ter_size)/Float(grass_mapsize))*Float(Cworld_size))
-	;Perform spread
 	grass_x=-2147483648
 	grass_y=-2147483648
 	grass_spread()
 End Function
 
 
-;############################################ Deactivate Grass by Heightmap
 Function grass_heightmap()
 	Local size=ter_size
 	Local ctexsize=TextureHeight(ter_tex_color)
@@ -65,61 +53,45 @@ Function grass_heightmap()
 	Local fac#=Float(Float(size*Cworld_size)/Float(ctexsize))
 	For x=0 To texsize
 		For y=0 To texsize
-			;Reset
 			grass_rgb(x,y,3)=1
 		
-			;Get Height
 			h#=Float(TerrainY(ter,rx+(x*fac#),0,ry+(y*fac#))/Float(Cworld_height))+0.5
 			
-			;Deep Disable
 			If h#<0.54 Then
 				If h#<0.52 Then
 					grass_rgb(x,y,3)=0
 				Else
 					If Rand(3)<>1 Then grass_rgb(x,y,3)=0
 				EndIf
-			;Mountain Disable
 			ElseIf h#>0.57 Then
 				If Rand(10)<>1 Then grass_rgb(x,y,3)=0
 			EndIf
 		Next
 	Next
-	; Reapply eligibility even if the camera remains in the same grid cell.
 	grass_x=-2147483648
 	grass_y=-2147483648
 End Function
 
 
-;############################################ Spread Grass
-;this function places and paints grass meshes arround the cam position
 Function grass_spread()
-	;Grass Wind Tex. Rotation
 	grass_wind#=(grass_wind#+2.*f#) Mod 360
 	RotateTexture gfx_grasspreadtex,0+Sin(grass_wind#)*1.5
-	;Grass Activated?
 	If set_grass>0 Then
 		Local half=-(grass_c/2)
 		Local camx=EntityX(cam)
 		Local camz=EntityZ(cam)
 		Local terhalf=(ter_size/2)*Cworld_size
-		; Only placement/terrain eligibility is persistent. The renderer culls
-		; each view every frame; a timed main-camera HideEntity cache pops on turns
-		; and also removes grass from other cameras and water reflections.
 		Local update=0
-		;X Change?
 		If grass_x<>((Int(camx)/grass_dist)+half)*grass_dist Then
 			update=1
-		;Y Change?
 		ElseIf grass_y<>((Int(camz)/grass_dist)+half)*grass_dist Then
 			update=1
 		EndIf
-		;Instant Update
 		If update=1 Then
 			grass_x=((Int(camx)/grass_dist)+half)*grass_dist
 			grass_y=((Int(camz)/grass_dist)+half)*grass_dist
 			For x=0 To grass_c
 				For y=0 To grass_c
-					;Position
 					gx#=((Int(camx)/grass_dist)+half+x)*grass_dist
 					gz#=((Int(camz)/grass_dist)+half+y)*grass_dist
 					If Int(gx#) Mod 2=0 Then gx#=gx#+grass_dist/2
@@ -128,11 +100,8 @@ Function grass_spread()
 					PositionEntity grass_h(x,y),gx#,gy#,gz#
 					gcx=((gx+terhalf)/grass_f#)
 					gcy=((gz+terhalf)/grass_f#)
-					;In Map?
 					If gcx>=0 And gcx<=grass_mapsize And gcy>=0 And gcy<=grass_mapsize Then
-						;Show?
 						If grass_rgb(gcx,gcy,3)=1 Then
-							;Assign Color
 							EntityColor grass_h(x,y),grass_rgb(gcx,gcy,0),grass_rgb(gcx,gcy,1),grass_rgb(gcx,gcy,2)
 							ShowEntity(grass_h(x,y))
 						Else
@@ -148,8 +117,6 @@ Function grass_spread()
 End Function
 
 
-;### Grass Free
-;Deletes the grass meshes
 Function grass_free()
 	For x=0 To grass_c
 		For y=0 To grass_c
@@ -160,8 +127,6 @@ Function grass_free()
 	grass_y=-2147483648
 End Function
 
-;### Grass Colors
-;Set Complete Grass to one Color
 Function grass_colors(r,g,b)
 	grass_x=-2147483648
 	For x=0 To grass_mapsize-1

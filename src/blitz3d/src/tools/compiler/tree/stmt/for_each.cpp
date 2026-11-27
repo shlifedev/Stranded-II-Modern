@@ -1,8 +1,5 @@
 #include "for_each.h"
 
-///////////////////////////////
-// For each object of a type //
-///////////////////////////////
 void ForEachNode::semant( Environ *e ){
 	var->semant( e );
 	Type *ty=var->sem_type;
@@ -78,7 +75,6 @@ void ForEachNode::translate2( Codegen_LLVM *g ){
 	stmts->translate2( g );
 	g->breakBlock=oldBreakBlock;
 
-	// debug( nextPos,g );
 	g->builder->CreateCondBr( g->builder->CreateTruncOrBitCast( g->CallIntrinsic( objNext,ity,1,l ),bty ),loop,cont );
 
 	g->builder->SetInsertPoint( cont );

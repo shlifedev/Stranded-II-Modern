@@ -33,8 +33,6 @@ def package():
     html = html.replace(old, f'<script src="shell.js?v={key}"></script>')
 
     destination = build / 'pages'
-    # This is an output directory, not the local preview (which may contain
-    # isolated checks). Refuse unexpected content instead of recursively deleting it.
     if destination.is_symlink() or destination.resolve() != build.resolve() / 'pages':
         raise ValueError('Pages output must stay directly inside the web build directory.')
     destination.mkdir(exist_ok=True)

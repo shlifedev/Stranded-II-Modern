@@ -1,9 +1,6 @@
 #include "data_decl.h"
 #include "../expr/const.h"
 
-//////////////////////
-// Data declaration //
-//////////////////////
 void DataDeclNode::proto( DeclSeq *d,Environ *e ){
 	expr=expr->semant( e );
 	ConstNode *c=expr->constNode();

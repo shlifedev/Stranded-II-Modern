@@ -1,8 +1,5 @@
 #include "null.h"
 
-/////////////////
-// Null object //
-/////////////////
 ExprNode *NullNode::semant( Environ *e ){
 	sem_type=Type::null_type;
 	return this;

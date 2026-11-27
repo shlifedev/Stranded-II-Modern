@@ -1,4 +1,3 @@
-; Scene-only changes. Native .s2 remains authoritative for play/export.
 Type TstudioDrag
  Field class,id,h,x#,y#,z#,pitch#,yaw#,ground#
 End Type
@@ -66,7 +65,6 @@ Function studio_patch(token$)
   web_service("studio-event","error"+Chr(31)+"Scene patch version mismatch")
   Return
  EndIf
- ; Host validates and stages the complete packet at this frame boundary.
  studio_drag_cancel()
  Local oldloading=tmp_loading,count,j,class,id,typ,h,x#,y#,z#,yaw#,pit#,vars$,changed
  tmp_loading=1
@@ -155,7 +153,6 @@ End Function
 
 Function studio_project$(x#,y#,z#)
  If CameraProject(cam,x,y,z)=0 Then Return "0"+Chr(31)+"0"+Chr(31)+"0"
- ; ProjectedZ is the near plane in Blitz, not the point's view depth.
  TFormPoint x,y,z,0,cam
  Return ProjectedX()+Chr(31)+ProjectedY()+Chr(31)+TFormedZ()
 End Function

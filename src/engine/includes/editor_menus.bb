@@ -1,13 +1,9 @@
-;############################################ EDITOR MENUS
-
 Function editor_menus()
 
 	Select m_menu
 			
-		;Blank
 		Case 0
 		
-		;New
 		Case Cmenu_ed_new
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -15,25 +11,19 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(1)+"...")
 			DrawImage gfx_winbar,215,42
 			
-			;Size
 			bmpf_txt(236,63,se$(30)+":")
 			
 			bmpf_txt(450,63,se$(31)+":",4)
 			gui_opt(450,63+20,"16x16",0,3)
 			gui_opt(450,63+40,"32x32",1,3)
-			;gui_opt(450,63+60,"64x64",2,3)
 			
 			bmpf_txt(550,63,se$(32)+":",1)
-			gui_opt(550,63+20,"64x64",3,3) ;gui_opt(550,63+20,"128x128",3,3)
-			gui_opt(550,63+40,"128x128",4,3) ;gui_opt(550,63+40,"256x256",4,3)
-			;gui_opt(550,63+60,"512x512",5,3)
+			gui_opt(550,63+20,"64x64",3,3)
+			gui_opt(550,63+40,"128x128",4,3)
 			
 			bmpf_txt(650,63,se$(33)+":",3)
-			gui_opt(650,63+20,"256x256",6,3) ;gui_opt(650,63+20,"1024x1024",6,3)
-			;gui_opt(650,63+40,"512x512",7,3,0) ;gui_opt(650,63+40,"2048x2048",7,3,0)
-			;gui_opt(650,63+60,"4096x4096",8,3,0)
+			gui_opt(650,63+20,"256x256",6,3)
 			
-			;Terrain
 			bmpf_txt(236,163,se$(34)+":")
 			gui_opt(450,163,se$(35),0,4)
 			gui_opt(450,163+20,se$(36),1,4)
@@ -42,34 +32,18 @@ Function editor_menus()
 			gui_opt(450,163+80,se$(39),4,4)
 			gui_opt(450,163+100,se$(40),5,4)
 			
-			;Vegetation
-			;bmpf_txt(236,303,se$(41)+":")
-			;gui_opt(450,303,se$(42),0,5)
-			;gui_opt(450,303+20,se$(43),1,5)
-			;gui_opt(450,303+40,se$(44),2,5)
-			;gui_opt(450,303+60,se$(45),3,5)
-			;gui_opt(450,303+80,se$(46),4,5)
-			;gui_opt(450,303+100,se$(47),5,5)
-			
-			;gui_check(450,303+140,se$(48),5,in_opt(5)>0)
-			;gui_check(450,303+160,se$(49),6,in_opt(5)>0)
-			;gui_check(450,303+180,se$(50),7,in_opt(5)>0)
-			;gui_check(450,303+200,se$(51),8,in_opt(5)>0)
-			
-			;Cancel/Okay
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then
-				editor_defaultmapsettings()				;Standardmapeinstellungen
-				editor_genmap()							;Map generieren (Zufall und so)
-				editor_gencolormap()					;Colormap generieren (aus Heightmap)
-				grass_map()								;Grassmap generieren (aus Colormap)
-				grass_heightmap()						;Grassmap anpassen (an Heightmap)
+				editor_defaultmapsettings()
+				editor_genmap()
+				editor_gencolormap()
+				grass_map()
+				grass_heightmap()
 				m_menu=0
 				in_edmap$=""
 				editor_resetcam()
 			EndIf
 			If gui_ibutton(742-37,542,Cicon_x,sm$(3)) Then m_menu=0
 			
-		;Settings
 		Case Cmenu_ed_settings
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -77,45 +51,37 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(4)+"...")
 			DrawImage gfx_winbar,215,42
 			
-			;Time
 			bmpf_txt(236,63,se$(52)+":")
 			gui_input(450,63,128,3)
 			gui_check(590,63,se$(53),5)
 			
-			;Skybox
 			bmpf_txt(236,88,se$(54)+":")
 			gui_input(450,88,256,4,1,se$(55))
-			;Browse
 			If gui_ibutton(742,83,Cicon_dir,se$(75)) Then
 				If gui_win_file(se$(56),set_rootdir$+"mods\"+set_moddir$+"\skies","",1) Then
 					in_input$(4)=editor_getskybox$(in_win_file$)
 				EndIf
 			EndIf
 			
-			;Multiplayer
 			bmpf_txt(236,118,sm$(43)+":")
 			gui_check(450,118,se$(57),6)
 			
-			;Climate
 			bmpf_txt(236,143,se$(58)+":")
-			gui_opt(450,143,se$(59),0,3)			;Normal (Sun/Rain)
-			gui_opt(450,143+20,se$(60),1,3)			;Arctic (Sun/Snow)
-			gui_opt(450,143+40,se$(61),2,3)			;Sun only
-			gui_opt(450,143+60,se$(62),3,3)			;Rain only
-			gui_opt(580,143+40,se$(63),4,3)			;Snow only
-			gui_opt(580,143+60,se$(64),5,3)			;Lightning only
-			
-			;Background Music
+			gui_opt(450,143,se$(59),0,3)
+			gui_opt(450,143+20,se$(60),1,3)
+			gui_opt(450,143+40,se$(61),2,3)
+			gui_opt(450,143+60,se$(62),3,3)
+			gui_opt(580,143+40,se$(63),4,3)
+			gui_opt(580,143+60,se$(64),5,3)
+
 			bmpf_txt(236,225,se$(65)+":")
 			gui_input(450,225,256,5,1,se$(66))
-			;Browse
 			If gui_ibutton(742,220,Cicon_dir,se$(75)) Then
 				If gui_win_file(se$(67),set_rootdir$+"mods\"+set_moddir$+"\sfx","",1) Then
 					in_input$(5)=in_win_file$
 				EndIf
 			EndIf
 			
-			;Fog
 			bmpf_txt(236,255,se$(68)+":")
 			If gui_colorbox(map_fog(0),map_fog(1),map_fog(2),450,255,32,16,se$(76))
 				in_slider(0)=Float(map_fog(0))/2.55
@@ -130,7 +96,6 @@ Function editor_menus()
 			
 			gui_check(500,255,se$(69),7)
 			
-			;Global
 			bmpf_txt(236,285,se$(70))
 			gui_tb(450,285,285,16)
 			If gui_ibutton(742,285,Cicon_script,se$(71)) Then 
@@ -139,22 +104,16 @@ Function editor_menus()
 				editor_setmenu(Cmenu_ed_scripts)
 			EndIf
 			
-			;Checkmap
 			If gui_ibutton(236,542,Cicon_check,se$(72)) Then
 				editor_testmap()
 			EndIf
-			;Options
 			If gui_ibutton(236+37,542,Cicon_options,se$(73)) Then editor_setmenu(Cmenu_ed_options)
-			;Infolist
 			If gui_ibutton(236+37+37,542,Cicon_list,se$(74)) Then editor_setmenu(Cmenu_ed_infolist)
-			;Attachments			
 			If gui_ibutton(236+37+37+37,542,Cicon_dir,se$(186)) Then editor_setmenu(Cmenu_ed_attachments) 
 			
-			;Cancel/Okay
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then
 				editor_savesettings()
 				m_menu=0
-				;Sky
 				If env_sky<>0 Then FreeEntity env_sky
 				If map_skybox$="" Then
 					env_sky=e_skybox("skies\sky")
@@ -168,7 +127,6 @@ Function editor_menus()
 			EndIf
 			If gui_ibutton(742-37,542,Cicon_x,sm$(3)) Then m_menu=0
 			
-		;Infolist
 		Case Cmenu_ed_infolist
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -176,10 +134,8 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(74))
 			DrawImage gfx_winbar,215,42
 			
-			;Size (Terrain)
 			bmpf_txt(236,63,se$(77)+":")
 			bmpf_txt(450,63,ter_size+"x"+ter_size)
-			;Size (Colormap)
 			bmpf_txt(236,83,se$(78)+":")
 			If ter_tex_color<>0 Then
 				bmpf_txt(450,83,TextureWidth(ter_tex_color)+"x"+TextureHeight(ter_tex_color)+"[[loc:engine.a6e49e671878]]")
@@ -188,7 +144,6 @@ Function editor_menus()
 			EndIf
 			
 			
-			;Counts
 			bmpf_txt(236,123,se$(7)+":")
 			c1=0:For Tobject.Tobject=Each Tobject:c1=c1+1:Next
 			bmpf_txt(450,123,c1)
@@ -220,10 +175,8 @@ Function editor_menus()
 			bmpf_txt(450,263,(c1+c2+c3+c4+c5+c6)+ss$(se$(83),(c1+c2+c3)))  
 			
 			
-			;Okay
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then m_menu=0
 			
-		;Options
 		Case Cmenu_ed_options
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -231,7 +184,6 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(73))
 			DrawImage gfx_winbar,215,42
 			
-			;Health
 			If gui_ibutton(236,63,Cicon_ok,se$(84)) Then
 				If gui_msgdecide(se$(85))
 					Local objectfit
@@ -272,7 +224,6 @@ Function editor_menus()
 			bmpf_txt(273,63,se$(84))
 			bmpf_txt(273,79,se$(88),Cbmpf_tiny)
 			
-			;Free
 			If gui_ibutton(236,100,Cicon_ok,se$(89),in_opt(0)>0) Then
 				Local name$
 				Select in_opt(0)
@@ -326,7 +277,6 @@ Function editor_menus()
 			bmpf_txt(273,100,se$(89))
 			bmpf_txt(273,116,se$(94),Cbmpf_tiny)
 			
-			;Free
 			If gui_ibutton(236,137,Cicon_ok,se$(95)) Then
 				Local statedel
 				Local scriptdel
@@ -363,11 +313,9 @@ Function editor_menus()
 			bmpf_txt(273,153,se$(100),Cbmpf_tiny)
 
 			
-			;Cancel/Okay
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then editor_setmenu(Cmenu_ed_settings)
 			
 			
-		;Attachments
 		Case Cmenu_ed_attachments
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -375,23 +323,18 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(186))
 			DrawImage gfx_winbar,215,42
 			
-			;Black Rect
 			Color 0,0,0
 			Rect 236,63,537,435+37,1
 			
-			;List Attachments
 			Local y=0
 			For Tat.Tat=Each Tat
 				
-				;Name
 				bmpf_txt(236+37+5,63+(y*37)+12,Tat\path$)
 				
-				;Button
 				If gui_ibutton(236+5,63+(y*37)+5,Cicon_x,se$(188)) Then
 					Delete Tat
 				EndIf
 				
-				;Pos
 				y=y+1
 				If y>=12 Then
 					y=-1
@@ -399,10 +342,8 @@ Function editor_menus()
 				EndIf
 			Next
 			
-			;Add
 			If gui_ibutton(236,542,Cicon_inc,se$(187)+"...",y<>-1) Then
 				If gui_win_file(se$(187)+"...",set_rootdir$+"mods\"+set_moddir$,"") Then
-				;gui_win_file(se$(67),set_rootdir$+"mods\"+set_moddir$+"\sfx","",1)
 					Tat.Tat=New Tat
 					If Instr(in_win_path$,set_rootdir$+"mods\"+set_moddir$+"\")=1 Then
 						in_win_path$=Replace(in_win_path$,set_rootdir$+"mods\"+set_moddir$+"\","")
@@ -413,12 +354,10 @@ Function editor_menus()
 				EndIf
 			EndIf
 			
-			;Cancel/Okay
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then editor_setmenu(Cmenu_ed_settings)
 		
 		
 		
-		;Random
 		Case Cmenu_ed_random
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -426,17 +365,14 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(216))
 			DrawImage gfx_winbar,215,42
 			
-			;Amount
 			bmpf_txt(236,63,se$(143)+":")
 			gui_input(450,63,256,3)
 		
-			;Objects
 			bmpf_txt(236,100,se$(203)+":")
 			gui_check(450,100,se$(7),5)
 			gui_check(450,100+20,se$(8),6)
 			gui_check(450,100+20+20,se$(9),7)
 			
-			;Profile
 			bmpf_txt(236,283,se$(129)+":")
 			y=0
 			Color 0,0,0
@@ -454,7 +390,6 @@ Function editor_menus()
 				EndIf
 			Next
 			
-			;Scroll
 			If gui_ibutton(742,283,Cicon_up,sm$(29),in_scr_scr>0) Then
 				in_scr_scr=in_scr_scr-1
 			EndIf
@@ -472,7 +407,6 @@ Function editor_menus()
 			in_scr_scr=gui_scrollbar(742,320,180,c,in_scr_scr,14)
 			
 			
-			;Cancel/Okay
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then
 				If Int(in_input(3))>0 Then
 					load_randommap(in_opt(5))
@@ -483,7 +417,6 @@ Function editor_menus()
 		
 			
 		
-		;Quit
 		Case Cmenu_ed_quit
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -491,18 +424,15 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(5)+"...")
 			DrawImage gfx_winbar,215,42
 			
-			;Text
 			bmpf_txt(236,63,se$(102))
 			bmpf_txt(236,83,se$(103),3)
 			
-			;Cancel/Okay
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then
 				editor_quit()
 				menu_start()
 			EndIf
 			If gui_ibutton(742-37,542,Cicon_x,sm$(3)) Then m_menu=0
 			
-		;Load
 		Case Cmenu_ed_load
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -510,13 +440,11 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(2)+"...")
 			DrawImage gfx_winbar,215,42
 			
-			;Name/PW
 			bmpf_txt(236,63,se$(104)+":")
 			gui_input(450,63,256,3)
 			bmpf_txt(236,88,se$(105)+":")
 			gui_input(450,88,128,4)
 			
-			;Browse
 			If gui_ibutton(742,63,Cicon_dir,se$(75)) Then
 				If gui_win_file(se$(2)+"...",set_rootdir$+"mods\"+set_moddir$+"\maps","",0) Then
 					path$=Replace(in_win_path$,set_rootdir$+"mods\"+set_moddir$+"\maps","")
@@ -525,7 +453,6 @@ Function editor_menus()
 				EndIf
 			EndIf
 			
-			;Recent
 			y=1
 			doload=0
 			For Trecent.Trecent=Each Trecent
@@ -539,7 +466,6 @@ Function editor_menus()
 				y=y+1
 			Next
 			
-			;Okay
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Or doload Then
 				in_input(3)=Replace(in_input(3),".S2","")
 				in_input(3)=Replace(in_input(3),".s2","")
@@ -565,11 +491,9 @@ Function editor_menus()
 					EndIf
 				EndIf
 			EndIf
-			;Cancel
 			If gui_ibutton(742-37,542,Cicon_x,sm$(3)) Then m_menu=0
 			
 			
-		;Save
 		Case Cmenu_ed_save
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -577,13 +501,11 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(3)+"...")
 			DrawImage gfx_winbar,215,42
 			
-			;Name/PW
 			bmpf_txt(236,63,se$(104)+":")
 			gui_input(450,63,256,3)
 			bmpf_txt(236,88,se$(105)+":")
 			gui_input(450,88,128,4)
 			
-			;Browse
 			If gui_ibutton(742,63,Cicon_dir,se$(75)) Then
 				If gui_win_file(se$(3)+"...",set_rootdir$+"mods\"+set_moddir$+"\maps","",0,1) Then
 					path$=Replace(in_win_path$,set_rootdir$+"mods\"+set_moddir$+"\maps","")
@@ -592,7 +514,6 @@ Function editor_menus()
 				EndIf
 			EndIf
 			
-			;Recent
 			y=1
 			dosave=0
 			For Trecent.Trecent=Each Trecent
@@ -606,7 +527,6 @@ Function editor_menus()
 				y=y+1
 			Next
 			
-			;Okay
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Or dosave Then
 				in_input(3)=Replace(in_input(3),".S2","")
 				in_input(3)=Replace(in_input(3),".s2","")
@@ -652,10 +572,8 @@ Function editor_menus()
 					EndIf
 				EndIf
 			EndIf
-			;Cancel
 			If gui_ibutton(742-37,542,Cicon_x,sm$(3)) Then m_menu=0
 		
-		;Heightmap
 		Case Cmenu_ed_heightmap
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -663,11 +581,9 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(11)+"...")
 			DrawImage gfx_winbar,215,42
 			
-			;Map/Scale
 			bmpf_txt(236,63,se$(109)+":")
 			gui_input(702,63,64,4)
 							
-			;Import
 			If gui_ibutton(742-37,103,Cicon_load,se$(110)) Then
 				If gui_win_file(se$(110),set_rootdir$,"",0,0) Then
 					in_input$(3)=in_win_path$+in_win_file$
@@ -678,7 +594,6 @@ Function editor_menus()
 					EndIf
 				EndIf
 			EndIf
-			;Export
 			If gui_ibutton(742,103,Cicon_save,se$(111)) Then
 				If gui_win_file(se$(111),set_rootdir$,"",0,1) Then
 					in_input$(3)=in_win_path$+in_win_file$
@@ -689,24 +604,19 @@ Function editor_menus()
 				EndIf
 			EndIf
 			
-			;Bar
 			DrawImage gfx_winbar,215,140
 			
-			;Bufferwin
 			editor_bufferwin(236,160,500,375)
 			
-			;Colors
 			grey=Float(in_slider(0))*2.55
 			gui_colorbox(grey,grey,grey,236,542,64,32,se$(112)+": "+grey)
 			gui_slider(236+64+10,550,100,0)
 			
-			;Alpha
 			a=in_slider(10)
 			bmpf_txt_c(460+32,542,se$(113)+":",Cbmpf_tiny)
 			bmpf_txt_c(460+32,542+16,a+"%",Cbmpf_tiny)
 			gui_slider(460+64+10,550,100,10)
 			
-			;Tools
 			If gui_ibutton(742,160,Cicon_brush,se$(114),1,in_edtool=0) Then
 				in_edtool=0
 			EndIf
@@ -730,16 +640,13 @@ Function editor_menus()
 			EndIf
 			bmpf_txt(742+12,160+37+37+37+37+37+37+15,in_edzoom+"x",Cbmpf_tiny)
 				
-			;Close
 			If gui_ibutton(742-37,542,Cicon_x,sm$(3)) Then m_menu=0
-			;Ok
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then
 				editor_buffertoheightmap()
 				m_menu=0
 			EndIf
 					
 		
-		;Colormap
 		Case Cmenu_ed_colormap
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -747,14 +654,12 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(12)+"...")
 			DrawImage gfx_winbar,215,42
 			
-			;Map/Scale
 			bmpf_txt(236,63,se$(120)+":")
 			gui_input(702-37,63,64,4)
 			If gui_ibutton(742,63,Cicon_ok,se$(121)) Then
 				in_input$(4)=e_terraincmscale(in_input$(4))
 			EndIf
 					
-			;Import
 			If gui_ibutton(742-37,103,Cicon_load,se$(122)) Then
 				If gui_win_file(se$(122),set_rootdir$,"",0,0) Then
 					in_input$(3)=in_win_path$+in_win_file$
@@ -767,7 +672,6 @@ Function editor_menus()
 					EndIf
 				EndIf
 			EndIf
-			;Export
 			If gui_ibutton(742,103,Cicon_save,se$(123)) Then
 				If gui_win_file(se$(123),set_rootdir$,"",0,1) Then
 					in_input$(3)=in_win_path$+in_win_file$
@@ -778,13 +682,10 @@ Function editor_menus()
 				EndIf
 			EndIf
 			
-			;Bar
 			DrawImage gfx_winbar,215,140
 			
-			;Bufferwin
 			editor_bufferwin(236,160,500,375)
 			
-			;Maincolor
 			If gui_colorbox(in_col(0),in_col(1),in_col(2),236,542,64,32,se$(124)) Then
 				in_slider(0)=Float(in_col(0))/2.55
 				in_slider(1)=Float(in_col(1))/2.55
@@ -793,7 +694,6 @@ Function editor_menus()
 					in_col(0)=in_win_color(0):in_col(1)=in_win_color(1):in_col(2)=in_win_color(2)
 				EndIf
 			EndIf
-			;Deepcolor
 			x=gui_colorbox(in_tercol(0,0),in_tercol(1,0),in_tercol(2,0),236+64+15,542,32,32,se$(125))
 			If x=1 Then
 				in_col(0)=in_tercol(0,0):in_col(1)=in_tercol(1,0):in_col(2)=in_tercol(2,0)
@@ -805,7 +705,6 @@ Function editor_menus()
 					e_tercol(in_win_color(0),in_win_color(1),in_win_color(2),0)
 				EndIf
 			EndIf
-			;Basecolor
 			x=gui_colorbox(in_tercol(0,1),in_tercol(1,1),in_tercol(2,1),236+64+15+37,542,32,32,se$(126))
 			If x=1 Then
 				in_col(0)=in_tercol(0,1):in_col(1)=in_tercol(1,1):in_col(2)=in_tercol(2,1)
@@ -817,7 +716,6 @@ Function editor_menus()
 					e_tercol(in_win_color(0),in_win_color(1),in_win_color(2),1)
 				EndIf
 			EndIf
-			;Heightcolor
 			x=gui_colorbox(in_tercol(0,2),in_tercol(1,2),in_tercol(2,2),236+64+15+37+37,542,32,32,se$(127))
 			If x=1 Then
 				in_col(0)=in_tercol(0,2):in_col(1)=in_tercol(1,2):in_col(2)=in_tercol(2,2)
@@ -830,13 +728,11 @@ Function editor_menus()
 				EndIf
 			EndIf
 			
-			;Alpha
 			a=in_slider(10)
 			bmpf_txt_c(460+32,542,se$(113)+":",Cbmpf_tiny)
 			bmpf_txt_c(460+32,542+16,a+"%",Cbmpf_tiny)
 			gui_slider(460+64+10,550,100,10)
 			
-			;Tools
 			If gui_ibutton(742,160,Cicon_brush,se$(114),1,in_edtool=0) Then
 				in_edtool=0
 			EndIf
@@ -861,22 +757,18 @@ Function editor_menus()
 			bmpf_txt(742+12,160+37+37+37+37+37+37+15,in_edzoom+"x",Cbmpf_tiny)
 			
 			
-			;Update
 			If gui_ibutton(742-37-47,542,Cicon_update,se$(128)) Then
 				editor_gencolormap(0)
 				editor_textobuffer(ter_tex_color)
 				p_kill2d()
 			EndIf
-			;Close
 			If gui_ibutton(742-37,542,Cicon_x,sm$(3)) Then m_menu=0
-			;Ok
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then
 				editor_buffertotex(ter_tex_color)
 				m_menu=0
 			EndIf
 			
 		
-		;Grassmap
 		Case Cmenu_ed_grassmap
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -884,13 +776,10 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(13)+"...")
 			DrawImage gfx_winbar,215,42
 					
-			;Bar
 			DrawImage gfx_winbar,215,140
 			
-			;Bufferwin
 			editor_bufferwin(236,160,500,375)
 			
-			;Grassmode
 			If gui_ibutton(236,542,Cicon_grassmap,se$(129),1,in_edgrassmode=1) Then
 				in_edgrassmode=1-in_edgrassmode
 			EndIf
@@ -900,7 +789,6 @@ Function editor_menus()
 				bmpf_txt(236+37,542+5,se$(129)+": "+se$(131),Cbmpf_red)
 			EndIf
 			
-			;Tools
 			If gui_ibutton(742,160,Cicon_brush,se$(114),1,in_edtool=0) Then
 				in_edtool=0
 			EndIf
@@ -915,18 +803,15 @@ Function editor_menus()
 			EndIf
 			bmpf_txt(742+12,160+37+37+37+37+37+37+15,in_edzoom+"x",Cbmpf_tiny)
 			
-			;Update
 			If gui_ibutton(742-47,542,Cicon_update,se$(132)) Then
 				grass_heightmap()
 				editor_grassmaptobuffer()
 				p_kill2d()
 			EndIf
-			;Ok
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then
 				m_menu=0
 			EndIf
 			
-		;Object Properties
 		Case Cmenu_ed_objects
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0:in_opt(0)=Cclass_object:editor_setmode(Cclass_object)
@@ -934,14 +819,12 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(133))
 			DrawImage gfx_winbar,215,42
 			
-			;ID
 			bmpf_txt(236,63,se$(137)+":")
 			gui_input(450,63,64,3)
 			in_input(3)=Int(in_input(3))
 			If Len(in_input(3))>6 Then in_input(3)=Left(in_input(3),6)
 			If in_inputfocus=3 Then editor_setmenu(Cmenu_ed_objects,in_input(3))
 			
-			;Exists?
 			i=0
 			For Tobject.Tobject=Each Tobject
 				If Tobject\id=Int(in_input(3)) Then
@@ -965,7 +848,6 @@ Function editor_menus()
 					If x<>-1 Then in_input(5)=x
 					If Float(in_input(5))>Float(in_input(6)) Then in_input(5)=Float(in_input(6))
 					
-					;Description
 					scrolldown=bmpf_txt_rect(236,210,500,160,Dobject_descr(typ),2,in_scr_descr)
 					If gui_ibutton(742,210,Cicon_up,sm$(29),in_scr_descr>0) Then
 						in_scr_descr=in_scr_descr-1
@@ -984,12 +866,10 @@ Function editor_menus()
 				
 			If Not i Then bmpf_txt(236,93,"N/A",3)
 			
-			;Jump to Parent
 			If gui_ibutton(742-37,5,Cicon_cam,se$(202),i) Then
 				editor_jumpto(Cclass_object,in_input(3))
 			EndIf
 			
-			;Spawn
 			If i=1 Then
 				If Dobject_spawn$(TCobject\typ)<>"" Then
 					If gui_ibutton(236+37,542,78,"[[loc:engine.0fc12ed14135]]") Then
@@ -1002,30 +882,23 @@ Function editor_menus()
 				gui_ibutton(236+37,542,78,"[[loc:engine.0fc12ed14135]]",0)
 			EndIf
 			
-			;Delete
 			If gui_ibutton(236,542,Cicon_x,se$(141),i) Then
 				free_object(Int(in_input(3)))
 				m_menu=0:in_opt(0)=Cclass_object:editor_setmode(Cclass_object)
 			EndIf
 			
-			;Okay
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then
 				If i Then
-					;Rotation
 					RotateEntity Tobject\h,EntityPitch(Tobject\h),Float(in_input(4)),EntityRoll(Tobject\h)
-					;Health
 					Tobject\health#=Float(in_input(5))
 					Tobject\health_max#=Float(in_input(6))
-					;Script
 					editor_savescript(Cclass_object,Int(in_input(3)))
 				EndIf
 				m_menu=0:in_opt(0)=Cclass_object:editor_setmode(Cclass_object)
 			EndIf
 			
-			;Cancel
 			If gui_ibutton(742-37,542,Cicon_x,sm$(3)) Then m_menu=0:in_opt(0)=Cclass_object:editor_setmode(Cclass_object)
 			
-			;Defvars
 			defvars=0
 			If i Then
 				For Tdefvar.Tdefvar=Each Tdefvar
@@ -1041,12 +914,10 @@ Function editor_menus()
 				gui_win_defvars(Cclass_object,typ,Int(in_input(3)))
 			EndIf
 			
-			;Info
 			If gui_ibutton(742-(37*4),542,Cicon_info,se$(144),Len(Dobject_descr(typ))>0) Then
 				gui_win_text(Dobject_descr(typ))
 			EndIf
 		
-		;Unit Properties
 		Case Cmenu_ed_units
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0:in_opt(0)=Cclass_unit:editor_setmode(Cclass_unit)
@@ -1054,14 +925,12 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(134))
 			DrawImage gfx_winbar,215,42
 			
-			;ID
 			bmpf_txt(236,63,se$(137)+":")
 			gui_input(450,63,64,3)
 			in_input(3)=Int(in_input(3))
 			If Len(in_input(3))>6 Then in_input(3)=Left(in_input(3),6)
 			If in_inputfocus=3 Then editor_setmenu(Cmenu_ed_units,in_input(3))
 			
-			;Exists?
 			i=0
 			For Tunit.Tunit=Each Tunit
 				If Tunit\id=Int(in_input(3)) Then
@@ -1085,7 +954,6 @@ Function editor_menus()
 					If x<>-1 Then in_input(5)=x
 					If Float(in_input(5))>Float(in_input(6)) Then in_input(5)=Float(in_input(6))
 					
-					;Description
 					scrolldown=bmpf_txt_rect(236,210,500,160,Dunit_descr(typ),2,in_scr_descr)
 					If gui_ibutton(742,210,Cicon_up,sm$(29),in_scr_descr>0) Then
 						in_scr_descr=in_scr_descr-1
@@ -1102,35 +970,27 @@ Function editor_menus()
 				
 			If Not i Then bmpf_txt(236,93,"N/A",3)
 			
-			;Jump to Parent
 			If gui_ibutton(742-37,5,Cicon_cam,se$(202),i) Then
 				editor_jumpto(Cclass_unit,in_input(3))
 			EndIf
 			
-			;Delete
 			If gui_ibutton(236,542,Cicon_x,se$(141),i) Then
 				free_unit(Int(in_input(3)))
 				m_menu=0:in_opt(0)=Cclass_unit:editor_setmode(Cclass_unit)
 			EndIf
 			
-			;Okay
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then
 				If i Then
-					;Rotation
 					RotateEntity Tunit\h,EntityPitch(Tunit\h),Float(in_input(4)),EntityRoll(Tunit\h)
-					;Health
 					Tunit\health#=Float(in_input(5))
 					Tunit\health_max#=Float(in_input(6))
-					;Script
 					editor_savescript(Cclass_unit,Int(in_input(3)))
 				EndIf
 				m_menu=0:in_opt(0)=Cclass_unit:editor_setmode(Cclass_unit)
 			EndIf
 			
-			;Cancel
 			If gui_ibutton(742-37,542,Cicon_x,sm$(3)) Then m_menu=0:in_opt(0)=Cclass_unit:editor_setmode(Cclass_unit)			
 			
-			;Defvars
 			defvars=0
 			If i Then
 				For Tdefvar.Tdefvar=Each Tdefvar
@@ -1146,13 +1006,11 @@ Function editor_menus()
 				gui_win_defvars(Cclass_unit,typ,Int(in_input(3)))
 			EndIf
 			
-			;Info
 			If gui_ibutton(742-(37*4),542,Cicon_info,se$(144),Len(Dunit_descr(typ))>0) Then
 				gui_win_text(Dunit_descr(typ))
 			EndIf
 			
 			
-		;Item Properties
 		Case Cmenu_ed_items
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0:in_opt(0)=3:editor_picking(Cclass_item)
@@ -1160,20 +1018,17 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(135))
 			DrawImage gfx_winbar,215,42
 			
-			;ID
 			bmpf_txt(236,63,se$(137)+":")
 			gui_input(450,63,64,3)
 			in_input(3)=Int(in_input(3))
 			If Len(in_input(3))>6 Then in_input(3)=Left(in_input(3),6)
 			If in_inputfocus=3 Then editor_setmenu(Cmenu_ed_items,in_input(3))
 			
-			;Exists?
 			i=0
 			For Titem.Titem=Each Titem
 				If Titem\id=Int(in_input(3)) Then
 					i=1
 					
-					;Item
 					bmpf_txt(236,93,se$(138)+":")
 					typ=Titem\typ
 					DrawBlock gfx_if_itemback,450,93
@@ -1186,22 +1041,18 @@ Function editor_menus()
 						EndIf
 					EndIf
 					
-					;Rotation
 					bmpf_txt(236,140,se$(139)+":")
 					gui_input(450,140,128,4)
 					
-					;Health
 					bmpf_txt(236,165,se$(140)+":")
 					gui_input(450,165,128,5)
 					bmpf_txt(590,165,"/ "+Ditem_health#(typ))
 					x=gui_healthbar#(450,190,Float(in_input(5)),Ditem_health#(typ))
 					If x<>-1 Then in_input(5)=x
 					
-					;Count
 					bmpf_txt(236,205,se$(143)+":")
 					gui_input(450,205,128,6)
 					
-					;Attach to Objects
 					x=1
 					If Titem\parent_class<>0 Then
 						If Titem\parent_mode=Cpm_in Then x=0
@@ -1213,7 +1064,6 @@ Function editor_menus()
 					EndIf
 					gui_input(450,235,128,7,x)
 					
-					;Description
 					scrolldown=bmpf_txt_rect(236,260,500,120,Ditem_descr(typ),2,in_scr_descr)
 					If gui_ibutton(742,260,Cicon_up,sm$(29),in_scr_descr>0) Then
 						in_scr_descr=in_scr_descr-1
@@ -1222,7 +1072,6 @@ Function editor_menus()
 						in_scr_descr=in_scr_descr+1
 					EndIf
 					
-					;Childs
 					editor_childs(Cclass_item,Int(in_input(3)),1,0,1)
 					
 					Exit
@@ -1231,7 +1080,6 @@ Function editor_menus()
 				
 			If Not i Then bmpf_txt(236,93,"N/A",3)
 			
-			;Jump to Parent
 			If gui_ibutton(742-37,5,Cicon_cam,se$(202),i) Then
 				If Titem\parent_class=0 Then
 					editor_jumpto(Cclass_item,in_input(3))
@@ -1240,23 +1088,17 @@ Function editor_menus()
 				EndIf
 			EndIf
 			
-			;Delete
 			If gui_ibutton(236,542,Cicon_x,se$(141),i) Then
 				free_item(Int(in_input(3)))
 				m_menu=0:in_opt(0)=3:editor_picking(Cclass_item)
 			EndIf
 			
-			;Okay
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then
 				If i Then
-					;Rotation
 					RotateEntity Titem\h,EntityPitch(Titem\h),Float(in_input(4)),EntityRoll(Titem\h)
-					;Health
 					Titem\health#=Float(in_input(5))
-					;Count
 					If Int(in_input(6))<1 Then in_input(6)=1
 					Titem\count=Int(in_input(6))
-					;Save Object
 					x=1
 					If Titem\parent_class<>0 Then
 						If Titem\parent_mode=Cpm_in Then
@@ -1276,16 +1118,13 @@ Function editor_menus()
 							RotateEntity Titem\h,0,EntityYaw(Titem\h),0
 						EndIf
 					EndIf
-					;Script
 					editor_savescript(Cclass_item,Int(in_input(3)))
 				EndIf
 				m_menu=0:in_opt(0)=3:editor_picking(Cclass_item)
 			EndIf
 			
-			;Cancel
 			If gui_ibutton(742-37,542,Cicon_x,sm$(3)) Then m_menu=0:in_opt(0)=3:editor_picking(Cclass_item)
 			
-			;Defvars
 			defvars=0
 			If i Then
 				For Tdefvar.Tdefvar=Each Tdefvar
@@ -1301,12 +1140,10 @@ Function editor_menus()
 				gui_win_defvars(Cclass_item,typ,Int(in_input(3)))
 			EndIf
 			
-			;Info
 			If gui_ibutton(742-(37*4),542,Cicon_info,se$(144),Len(Ditem_descr(typ))>0) Then
 				gui_win_text(Ditem_descr(typ))
 			EndIf
 			
-		;Info Properties
 		Case Cmenu_ed_infos
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -1314,14 +1151,12 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(136))
 			DrawImage gfx_winbar,215,42
 			
-			;ID
 			bmpf_txt(236,63,se$(137)+":")
 			gui_input(450,63,64,3)
 			in_input(3)=Int(in_input(3))
 			If Len(in_input(3))>6 Then in_input(3)=Left(in_input(3),6)
 			If in_inputfocus=3 Then editor_setmenu(Cmenu_ed_infos,in_input(3))
 						
-			;Exists?
 			i=0
 			For Tinfo.Tinfo=Each Tinfo
 				If Tinfo\id=Int(in_input(3)) Then
@@ -1334,20 +1169,15 @@ Function editor_menus()
 					bmpf_txt(495,93,Dinfo_name$(typ)+" ("+typ+")")
 					h=Tinfo\h
 					
-					;Infostuff
 					Select typ
-						;Spawnpoint
 						Case 1
 							bmpf_txt(236,140,se$(144)+":")
 							bmpf_txt(450,140,se$(145))
 							
-						;Sprite
 						Case 5
-							;Image
 							bmpf_txt(236,140,se$(207)+":")
 							gui_input(450,140,256,4)
 
-							;Browse
 							If gui_ibutton(742,140,Cicon_dir,se$(75)) Then
 								If gui_win_file(se$(2)+"...",set_rootdir$+"mods\"+set_moddir$,"",0) Then
 									path$=Replace(in_win_path$,set_rootdir$+"mods\"+set_moddir$,"")
@@ -1356,13 +1186,11 @@ Function editor_menus()
 								EndIf
 							EndIf
 							
-							;Size
 							bmpf_txt(236,170,se$(30)+":")
 							gui_input(450,170,64,5)
 							bmpf_txt(450+64+5,170,"x")
 							gui_input(450+64+15,170,64,6)
 							
-							;Color
 							bmpf_txt(236,200,se$(194)+":")
 							If gui_colorbox(in_scol(0),in_scol(1),in_scol(2),450,200,64,32) Then
 								in_slider(0)=Float(in_scol(0))/2.55
@@ -1375,20 +1203,16 @@ Function editor_menus()
 								EndIf
 							EndIf
 							
-							;Alpha
 							bmpf_txt(236,240,se$(196)+":")
 							gui_slider(450,240,100,0)
 							
-							;Blend
 							bmpf_txt(236,270,se$(208)+":")
 							gui_check(450,270,se$(208),0)
 							
-							;Fix
 							bmpf_txt(236,300,se$(209)+":")
 							gui_check(450,300,se$(210),1)
 							
 						
-						;Trigger Range
 						Case 10
 							bmpf_txt(236,140,se$(146)+":")
 							If gui_opt(450,140,se$(147),0,3) Then in_input$(4)=0
@@ -1415,14 +1239,12 @@ Function editor_menus()
 							bmpf_txt(236,337,se$(153)+":")
 							gui_check(450,337,se$(154),0)
 							
-						;Trigger Time
 						Case 11
 							bmpf_txt(236,140,se$(146)+":")
 							gui_opt(450,140,se$(155),0,3)
 							gui_opt(450,160,se$(156),1,3)
 							gui_opt(450,180,se$(157),2,3)
 							gui_opt(450,200,se$(158),3,3)
-							;gui_opt(450,220,se$(159),4,3)
 							
 							Select in_opt(3)
 								Case 0
@@ -1448,7 +1270,6 @@ Function editor_menus()
 							bmpf_txt(236,315,se$(153)+":")
 							gui_check(450,315,se$(154),0)
 							
-						;Trigger Item Count
 						Case 12
 							bmpf_txt(236,140,se$(146)+":")
 							gui_opt(450,140,se$(147),0,3)
@@ -1474,7 +1295,6 @@ Function editor_menus()
 							bmpf_txt(236,317,se$(153)+":")
 							gui_check(450,317,se$(154),0)
 						
-						;Map Indication
 						Case 36
 							bmpf_txt(236,140,se$(190)+":")
 							gui_opt(450,140,"      ",0,3):DrawImage gfx_arrows,475,147,0
@@ -1488,27 +1308,22 @@ Function editor_menus()
 							bmpf_txt(236,317,se$(153)+":")
 							gui_check(450,317,se$(154),0)
 							
-						;Freshwater Area
 						Case 41
 							bmpf_txt(236,140,se$(152)+":")
 							gui_input(450,140,64,4)
 							
-						;Dig Area
 						Case 42
 							bmpf_txt(236,140,se$(152)+":")
 							gui_input(450,140,64,4)
 							
-						;Fishing Area
 						Case 43
 							bmpf_txt(236,140,se$(152)+":")
 							gui_input(450,140,64,4)
 							
-						;Area
 						Case 44
 							bmpf_txt(236,140,se$(152)+":")
 							gui_input(450,140,64,4)
 							
-						;Spawn-Control
 						Case 45
 							bmpf_txt(236,140,se$(152)+":")
 							gui_input(450,140,64,4)
@@ -1568,7 +1383,6 @@ Function editor_menus()
 							bmpf_txt(236,359,se$(153)+":")
 							gui_check(450,359,se$(154),0)
 						
-						;AI Area
 						Case 46
 							bmpf_txt(236,140,se$(152)+":")
 							gui_input(450,140,64,4)
@@ -1577,13 +1391,10 @@ Function editor_menus()
 							gui_opt(450,170,se$(212),0,3)
 							gui_opt(450,190,se$(213),1,3)
 							
-						;Loudspeaker
 						Case 47
-							;Sound
 							bmpf_txt(236,140,se$(220)+":")
 							gui_input(450,140,256,4)
 
-							;Browse
 							If gui_ibutton(742,140,Cicon_dir,se$(75)) Then
 								If gui_win_file(se$(2)+"...",set_rootdir$+"mods\"+set_moddir$,"",0) Then
 									path$=Replace(in_win_path$,set_rootdir$+"mods\"+set_moddir$,"")
@@ -1592,18 +1403,14 @@ Function editor_menus()
 								EndIf
 							EndIf
 							
-							;Radius
 							bmpf_txt(236,170,se$(152)+":")
 							gui_input(450,170,64,5)
 							bmpf_txt(450,200,se$(221))
 							
-						;Previewimage
 						Case 48
-							;Image
 							bmpf_txt(236,140,se$(207)+":")
 							gui_input(450,140,256,4)
 
-							;Browse
 							If gui_ibutton(742,140,Cicon_dir,se$(75)) Then
 								If gui_win_file(se$(2)+"...",set_rootdir$+"mods\"+set_moddir$,"",0) Then
 									path$=Replace(in_win_path$,set_rootdir$+"mods\"+set_moddir$,"")
@@ -1613,14 +1420,11 @@ Function editor_menus()
 							EndIf
 							
 							
-						;Default
 						Default
 							If Dinfo_descr(typ)="" Then
-								;Nothing Special
 								bmpf_txt(236,140,se$(144)+":")
 								bmpf_txt(450,140,se$(169))
 							Else
-								;Description
 								scrolldown=bmpf_txt_rect(236,140,500,230,Dinfo_descr(typ),2,in_scr_descr)
 								If gui_ibutton(742,140,Cicon_up,sm$(29),in_scr_descr>0) Then
 									in_scr_descr=in_scr_descr-1
@@ -1632,7 +1436,6 @@ Function editor_menus()
 							
 					End Select			
 					
-					;Childs
 					editor_childs(Cclass_info,Int(in_input(3)),1,1,1)
 					
 					Exit
@@ -1641,18 +1444,15 @@ Function editor_menus()
 			
 			If Not i Then bmpf_txt(236,93,"N/A",3)
 			
-			;Jump to Parent
 			If gui_ibutton(742-37,5,Cicon_cam,se$(202),i) Then
 				editor_jumpto(Cclass_info,in_input(3))
 			EndIf
 			
-			;Delete
 			If gui_ibutton(236,542,Cicon_x,se$(141),i) Then
 				free_info(Int(in_input(3)))
 				m_menu=0:in_opt(0)=4:editor_picking(Cclass_info)
 			EndIf
 			
-			;Okay
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then
 				If i=1 Then
 					editor_saveinfo(Tinfo)
@@ -1660,10 +1460,8 @@ Function editor_menus()
 				m_menu=0:in_opt(0)=4:editor_picking(Cclass_info)
 			EndIf
 			
-			;Cancel
 			If gui_ibutton(742-37,542,Cicon_x,sm$(3)) Then m_menu=0:in_opt(0)=4:editor_picking(Cclass_info)
 				
-			;Defvars
 			defvars=0
 			If i Then
 				For Tdefvar.Tdefvar=Each Tdefvar
@@ -1679,12 +1477,10 @@ Function editor_menus()
 				gui_win_defvars(Cclass_info,typ,Int(in_input(3)))
 			EndIf
 			
-			;Info
 			If gui_ibutton(742-(37*4),542,Cicon_info,se$(144),Len(Dinfo_descr(typ))>0) Then
 				gui_win_text(Dinfo_descr(typ))
 			EndIf
 			
-		;Script Editor
 		Case Cmenu_ed_scripts
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -1692,10 +1488,8 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(71))
 			DrawImage gfx_winbar,215,42
 			
-			;Focus
 			in_inputfocus=1337
 			
-			;ID
 			i=0
 			For Tx.Tx=Each Tx
 				If Tx\parent_class=Int(in_input(3)) Then
@@ -1718,22 +1512,18 @@ Function editor_menus()
 				
 			gui_tb(236,85,538,29,1,1)
 			
-			;Okay
 			If gui_ibutton(742,542,Cicon_ok, sm$(5)) Then
 				editor_savescript(Int(in_input(3)),Int(in_input(4)))
 				editor_setmenu(in_prevmenu,Int(in_input(4)))
 			EndIf
-			;Cancel
 			If gui_ibutton(742-37,542,Cicon_x,sm$(3)) Then
 				editor_setmenu(in_prevmenu,Int(in_input(4)))
 			EndIf
 			
-			;Jump to Parent
 			If gui_ibutton(742-37,5,Cicon_cam,se$(202)) Then
 				editor_jumpto(in_input(3),in_input(4))
 			EndIf
 			
-			;Help
 			x=0
 			If in_sh=1 Then
 				If in_sh_cmd$<>0 Then
@@ -1745,7 +1535,6 @@ Function editor_menus()
 			EndIf
 			
 			
-			;Delete
 			If gui_ibutton(236,542,Cicon_x,se$(141)) Then
 				If gui_msgdecide(se$(176),Cbmpf_red,sm$(2),sm$(1))
 					If Int(in_input(3))=0 Then
@@ -1759,32 +1548,23 @@ Function editor_menus()
 				EndIf
 			EndIf
 			
-			;List
-			;If gui_ibutton(236+37,542,Cicon_list,se$(201)) Then
-			;	editor_setmenu(Cmenu_ed_list)
-			;EndIf
-			
-			;Load
 			If gui_ibutton(236+37+37,542,Cicon_load,se$(177)) Then
 				If gui_win_file(se$(177),set_rootdir$,"",0,0) Then
 					gui_tb_loadfile(in_win_path$+in_win_file$)
 				EndIf
 			EndIf
-			;Export
 			If gui_ibutton(236+37+37+37,542,Cicon_save,se$(178)) Then
 				If gui_win_file(se$(178),set_rootdir$,"",0,1) Then
 					gui_tb_savefile(in_win_path$+in_win_file$)
 				EndIf
 			EndIf
 			
-			;Add Command
 			gui_tb_scripthelper_list()
 			If gui_ibutton(236+37+37+37+5+37,542,Cicon_inc,se$(179)) Then
 				gui_win_command()
 			EndIf 
 
 
-		;State Properties
 		Case Cmenu_ed_states
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0:in_opt(0)=3
@@ -1792,7 +1572,6 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(192))
 			DrawImage gfx_winbar,215,42
 						
-			;Exists?
 			i=0
 			For Tstate.Tstate=Each Tstate
 				If Tstate\typ=Int(in_input(3)) Then
@@ -1800,7 +1579,6 @@ Function editor_menus()
 						If Tstate\parent_id=Int(in_input(5)) Then
 							i=1
 							
-							;Jump to Parent
 							If gui_ibutton(742-37,5,Cicon_cam,se$(202)) Then
 								editor_jumpto(Tstate\parent_class,Tstate\parent_id)
 							EndIf
@@ -1813,11 +1591,9 @@ Function editor_menus()
 							
 							bmpf_txt(495,63,Dstate_name$(typ)+" ("+typ+")")
 							
-							;Power/Damage (value_f#)
 							bmpf_txt(236,140,se$(193)+":")
 							gui_input(450,140,128,6)
 							
-							;Color
 							If Tstate\typ=Cstate_flare Or Tstate\typ=Cstate_light Or Tstate\typ=Cstate_particles Then
 								bmpf_txt(236,170,se$(194)+":")
 								If gui_colorbox(in_scol(0),in_scol(1),in_scol(2),450,170,64,32) Then
@@ -1832,7 +1608,6 @@ Function editor_menus()
 								EndIf
 							EndIf
 							
-							;Size
 							If Tstate\typ=Cstate_flare Or Tstate\typ=Cstate_light Then
 								bmpf_txt(236,210,se$(195)+":")
 								gui_input(450,210,64,7)
@@ -1846,38 +1621,30 @@ Function editor_menus()
 				
 			If Not i Then bmpf_txt(236,93,"N/A",3)
 			
-			;Delete
 			If gui_ibutton(236,542,Cicon_x,se$(141),i) Then
 				free_state(Int(in_input(3)),Int(in_input(4)),Int(in_input(5)))
 				m_menu=0
 			EndIf
 			
-			;Okay
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then
 				If i Then
-					;Value
 					Tstate\value_f#=Float(in_input$(6))
-					;Color
 					If Tstate\typ=Cstate_flare Or Tstate\typ=Cstate_light Or Tstate\typ=Cstate_particles Then
 						Tstate\value_s$=in_scol(0)+","+in_scol(1)+","+in_scol(2)
 					EndIf
-					;Size
 					If Tstate\typ=Cstate_flare Or Tstate\typ=Cstate_light Then
 						Tstate\value=Int(in_input$(7))
 					EndIf
-					;Look
 					TCstate.Tstate=Tstate
 					look_state()
 				EndIf
 				m_menu=0
 			EndIf
 			
-			;Cancel
 			If gui_ibutton(742-37,542,Cicon_x,sm$(3)) Then m_menu=0
 			
 
 
-		;List
 		Case Cmenu_ed_list
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -1885,7 +1652,6 @@ Function editor_menus()
 			bmpf_txt(236+37,10,se$(201))
 			DrawImage gfx_winbar,215,42
 			
-			;Groups
 			If gui_opt(236,63,se$(7),Cclass_object,3) Then in_scr_scr=0
 			If gui_opt(236,63+20,se$(8),Cclass_unit,3) Then in_scr_scr=0
 			If gui_opt(236+200,63,se$(9),Cclass_item,3) Then in_scr_scr=0
@@ -1898,17 +1664,14 @@ Function editor_menus()
 			y=103+16+5
 			scrolldown=0
 			
-			;List
 			Select in_opt(3)
 				
 				
-				;Objects
 				Case Cclass_object
 					i=0
 					For Tobject.Tobject=Each Tobject
 						i=i+1
 						If in_scr_scr<i Then
-							;Over?
 							over=0
 							If in_mx>=236 Then
 								If in_mx<=738 Then
@@ -1919,18 +1682,15 @@ Function editor_menus()
 									EndIf
 								EndIf
 							EndIf
-							;Output
 							typ=Tobject\typ
 							DrawBlock gfx_if_itemback,236,y
 							DrawImage Dobject_iconh(typ),236,y
 							bmpf_txt(236+45,y,"#"+Tobject\id+" "+Dobject_name$(typ)+" ("+typ+")",over)
-							;Action
 							If over Then
 								If in_mrelease(1) Then
 									editor_setmenu(Cmenu_ed_objects,Tobject\id)
 								EndIf
 							EndIf
-							;Pos
 							y=y+45
 							If y>550 Then
 								scrolldown=1
@@ -1945,13 +1705,11 @@ Function editor_menus()
 					Next
 					in_scr_scr=gui_scrollbar(742,161,500-161,c,in_scr_scr,10)					
 					
-				;Units
 				Case Cclass_unit
 					i=0
 					For Tunit.Tunit=Each Tunit
 						i=i+1
 						If in_scr_scr<i Then
-							;Over?
 							over=0
 							If in_mx>=236 Then
 								If in_mx<=738 Then
@@ -1962,18 +1720,15 @@ Function editor_menus()
 									EndIf
 								EndIf
 							EndIf
-							;Output
 							typ=Tunit\typ
 							DrawBlock gfx_if_itemback,236,y
 							DrawImage Dunit_iconh(typ),236,y
 							bmpf_txt(236+45,y,"#"+Tunit\id+" "+Dunit_name$(typ)+" ("+typ+")",over)
-							;Action
 							If over Then
 								If in_mrelease(1) Then
 									editor_setmenu(Cmenu_ed_units,Tunit\id)
 								EndIf
 							EndIf
-							;Pos
 							y=y+45
 							If y>550 Then
 								scrolldown=1
@@ -1988,13 +1743,11 @@ Function editor_menus()
 					Next
 					in_scr_scr=gui_scrollbar(742,161,500-161,c,in_scr_scr,10)
 				
-				;Items
 				Case Cclass_item	
 					i=0
 					For Titem.Titem=Each Titem
 						i=i+1
 						If in_scr_scr<i Then
-							;Over?
 							over=0
 							If in_mx>=236 Then
 								If in_mx<=738 Then
@@ -2005,7 +1758,6 @@ Function editor_menus()
 									EndIf
 								EndIf
 							EndIf
-							;Output
 							typ=Titem\typ
 							DrawBlock gfx_if_itemback,236,y
 							DrawImage Ditem_iconh(typ),236,y
@@ -2015,13 +1767,11 @@ Function editor_menus()
 							Else
 								bmpf_txt(236+45,y+18,Titem\count+"x ("+se$(142)+")",Cbmpf_dark)
 							EndIf						
-							;Action
 							If over Then
 								If in_mrelease(1) Then
 									editor_setmenu(Cmenu_ed_items,Titem\id)
 								EndIf
 							EndIf
-							;Pos
 							y=y+45
 							If y>550 Then
 								scrolldown=1
@@ -2036,13 +1786,11 @@ Function editor_menus()
 					Next
 					in_scr_scr=gui_scrollbar(742,161,500-161,c,in_scr_scr,10)
 				
-				;Infos
 				Case Cclass_info
 					i=0
 					For Tinfo.Tinfo=Each Tinfo
 						i=i+1
 						If in_scr_scr<i Then
-							;Over?
 							over=0
 							If in_mx>=0 Then
 								If in_mx<=738 Then
@@ -2053,18 +1801,15 @@ Function editor_menus()
 									EndIf
 								EndIf
 							EndIf
-							;Output
 							typ=Tinfo\typ
 							DrawBlock gfx_if_itemback,236,y
 							DrawImage gfx_icons,236+4,y+4,Dinfo_frame(typ)
 							bmpf_txt(236+45,y,"#"+Tinfo\id+" "+Dinfo_name$(typ)+" ("+typ+")",over)
-							;Action
 							If over Then
 								If in_mrelease(1) Then
 									editor_setmenu(Cmenu_ed_infos,Tinfo\id)
 								EndIf
 							EndIf
-							;Pos
 							y=y+45
 							If y>550 Then
 								scrolldown=1
@@ -2079,13 +1824,11 @@ Function editor_menus()
 					Next
 					in_scr_scr=gui_scrollbar(742,161,500-161,c,in_scr_scr,10)
 					
-				;States
 				Case Cclass_state
 					i=0
 					For Tstate.Tstate=Each Tstate
 						i=i+1
 						If in_scr_scr<i Then
-							;Over?
 							over=0
 							If in_mx>=236 Then
 								If in_mx<=738 Then
@@ -2096,7 +1839,6 @@ Function editor_menus()
 									EndIf
 								EndIf
 							EndIf
-							;Output
 							typ=Tstate\typ
 							DrawBlock gfx_if_itemback,236,y
 							DrawImage gfx_states,236+10,y+10,Dstate_frame(typ)
@@ -2109,7 +1851,6 @@ Function editor_menus()
 								Case Cclass_info bmpf_txt(236+45,y+18,"@ "+se$(167)+" #"+Tstate\parent_id,Cbmpf_dark)
 								Default  bmpf_txt(236+45,y+18,"[[loc:engine.a258b30f88c3]]",Cbmpf_dark)
 							End Select
-							;Action
 							If over Then
 								If in_mrelease(1) Then
 									in_input(3)=Tstate\typ
@@ -2118,7 +1859,6 @@ Function editor_menus()
 									editor_setmenu(Cmenu_ed_states)
 								EndIf
 							EndIf
-							;Pos
 							y=y+45
 							If y>550 Then
 								scrolldown=1
@@ -2133,14 +1873,12 @@ Function editor_menus()
 					Next
 					in_scr_scr=gui_scrollbar(742,161,500-161,c,in_scr_scr,10)
 					
-				;Scripts
 				Case 100
 					i=0
 					For Tx.Tx=Each Tx
 						If Tx\mode=0 Then
 							i=i+1
 							If in_scr_scr<i Then
-								;Over?
 								over=0
 								If in_mx>=236 Then
 									If in_mx<=738 Then
@@ -2151,7 +1889,6 @@ Function editor_menus()
 										EndIf
 									EndIf
 								EndIf
-								;Output
 								DrawBlock gfx_if_itemback,236,y
 								bmpf_txt(236+45,y,"Script",over)
 								Select Tx\parent_class
@@ -2179,7 +1916,6 @@ Function editor_menus()
 										bmpf_txt(236+45,y+18,"[[loc:engine.a258b30f88c3]]",Cbmpf_dark)
 								End Select
 								DrawImage gfx_icons,236,y,Cicon_script
-								;Action
 								If over Then
 									If in_mrelease(1) Then
 										in_input(3)=Tx\parent_class
@@ -2188,7 +1924,6 @@ Function editor_menus()
 										
 									EndIf
 								EndIf
-								;Pos
 								y=y+45
 								If y>550 Then
 									scrolldown=1
@@ -2209,7 +1944,6 @@ Function editor_menus()
 			
 			End Select
 			
-			;Scroll
 			If gui_ibutton(742,124,Cicon_up,sm$(29),in_scr_scr>0) Then
 				in_scr_scr=in_scr_scr-1
 			EndIf
@@ -2217,10 +1951,8 @@ Function editor_menus()
 				in_scr_scr=in_scr_scr+1
 			EndIf
 			
-			;Okay
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then m_menu=0
 			
-		;Map
 		Case Cmenu_ed_map
 			DrawImage gfx_win,215,0
 			If gui_ibutton(742,5,Cicon_x,sm$(15),1,0,1) Then m_menu=0
@@ -2234,8 +1966,6 @@ Function editor_menus()
 End Function
 
 
-;############################################ EDITOR FILLMENU
-
 Function editor_setmenu(menu,param=-1)
 	in_prevmenu=m_menu
 	m_menu=menu
@@ -2244,9 +1974,7 @@ Function editor_setmenu(menu,param=-1)
 	in_scr_scr3=0
 	in_scr_descr=0
 	Select menu
-		;### MAIN
 	
-		;New
 		Case Cmenu_ed_new
 			in_opt(3)=0
 			in_opt(4)=0
@@ -2255,14 +1983,12 @@ Function editor_setmenu(menu,param=-1)
 			in_check(6)=1
 			in_check(7)=1
 			in_check(8)=1
-		;Load
 		Case Cmenu_ed_load
 			load_recent()
 			in_input(3)=""
 			in_input(4)=""
 			in_opt(3)=0
 			If in_edmap$<>"" Then in_input(3)=in_edmap$
-		;Save
 		Case Cmenu_ed_save
 			load_recent()
 			in_input(3)=""
@@ -2270,9 +1996,6 @@ Function editor_setmenu(menu,param=-1)
 			in_opt(3)=0
 			If in_edmap$<>"" Then in_input(3)=in_edmap$
 			
-		;### TERRAIN
-		
-		;Heightmap
 		Case Cmenu_ed_heightmap
 			editor_heightmaptobuffer()
 			in_editor_bufferx=-5
@@ -2282,7 +2005,6 @@ Function editor_setmenu(menu,param=-1)
 			in_slider(0)=50
 			in_slider(10)=100
 			in_edtool=0
-		;Colormap
 		Case Cmenu_ed_colormap
 			editor_textobuffer(ter_tex_color)
 			in_editor_bufferx=-5
@@ -2291,13 +2013,11 @@ Function editor_setmenu(menu,param=-1)
 			in_input(4)=TextureHeight(ter_tex_color)
 			in_edtool=0
 			in_slider(10)=100
-		;Grassmap
 		Case Cmenu_ed_grassmap
 			editor_grassmaptobuffer()
 			in_editor_bufferx=-5
 			in_editor_buffery=-5
 			in_edtool=0
-		;Random
 		Case Cmenu_ed_random
 			in_input(3)=(ter_size*ter_size)/4
 			in_check(5)=1
@@ -2306,25 +2026,16 @@ Function editor_setmenu(menu,param=-1)
 			in_opt(5)=1
 			in_scr_scr=0
 		
-		;### PROPERTIES
 		Case Cmenu_ed_settings
-			;Time
 			in_input$(3)=map_day+":"+map_hour+":"+map_minute
 			in_check(5)=map_freezetime
-			;Skybox
 			in_input$(4)=map_skybox$
-			;Multiplayer
 			in_check(6)=map_multiplayer
-			;Climate
 			in_opt(3)=map_climate
-			;Background Music
 			in_input$(5)=map_music$
-			;Fog
 			in_check(7)=map_fog(3)
-			;Briefing/Global Scripts
 			gui_tb_loadstring(map_briefing$,"")
 			
-		;Object Properties
 		Case Cmenu_ed_objects
 			If param<>-1 Then in_input(3)=param
 			If con_object(Int(in_input(3))) Then
@@ -2342,7 +2053,6 @@ Function editor_setmenu(menu,param=-1)
 					EndIf
 				Next
 			EndIf
-		;Unit Properties
 		Case Cmenu_ed_units
 			If param<>-1 Then in_input(3)=param
 			If con_unit(Int(in_input(3))) Then
@@ -2360,7 +2070,6 @@ Function editor_setmenu(menu,param=-1)
 					EndIf
 				Next
 			EndIf
-		;Item Properties
 		Case Cmenu_ed_items
 			If param<>-1 Then in_input(3)=param
 			If con_item(Int(in_input(3))) Then
@@ -2384,12 +2093,10 @@ Function editor_setmenu(menu,param=-1)
 					EndIf
 				EndIf
 			EndIf
-		;Info Properties
 		Case Cmenu_ed_infos
 			If param<>-1 Then in_input(3)=param
 			If con_info(Int(in_input(3))) Then
 				Select TCinfo\typ
-					;Sprite
 					Case 5
 						in_input(4)=TCinfo\strings[0]
 						in_input(5)=TCinfo\floats[0]
@@ -2400,7 +2107,6 @@ Function editor_setmenu(menu,param=-1)
 						in_slider(0)=Float(TCinfo\floats[2]*100.)
 						in_check(0)=Int(TCinfo\strings[1])
 						in_check(1)=Int(TCinfo\strings[2])
-					;Trigger Range,Trigger Time,Trigger Item Count
 					Case 10,11,12
 						in_opt(3)=TCinfo\ints[0]
 						in_input(4)=TCinfo\ints[1]
@@ -2408,15 +2114,12 @@ Function editor_setmenu(menu,param=-1)
 						in_input(6)=Int(TCinfo\floats[0])
 						in_check(0)=Int(TCinfo\floats[1])
 						in_input(7)=Int(TCinfo\floats[2])
-					;Map Indication
 					Case 36
 						in_opt(3)=TCinfo\ints[0]
 						in_check(0)=TCinfo\ints[1]
 						in_input(4)=TCinfo\strings[0]
-					;Areas
 					Case 41,42,43,44
 						in_input(4)=Int(TCinfo\floats[0])
-					;Spawn Control
 					Case 45
 						in_input(4)=Int(TCinfo\floats[0])
 						in_check(0)=Int(TCinfo\floats[1])
@@ -2425,15 +2128,12 @@ Function editor_setmenu(menu,param=-1)
 						in_input(6)=TCinfo\ints[2]
 						in_input(7)=Int(TCinfo\strings[0])
 						in_input(8)=Int(TCinfo\strings[1])
-					;AI Area
 					Case 46
 						in_input(4)=Int(TCinfo\floats[0])
 						in_opt(3)=TCinfo\ints[0]
-					;Loudspeaker
 					Case 47
 						in_input(4)=TCinfo\strings[0]
 						in_input(5)=Int(TCinfo\floats[0])
-					;Previewimage
 					Case 48
 						in_input(4)=TCinfo\strings[0]
 				End Select
@@ -2449,10 +2149,7 @@ Function editor_setmenu(menu,param=-1)
 				Next
 			EndIf
 			
-		;Script Editor
 		Case Cmenu_ed_scripts
-			;in_input(3)=Script Parent Class
-			;in_input(4)=Script Parent ID
 			gui_tb_loadstring("","")
 			If in_prevmenu=Cmenu_ed_settings
 				gui_tb_loadstring(map_briefing$,"")
@@ -2471,11 +2168,7 @@ Function editor_setmenu(menu,param=-1)
 				Next
 			EndIf
 			
-		;State Properties
 		Case Cmenu_ed_states
-			;in_input(3)=State Parent Type
-			;in_input(4)=State Parent Class
-			;in_input(5)=State Parent ID
 			For Tstate.Tstate=Each Tstate
 				If Tstate\typ=Int(in_input(3)) Then
 					If Tstate\parent_class=Int(in_input(4)) Then
@@ -2491,7 +2184,6 @@ Function editor_setmenu(menu,param=-1)
 				EndIf
 			Next
 			
-		;Map
 		Case Cmenu_ed_map
 			If map_mapimage<>0 Then
 				FreeImage map_mapimage
@@ -2503,9 +2195,7 @@ Function editor_setmenu(menu,param=-1)
 End Function
 
 
-;Save Script
 Function editor_savescript(class,id=0)
-	;Global Scripts
 	If class=0 Then
 		If gui_tb_filled() Then
 			map_briefing$=gui_tb_savestring$("")
@@ -2521,7 +2211,6 @@ Function editor_savescript(class,id=0)
 		EndIf
 		Return 1		
 	EndIf
-	;Change or Delete existing Script
 	For Tx.Tx=Each Tx
 		If Tx\parent_class=class Then
 			If Tx\parent_id=id Then
@@ -2537,7 +2226,6 @@ Function editor_savescript(class,id=0)
 			EndIf
 		EndIf
 	Next
-	;Create new Script (if needed!)
 	If gui_tb_filled() Then
 		Tx.Tx=New Tx
 		Tx\parent_class=class
@@ -2550,9 +2238,7 @@ Function editor_savescript(class,id=0)
 End Function
 
 
-;Save Settings
 Function editor_savesettings()
-	;Time
 	Local tstr$=in_input$(3)
 	map_day=1
 	map_hour=9
@@ -2571,36 +2257,24 @@ Function editor_savesettings()
 	If map_minute<0 Then map_minute=0
 	If map_minute>59 Then map_minute=59
 	map_freezetime=in_check(5)
-	;Skybox
 	map_skybox$=in_input$(4)
-	;Multiplayer
 	map_multiplayer=in_check(6)
-	;Climate
 	map_climate=in_opt(3)			
-	;Background Music
 	map_music$=in_input$(5)
-	;Fog
 	map_fog(3)=in_check(7)
-	;Briefing / Global Scripts
 	If gui_tb_filled() Then
 		map_briefing$=gui_tb_savestring$("")
 	Else
 		map_briefing$=""
 	EndIf
-	;Update Light
 	e_environment_update_light()
 End Function
 
 
-;Childs Menu to setup Childs
 Function editor_childs(pclass,pid,states=1,items=1,scripts=1)
-	;pclass = parent_class
-	;pid = parent_id
 
-	;##################################### States
 	If states Then
 
-		;Child States List
 		x=0:y=0:j=0
 		bmpf_txt(236,390,se$(180)+":")
 		x=450
@@ -2630,7 +2304,6 @@ Function editor_childs(pclass,pid,states=1,items=1,scripts=1)
 			EndIf
 		Next
 		
-		;Child State Options
 		If gui_ibutton(742,390,Cicon_inc,se$(182)) Then
 			If in_opt(0)<>Cclass_state Then
 				in_opt(0)=Cclass_state
@@ -2645,10 +2318,8 @@ Function editor_childs(pclass,pid,states=1,items=1,scripts=1)
 	
 	EndIf
 	
-	;##################################### Items
 	If items Then
 	
-		;Child Items List
 		x=0:y=0:j=0
 		bmpf_txt(236,440,se$(9)+":")
 		x=450
@@ -2673,7 +2344,6 @@ Function editor_childs(pclass,pid,states=1,items=1,scripts=1)
 				EndIf
 			EndIf
 		Next
-		;Child Item Options
 		If gui_ibutton(742,440,Cicon_inc,se$(185)) Then
 			If in_opt(0)<>Cclass_item Then
 				in_opt(0)=Cclass_item
@@ -2690,60 +2360,43 @@ Function editor_childs(pclass,pid,states=1,items=1,scripts=1)
 	
 	EndIf
 	
-	;##################################### Scripts
 	If scripts Then
 	
-		;Scripts
 		bmpf_txt(236,490,se$(170)+":")
 		gui_tb(450,490,285,3,0,1)
 		If gui_ibutton(742,490,Cicon_script,se$(71)) Then
-			;Save Stuff
 			Select pclass
-				;Object
 				Case Cclass_object
 					For Tobject.Tobject=Each Tobject
 						If Tobject\id=pid Then
-							;Rotation
 							RotateEntity Tobject\h,EntityPitch(Tobject\h),Float(in_input(4)),EntityRoll(Tobject\h)
-							;Health
 							Tobject\health#=Float(in_input(5))
 							Tobject\health_max#=Float(in_input(6))
-							;Script
 							editor_savescript(Cclass_object,Int(in_input(3)))
 							Exit
 						EndIf
 					Next
-				;Unit
 				Case Cclass_unit
 					For Tunit.Tunit=Each Tunit
 						If Tunit\id=pid Then
-							;Rotation
 							RotateEntity Tunit\h,EntityPitch(Tunit\h),Float(in_input(4)),EntityRoll(Tunit\h)
-							;Health
 							Tunit\health#=Float(in_input(5))
 							Tunit\health_max#=Float(in_input(6))
-							;Script
 							editor_savescript(Cclass_unit,Int(in_input(3)))
 							Exit
 						EndIf
 					Next
-				;Item
 				Case Cclass_item
 					For Titem.Titem=Each Titem
 						If Titem\id=pid Then
-							;Rotation
 							RotateEntity Titem\h,EntityPitch(Titem\h),Float(in_input(4)),EntityRoll(Titem\h)
-							;Health
 							Titem\health#=Float(in_input(5))
-							;Count
 							If Int(in_input(6))<1 Then in_input(6)=1
 							Titem\count=Int(in_input(6))
-							;Script
 							editor_savescript(Cclass_item,Int(in_input(3)))
 							Exit
 						EndIf
 					Next
-				;Info
 				Case Cclass_info
 					For Tinfo.Tinfo=Each Tinfo
 						If Tinfo\id=pid Then
@@ -2752,7 +2405,6 @@ Function editor_childs(pclass,pid,states=1,items=1,scripts=1)
 						EndIf
 					Next
 			End Select
-			;Open Scriptmenu
 			in_input(3)=pclass
 			in_input(4)=pid
 			editor_setmenu(Cmenu_ed_scripts)
@@ -2764,7 +2416,6 @@ End Function
 
 Function editor_saveinfo(Tinfo.Tinfo)
 	Select Tinfo\typ
-		;Sprite
 		Case 5
 			Tinfo\strings[0]=in_input(4)
 			Tinfo\floats[0]=in_input(5)
@@ -2777,7 +2428,6 @@ Function editor_saveinfo(Tinfo.Tinfo)
 			Tinfo\strings[2]=in_check(1)
 			info_vts()
 			info_setupsprite(Tinfo)
-		;Trigger Range,Trigger Time,Trigger Item Count
 		Case 10,11,12
 			Tinfo\ints[0]=in_opt(3)
 			Tinfo\ints[1]=Int(in_input(4))
@@ -2786,17 +2436,14 @@ Function editor_saveinfo(Tinfo.Tinfo)
 			Tinfo\floats[1]=Int(in_check(0))
 			Tinfo\floats[2]=Int(in_input(7))
 			info_vts()
-		;Map Indication
 		Case 36
 			Tinfo\ints[0]=in_opt(3)
 			Tinfo\ints[1]=Int(in_check(0))
 			Tinfo\strings[0]=in_input(4)
 			info_vts()
-		;Areas
 		Case 41,42,43,44
 			TCinfo\floats[0]=Int(in_input(4))
 			info_vts()
-		;Spawn Control
 		Case 45
 			TCinfo\floats[0]=Int(in_input(4))
 			Tinfo\floats[1]=Int(in_check(0))
@@ -2806,21 +2453,17 @@ Function editor_saveinfo(Tinfo.Tinfo)
 			TCinfo\strings[0]=Int(in_input(7))
 			TCinfo\strings[1]=Int(in_input(8))
 			info_vts()
-		;AI Area
 		Case 46
 			TCinfo\floats[0]=Int(in_input(4))
 			TCinfo\ints[0]=in_opt(3)
 			info_vts()
-		;Loudspeaker
 		Case 47
 			Tinfo\strings[0]=in_input(4)
 			TCinfo\floats[0]=Int(in_input(5))
 			info_vts()
-		;Previewimage
 		Case 48
 			Tinfo\strings[0]=in_input(4)
 			info_vts()
 	End Select
-	;Save Script
 	editor_savescript(Cclass_info,Int(in_input(3)))
 End Function

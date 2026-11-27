@@ -1,9 +1,5 @@
 #include "decl_var.h"
 
-//////////////////
-// Declared var //
-//////////////////
-
 void DeclVarNode::semant( Environ *e ){
 }
 

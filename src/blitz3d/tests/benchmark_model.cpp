@@ -14,7 +14,6 @@ int main(){
   assert(rec.history().size()==Recorder::Capacity && c.trials[0].frames.size()==5000);
   assert(!rec.find(first));
   std::array<GpuSample,GpuCount> g{};g[Reflections].ms=2.5;g[Reflections].passes=6;
-  // Late GPU data must reach the original trial even after ring eviction.
   rec.gpuResult(first,g,GpuStatus::Partial);c.stop();c.finish(50025,true);
   assert(c.trials[0].frames[0].graphics[Reflections].ms==2.5);
   assert(c.trials[0].frames[0].gpu==GpuStatus::Partial);

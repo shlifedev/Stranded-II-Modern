@@ -6,7 +6,7 @@
 #include "prefs.h"
 #include "dpi.h"
 
-#define WM_IDLEUPDATECMDUI  0x0363  // wParam == bDisableIfNoHandler
+#define WM_IDLEUPDATECMDUI  0x0363
 
 enum{
 	WM_STOP=WM_USER+1,WM_RUN,WM_END
@@ -63,7 +63,6 @@ int MainFrame::OnCreate( LPCREATESTRUCT lpCreateStruct ){
 		scale_bmp=true;
 	}
 
-	//Toolbar
 	HBITMAP toolbmp=(HBITMAP)LoadImage(	0,tb.c_str(),IMAGE_BITMAP,0,0,LR_LOADFROMFILE|LR_LOADMAP3DCOLORS );
 
 	BITMAP bm;
@@ -88,28 +87,24 @@ int MainFrame::OnCreate( LPCREATESTRUCT lpCreateStruct ){
 	toolBar.SetSizes( butsz,imgsz );
 	toolBar.SetButtons( toolbuts,toolcnt );
 
-	//Tabber
 	tabber.Create(
 		WS_VISIBLE|WS_CHILD|
 		TCS_HOTTRACK,
 		CRect( 0,0,0,0 ),this,1 );
 	tabber.SetFont( &prefs.tabsFont );
 
-	//Second tabber
 	tabber2.Create(
 		WS_VISIBLE|WS_CHILD|
 		TCS_HOTTRACK,
 		CRect( 0,0,0,0 ),this,2 );
 	tabber2.SetFont( &prefs.tabsFont );
 
-	//Debug Log
 	debug_log.Create(
 		WS_CHILD|WS_HSCROLL|WS_VSCROLL|
 		ES_NOHIDESEL|ES_MULTILINE|ES_AUTOHSCROLL|ES_AUTOVSCROLL,
 		CRect( 0,0,0,0 ),&tabber,1 );
 	tabber.insert( 0,&debug_log,"Debug log" );
 
-	//Debug trees
 	locals_tree.Create(
 		WS_VISIBLE|WS_CHILD|
 		TVS_HASLINES|TVS_LINESATROOT|TVS_HASBUTTONS,
@@ -274,7 +269,6 @@ SourceFile *MainFrame::sourceFile(const char *file){
 		return it->second;
 	}
 
-	//crete new source file
 	SourceFile *t=new SourceFile();
 
 	it=files.insert( std::make_pair(file,t) ).first;

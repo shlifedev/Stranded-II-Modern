@@ -1,4 +1,3 @@
-; Shared optional settings and input. No save format or gameplay data changes.
 Const Cqol_recipes=0,Cqol_storage=1,Cqol_close=2,Cqol_sort=3,Cqol_build=4
 Dim qol_enabled(4),qol_pending(4),qol_keys$(4),qol_labels$(4)
 Global qol_hold_state,qol_hold_target,qol_hold_weapon,qol_hold_resume
@@ -129,8 +128,6 @@ Function qol_build_result(id,continuing)
  EndIf
 End Function
 
-; Shift+Esc is the original quit-without-saving shortcut. Quick transfers keep Shift
-; held in the storage window, so Esc there only closes the window.
 Function qol_shift_reserved()
  Return m_menu=Cmenu_if_exchange And qol_enabled(Cqol_storage)
 End Function

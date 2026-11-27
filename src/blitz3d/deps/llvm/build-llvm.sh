@@ -2,9 +2,6 @@
 
 set -e
 
-##
-# Standard script for building LLVM on linux & macos.
-#
 LLVM_VERSION=19.1.5
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )

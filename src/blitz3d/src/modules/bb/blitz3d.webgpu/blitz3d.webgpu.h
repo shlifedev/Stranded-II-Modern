@@ -74,7 +74,6 @@ struct BBWebGPU3DVertex{
 };
 static_assert( sizeof(BBWebGPU3DVertex)==44,"3D vertex layout mismatch" );
 
-// Tint and fade vary per copy too, without splitting shared-material draws.
 struct BBWebGPUInstance{
 	float world[16];
 	float normal[12];

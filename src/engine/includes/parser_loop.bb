@@ -1,18 +1,10 @@
-;############################################ Parser Loop
-
-
-;### Parse Loop
 Function parse_loop()
-	;Already in a Loop?
 	If p_loopmode=1 Then
 		parse_error("alreadylooping")
 	Else
-		;Reset
 		p_looptype=""
 		p_loopargs=""
-		;Spaces
 		parse_skipspace()
-		;(
 		If Mid(p_l$,p_p,1)<>"(" Then
 			parse_error("expect","'('")
 			Return 0
@@ -42,29 +34,23 @@ Function parse_loop()
 					Return 0
 			End Select
 		EndIf
-		;Spaces
 		parse_skipspace()
-		;)
 		If Mid(p_l$,p_p,1)=")" Then
 			p_p=p_p+1
 		Else
 			parse_error("expecting","')'")
 			Return 0
 		EndIf
-		;K
 		p_loopmode=1
 		Return 1
 	EndIf
 End Function
 
 
-;### Loop End
 Function parse_loop_check()
 	Select p_looptype$
 		Case "count"
-			;Increase
 			p_loopi=p_loopi+1
-			;Quit Loop
 			If p_loopi>Int(p_loopargs$) Then
 				p_loopmode=0
 				parse_closebrace()
@@ -78,14 +64,11 @@ Function parse_loop_check()
 		Case "infos"
 			parse_loop_infos()
 		Case "states"
-			;Setup
 			If p_loopi=0 Then
 				p_loop_state=First Tstate
-			;Inc
 			Else
 				p_loop_state=After p_loop_state
 			EndIf
-			;Quit Loop?
 			If p_loop_state=Null Then
 				p_loopi=0
 				p_loopmode=0
@@ -102,16 +85,12 @@ End Function
 Function parse_loop_objects()
 	Local args=Int(p_loopargs$)
 	Local f=0
-	;All
 	If args=0 Then
-		;Setup
 		If p_loopi=0 Then
 			p_loop_object=First Tobject
-		;Inc
 		Else
 			p_loop_object=After p_loop_object
 		EndIf
-		;Quit Loop?
 		If p_loop_object=Null Then
 			p_loopi=0
 			p_loopmode=0
@@ -119,9 +98,7 @@ Function parse_loop_objects()
 		Else
 			p_loopi=p_loop_object\id
 		EndIf
-	;By Type
 	Else
-		;Find Next
 		f=0
 		For x.Tobject=Each Tobject
 			If x\typ=args Then
@@ -132,7 +109,6 @@ Function parse_loop_objects()
 				EndIf 
 			EndIf
 		Next
-		;Quit Loop?
 		If f=0 Then
 			p_loopi=0
 			p_loopmode=0
@@ -144,16 +120,12 @@ End Function
 Function parse_loop_units()
 	Local args=Int(p_loopargs$)
 	Local f=0
-	;All
 	If args=0 Then
-		;Setup
 		If p_loopi=0 Then
 			p_loop_unit=First Tunit
-		;Inc
 		Else
 			p_loop_unit=After p_loop_unit
 		EndIf
-		;Quit Loop?
 		If p_loop_unit=Null Then
 			p_loopi=0
 			p_loopmode=0
@@ -161,9 +133,7 @@ Function parse_loop_units()
 		Else
 			p_loopi=p_loop_unit\id
 		EndIf
-	;By Type
 	Else
-		;Find Next
 		f=0
 		For x.Tunit=Each Tunit
 			If x\typ=args Then
@@ -174,7 +144,6 @@ Function parse_loop_units()
 				EndIf 
 			EndIf
 		Next
-		;Quit Loop?
 		If f=0 Then
 			p_loopi=0
 			p_loopmode=0
@@ -186,16 +155,12 @@ End Function
 Function parse_loop_items()
 	Local args=Int(p_loopargs$)
 	Local f=0
-	;All
 	If args=0 Then
-		;Setup
 		If p_loopi=0 Then
 			p_loop_item=First Titem
-		;Inc
 		Else
 			p_loop_item=After p_loop_item
 		EndIf
-		;Quit Loop?
 		If p_loop_item=Null Then
 			p_loopi=0
 			p_loopmode=0
@@ -203,9 +168,7 @@ Function parse_loop_items()
 		Else
 			p_loopi=p_loop_item\id
 		EndIf
-	;By Type
 	Else
-		;Find Next
 		f=0
 		For x.Titem=Each Titem
 			If x\typ=args Then
@@ -216,7 +179,6 @@ Function parse_loop_items()
 				EndIf 
 			EndIf
 		Next
-		;Quit Loop?
 		If f=0 Then
 			p_loopi=0
 			p_loopmode=0
@@ -228,16 +190,12 @@ End Function
 Function parse_loop_infos()
 	Local args=Int(p_loopargs$)
 	Local f=0
-	;All
 	If args=0 Then
-		;Setup
 		If p_loopi=0 Then
 			p_loop_info=First Tinfo
-		;Inc
 		Else
 			p_loop_info=After p_loop_info
 		EndIf
-		;Quit Loop?
 		If p_loop_info=Null Then
 			p_loopi=0
 			p_loopmode=0
@@ -245,9 +203,7 @@ Function parse_loop_infos()
 		Else
 			p_loopi=p_loop_info\id
 		EndIf
-	;By Type
 	Else
-		;Find Next
 		f=0
 		For x.Tinfo=Each Tinfo
 			If x\typ=args Then
@@ -258,7 +214,6 @@ Function parse_loop_infos()
 				EndIf 
 			EndIf
 		Next
-		;Quit Loop?
 		If f=0 Then
 			p_loopi=0
 			p_loopmode=0

@@ -232,7 +232,6 @@ class CIPackagingTests(unittest.TestCase):
                      'Play.cmd', 'debug.bat', 'setup.ps1', 'StrandedII-old.exe'):
             self.put(self.runtime / name, b'private or obsolete')
         members = ci.release_members(self.runtime, self.game)
-        # Extracting an update over an existing folder must not replace player files.
         self.assertEqual(members['StrandedII/core/modern.default.ini'], b'fps=144\nlanguage=en\n')
         self.assertNotIn('StrandedII/core/modern.ini', members)
         self.assertNotIn('StrandedII/mods/Stranded II/sys/settings.cfg', members)

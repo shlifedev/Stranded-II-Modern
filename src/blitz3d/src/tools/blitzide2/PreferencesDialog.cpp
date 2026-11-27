@@ -58,8 +58,6 @@ PreferencesDialog::PreferencesDialog( wxWindow *parent,Preferences *prefs )
 		}
 	}
 
-	//
-
 	int signerIdx=-1;
 	wxArrayString results;
 	wxExecute( "security find-identity -v -p codesigning",results );

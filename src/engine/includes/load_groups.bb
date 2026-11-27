@@ -1,5 +1,3 @@
-;############################################ Load Groups
-
 Function load_groups()
 	Local stream=ReadFile("sys\groups.inf")
 	If stream=0 Then Return 0
@@ -46,18 +44,8 @@ Function group_add(class,group$,name$)
 	g\class=class
 	g\group$=group$
 	g\name$=name$
-	;DebugLog "add group "+group$+","+name$
 End Function
 
 Function group_set$(class,group$)
 	Return group$
-	;For g.Tgroup=Each Tgroup
-	;	If g\class=class Then
-	;		If g\group$=group$ Then
-	;			Return g\group$
-	;		EndIf
-	;	EndIf
-	;Next
-	;RuntimeError "Group '"+group$+"' has not been defined and cannot be assigned"
-	;Return ""
 End Function

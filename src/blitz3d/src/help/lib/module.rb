@@ -25,31 +25,21 @@ module Blitz3D
     end
 
     def initialize(config_file)
-      # begin
-      #   config = YAML.load(File.open(config_file).read)
-      # rescue Psych::SyntaxError
-      #   puts "YAML syntax error in #{config_file}".red
-      #   exit 1
-      # end
 
       @path = File.dirname(config_file)
       @id = File.basename(@path)
-      @name = "#{id} (TODO: add name support back in)" # config['name']
-      @description = 'TODO: add description support back in' #config['description']
+      @name = "#{id} (TODO: add name support back in)"
+      @description = 'TODO: add description support back in'
 
-      platforms = [] #config['platforms'] || []
+      platforms = []
       if platforms.empty?
         @platforms = Module::PLATFORMS.dup
       else
         @platforms = platforms.map { |plat| METAPLATFORMS[plat.to_sym] || plat }.flatten.uniq
       end
 
-      @dependencies = [] # [config['dependencies']].flatten.compact
-      @symbols = {} # (config['symbols'] || []).inject({}) do |syms, line|
-      #   ident, sym = line.split(':')
-      #   syms[ident] = sym
-      #   syms
-      # end
+      @dependencies = []
+      @symbols = {}
 
       @commands = File.read(config_file).split("\n").map do |line|
         next if line.blank? || line.strip.starts_with?(';')
@@ -59,7 +49,6 @@ module Blitz3D
       end.compact.sort_by(&:name)
 
 
-      # @commands = (config['commands'] || []).map { |text| Command.new(self, text) }
     end
 
     def ==(other)

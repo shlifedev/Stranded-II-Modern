@@ -8,9 +8,6 @@
 
 std::set<std::string> Node::usedfuncs;
 
-///////////////////////////////
-// generic exception thrower //
-///////////////////////////////
 void Node::ex(){
 	ex( "INTERNAL COMPILER ERROR" );
 }
@@ -27,18 +24,12 @@ void Node::ex( const std::string &e,int pos,const std::string &f ){
 	throw Ex( e,pos,f );
 }
 
-///////////////////////////////
-// Generate a local variable //
-///////////////////////////////
 VarNode *Node::genLocal( Environ *e,Type *ty ){
 	std::string t=genLabel();
 	Decl *d=e->decls->insertDecl( t,ty,DECL_LOCAL );
 	return d_new DeclVarNode( d );
 }
 
-/////////////////////////////////////////////////
-// if type is const, return const value else 0 //
-/////////////////////////////////////////////////
 ConstNode *Node::constValue( Type *ty ){
 	ConstType *c=ty->constType();
 	if( !c ) return 0;
@@ -48,11 +39,7 @@ ConstNode *Node::constValue( Type *ty ){
 	return d_new StringConstNode( c->stringValue );
 }
 
-///////////////////////////////////////////////////////
-// work out var offsets - return size of local frame //
-///////////////////////////////////////////////////////
 int Node::enumVars( Environ *e ){
-	//calc offsets
 	int p_size=0,l_size=0;
 	for( int k=0;k<e->decls->size();++k ){
 		Decl *d=e->decls->decls[k];
@@ -67,13 +54,9 @@ int Node::enumVars( Environ *e ){
 	return l_size;
 }
 
-//////////////////////////////
-// initialize all vars to 0 //
-//////////////////////////////
 TNode *Node::createVars( Environ *e ){
 	int k;
 	TNode *t=0;
-	//initialize locals
 	for( k=0;k<e->decls->size();++k ){
 		Decl *d=e->decls->decls[k];
 		if( d->kind!=DECL_LOCAL ) continue;
@@ -83,7 +66,6 @@ TNode *Node::createVars( Environ *e ){
 		p=d_new TNode( IR_MEM,p,0 );
 		t=d_new TNode( IR_MOVE,t,p );
 	}
-	//initialize vectors
 	for( k=0;k<e->decls->size();++k ){
 		Decl *d=e->decls->decls[k];
 		if( d->kind==DECL_PARAM ) continue;
@@ -101,7 +83,6 @@ TNode *Node::createVars( Environ *e ){
 #ifdef USE_LLVM
 void Node::createVars2( Environ *e, Codegen_LLVM *g ){
 	int k;
-	//initialize locals
 	for( k=0;k<e->decls->size();++k ){
 		Decl *d=e->decls->decls[k];
 		if( d->kind!=DECL_LOCAL ) continue;
@@ -110,7 +91,6 @@ void Node::createVars2( Environ *e, Codegen_LLVM *g ){
 		d->ptr=g->builder->CreateAlloca( d->type->llvmType( g->context.get() ),nullptr,d->name );
 		g->builder->CreateStore( d->type->llvmZero( g->context.get() ),d->ptr );
 	}
-	//initialize vectors
 	for( k=0;k<e->decls->size();++k ){
 		Decl *d=e->decls->decls[k];
 		if( d->kind==DECL_PARAM ) continue;
@@ -123,9 +103,6 @@ void Node::createVars2( Environ *e, Codegen_LLVM *g ){
 }
 #endif
 
-////////////////////////
-// release local vars //
-////////////////////////
 TNode *Node::deleteVars( Environ *e ){
 	TNode *t=0,*l=0,*p,*p1,*p2;
 	for( int k=0;k<e->decls->size();++k ){
@@ -159,9 +136,6 @@ TNode *Node::deleteVars( Environ *e ){
 	return t;
 }
 
-//////////////////////////////////////////////////////////////
-// compare 2 translated operands - return 1 if true, else 0 //
-//////////////////////////////////////////////////////////////
 TNode *Node::compare( int op,TNode *l,TNode *r,Type *ty ){
 	int n=0;
 	if( ty==Type::float_type ){
@@ -233,9 +207,6 @@ llvm::Value *Node::compare2( int op,llvm::Value *l,llvm::Value *r,Type *ty,Codeg
 }
 #endif
 
-/////////////////////////////////
-// calculate the type of a tag //
-/////////////////////////////////
 Type *Node::tagType( const std::string &tag,Environ *e ){
 	Type *t;
 	if( tag.size() ){
@@ -245,17 +216,11 @@ Type *Node::tagType( const std::string &tag,Environ *e ){
 	return t;
 }
 
-////////////////////////////////
-// Generate a fresh ASM label //
-////////////////////////////////
 std::string Node::genLabel(){
 	static int cnt;
 	return "_"+itoa( ++cnt & 0x7fffffff );
 }
 
-//////////////////////////////////////////////////////
-// create a stmt-type function call with int result //
-//////////////////////////////////////////////////////
 TNode *Node::call( const std::string &func,TNode *a0,TNode *a1,TNode *a2 ){
 	int size=0;
 	TNode *t=0;
@@ -275,9 +240,6 @@ TNode *Node::call( const std::string &func,TNode *a0,TNode *a1,TNode *a2 ){
 	return d_new TNode( IR_CALL,l,t,size );
 }
 
-////////////////////////////////////////////////////////
-// create a stmt-type function call with float result //
-////////////////////////////////////////////////////////
 TNode *Node::fcall( const std::string &func,TNode *a0,TNode *a1,TNode *a2 ){
 	int size=0;
 	TNode *t=0;

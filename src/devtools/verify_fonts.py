@@ -42,7 +42,6 @@ def main():
     deps=json.loads((root/'build/dependencies.local.json').read_text('utf8'));default=Path(deps['font'])
     assert Font(default).axes,'default exercises variable font path'
     fixture=out/'project';locale=fixture/'resources/locales';locale.mkdir(parents=True)
-    # The isolated project exercises the same pinned UI-font publication as setup.
     from ui_fonts import prepare as prepare_ui_font
     ui_font=prepare_ui_font(root)
     (fixture/'config').mkdir()
@@ -56,7 +55,6 @@ def main():
     for p in ((args.runtime or root/'build/runtime')/'mods/Stranded II/sys/gfx').glob('font_*.bmp'):shutil.copy2(p,gfx/p.name)
     latin=fixture/'Latin.ttf';other=fixture/'Other.otf'
     fixture_font(latin,list(range(32,127)))
-    # A private-use character missing in Noto must come from another pack's OTF.
     private=next(c for c in range(0xE000,0xF900) if c not in Font(default).coverage)
     fixture_font(other,list(range(32,127))+[private],cff=True)
     assert not Font(latin).axes and not Font(other).axes
@@ -96,7 +94,6 @@ def main():
     with (locale/'ja.tsv').open('a',encoding='utf8') as stream:stream.write('test.text\t\u0378\n')
     fails('U+0378')
     (locale/'ja.tsv').write_text('ui.language\t言語'+chr(private)+'\n',encoding='utf8')
-    # Second rename fails after the old pack was moved; rollback must restore it.
     import os
     real_replace=os.replace
     def rename(source,target):

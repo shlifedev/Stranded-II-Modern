@@ -128,7 +128,6 @@ class EditableMap:
             return self.height(gx,gz) if 0 <= gx <= self.size and 0 <= gz <= self.size else 0
         h = ((sample(ix, iz) * (1-ax) + sample(ix+1, iz) * ax) * (1-az)
              + (sample(ix, iz+1) * (1-ax) + sample(ix+1, iz+1) * ax) * az)
-        # Match Blitz TerrainY and e_tery's ground-plane floor, including edges.
         return (max(h, self.height(0,0)) - .5) * WORLD_HEIGHT
 
     def summary(self):
@@ -297,10 +296,9 @@ def new_map(size=32):
             distance = math.hypot(x-size/2, z-size/2)/(size*.43)
             data += struct.pack('<f', .45 + .10*max(0, min(1, (1-distance)*4)))
     data += bytes((color_size+1)**2)
-    data += struct.pack('<iii', 0,0,0)  # objects, units, items
-    # Player start (info type 1), required for a playable new map.
+    data += struct.pack('<iii', 0,0,0)
     data += struct.pack('<iiBfffff', 1, 1, 1, 0, 160, 0, 0, 0) + string('')
-    data += struct.pack('<ii', 0,0)  # states, extensions
+    data += struct.pack('<ii', 0,0)
     data += b'\r\n###\r\nwww.unrealsoftware.de\r\n'
     EditableMap(bytes(data))
     return bytes(data)

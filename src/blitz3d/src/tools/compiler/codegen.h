@@ -5,8 +5,6 @@
 #include "std.h"
 
 #ifdef USE_LLVM
-// TODO: eventually Codegen will be adapted to work with LLVM or other
-// backends.
 #include "codegen_llvm/codegen_llvm.h"
 #endif
 
@@ -28,10 +26,10 @@ enum{
 
 struct TNode{
 
-	int op;				//opcode
-	TNode *l,*r;		//args
-	int iconst;			//for CONST type_int
-	std::string sconst;		//for CONST type_string
+	int op;
+	TNode *l,*r;
+	int iconst;
+	std::string sconst;
 
 	TNode( int op,TNode *l=0,TNode *r=0 ):op(op),l(l),r(r),iconst(0){}
 	TNode( int op,TNode *l,TNode *r,int i ):op(op),l(l),r(r),iconst(i){}

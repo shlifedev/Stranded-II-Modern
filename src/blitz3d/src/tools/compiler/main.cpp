@@ -451,7 +451,7 @@ int main( int argc,char *argv[] ){
 
 	Target target=targets[ti];
 	#ifdef BB_LEGACY32
-    if(target.host) compileonly=true; // Native AOT; never load a mismatched JIT ABI.
+    if(target.host) compileonly=true;
 #endif
     if( !target.host ){
 		compileonly=true;
@@ -509,7 +509,6 @@ int main( int argc,char *argv[] ){
 #endif
 
 	try{
-		//parse
 		if( !veryquiet ) std::cout<<"Parsing..."<<std::endl;
 		Toker toker( in );
 		Parser parser( toker );
@@ -519,7 +518,6 @@ int main( int argc,char *argv[] ){
 		bundle.signerId = signerId;
 		bundle.teamId = teamId;
 
-		//semant
 		if( !veryquiet ) std::cout<<"Generating..."<<std::endl;
 		env=prog->semant( runtimeEnviron );
 
@@ -528,7 +526,6 @@ int main( int argc,char *argv[] ){
 			return 0;
 		}
 
-		//translate
 		if( !veryquiet ) std::cout<<"Translating..."<<std::endl;
 
 		qstreambuf qbuf;
@@ -571,7 +568,6 @@ int main( int argc,char *argv[] ){
 #endif
 		}
 
-		//assemble
 		if( !veryquiet ) std::cout<<"Assembling..."<<std::endl;
 
 		if ( usellvm ) {

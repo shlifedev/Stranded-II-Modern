@@ -20,7 +20,6 @@ EM_JS(void,s2BenchmarkDownload,(const char *name,const char *body,int json),{
 #endif
 namespace s2bench {
 namespace {
-// Callbacks run on the presentation thread (ProcessEvents), or the browser JS thread.
 struct State { int phase=0;uint64_t epoch=0;bool savedRecording=false;double started=0,duration=8000;Collector collector; };
 std::shared_ptr<State> state=std::make_shared<State>();
 WGPUQueue currentQueue=nullptr;
@@ -164,7 +163,6 @@ void BBCALL bbDebugUiBenchmarkResults(){
     }ImGui::EndTable();
   }
   if(ImGui::CollapsingHeader(label("benchmark.details"))){
-    // Repetition median is calculated only from completed valid trials.
     for(const auto &t:state->collector.trials){
       if(!ImGui::TreeNode(&t,"%s / %d",t.name.c_str(),t.repetition))continue;
       ImGui::TextWrapped("%s",t.context.c_str());if(!t.reason.empty())ImGui::TextWrapped("%s",label(t.reason.c_str()));

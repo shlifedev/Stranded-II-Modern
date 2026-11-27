@@ -1,12 +1,6 @@
-;############################################ MENU
-
-;### Menu Start
 Function menu_start()
-	;Section & Menu
 	m_section=Csection_menu
-	;Load Map
 	load_map("maps\menu\menu.s2","")
-	;Setup Player
 	game_playerspawn(1)
 	game_setplayer(1)
 	PositionEntity TCunit\h,-1000000,-1000000,-1000000
@@ -14,24 +8,19 @@ Function menu_start()
 End Function
 
 
-;### Menu Set
 Function menu_set(menu,save=1)
 	If menu>=50 And menu<=56 Then
 		If dev_initialized=0 Then modern_settings_reset():loc_pending$=loc_saved$:qol_settings_reset()
 	EndIf
-	;Save GUI Stuff @ Vars from current Menu
 	If save=1
 		Select m_menu
-			;Settings Controls
 			Case Cmenu_set_in
 				set_msens#=0.02*Float(in_slider(0))
 				set_minvert=1
 				If in_check(0)=1 Then set_minvert=-1
 				set_msmooth=in_check(1)
 				
-			;Settings GFX
 			Case Cmenu_set_gfx
-				; Display configuration is read from core/modern.ini.
 				set_viewrange=in_slider(2)
 				set_terrain=in_slider(3)
 				set_water=in_slider(4)
@@ -45,7 +34,6 @@ Function menu_set(menu,save=1)
 				set_hwmultitex=in_check(4)
 				set_reboot=0
 				
-			;Settings SFX
 			Case Cmenu_set_sfx
 				set_musicvolume#=Float(in_slider(0))/100.
 				set_fxvolume#=Float(in_slider(1))/100.
@@ -56,12 +44,9 @@ Function menu_set(menu,save=1)
 					ChannelVolume amb_chan,set_fxvolume#
 				EndIf
 			
-			;Multiplayer
 			Case Cmenu_mp
-				;Shutdown Multiplayer Stuff
 				udp_clear()
 			
-			;Multiplayer Create Game
 			Case Cmenu_mp_create
 				set_sv_name$=in_input(0)
 				set_sv_port=in_input(1)
@@ -69,7 +54,6 @@ Function menu_set(menu,save=1)
 				set_sv_playerlimit=in_input(3)
 				set_sv_map$=in_win_map$
 				
-			;Credits
 			Case Cmenu_credits
 				For Ttbt.Ttbt=Each Ttbt
 					Delete Ttbt
@@ -78,20 +62,16 @@ Function menu_set(menu,save=1)
 		End Select
 	EndIf
 	
-	;Set Menu
 	m_menu=menu
 	If menu=Cmenu_main Then modern_continue_path$=modern_latest_save()
 	
-	;Fill new GUI Stuff with Var Stuff ;)
 	Select m_menu
-		;Settings Controls
 		Case Cmenu_set_in
 			in_slider(0)=set_msens#/0.02
 			in_check(0)=0
 			If set_minvert=-1 Then in_check(0)=1
 			in_check(1)=set_msmooth
 			
-		;Settings GFX
 		Case Cmenu_set_gfx
 			modern_modes_init()
 			Select set_scrx_c
@@ -117,38 +97,28 @@ Function menu_set(menu,save=1)
 			in_check(2)=set_windsway
 			in_check(3)=set_fog
 			in_check(4)=set_hwmultitex
-		;Settings SFX
 		Case Cmenu_set_sfx
 			in_slider(0)=set_musicvolume#*100.
 			in_slider(1)=set_fxvolume#*100.
 			in_input(0)=set_name$
 			in_input(1)=set_serverport
 		
-		;Singleplayer
 		Case Cmenu_sp
 			in_scr_scr=0
-			;Load Maps
-			; 1 = Load first Map Image
-			;-1 = Load only Singleplayer Maps
-			;load_maps(1,-1)
 			load_maps(1,0)
 		
-		;Singleplayer Load
 		Case Cmenu_sp_load
 			in_scr_scr=0
 		
-		;Random Map Settings
 		Case Cmenu_random
 			in_opt(3)=1
 			in_opt(4)=0
 			in_opt(5)=1
 			in_scr_scr=0
 		
-		;Multiplayer
 		Case Cmenu_mp
 			usgn_setup()
 			
-		;Multiplayer Create Game
 		Case Cmenu_mp_create
 			If set_sv_name$="" Then set_sv_name$=ss$(sm$(39),set_name$)
 			in_input(0)=set_sv_name$
@@ -160,7 +130,6 @@ Function menu_set(menu,save=1)
 			load_maps(1,1)
 			If set_sv_map$<>"" Then in_win_map$=set_sv_map$
 			
-		;Credits
 		Case Cmenu_credits
 			in_input(0)=set_scry
 			For Ttbt.Ttbt=Each Ttbt
@@ -177,25 +146,14 @@ Function menu_set(menu,save=1)
 End Function
 
 
-;### Menu
 Function menu()
 	
-	;Unpaused?
 	g_unpaused=1
 	
-	;Input
 	getinput()
 	
-	;Cam Movement
-	;MoveEntity cam,3.*f,0,0
-	;Local center=CreatePivot()
-	;PointEntity cam,center
-	;FreeEntity center
-
-	;Update Items
 	cull_items()
 	
-	;Render
 	UpdateWorld(f#)
 	seq_update()
 	
@@ -206,7 +164,6 @@ Function menu()
 	mb_update()
 	e_environment_water2dfx()
 	
-	;Update
 	cull()
 	
 	grass_spread()
@@ -215,13 +172,10 @@ Function menu()
 	sfx_update()
 	up_update()
 	
-	;Buttons
 	Select m_menu
 		
-		;Main
 		Case Cmenu_main
 			
-			;Title
 			DrawImage gfx_title,200+((set_scrx-200)/2),200
 			
 			y=0
@@ -239,7 +193,6 @@ Function menu()
 				y=y+50
 			EndIf
 			
-			;Adventure
 			If game_m_adventure=1 Then
 				If gui_button(5,5+y,sm$(40)) Then
 					m_section=Csection_game_sp
@@ -249,22 +202,18 @@ Function menu()
 				y=y+50
 			EndIf
 			
-			;Random
 			If game_m_random=1 Then
 				If gui_button(5,5+y,sm$(41)) Then
-					;randommapcreate()
 					menu_set(Cmenu_random)
 				EndIf
 				y=y+50
 			EndIf
 			
-			;Singleplayer
 			If game_m_singleplayer=1 Then
 				If gui_button(5,5+y,sm$(42)) Then menu_set(Cmenu_sp)
 				y=y+50
 			EndIf
 				
-			;Load Savegame
 			If game_m_loadsave=1 Then
 				If gui_button(5,5+y,sm$(144)) Then
 					menu_set(Cmenu_sp_load)
@@ -274,47 +223,38 @@ Function menu()
 				y=y+50
 			EndIf
 			
-			;Multiplayer
 			If game_m_multiplayer=1 Then
 				If gui_button(5,5+y,sm$(43)) Then menu_set(Cmenu_mp)
 				y=y+50
 			EndIf
 			
-			;Settings
 			Local settingsy=(set_scry/2)-25
 			If settingsy<y+15 Then settingsy=y+15
 			If gui_button(5,settingsy,sm$(44)) Then menu_set(Cmenu_set_in)
 			
-			;Editor
 			If game_m_editor=1 Then
 				If gui_button(5,settingsy+50,sm$(45)) Then editor_ini():m_section=Csection_editor
 			EndIf
 			
-			;Credits
 			If game_m_credits=1 Then
 				If gui_button(5,settingsy+100,sm$(46)) Then menu_set(Cmenu_credits)
 			EndIf
 			
-			;Quit
 			If gui_button(5,(set_scry)-50,sm$(47),1,Cicon_x) Or in_escape Then
 				If gui_msgdecide( ss$(sm$(48),set_moddir$) ,Cbmpf_red,sm$(2),sm$(1)) Then
 					m_performquit=1
 				EndIf
 			EndIf
 			
-			;Version
 			bmpf_txt_r(set_scrx-3,set_scry-17,modern_version$,Cbmpf_tiny)
 			
 			
-			;Rightclick Explode Fun Stuff ;D
 			If in_mhit(2)=1 Then
 				pick=CameraPick(cam,in_mx,in_my)
 				game_explosion(PickedX(),PickedY(),PickedZ(),50.,10.,1)
 			EndIf
 			
-		;Options Input
 		Case Cmenu_set_in,Cmenu_set_gfx,Cmenu_set_sfx,Cmenu_set_inscript,55,56
-			;Buttons
 			If game_scriptkeys>0 Then
 				If gui_button(5,5,sm$(49)+" (1)") Then menu_set(Cmenu_set_in)
 				If gui_button(5,55,sm$(49)+" (2)") Then menu_set(Cmenu_set_inscript)
@@ -346,11 +286,9 @@ Function menu()
 				EndIf
 			EndIf
 			
-			;Window
 			Select m_menu
 				Case 55:qol_options_draw()
 				Case 56:remaster_options_draw()
-				;Controls
 				Case Cmenu_set_in
 					DrawImage gfx_win,215,0
 					DrawImage gfx_icons,236,5,Cicon_options
@@ -369,13 +307,11 @@ Function menu()
 					menu_keysetting(40,sm$(56),Ckey_left)
 					menu_keysetting(60,sm$(57),Ckey_right)
 					menu_keysetting(80,sm$(58),Ckey_jump)
-					;menu_keysetting(100,sm$(59),Ckey_laystay)
 					
 					menu_keysetting(130,sm$(60),Ckey_attack1)
 					menu_keysetting(150,sm$(61),Ckey_attack2)
 					menu_keysetting(170,sm$(62),Ckey_next)
 					menu_keysetting(190,sm$(63),Ckey_prev)
-					;menu_keysetting(210,sm$(64),Ckey_drop)
 					
 					menu_keysetting(240,sm$(65),Ckey_use)
 					menu_keysetting(260,sm$(66),Ckey_chat)
@@ -394,11 +330,9 @@ Function menu()
 					If in_slider(0)<1 Then in_slider(0)=1
 					bmpf_txt(436,510,sm$(73)+" "+(0.02*Float(in_slider(0))))
 					gui_slider(636,510,100,0)
-					gui_check(436,540,sm$(74),0)	;Invert
-					;gui_check(636,540,sm$(75),1)	;Smooth
+					gui_check(436,540,sm$(74),0)
 					
 					
-				;Graphics
 				Case Cmenu_set_gfx
 					DrawImage gfx_win,215,0
 					DrawImage gfx_icons,236,5,Cicon_options
@@ -468,15 +402,12 @@ Function menu()
 					gui_check(436,303,sm$(103),1)
 					gui_check(436,323,sm$(104),2)
 					gui_check(436,343,sm$(105),3)
-					;gui_check(436,363,sm$(106),4) Multitexturing Stuff
 					
 					bmpf_txt(236,453,"[[loc:ui.language]]")
                     loc_cycle(modern_choice(436,449,340,loc_name(loc_pending$)))
                     bmpf_txt(236,503,"[[loc:ui.restart]]",Cbmpf_tiny)
 
-				;Sounds & MP
 				Case Cmenu_set_sfx
-					;Sounds
 					DrawImage gfx_win,215,0
 					DrawImage gfx_icons,236,5,Cicon_options
 					bmpf_txt(236+37,10,sm$(110))
@@ -498,7 +429,6 @@ Function menu()
 						bmpf_txt(436,93,sm$(112))
 					EndIf
 					
-					;Multiplayer
 					If game_m_multiplayer=1 Then
 					
 						DrawImage gfx_winbar,215,200
@@ -515,7 +445,6 @@ Function menu()
 						
 					EndIf
 				
-				;Controls Script
 				Case Cmenu_set_inscript
 					DrawImage gfx_win,215,0
 					DrawImage gfx_icons,236,5,Cicon_options
@@ -538,14 +467,12 @@ Function menu()
 					
 			End Select
 			
-		;Reboot
 		Case Cmenu_reboot
 			
 			If gui_button(5,(set_scry)-50,sm$(47),1,Cicon_ok) Then
 				m_performquit=1
 			EndIf
 			
-			;Window
 			DrawImage gfx_win,215,0
 			DrawImage gfx_icons,236,5,Cicon_options
 			bmpf_txt(236+37,10,sm$(120))
@@ -556,16 +483,13 @@ Function menu()
 			bmpf_txt(236,63+60,sm$(123))
 			bmpf_txt(236,63+80,sm$(124))
 			
-		;Singleplayer
 		Case Cmenu_sp
 			
-			;Window
 			DrawImage gfx_win,215,0
 			DrawImage gfx_icons,236,5,Cicon_options
 			bmpf_txt(236+37,10,sm$(42))
 			DrawImage gfx_winbar,215,42
 					
-			;List Maps
 			Color 0,0,0
 			Rect 236,195,500,379,1
 			i=0:j=0
@@ -581,7 +505,6 @@ Function menu()
 				EndIf
 			Next
 					
-			;Scroll
 			If gui_ibutton(742,200,Cicon_up,sm$(29),in_scr_scr>0) Then
 				in_scr_scr=in_scr_scr-1
 			EndIf
@@ -597,7 +520,6 @@ Function menu()
 			Next
 			in_scr_scr=gui_scrollbar(742,237,500-237,c,in_scr_scr,19)
 					
-			;Determine & Show
 			loadtemp$=""
 			i=0
 			For Tsg.Tsg=Each Tsg
@@ -620,7 +542,6 @@ Function menu()
 				bmpf_txt(450,103,sg_time$+" "+sm$(36))
 			EndIf
 					
-			;Load
 			If gui_ibutton(742,542,Cicon_load,sm$(5),loadtemp$<>"") Then
 				m_section=Csection_game_sp
 				m_menu=0
@@ -628,7 +549,6 @@ Function menu()
 				load_map("maps\"+loadtemp$+".s2","")
 			EndIf
 			
-			;Buttons
 			If gui_button(5,5,sm$(5),loadtemp$<>"") Then
 				m_section=Csection_game_sp
 				m_menu=0
@@ -638,16 +558,13 @@ Function menu()
 			
 			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Then menu_set(Cmenu_main)
 
-		;Singleplayer Load
 		Case Cmenu_sp_load
 			
-			;Window
 			DrawImage gfx_win,215,0
 			DrawImage gfx_icons,236,5,Cicon_load
 			bmpf_txt(236+37,10,sm$(154))
 			DrawImage gfx_winbar,215,42
 			
-			;List Savegames
 			Color 0,0,0
 			Rect 236,195,500,379,1
 			i=0:j=0
@@ -663,7 +580,6 @@ Function menu()
 				EndIf
 			Next
 			
-			;Scroll
 			If gui_ibutton(742,200,Cicon_up,sm$(29),in_scr_scr>0) Then
 				in_scr_scr=in_scr_scr-1
 			EndIf
@@ -679,7 +595,6 @@ Function menu()
 			Next
 			in_scr_scr=gui_scrollbar(742,237,500-237-37,c,in_scr_scr,19)
 			
-			;Determine & Show
 			loadtemp$=""
 			i=0
 			For Tsg.Tsg=Each Tsg
@@ -703,7 +618,6 @@ Function menu()
 				bmpf_txt(450,103,sg_time$+" "+sm$(36))
 			EndIf
 			
-			;Delete
 			If gui_ibutton(742,542-37,Cicon_x,sm$(189),loadtemp$<>"") Then
 				If gui_msgdecide(ss$(sm$(190),loadtemp$),Cbmpf_red,sm$(2),sm$(1)) Then
 					DeleteFile("saves\"+loadtemp$+".sav")
@@ -712,7 +626,6 @@ Function menu()
 				EndIf
 			EndIf
 						
-			;Load
 			If gui_ibutton(742,542,Cicon_load,sm$(154),loadtemp$<>"") Then
 				m_section=Csection_game_sp
 				m_menu=0
@@ -720,7 +633,6 @@ Function menu()
 				load_map("saves\"+loadtemp$+".sav","")
 			EndIf
 
-			;Buttons
 			If gui_button(5,5,sm$(5),loadtemp$<>"") Then
 				m_section=Csection_game_sp
 				m_menu=0
@@ -730,22 +642,18 @@ Function menu()
 			
 			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Then menu_set(Cmenu_main)
 		
-		;Random Map Settings
 		Case Cmenu_random
 			
-			;Window
 			DrawImage gfx_win,215,0
 			DrawImage gfx_icons,236,5,Cicon_all
 			bmpf_txt(236+37,10,sm$(41))
 			DrawImage gfx_winbar,215,42
 			
-			;Size
 			bmpf_txt(236,63,se$(30)+":")
 			gui_opt(436,63,se$(31),1,3)
 			gui_opt(436,63+20,se$(32),3,3)
 			gui_opt(436,63+40,se$(33),4,3)
 			
-			;Terrain
 			bmpf_txt(236,143,se$(34)+":")
 			gui_opt(436,143,se$(35),0,4)
 			gui_opt(436,143+20,se$(36),1,4)
@@ -754,7 +662,6 @@ Function menu()
 			gui_opt(436,143+80,se$(39),4,4)
 			gui_opt(436,143+100,se$(40),5,4)
 			
-			;Profile
 			bmpf_txt(236,283,se$(129)+":")
 			y=0
 			Color 0,0,0
@@ -772,7 +679,6 @@ Function menu()
 				EndIf
 			Next
 			
-			;Scroll
 			If gui_ibutton(742,283,Cicon_up,sm$(29),in_scr_scr>0) Then
 				in_scr_scr=in_scr_scr-1
 			EndIf
@@ -790,13 +696,11 @@ Function menu()
 			in_scr_scr=gui_scrollbar(742,320,180,c,in_scr_scr,14)
 			
 
-			;Load
 			If gui_ibutton(742,542,Cicon_ok,sm$(5)) Then
 				load_randommap(in_opt(5))
 				randommapcreate()
 			EndIf
 			
-			;Buttons
 			If gui_button(5,5,sm$(5)) Then
 				load_randommap(in_opt(5))
 				randommapcreate()
@@ -804,23 +708,19 @@ Function menu()
 			
 			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Then menu_set(Cmenu_main)
 		
-		;Multiplayer
 		Case Cmenu_mp
 			
-			;Window
 			DrawImage gfx_win,215,0
 			DrawImage gfx_icons,236,5,Cicon_options
 			bmpf_txt(236+37,10,sm$(125))
 			DrawImage gfx_winbar,215,42
 			
-			;Buttons
 			If gui_button(5,5,sm$(125)) Then menu_set(Cmenu_mp)
 			If gui_button(5,5+50,sm$(126),0) Then menu_set(Cmenu_mp_lan)
 			If gui_button(5,5+100,sm$(127)) Then menu_set(Cmenu_mp_create)
 			
 			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Then menu_set(Cmenu_main)
 			
-			;Scrolltext
 			bmpf_txt_scroll(236,60,in_usgn_msg$,0,740,in_usgn_msgscr#)
 			in_usgn_msgscr#=in_usgn_msgscr#-1.*f#
 			If in_t500go Then
@@ -829,24 +729,20 @@ Function menu()
 				EndIf
 			EndIf
 			
-			;Descriptions
 			bmpf_txt(260,80,sm$(128),Cbmpf_dark)
 			bmpf_txt(450,80,sm$(33),Cbmpf_dark)
 			bmpf_txt(620,80,sm$(129),Cbmpf_dark)
 			bmpf_txt(690,80,sm$(130),Cbmpf_dark)
 			
-			;Black Rect
 			Color 0,0,0
 			Rect 236,100,500,473,1
 			
-			;List Servers
 			i=0:j=0
 			For Tserver.Tserver=Each Tserver
 				If Tserver\name<>"" Then
 					j=j+1
 					If j>in_scr_scr Then
 						
-						;Over / Click
 						over=0
 						If in_mx>=236 Then
 							If in_my>=105+(i*20) Then
@@ -854,7 +750,6 @@ Function menu()
 									If in_my<105+(i*20)+20 Then
 										over=1
 										gui_tt(in_mx,in_my,Tserver\name$+" ("+DottedIP(Tserver\ip)+":"+Tserver\port+") "+sm$(132))
-										;Click
 										If in_mhit(1) Then
 											usgn_joinserver(Tserver\ip,Tserver\port)
 										EndIf
@@ -863,7 +758,6 @@ Function menu()
 							EndIf
 						EndIf
 						
-						;Password
 						If Tserver\password=1 Then
 							If over Then
 								DrawImage gfx_icons,233,99+(i*20),Cicon_pw
@@ -872,19 +766,15 @@ Function menu()
 							EndIf
 						EndIf
 						
-						;Name
 						bmpf_txt_ml(260,105+(i*20),Tserver\name$,over,450-5)
 						
-						;Map
 						bmpf_txt_ml(450,105+(i*20),Tserver\map$,over,620-5)
 						
-						;Players
 						col=Cbmpf_yellow
 						If Tserver\players=Tserver\maxplayers Then col=Cbmpf_red
 						bmpf_txt(620,105+(i*20),Tserver\players+"/"+Tserver\maxplayers,col)
 						
 						
-						;Ping
 						If Tserver\ping<>0 Then
 							ping=Tserver\ping
 							col=Cbmpf_green
@@ -900,7 +790,6 @@ Function menu()
 				EndIf
 			Next
 			
-			;Scroll
 			If gui_ibutton(742,100,Cicon_up,sm$(29),in_scr_scr>0) Then
 				in_scr_scr=in_scr_scr-1
 			EndIf
@@ -908,36 +797,29 @@ Function menu()
 				in_scr_scr=in_scr_scr+1
 			EndIf
 			
-			;Update Net Stuff
 			If udp<>0 Then
 				usgn_update()
 			EndIf
 			
-		;Multiplayer Create Game
 		Case Cmenu_mp_create
 		
-			;Window
 			DrawImage gfx_win,215,0
 			DrawImage gfx_icons,236,5,Cicon_options
 			bmpf_txt(236+37,10,sm$(127))
 			DrawImage gfx_winbar,215,42
 			
-			;Buttons
 			If gui_button(5,5,sm$(125)) Then menu_set(Cmenu_mp)
 			If gui_button(5,5+50,sm$(126),0) Then menu_set(Cmenu_mp_lan)
 			If gui_button(5,5+100,sm$(127)) Then menu_set(Cmenu_mp_create)
 			
 			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Then menu_set(Cmenu_main)
 			
-			;Server Name
 			bmpf_txt(236,63,sm$(133)+":")
 			gui_input(436,63,256,0)
 			
-			;Server Port		
 			bmpf_txt(236,93,sm$(115)+":")
 			gui_input(436,93,64,1)
 			
-			;Server Map
 			bmpf_txt(236,133,sm$(33)+":")
 			
 			If in_win_map$="" Then
@@ -949,24 +831,19 @@ Function menu()
 				If map_image<>0 Then DrawBlock map_image,436,163
 			EndIf
 			
-			;Browse
 			If gui_ibutton(742,133,Cicon_dir,sm$(135)) Then
 				If Not gui_win_map(1,in_win_map$) Then
 					If in_win_map$<>"" Then load_map_header("maps\"+in_win_map$+".s2")
 				EndIf
 			EndIf
 			
-			;Server Password
 			bmpf_txt(236,243,sm$(136)+":")
 			gui_input(436,243,128,2)
 			
-			;Player Limit
 			bmpf_txt(236,273,sm$(137)+":")
 			gui_input(436,273,64,3)
 			
-			;Start
 			If gui_ibutton(742,542,Cicon_ok,sm$(127)) Then
-				;Cache Values
 				set_sv_name$=Trim(in_input$(0))
 				If Len(set_sv_name$)>20 Then set_sv_name$=Trim(Left(set_sv_name$,20))
 				If set_sv_name$="" Then set_sv_name$="Server"
@@ -977,19 +854,15 @@ Function menu()
 				set_sv_playerlimit=Int(in_input$(3))
 				If set_sv_playerlimit<1 Then set_sv_playerlimit=1
 				If set_sv_playerlimit>4 Then set_sv_playerlimit=4
-				;Setup
 				menu_set(Cmenu_main)
 				usgn_hostserver(set_sv_port)
 			EndIf
 		
 						
-		;Credits
 		Case Cmenu_credits	
 			
-			;Scroll
 			in_input(0)=Float(in_input(0))-Float(1.*f#)
 			
-			;Draw
 			y=in_input(0)
 			For Ttbt.Ttbt=Each Ttbt
 				If (y+20)>0 And y<set_scry Then
@@ -1003,7 +876,6 @@ Function menu()
 			Next
 			If y<0 Then in_input(0)=set_scry
 			
-			;Quit Button
 			If gui_button(5,(set_scry)-50,sm$(131),1,Cicon_x) Then
 				menu_set(Cmenu_main)
 			EndIf
@@ -1011,19 +883,13 @@ Function menu()
 	
 	End Select
 	
-	;Particles
 	p_update()
 	
-	;Sequence Blend
 	seq_blend()
 	
-	;Endinput
 	endinput()
 
 	
-	;### Hotkeys
-	
-	;Checkmap
 	If KeyHit(88) Then
 		editor_testmap(1)
 	EndIf
@@ -1033,10 +899,8 @@ End Function
 
 
 
-;### Menu Keysetting
 Function menu_keysetting(y,name$,id)
 	If in_getkey<>id Then
-		;Input
 		over=0
 		If in_getkey=-1 Then
 			If in_my>=83+y Then
@@ -1054,7 +918,6 @@ Function menu_keysetting(y,name$,id)
 				EndIf
 			EndIf
 		EndIf
-		;Draw
 		bmpf_txt(236,83+y,name$,over)
 		If id=Ckey_devmenu And in_keys(id)=0 Then
 			bmpf_txt(506,83+y,"None",over)
@@ -1066,11 +929,9 @@ Function menu_keysetting(y,name$,id)
 			If in_mhit(2) Then in_keys(id)=0:in_mhit(2)=0
 		EndIf
 	Else
-		;Draw
 		bmpf_txt(236,83+y,name$,1)
 		bmpf_txt(506,83+y,sm$(138),in_cursor)
 		
-		;Getcode
 		Local gotkey=0
 		If in_mhit(1) Then gotkey=256:in_mhit(1)=0:in_mdown(1)=0
 		If in_mhit(2) Then gotkey=257
@@ -1097,7 +958,6 @@ Function menu_keysetting(y,name$,id)
 			EndIf
 		EndIf
 		
-		;Set
 		If gotkey<>0 Then
 			For i=0 To 20
 				If in_keys(i)=gotkey Then in_keys(i)=0
@@ -1112,10 +972,8 @@ Function menu_keysetting(y,name$,id)
 End Function
 
 
-;### Menu Keysetting Script
 Function menu_keysettingscript(y,name$,id)
 	If in_getkey<>id Then
-		;Input
 		over=0
 		If in_getkey=-1 Then
 			If in_my>=83+y Then
@@ -1133,15 +991,12 @@ Function menu_keysettingscript(y,name$,id)
 				EndIf
 			EndIf
 		EndIf
-		;Draw
 		bmpf_txt(236,83+y,name$,over)
 		bmpf_txt(506,83+y,in_keyname$(game_scriptkey(id)),over)
 	Else
-		;Draw
 		bmpf_txt(236,83+y,name$,1)
 		bmpf_txt(506,83+y,sm$(138),in_cursor)
 		
-		;Getcode
 		Local gotkey=0
 		If in_mhit(1) Then gotkey=256:in_mhit(1)=0:in_mdown(1)=0
 		If in_mhit(2) Then gotkey=257
@@ -1168,7 +1023,6 @@ Function menu_keysettingscript(y,name$,id)
 			EndIf
 		EndIf
 		
-		;Set
 		If gotkey<>0 Then
 			For i=0 To 20
 				If in_keys(i)=gotkey Then in_keys(i)=0

@@ -9,7 +9,7 @@ if(BB_DESKTOP AND NOT BB_MINGW32)
 
     if(BB_MACOS)
       set(MAKE_FLAGS MACOSX_DEPLOYMENT_TARGET=10.14)
-      set(MACOS_FIX '') # sed on macos works a bit differently than the GNU one
+      set(MACOS_FIX '')
     endif()
 
     ExternalProject_Add(LUAJIT_EXTERNAL
@@ -34,7 +34,6 @@ if(BB_DESKTOP AND NOT BB_MINGW32)
     set(LUAJIT_LIB ${LUAJIT_LIB_DIR}/lua51.lib)
   endif()
 
-  # do this so cmake doesn't flip out...
   file(MAKE_DIRECTORY ${LUAJIT_INCLUDE})
   file(MAKE_DIRECTORY ${LUAJIT_LIB_DIR})
   file(TOUCH ${LUAJIT_LIB})

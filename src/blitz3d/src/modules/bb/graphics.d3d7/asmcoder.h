@@ -1,47 +1,4 @@
-// asmcoder.h
 // by simon@acid.co.nz
-
-// v0.5
-// point sets nonused bits to 1
-
-// v0.4
-// direct pixel address now expected
-// x,y args removed span removed
-
-// v0.3
-// span changed to bytes
-// pixfield indirect dropped, passed directy to plot
-// ret(n) added to remove args from fastcall stack
-// CodePoint() method added
-
-/*
-
-asmcoder provides inline assembly generator for high speed runtime tasks
-
-methods:
-
-CodePlot(codebase,depth,amask,rmask,gmask,bmask)
-CodePoint(codebase,depth,amask,rmask,gmask,bmask)
-CodeSpan(codebase,depth,amask,rmask,gmask,bmask)
-
-	codebase=executable memory (64 bytes)
-	depth=pixel depth (8,16,24,32)
-	amask=32bit alpha pixel mask
-	rmask=32bit red pixel mask
-	gmask=32bit green pixel mask
-	bmask=32bit blue pixel mask
-
-	returns number of bytes of code generated (max 64 bytes)
-
-	call resulting code by typecasting codebase with
-
-	void (__fastcall *plot)(void *pix,int argb)
-	int (__fastcall *point)(void *pix)
-	void (__fastcall *span)(void *pix,int *argb,int count)
-
-ToDo:
-
-*/
 
 #ifndef ASMCODER_H
 #define ASMCODER_H
@@ -113,7 +70,7 @@ public:
 	{
 		Code(0x69);Code((0xc0)|(dest<<3)|(src));Code32(imm);
 	}
-	void shift(Reg32 reg,int imm)	//+imm=left -imm=right
+	void shift(Reg32 reg,int imm)
 	{
 		int		op;
 		if (imm==0) return;
@@ -164,9 +121,6 @@ public:
 		bmsb=0;if (u=bmask) {while (u!=1) {u>>=1;bmsb++;}}
 	}
 
-// ecx=void *t pixel
-// edx=int argb
-
 	int CodePlot(void *code,int depth,int amask,int rmask,int gmask,int bmask)
 	{
 		Reset(code);
@@ -182,17 +136,17 @@ public:
 		}
 		else
 		{
-			mov		(ebx,eax);				//eax=b ebx=g ecx=r edx=a
-			shift	(eax,bmsb-7);			//3-0);
+			mov		(ebx,eax);
+			shift	(eax,bmsb-7);
 			mov		(ecx,ebx);
 			shift	(ebx,gmsb-15);
-if (amask)	mov		(edx,ecx);				//alph
-if (amask)	shift	(edx,amsb-31);			//alph
+if (amask)	mov		(edx,ecx);
+if (amask)	shift	(edx,amsb-31);
 			and_		(eax,bmask);
 			shift	(ecx,rmsb-23);
-if (amask)	and_		(edx,amask);			//alph
+if (amask)	and_		(edx,amask);
 			and_		(ebx,gmask);
-if (amask)	or_		(eax,edx);				//alph
+if (amask)	or_		(eax,edx);
 			and_		(ecx,rmask);
 			or_		(eax,ebx);
 			or_		(eax,ecx);
@@ -200,7 +154,6 @@ if (amask)	or_		(eax,edx);				//alph
 		switch (depth)
 		{
 			case 16:store16(ebp,0,eax);break;
-//			case 24:store16(ebp,0,eax);shift(eax,-16);store8(ebp,2,eax);break;
 			case 24:store8(ebp,0,eax);shift(eax,-8);store16(ebp,1,eax);break;
 			case 32:store32(ebp,0,eax);break;
 			default:store8(ebp,0,eax);
@@ -211,8 +164,6 @@ if (amask)	or_		(eax,edx);				//alph
 		return off;
 	}
 
-// ecx=void*pix
-
 	int CodePoint(void *code,int depth,int amask,int rmask,int gmask,int bmask)
 	{
 		Reset(code);
@@ -222,18 +173,16 @@ if (amask)	or_		(eax,edx);				//alph
 		switch (depth)
 		{
 			case 16:load16(eax,ecx);break;
-//			case 24:load16(eax,ecx);shift(eax,-16);load8(eax,ecx,2);break;
 			case 24:load16(eax,ecx,1);shift(eax,8);load8(eax,ecx);break;
 			case 32:load32(eax,ecx);break;
 			default:load8(eax,ecx);
 		}
 		if ((amask==0 || amask==0xff000000) && (rmask==0xff0000 && gmask==0xff00 && bmask==0xff))
 		{
-			//
 		}
 		else
 		{
-			mov		(ebx,eax);		//eax=b ebx=g ecx=r edx=a
+			mov		(ebx,eax);
 			mov		(ecx,eax);
 if (amask)	mov		(edx,eax);
 			and_		(eax,bmask);
@@ -259,10 +208,6 @@ if (amask)	or_		(eax,edx);
 		return off;
 	}
 
-// ecx=void *t pixel
-// edx=int *argb
-// 8(esp)=count
-
 	int CodeSpan(void *code,int depth,int amask,int rmask,int gmask,int bmask)
 	{
 		int		loop;
@@ -276,13 +221,12 @@ if (amask)	or_		(eax,edx);
 		push	(esi);
 		push	(edi);
 
-		load32	(edi,ebp,8);		//edi=count
-		mov		(esi,edx);			//esi=[argb]
-		mov		(ebp,ecx);			//ebp=[pix]
+		load32	(edi,ebp,8);
+		mov		(esi,edx);
+		mov		(ebp,ecx);
 		neg		(edi);
 
 		loop=off;
-// loop
 		load32	(eax,esi);
 		add		(esi,4);
 
@@ -292,17 +236,17 @@ if (amask)	or_		(eax,edx);
 		}
 		else
 		{
-			mov		(ebx,eax);				//eax=b ebx=g ecx=r edx=a
-			shift	(eax,bmsb-7);			//3-0);
+			mov		(ebx,eax);
+			shift	(eax,bmsb-7);
 			mov		(ecx,ebx);
 			shift	(ebx,gmsb-15);
-if (amask)	mov		(edx,ecx);				//alph
-if (amask)	shift	(edx,amsb-31);			//alph
+if (amask)	mov		(edx,ecx);
+if (amask)	shift	(edx,amsb-31);
 			and_		(eax,bmask);
 			shift	(ecx,rmsb-23);
-if (amask)	and_		(edx,amask);			//alph
+if (amask)	and_		(edx,amask);
 			and_		(ebx,gmask);
-if (amask)	or_		(eax,edx);				//alph
+if (amask)	or_		(eax,edx);
 			and_		(ecx,rmask);
 			or_		(eax,ebx);
 			or_		(eax,ecx);

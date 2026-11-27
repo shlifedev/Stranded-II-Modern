@@ -1,9 +1,6 @@
 #include "repeat.h"
 #include "../expr/const.h"
 
-////////////////////////////
-// Repeat...Until/Forever //
-////////////////////////////
 void RepeatNode::semant( Environ *e ){
 	sem_brk=genLabel();
 	std::string brk=e->setBreak( sem_brk );

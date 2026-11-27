@@ -7,7 +7,6 @@
 class BBTimer{
 public:
 	virtual ~BBTimer();
-	/***** GX INTERFACE *****/
 public:
 	virtual int wait()=0;
 };

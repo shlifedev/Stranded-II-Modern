@@ -57,7 +57,6 @@ def dependency_members(game, blitz, font):
             members[f'{prefix}/{relative}'] = checked_bytes(base, relative, expected)
     expected = read_json(ROOT / 'config/dependencies.json')['font_sha256']
     members['fonts/NotoSansKR.ttf'] = checked_bytes(font.parent, font.name, expected)
-    # Archive inputs stay fixed when the release gains new third-party notices.
     for relative, expected in read_json(ROOT / 'config/dependency-license-files.json').items():
         members[relative] = checked_bytes(ROOT, relative, expected)
     return members
@@ -194,8 +193,6 @@ def release_members(runtime, game, edition='classic'):
     for relative, expected in manifest.items():
         if player_data(relative):
             continue
-        # Ship original key bindings, even when packaging a used local runtime.
-        # The game copies them into place on first launch.
         if relative.endswith('.cfg'):
             members[default_name(relative)] = checked_bytes(game, relative, expected)
         else:

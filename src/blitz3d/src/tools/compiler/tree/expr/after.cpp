@@ -1,8 +1,5 @@
 #include "after.h"
 
-////////////////////
-// Next of object //
-////////////////////
 ExprNode *AfterNode::semant( Environ *e ){
 	expr=expr->semant( e );
 	if( expr->sem_type==Type::null_type ) ex( "'After' cannot be used on 'Null'" );

@@ -74,8 +74,6 @@ bool Frustum::cull( const Box &b )const{
 	}
 	for( int k=0;k<6;++k ){
 		const Plane &p=planes[k];
-		// The corner furthest along the plane normal decides whether every
-		// corner is outside. Avoid testing all eight corners per plane.
 		Vector v( p.n.x>=0?b.b.x:b.a.x,p.n.y>=0?b.b.y:b.a.y,p.n.z>=0?b.b.z:b.a.z );
 		if( p.distance(v)<0 ) return false;
 	}
@@ -83,16 +81,11 @@ bool Frustum::cull( const Box &b )const{
 }
 
 bool Frustum::cull( const Box &b,const Transform &t )const{
-	// Pull each world plane into model space. This avoids inverting the model
-	// and rebuilding/normalizing six frustum planes for every mesh and camera.
-	// No normalization is needed: only the sign of each distance matters.
 	for( int k=0;k<6;++k ){
 		const Plane &p=planes[k];
 		Vector n( p.n.dot(t.m.i),p.n.dot(t.m.j),p.n.dot(t.m.k) );
 		Vector v( n.x>=0?b.b.x:b.a.x,n.y>=0?b.b.y:b.a.y,n.z>=0?b.b.z:b.a.z );
 		float d=p.distance(t.v);
-		// Roundoff at a touching plane may retain a tiny extra sliver, but
-		// must not make a visible object pop out of the frame or reflection.
 		float tolerance=1e-5f*(fabsf(n.x*v.x)+fabsf(n.y*v.y)+fabsf(n.z*v.z)+fabsf(d)+1);
 		if( n.dot(v)+d < -tolerance ) return false;
 	}
@@ -106,8 +99,6 @@ Frustum::Bounds::Bounds( const Box &b,const Transform &t ){
 	const Vector k(fabsf(t.m.k.x),fabsf(t.m.k.y),fabsf(t.m.k.z));
 	const Vector extent=i*half.x+j*half.y+k*half.z;
 	world=Box( center-extent,center+extent );
-	// Upper bound on the legacy plane test's tolerance, even with large
-	// local coordinates, negative scales, shear or cancelling translations.
 	roundoff=i*std::max(fabsf(b.a.x),fabsf(b.b.x))+
 		j*std::max(fabsf(b.a.y),fabsf(b.b.y))+
 		k*std::max(fabsf(b.a.z),fabsf(b.b.z))+
@@ -124,8 +115,6 @@ bool Frustum::cull( const Box &b,const Transform &t,const Bounds &bounds )const{
 		if( p.distance(farthest)<-guard ) return false;
 		const Vector nearest(p.n.x>=0?w.a.x:w.b.x,p.n.y>=0?w.a.y:w.b.y,p.n.z>=0?w.a.z:w.b.z);
 		if( p.distance(nearest)>guard ) continue;
-		// Only a box crossing this plane needs the original oriented test.
-		// Keep its arithmetic and tolerance for identical boundary decisions.
 		Vector n(p.n.dot(t.m.i),p.n.dot(t.m.j),p.n.dot(t.m.k));
 		Vector v(n.x>=0?b.b.x:b.a.x,n.y>=0?b.b.y:b.a.y,n.z>=0?b.b.z:b.a.z);
 		float d=p.distance(t.v);
@@ -160,9 +149,6 @@ float Frustum::getFar()const{
 }
 
 void Frustum::makePlanes(){
-	// Parallel projection sides pass through the matching near edge. Using
-	// the eye instead cuts a cone out of the shadow volume, dropping casters
-	// at its sides as the main camera moves or turns. Keep this after transforms.
 	planes[PLANE_TOP]=Plane( verts[parallel?VERT_TRNEAR:VERT_EYE],verts[VERT_TRFAR],verts[VERT_TLFAR] );
 	planes[PLANE_LEFT]=Plane( verts[parallel?VERT_TLNEAR:VERT_EYE],verts[VERT_TLFAR],verts[VERT_BLFAR] );
 	planes[PLANE_BOTTOM]=Plane( verts[parallel?VERT_BLNEAR:VERT_EYE],verts[VERT_BLFAR],verts[VERT_BRFAR] );

@@ -207,7 +207,6 @@ bb_int_t BBCALL bbDebugUiSection(BBStr *label){auto s=consume(label);return buil
 bool debugui_create(){return true;}
 bool debugui_destroy(){if(window)s2DebugUiDetach(window);return true;}
 
-// Retire after the last draw data using this icon has been rendered or discarded.
 void s2DebugUiForgetCanvas(BBCanvas *canvas){
   auto found=icons.find(canvas);if(found==icons.end())return;
   retiredIcons.push_back(found->second);icons.erase(found);

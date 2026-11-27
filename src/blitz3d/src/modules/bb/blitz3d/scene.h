@@ -77,7 +77,6 @@ protected:
   virtual void setAntialiasSamples( int samples ){}
   virtual void setAntialiasTarget( BBCanvas *canvas ){}
   virtual void setTextureLodBias( float bias ){}
-  // Optional modern effects. Legacy backends keep their original behaviour.
   virtual void setRenderEffects( bool lighting,bool atmosphere,float seconds ){}
   virtual void setClipPlane( const float plane[4] ){}
   virtual void captureReflectionMatrix(){}

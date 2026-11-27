@@ -15,7 +15,6 @@ Environ::~Environ(){
 	while( children.size() ) delete children.back();
 	for( ;labels.size();labels.pop_back() ) delete labels.back();
 
-	//delete all types
 	delete decls;
 	delete funcDecls;
 	delete typeDecls;

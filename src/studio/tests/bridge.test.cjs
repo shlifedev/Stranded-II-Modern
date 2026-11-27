@@ -47,10 +47,10 @@ test('play reuses the loaded engine, fetches the latest saved map and starts onl
   assert.equal(h.writes.length,1);assert.equal(h.context.Module,engine);
   assert.equal(await h.bridge('studio-poll'),'');
   await h.bridge('studio-event\x1floaded\x1f1\x1f32');
-  assert.equal(await h.bridge('focus'),1); // first frame before pointer capture
+  assert.equal(await h.bridge('focus'),1);
   await h.bridge('studio-event\x1fplaying');
   assert.equal(h.messages.at(-1).state,'playing');assert.ok(h.messages.at(-1).startMs>=0);
-  assert.equal(await h.bridge('focus'),0); // Esc/unlocked pauses normally
+  assert.equal(await h.bridge('focus'),0);
   h.document.pointerLockElement=h.canvas;
   assert.equal(await h.bridge('focus'),1);
 });
@@ -112,7 +112,7 @@ test('stop releases paused focus and restores the authoring map, camera and sele
   h.context.Module.FS.writeFile('/game/mods/Stranded II/maps/studio.s2','gameplay-changes');
   assert.equal(await h.bridge('focus'),0);
   h.send({type:'stop',id:2});assert.equal(await h.bridge('focus'),1);
-  assert.equal(h.writes.at(-1).data,'gameplay-changes'); // restore only at frame boundary
+  assert.equal(h.writes.at(-1).data,'gameplay-changes');
   assert.equal(await h.bridge('studio-poll'),'stop');
   assert.equal(Buffer.from(h.writes.at(-1).data).toString(),'native-map');
   await h.bridge('studio-event\x1floaded\x1f0\x1f32');
@@ -260,7 +260,6 @@ test('axis drag previews one group delta, commits once, queues external edits an
   host.overlayListeners.pointermove(pointer('x',360));
   host.overlayListeners.pointermove(pointer('x',375));
   host.send({type:'refresh'});
-  // An inspect response from a CLI writer must not cancel the current gesture.
   host.send({type:'tool',tool:'move',selection:{kind:'unit',id:100,class:2},entities:[{kind:'unit',id:100,class:2,x:900,y:160,z:0}],revision:6,snap:16});
   assert.equal(host.messages.filter(m=>m.type==='request-preview').length,0);
   assert.equal(await host.bridge('studio-poll\x1f'),'drag-begin\x1f1\x1f2\x1f100');

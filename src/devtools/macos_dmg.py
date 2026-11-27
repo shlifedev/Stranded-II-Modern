@@ -12,7 +12,6 @@ from macos_validation import tree_records
 
 MEMBERS = {'Stranded II.app', 'Applications', 'README-en.txt', 'README-ko.txt',
            'verification-summary.json'}
-# HFS+ and macOS may add these independently of the distribution payload.
 VOLUME_METADATA = {'.DS_Store', '.Trashes', '.fseventsd', '.Spotlight-V100',
                    '.TemporaryItems', '.DocumentRevisions-V100'}
 

@@ -82,7 +82,6 @@ static const char *linkRuntime(std::string rt){
 
 		int pc=runtimeLib->symValue(sym);
 
-		//internal?
 		if( s[0]=='_' ){
 			runtimeModule->addSymbol( ("_"+s).c_str(),pc );
 			continue;
@@ -97,7 +96,6 @@ static const char *linkRuntime(std::string rt){
 
 		keyWords.push_back( s );
 
-		//global!
 		int start=0,end;
 		Type *t=Type::void_type;
 		if( !isalpha( s[0] ) ){ start=1;t=_typeof( s[0] ); }
@@ -223,7 +221,7 @@ static const char *loadUserLib( const std::string &userlib ){
 
 			runtimeEnviron->funcDecls->insertDecl( lower_id,fn,DECL_FUNC );
 
-			if( next(in)==':' ){	//real name?
+			if( next(in)==':' ){
 				next(in);
 				if( curr!=-1 && curr!=-2 ) return "expecting identifier or string after alias";
 				id=text;
@@ -284,7 +282,7 @@ const char *openLibs( const Target &t,const std::string &rt ){
 #endif
 
 	#ifdef BB_LEGACY32
-    if(false){ // Legacy numeric ABI uses AOT; no host runtime DLL/JIT.
+    if(false){
 #else
     if(t.host){
 #endif
@@ -334,7 +332,6 @@ void parseSymbols( const Target &t ){
 
 			int pc=0;
 
-			//internal?
 			if( s[0]=='_' ){
 				if( runtimeModule ) runtimeModule->addSymbol( ("_"+s).c_str(),pc );
 				continue;
@@ -349,7 +346,6 @@ void parseSymbols( const Target &t ){
 
 			keyWords.push_back( s );
 
-			//global!
 			int start=0,end;
 			Type *t=Type::void_type;
 			if( !isalpha( s[0] ) ){ start=1;t=_typeof( s[0] ); }
@@ -400,7 +396,7 @@ void parseSymbols( const Target &t ){
 
 const char *linkLibs( const Target &t,const std::string &rt ){
 	#ifdef BB_LEGACY32
-    if(false){ // Native and web declarations come from the selected toolchain.
+    if(false){
 #else
     if(t.host){
 #endif

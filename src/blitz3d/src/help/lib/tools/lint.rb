@@ -44,8 +44,6 @@ module Blitz3D
             messages << (errors.to_sentence << '.').red unless errors.empty?
             messages << (warnings.to_sentence << '.').yellow unless warnings.empty?
 
-            # messages << 'all good.'.green if errors.empty? && warnings.empty?
-
             puts "  #{name} #{messages.join(' ')}" unless messages.blank?
           end
         end

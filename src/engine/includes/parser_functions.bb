@@ -1,6 +1,3 @@
-;############################################ Parse Cache
-
-; Optional bounded authoring trace. Ordinary game targets leave it disabled.
 Global p_trace_enabled=0,p_trace_count=0
 Type TparseTrace
  Field category$,event$,info$,message$,code$,source$
@@ -29,7 +26,6 @@ Function parse_trace(category$,message$="")
 End Function
 
 
-;### Clear Parse Cache
 Function clear_parsecache()
 	For Tpc.Tpc=Each Tpc
 		Delete Tpc
@@ -37,7 +33,6 @@ Function clear_parsecache()
 End Function
 
 
-;### Add Parse Cache Line
 Function add_parsecache(txt$)
 	txt$=Trim(txt$)
 	If txt$="" Then Return 0
@@ -48,7 +43,6 @@ Function add_parsecache(txt$)
 End Function
 
 
-;### String to Parse Cache
 Function loadstring_parsecache(txt$,sep$="",clear=1)
 	If clear Then clear_parsecache()
 	Local substr$=txt$
@@ -70,7 +64,6 @@ Function loadstring_parsecache(txt$,sep$="",clear=1)
 End Function
 
 
-;### Set Parse Environment
 Function parse_env(class=0,id=0,event$="",info$="")
 	p_env_class=class
 	p_env_id=id
@@ -78,35 +71,28 @@ Function parse_env(class=0,id=0,event$="",info$="")
 	p_env_info$=info$
 End Function
 
-;### Set Parse Cache and Environment by Script Source
 Function set_parsecache(class,id,event$="",info$="")
-	;Scripts
 	For Tx.Tx=Each Tx
 		If Tx\mode=0 Then
 			If Tx\parent_class=class Then
 				If Tx\parent_id=id Then
-					;Event Check
 					If event$<>"" Then
 						If Instr(Tx\key$,""+event$)=0 Then Return 0
 					EndIf
-					;Add Parse Task
 					Tpt.Tpt=New Tpt
 					Tpt\class=class
 					Tpt\id=id
 					Tpt\event$=event$
 					Tpt\info$=info$
 					Tpt\script$=Tx\value$
-					;K!
 					Return 1
 				EndIf
 			EndIf
 		EndIf
 	Next
-	;Global Script
 	If class=0 Then
 		If id=0 Then
 			If Instr(map_briefing_key$,""+event$) Then
-				;Add Parse Task
 				Tpt.Tpt=New Tpt
 				Tpt\class=0
 				Tpt\id=0
@@ -116,15 +102,11 @@ Function set_parsecache(class,id,event$="",info$="")
 			EndIf
 		EndIf
 	EndIf
-	;Failed!
 	Return 0
 End Function
 
-;### Parse an Global Event
 Function parse_globalevent(event$,info$="")
-	;Game Script
 	If Instr(game_scriptk$,""+event$) Then
-		;Add Parse Task
 		Tpt.Tpt=New Tpt
 		Tpt\class=-1
 		Tpt\id=0
@@ -132,9 +114,7 @@ Function parse_globalevent(event$,info$="")
 		Tpt\info$=info$
 		Tpt\script$=game_script$
 	EndIf
-	;Global Script
 	If Instr(map_briefing_key$,""+event$) Then
-		;Add Parse Task
 		Tpt.Tpt=New Tpt
 		Tpt\class=0
 		Tpt\id=0
@@ -142,11 +122,9 @@ Function parse_globalevent(event$,info$="")
 		Tpt\info$=info$
 		Tpt\script$=map_briefing$
 	EndIf
-	;Scripts
 	For Tx.Tx=Each Tx
 		If Tx\mode=0
 			If Instr(Tx\key$,""+event$) Then
-				;Add Parse Task
 				Tpt.Tpt=New Tpt
 				Tpt\class=Tx\parent_class
 				Tpt\id=Tx\parent_id
@@ -156,12 +134,10 @@ Function parse_globalevent(event$,info$="")
 			EndIf
 		EndIf
 	Next
-	;Object Definitions
 	For i=1 To Cobject_count
 		If Instr(Dobject_scriptk$(i),""+event$) Then
 			For Tobject.Tobject=Each Tobject
 				If Tobject\typ=i Then
-					;Add Parse Task
 					Tpt.Tpt=New Tpt
 					Tpt\class=Cclass_object
 					Tpt\id=Tobject\id
@@ -172,12 +148,10 @@ Function parse_globalevent(event$,info$="")
 			Next
 		EndIf
 	Next
-	;Unit Definitions
 	For i=1 To Cunit_count
 		If Instr(Dunit_scriptk$(i),""+event$) Then
 			For Tunit.Tunit=Each Tunit
 				If Tunit\typ=i Then
-					;Add Parse Task
 					Tpt.Tpt=New Tpt
 					Tpt\class=Cclass_unit
 					Tpt\id=Tunit\id
@@ -188,12 +162,10 @@ Function parse_globalevent(event$,info$="")
 			Next
 		EndIf
 	Next
-	;Item Definitions
 	For i=1 To Citem_count
 		If Instr(Ditem_scriptk$(i),""+event$) Then
 			For Titem.Titem=Each Titem
 				If Titem\typ=i Then
-					;Add Parse Task
 					Tpt.Tpt=New Tpt
 					Tpt\class=Cclass_item
 					Tpt\id=Titem\id
@@ -204,12 +176,10 @@ Function parse_globalevent(event$,info$="")
 			Next
 		EndIf
 	Next
-	;Info Definitions
 	For i=1 To Cinfo_count
 		If Instr(Dinfo_scriptk$(i),""+event$) Then
 			For Tinfo.Tinfo=Each Tinfo
 				If Tinfo\typ=i Then
-					;Add Parse Task
 					Tpt.Tpt=New Tpt
 					Tpt\class=Cclass_info
 					Tpt\id=Tinfo\id
@@ -223,10 +193,8 @@ Function parse_globalevent(event$,info$="")
 End Function
 
 
-;### Add a Parse Task
 Function parse_task(class,id,event$,info$,script$)
  If bench_active Then Return
-	;Add Parse Task
 	Tpt.Tpt=New Tpt
 	Tpt\class=class
 	Tpt\id=id
@@ -236,10 +204,8 @@ Function parse_task(class,id,event$,info$,script$)
 End Function
 
 
-;### Parse All
 Function parse_all()
  If bench_active Then Return
-	;Parse All Parse Tasks
 	For Tpt.Tpt=Each Tpt
 		If set_debug=1 Then con_add("PARSE: "+p_env_event$+ " @ "+p_env_class+","+p_env_id+" "+p_env_info$,Cbmpf_yellow)
 		p_env_class=Tpt\class
@@ -250,7 +216,6 @@ Function parse_all()
 		parse()
 		Delete Tpt
 	Next
-	;Dump Vars (Locals for Kill Events)
 	If tmp_dumpvars=1 Then
 		For Tx.Tx=Each Tx
 			If Tx\mode=4 Then
@@ -261,7 +226,6 @@ Function parse_all()
 		Next
 		tmp_dumpvars=0
 	EndIf
-	;Dump Kill Cache
 	For Tpkill.Tpkill=Each Tpkill
 		FreeEntity Tpkill\h
 		Delete Tpkill
@@ -269,7 +233,6 @@ Function parse_all()
 End Function
 
 
-;### Parse Selective
 Function parse_sel(class,id,event$)
 	tasks=0
 	For Tpt.Tpt=Each Tpt
@@ -293,7 +256,6 @@ Function parse_sel(class,id,event$)
 End Function
 
 
-;### Parse Selective Event
 Function parse_sel_event(event$,noskip=0)
 	For Tpt.Tpt=Each Tpt
 		If Tpt\event$=event$ Then
@@ -310,9 +272,7 @@ Function parse_sel_event(event$,noskip=0)
 End Function
 
 
-;### Emulate Event
 Function parse_emuevent(class,id,event$,info$="")
-	;Definition
 	Select class
 		Case Cclass_object
 			If con_object(id) Then
@@ -339,15 +299,10 @@ Function parse_emuevent(class,id,event$,info$="")
 				EndIf
 			EndIf
 	End Select
-	;Normal Scripts
 	set_parsecache(class,id,event$,info$)
 End Function
 
 
-;############################################ Parse Parameters
-
-
-;### Extract Parameter
 Function param$(rawvar=0)
 	Local i,s
 	Local start
@@ -365,24 +320,19 @@ Function param$(rawvar=0)
 		
 		p_gotparam=0
 		
-		;Scan
 		For i=p_p To p_len
 			s=Asc(Mid(p_l$,i,1))
 			
-			;Find Start
 			If start=0 Then
 				If s<>32 Then start=i
 			EndIf
 			
-			;Numerics
 			If s>47 And s<58 Then
 				con_numerics=con_numerics+1
 				
-			;Dot
 			ElseIf s=46 Then
 				con_dot=1
 			
-			;Quotes
 			ElseIf s=34 Then
 				quote=1-quote
 				con_strings=con_strings+1
@@ -393,7 +343,6 @@ Function param$(rawvar=0)
 					EndIf
 				EndIf
 			
-			;Brace
 			ElseIf s=40 Then
 				brace=brace+1
 			ElseIf s=41 Then
@@ -410,7 +359,6 @@ Function param$(rawvar=0)
 					EndIf
 				EndIf
 			
-			;End on ; or ,
 			ElseIf s=59 Or s=44 Then
 				If quote=0 Then
 					If brace=0 Then
@@ -423,7 +371,6 @@ Function param$(rawvar=0)
 				
 		Next
 		
-		;Got
 		Local pend
 		If got=1 Then
 			pend=1	
@@ -431,17 +378,13 @@ Function param$(rawvar=0)
 			pend=0
 		EndIf
 		
-		;Extract
 		txt$=Mid(p_l$,start,i-start+pend)
 		p_p=i+pend
 		
-		;Remove @
 		If Left(txt$,1)="@" Then txt$=Mid(txt$,2,-1)
 		
-		;Skip
 		If rawvar=2 Then Return txt$
 		
-		;Vars
 		If rawvar=0 Then
 			txt$=loc_bind(txt$)
 			If Instr(txt$,"$")		
@@ -451,7 +394,6 @@ Function param$(rawvar=0)
 			con_strings=1
 		EndIf
 				
-		;Math
 		If con_strings=0 Then
 			If con_dot=0 Then
 				txt$=parse_math(txt$)
@@ -460,7 +402,6 @@ Function param$(rawvar=0)
 					txt$=parse_math(txt$)
 				EndIf
 			EndIf
-		;Text?
 		Else
 			If con_braces>0 Then
 				txt$=parse_math(txt$)
@@ -469,32 +410,25 @@ Function param$(rawvar=0)
 			EndIf
 		EndIf
 
-		;Return
 		p_gotparam=1
 		Return txt$
 		
-	;Internal
 	Else
 		
-		;Scan
 		Local l=Len(p_internaltxt$)
 		For i=1 To l
 			s=Asc(Mid(p_internaltxt$,i,1))
 			
-			;Find Start
 			If start=0 Then
 				If s<>32 Then start=i
 			EndIf
 			
-			;Numerics
 			If s>47 And s<58 Then
 				con_numerics=con_numerics+1
 
-			;Dot
 			ElseIf s=46 Then
 				con_dot=1
 				
-			;Quotes
 			ElseIf s=34 Then
 				quote=1-quote
 				con_strings=con_strings+1
@@ -505,7 +439,6 @@ Function param$(rawvar=0)
 					EndIf
 				EndIf
 			
-			;Brace
 			ElseIf s=40 Then
 				brace=brace+1
 			ElseIf s=41 Then
@@ -518,7 +451,6 @@ Function param$(rawvar=0)
 					EndIf
 				EndIf
 			
-			;End on ; or ,
 			ElseIf s=59 Or s=44 Then
 				If quote=0 Then
 					If brace=0 Then
@@ -531,29 +463,22 @@ Function param$(rawvar=0)
 		
 		Next
 		
-		;Got
 		If got=1 Then
 			pend=1
 		Else
 			pend=0
 		EndIf
 		
-		;Extract
 		If p_internaltxt$="" Then
 			txt$=""
 		Else
 			txt$=Mid(p_internaltxt$,start,i-start+pend)
 		EndIf
 		
-		;Remove @
 		If Left(txt$,1)="@" Then txt$=Mid(txt$,2,-1)
 		
-		;con_add("internal param raw text: '"+txt$+"' <- "+p_internaltxt$)
-		
-		;Skip
 		If rawvar=2 Then Return txt$
 		
-		;Vars
 		If rawvar=0 Then
 			txt$=loc_bind(txt$)
 			If Instr(txt$,"$")		
@@ -563,7 +488,6 @@ Function param$(rawvar=0)
 			con_strings=1
 		EndIf
 		
-		;Math
 		If con_strings=0 Then
 			If con_dot=0 Then
 				txt$=parse_math(txt$)
@@ -572,7 +496,6 @@ Function param$(rawvar=0)
 					txt$=parse_math(txt$)
 				EndIf
 			EndIf
-		;Text?
 		Else
 			If con_braces>0 Then
 				txt$=parse_math(txt$)
@@ -581,17 +504,14 @@ Function param$(rawvar=0)
 			EndIf
 		EndIf
 		
-		;Cut away
 		p_internaltxt$=Mid(p_internaltxt$,i+pend,-1)
 		
-		;Return
 		Return txt$
 		
 	EndIf
 End Function
 
 
-;### Extract String Parameter
 Function params$()
 	Local i,s
 	Local start
@@ -606,16 +526,13 @@ Function params$()
 		
 		p_gotparam=0
 		
-		;Scan
 		For i=p_p To p_len
 			s=Asc(Mid(p_l$,i,1))
 			
-			;Find Start
 			If start=0 Then
 				If s<>32 Then start=i
 			EndIf
 						
-			;Quotes
 			If s=34 Then
 				quote=1-quote
 				con_strings=con_strings+1
@@ -625,11 +542,9 @@ Function params$()
 				EndIf
 			EndIf
 			
-			;End
 			If start>0 Then
 				If quote=0 Then
 					Select s
-						;Cancel on Space ) , ;
 						Case 32,41,44,59
 							got=2
 							Exit
@@ -639,7 +554,6 @@ Function params$()
 				
 		Next
 		
-		;Got
 		Local pend
 		If got=1 Then
 			pend=1	
@@ -647,37 +561,29 @@ Function params$()
 			pend=0
 		EndIf
 		
-		;Extract
 		txt$=Mid(p_l$,start,i-start+pend)
 		p_p=i+pend
 		
-		;Vars
 		txt$=loc_bind(txt$)
 		If Instr(txt$,"$")		
 			txt$=var_rep(txt$)
 		EndIf
 		
-		;Text
 		txt$=trimtext$(txt$)
 		
-		;Return
 		p_gotparam=1
 		Return txt$
 		
-	;Internal
 	Else
 		
-		;Scan
 		Local l=Len(p_internaltxt$)
 		For i=1 To l
 			s=Asc(Mid(p_internaltxt$,i,1))
 			
-			;Find Start
 			If start=0 Then
 				If s<>32 Then start=i
 			EndIf
 			
-			;Quotes
 			If s=34 Then
 				quote=1-quote
 				con_strings=con_strings+1
@@ -687,11 +593,9 @@ Function params$()
 				EndIf		
 			EndIf
 			
-			;End
 			If start>0 Then
 				If quote=0 Then
 					Select s
-						;Cancel on Space ) , ;
 						Case 32,41,44,59
 							got=2
 							Exit
@@ -701,29 +605,23 @@ Function params$()
 		
 		Next
 		
-		;Got
 		If got=1 Then
 			pend=1
 		Else
 			pend=0
 		EndIf
 		
-		;Extract
 		txt$=Mid(p_internaltxt$,start,i-start+pend)
 		
-		;Vars
 		txt$=loc_bind(txt$)
 		If Instr(txt$,"$")		
 			txt$=var_rep(txt$)
 		EndIf
 
-		;Text
 		txt$=trimtext$(txt$)
 
-		;Cut away
 		p_internaltxt$=Mid(p_internaltxt$,i+pend,-1)
 		
-		;Return
 		Return txt$
 		
 	EndIf
@@ -736,10 +634,6 @@ End Function
 
 
 
-;############################################ Parser Functions
-
-
-;### Find and Jump to Brace (Mode Search for: 0 - opening&closing, 1 - opening, 2 - closing)
 Function parse_brace(mode=0,direct=1,matching=1)
 	Local s
 	Local tl,tp
@@ -753,43 +647,35 @@ Function parse_brace(mode=0,direct=1,matching=1)
 		
 			s=Asc(Mid(Dpc$(tl),tp,1))
 			
-			;Strings / Comments
-			If s=34 And comment=0 Then instring=1-instring		;Ignore Strings
+			If s=34 And comment=0 Then instring=1-instring
 			If instring=0 Then
-				If (Mid(Dpc$(tl),tp,2))="//" Then Exit			;Skip everything after //
+				If (Mid(Dpc$(tl),tp,2))="//" Then Exit
 				If comment=0 Then
-					If (Mid(Dpc$(tl),tp,2))="/*" Then comment=1	;Start Comment
+					If (Mid(Dpc$(tl),tp,2))="/*" Then comment=1
 				Else
-					If (Mid(Dpc$(tl),tp,2))="*/" Then comment=0	;End Comment
+					If (Mid(Dpc$(tl),tp,2))="*/" Then comment=0
 				EndIf
 			EndIf
 			
-			;Scan for brace if not in comment or string
 			If instring=0 And comment=0 Then
-				;Find matching brace?
 				If matching Then
-					If s=123 Then level=level+1;:DebugLog "+{ BRACE @ "+tl+"|"+tp+" -> "+level
-					If s=125 Then level=level-1;:DebugLog "-} BRACE @ "+tl+"|"+tp+" -> "+level
+					If s=123 Then level=level+1
+					If s=125 Then level=level-1
 				EndIf
 			
-				;Opening Brace - Jump & Return 1
 				If s=123 Then
 					If mode<2 Then
-						;DebugLog "*{ BRACE @ "+tl+"|"+tp
 						parse_setl(tl):p_p=tp:Return 1
 					EndIf
-				;Closing Brace - Jump & Return 2
 				ElseIf s=125 Then
 					If mode=0 Or mode=2 Then
 						If ((matching=1 And level=0) Or matching=0) Then
-							;DebugLog "*} BRACE @ "+tl+"|"+tp
 							parse_setl(tl):p_p=tp:Return 2
 						EndIf
 					EndIf
 				EndIf
 			EndIf
 			
-			;Direct Check (error if something besides the expected brace is found)
 			If direct=1 Then
 				If s<>32 Then
 					If s<>9 Then
@@ -808,12 +694,10 @@ Function parse_brace(mode=0,direct=1,matching=1)
 		Next
 		ppt=1
 	Next
-	;No Brace - Return 0
 	Return 0
 End Function
 
 
-;### Skip Spaces in Line, Return 0 if there is nothing beside spaces
 Function parse_skipspace()
 	Local s
 	For p_p=p_p To p_len
@@ -827,7 +711,6 @@ Function parse_skipspace()
 	Return 0
 End Function
 
-;### Extract Command at current String Position
 Function parse_com()
 	Local s
 	Local start=p_p
@@ -836,7 +719,6 @@ Function parse_com()
 	For p_p=p_p To p_len
 		s=Asc(Mid(p_l$,p_p,1))
 		
-		;End at Position that is not A-Z,a-z,0-9,_
 		If s<48 Then endc=p_p
 		If s>57 And s<65 Then endc=p_p
 		If s>90 And s<95 Then endc=p_p
@@ -860,14 +742,12 @@ Function parse_com()
 End Function
 
 
-;### Parse Find End of Expression Part
 Function parse_end(txt$,pos)
 	Local i,s,l
 	l=Len(txt$)
 	For i=pos To l
 		s=Asc(Mid(txt$,i,1))
 		
-		;End at Position that is not A-Z,a-z,0-9,_
 		If s<48 Then Return i 
 		If s>57 And s<65 Then Return i 
 		If s>90 And s<95 Then Return i
@@ -878,15 +758,12 @@ Function parse_end(txt$,pos)
 	Return i
 End Function
 
-;### Parameter (1) or Semikolon (0)
 Function parse_param()
 	Local s,i
 	For i=p_p To p_len
 		s=Asc(Mid(p_l$,i,1))
 		If s<>32 Then
-			;Semikolon
 			If s=59 Then Return 0
-			;Other
 			Exit
 		EndIf
 	Next
@@ -894,16 +771,13 @@ Function parse_param()
 End Function
 
 
-;### Find and Jump to Semikolon
 Function parse_semi(error=1)
 	Local semitxt$=Mid(p_l$,p_p,-1)
 	Local s,i
 	For i=p_p To p_len
 		s=Asc(Mid(p_l$,i,1))
 		If s<>32 Then
-			;Semikolon
 			If s=59 Then p_p=i+1:Return 1
-			;Other
 			Exit
 		EndIf
 	Next
@@ -912,7 +786,6 @@ Function parse_semi(error=1)
 End Function
 
 
-;### Find and Jump to Comma
 Function parse_comma(error=1)
 	Local s,i
 	
@@ -921,40 +794,30 @@ Function parse_comma(error=1)
 		For i=p_p To p_len
 			s=Asc(Mid(p_l$,i,1))
 			If s<>32 Then
-				;Comma (Return 1)
 				If s=44 Then p_p=i+1:Return 1
-				;Other
 				If error=1 Then Exit
 			EndIf
 		Next
-		;Nothing
 		If error=1 Then parse_error("expect","parameter resp. ','")
 		Return 0
 		
 	Else
 		
-		;DebugLog "PARSE COMMA INTERNAL ("+error+") -> "+p_internaltxt$+" ("+p_com$+")"
-		
 		l=Len(p_internaltxt$)
 		For i=1 To l
 			s=Asc(Mid(p_internaltxt$,i,1))
 			If s<>32 Then
-				;Comma (Return 1)
 				If s=44 Then
-					;Cut off
 					p_internaltxt$=Mid(p_internaltxt$,i+1,-1)
 					Return 1
 				EndIf
-				;Other
 				If error=1 Then
 					Exit
-				;Do not try to get more Optional Params after )
 				ElseIf s=41 Then
 					Exit
 				EndIf
 			EndIf
 		Next
-		;Nothing
 		If error=1 Then parse_error("expect","parameter resp. ','")
 		Return 0
 	
@@ -963,22 +826,17 @@ Function parse_comma(error=1)
 End Function
 
 
-;### Find and Jump to Param/Semikolon
 Function parse_comsemi(error=1)
 	Local s
 	For p_p=p_p To p_len
 		s=Asc(Mid(p_l$,p_p,1))
-		;Comma (Return 1)
 		If s=44 Then p_p=p_p+1:Return 1
-		;Semikolon (Return 2)
 		If s=59 Then p_p=p_p+1:Return 2
 	Next
-	;Nothing
 	If error Then parse_error("expect","parameter or semicolon")
 	Return 0
 End Function
 
-;### Parser Set Jump Point
 Function parse_setjp(l,pos,level,typ$,name$)
 	Tpj.Tpj=New Tpj
 	Tpj\l=l
@@ -988,25 +846,21 @@ Function parse_setjp(l,pos,level,typ$,name$)
 	Tpj\name$=name$
 End Function
 
-;### Parser Free Last Jump Point
 Function parse_freelastjp()
 	lastpj.Tpj=Last Tpj
 	Delete lastpj
 End Function
 
-;### Parse Set Line
 Function parse_setl(l)
-	p_pl=l					;Line
-	p_l$=Dpc$(p_pl)			;Line Text
-	p_len=Len(p_l$)			;Line Length
+	p_pl=l
+	p_l$=Dpc$(p_pl)
+	p_len=Len(p_l$)
 End Function
 
 
-;### Get Bool of last Condition JP
 Function parse_getjpbool(level)
 	Local bool=-1
 	For Tpj.Tpj=Each Tpj
-		;DebugLog "* Level: "+Tpj\level+" Typ: "+Tpj\typ$+" - Scanlevel: "+level
 		If Tpj\level=level Then
 			If Tpj\typ$="if" Or Tpj\typ$="elseif" Then
 				bool=Int(Tpj\name$)
@@ -1018,7 +872,6 @@ Function parse_getjpbool(level)
 End Function
 
 
-;### Get Class out of String
 Function parse_getclass(txt$,mode=1)
 	Select txt$
 		Case "object",Cclass_object Return Cclass_object
@@ -1034,7 +887,6 @@ Function parse_getclass(txt$,mode=1)
 End Function
 
 
-;### Get Class Text
 Function parse_getclasstxt$(class)
 	Select class
 		Case Cclass_object Return "object"
@@ -1048,7 +900,6 @@ Function parse_getclasstxt$(class)
 End Function
 
 
-;### Get State out of String
 Function parse_getstate(txt$)
 	Select txt$
 		Case "bleeding",Cstate_bleeding Return Cstate_bleeding
@@ -1074,7 +925,6 @@ Function parse_getstate(txt$)
 		Case "light",Cstate_light Return Cstate_light
 		Case "particles",Cstate_particles Return Cstate_particles
 
-		;Internal State Stuff
 		Case "physics",Cstate_phy Return Cstate_phy
 		Case "buildplace",Cstate_buildplace Return Cstate_buildplace
 		Case "link",Cstate_link Return Cstate_link
@@ -1089,7 +939,6 @@ Function parse_getstate(txt$)
 End Function
 
 
-;### Get AI Signal
 Function parse_getaisignal(txt$)
 	Select txt$
 		Case "food","eat",ai_food Return ai_food
@@ -1103,7 +952,6 @@ Function parse_getaisignal(txt$)
 End Function
 
 
-;### Get AI Mode
 Function parse_getaimode(txt$)
 	Select txt$
 		Case "food","eat" Return ai_getfood
@@ -1125,22 +973,18 @@ Function parse_getaimode(txt$)
 End Function
 
 
-;### Is Int?
 Function parse_isint(txt$)
 	Local l=Len(txt$)
 	Local s
 	For i=1 To l
 		s=Asc(Mid(txt$,i,1))
-		;Return 0 if it is out auf Number ASCII Range
 		If s>57 Then Return 0
 		If s<48 Then Return 0
 	Next
-	;Check Ok
 	Return 1
 End Function
 
 
-;### Parse Kill Add
 Function parse_kill_add(class,id,model,spawntimer=0)
 	Tpkill.Tpkill=New Tpkill
 	Tpkill\class=class
@@ -1150,17 +994,13 @@ Function parse_kill_add(class,id,model,spawntimer=0)
 End Function
 
 
-;### Parse Kill Get
 Function parse_kill_get(class,id,value=0)
 	For Tpkill.Tpkill=Each Tpkill
 		If Tpkill\class=class Then
 			If Tpkill\id=id Then
 				Select value
-					;0 - Model
 					Case 0 Return Tpkill\h
-					;1 - Spawntimer
 					Case 1 Return Tpkill\spawntimer
-					;Default
 					Default Return 0
 				End Select
 			EndIf
@@ -1170,29 +1010,23 @@ Function parse_kill_get(class,id,value=0)
 End Function
 
 
-;### Load Script
 Function parse_loadscript$(file$,getstartl=1,startl$="")
 	If Instr(file$,".")=0 Then Return file$
-	;con_add("loadscript "+file$)
 	stream=ReadFile(file$)
 	If stream=0 Then
 		If set_debug=1 Then con_add("ERROR: Unable to load external script '"+file$+"'",Cbmpf_red)
 		Return ""
 	EndIf
 	Local txt$=""
-	;Get Startline
 	If getstartl=1 Then
-		If parse_comma(0) Then							;Startline
+		If parse_comma(0) Then
 			startl$=params()
 		EndIf
 	EndIf
-	;con_add("loadscript "+file$+" - startl: "+startl$)
-	;Normal Read
 	If startl$="" Then
 		While Not Eof(stream)
 			txt$=txt$+ReadLine(stream)+""
 		Wend
-	;Partial Read
 	Else
 		Local cacheit=0
 		Local in$
@@ -1206,29 +1040,21 @@ Function parse_loadscript$(file$,getstartl=1,startl$="")
 			EndIf
 		Wend
 	EndIf
-	;Remove End Break
 	If Right(txt$,1)="" Then
 		txt$=Left(txt$,Len(txt$)-1)
 	EndIf
-	;Close
 	CloseFile stream
-	;con_add("loadscript txt: "+txt$)
 	Return txt$
 End Function
 
 
-;### Parse Error
 Function parse_error(id$,param$="")
-	;Error!
 	p_error=1
 	
-	;Oppress?
 	If p_noerror>0 Then Return 0
 	
-	;Reset
 	Dim p_erd$(10)
 
-	;Error Message
 	Select id$
 		Case "uk"
 			p_erd$(0)="'"+p_com$+"' is an unknown script command"
@@ -1282,7 +1108,6 @@ Function parse_error(id$,param$="")
 			p_erd$(0)=id$
 	End Select
 	
-	;Error Script & Location Details
 	p_erd$(5)="Script: "
 	Select p_env_class
 		Case -2
@@ -1331,7 +1156,6 @@ Function parse_error(id$,param$="")
 	p_erd$(10)="Script: "+p_l$
 	If p_trace_enabled Then parse_trace("error",p_erd$(0))
 	
-	;Output
 	If set_debug=1 Then
 		sfx(sfx_fail)
 		con_open()
@@ -1346,9 +1170,6 @@ Function parse_error(id$,param$="")
 		con_add("SCRIPT ERROR: "+p_erd$(5)+" Row:"+(p_pl+1)+" Col:"+p_p+" ('debug' for details)",Cbmpf_red)
 	EndIf
 	
-	;>>>>> DEBUG STOP
-	;Stop
-	;<<<<<
 End Function
 
 
@@ -1361,7 +1182,6 @@ End Function
 Function parse_classid()
 	tmp_gclass=0
 	tmp_gid=0
-	;Class
 	Local class$=param()
 	Select class$
 		Case "object",Cclass_object tmp_gclass=Cclass_object
@@ -1372,18 +1192,14 @@ Function parse_classid()
 		Case "self" tmp_gclass=p_env_class : tmp_gid=p_env_id : Return
 		Case "player" tmp_gclass=Cclass_unit : tmp_gid=g_player : Return
 	End Select
-	;ID
 	parse_comma(1)
 	tmp_gid=param()
 	Return
 End Function
 
 
-;Parse Setscript
 Function parse_editorsetscript(class,id)
-	;Clear Parsecache
 	clear_parsecache()
-	;Execute SetScript
 	If ed_setscript$<>"" Then
 		p_env_class=class
 		p_env_id=id
@@ -1392,7 +1208,6 @@ Function parse_editorsetscript(class,id)
 		loadstring_parsecache(ed_setscript$,"")
 		parse(1)
 	EndIf
-	;Edset-Event
 	parse_emuevent(class,id,"edset","editor setscript")
 	parse_sel_event("edset",1)
 End Function

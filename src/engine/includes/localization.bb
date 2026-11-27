@@ -1,9 +1,6 @@
-; Shared UTF-8 catalogs. References stay intact in scripts and saved games.
-; Grammar: [[loc:key]] or [[loc:key|variable=HEX_UTF8_BYTES]].
 Dim loc_heads(4095)
 Global loc_language$="en",loc_saved$="en",loc_pending$="en"
 Global loc_language_count
-; Bumped on every catalog change so text caches resolve references again.
 Global loc_generation
 Type Tlanguage
  Field code$,name$,index
@@ -150,7 +147,6 @@ Function loc_cycle(direction)
  Next
 End Function
 
-; Save only the language setting. Preserve frame/display settings and comments.
 Function loc_save()
  Local path$=set_rootdir$+"core\modern.ini",stream=ReadFile(path$)
  Local content$="",line$,eq
@@ -178,7 +174,6 @@ End Function
 Function loc_get$(key$)
  Local entry.Tlocale=loc_find(key$),stream,path$
  If entry<>Null Then Return entry\value$
- ; Cache the diagnostic so a missing label does not flood the log each frame.
  path$=set_rootdir$+"core\localization.log"
  stream=OpenFile(path$)
  If stream=0 Then stream=WriteFile(path$)
@@ -263,8 +258,6 @@ Function loc_resolve$(text$,depth=0)
  Return result$+Mid(text$,cursor)
 End Function
 
-; Capture script variables at command evaluation, without baking in a language.
-; Hex encoding protects commas, quotes, dollar signs and reference delimiters.
 Function loc_bind$(text$)
  Local result$="",cursor=1,start,ending,key$,template$,bindings$,i,j,name$
  Repeat
@@ -274,7 +267,6 @@ Function loc_bind$(text$)
   If ending=0 Then Exit
   key$=Mid(text$,start+6,ending-start-6):bindings$=""
   If Instr(key$,"|")=0 Then
-   ; Both catalogs share the validated placeholder contract.
    template$=loc_get(key$):i=1
    While i<=Len(template$)
     If Mid(template$,i,1)="$" And loc_escaped(template$,i)=0 Then

@@ -1,8 +1,4 @@
-;############################################ Skills
-
-;Set Skill
 Function set_skill(skill$,value,caption$="")
-	;Modify Existing
 	For Tx.Tx=Each Tx
 		If Tx\mode=5 Then
 			If Tx\key$=skill$ Then
@@ -12,7 +8,6 @@ Function set_skill(skill$,value,caption$="")
 			EndIf
 		EndIf
 	Next
-	;Create New
 	Tx.Tx=New Tx
 	Tx\mode=5
 	Tx\key$=skill$
@@ -22,9 +17,7 @@ Function set_skill(skill$,value,caption$="")
 End Function
 
 
-;Inc Skill
 Function inc_skill(skill$,modify,caption$="")
-	;Modify Existing
 	For Tx.Tx=Each Tx
 		If Tx\mode=5 Then
 			If Tx\key$=skill$ Then
@@ -34,7 +27,6 @@ Function inc_skill(skill$,modify,caption$="")
 			EndIf
 		EndIf
 	Next
-	;Create New
 	Tx.Tx=New Tx
 	Tx\mode=5
 	Tx\key$=skill$
@@ -44,7 +36,6 @@ Function inc_skill(skill$,modify,caption$="")
 End Function
 
 
-;Free Skill
 Function free_skill(skill$)
 	For Tx.Tx=Each Tx
 		If Tx\mode=5 Then
@@ -54,12 +45,10 @@ Function free_skill(skill$)
 			EndIf
 		EndIf
 	Next
-	;Fail
 	Return 0	
 End Function
 
 
-;Got Skill
 Function got_skill(skill$)
 	For Tx.Tx=Each Tx
 		If Tx\mode=5 Then
@@ -68,12 +57,10 @@ Function got_skill(skill$)
 			EndIf
 		EndIf
 	Next
-	;Fail
 	Return 0
 End Function
 
 
-;Skill Value
 Function skill_value(skill$)
 	For Tx.Tx=Each Tx
 		If Tx\mode=5 Then
@@ -82,11 +69,9 @@ Function skill_value(skill$)
 			EndIf
 		EndIf
 	Next
-	;Fail
 	Return 0	
 End Function
 
-;Skill Name
 Function skill_name(skill$,name$)
 	For Tx.Tx=Each Tx
 		If Tx\mode=5 Then
@@ -96,6 +81,5 @@ Function skill_name(skill$,name$)
 			EndIf
 		EndIf
 	Next
-	;Fail
 	Return 0	
 End Function

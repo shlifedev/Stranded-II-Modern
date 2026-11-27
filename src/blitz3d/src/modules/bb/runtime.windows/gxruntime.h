@@ -9,7 +9,6 @@
 #include <vector>
 
 class gxRuntime : public BBRuntime, public D3D7ContextDriver, public Frame{
-	/***** INTERNAL INTERFACE *****/
 public:
 	BBEnv env;
 
@@ -35,7 +34,6 @@ private:
 	void backupGraphics();
 	void restoreGraphics();
 
-	/***** APP INTERFACE *****/
 public:
 	static gxRuntime *openRuntime( HINSTANCE hinst );
 
@@ -43,11 +41,9 @@ public:
 	void asyncRun();
 	void asyncEnd();
 
-	/***** GX INTERFACE *****/
 public:
 	void *window();
 
-	//return true if program should continue, or false for quit.
 	bool idle();
 
 	void setPointerVisible( bool vis );

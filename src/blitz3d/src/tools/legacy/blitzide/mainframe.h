@@ -103,13 +103,10 @@ private:
 	void build( bool exec,bool publish );
 	void switchRuntime( int i );
 
-	//editorlistener
 	void cursorMoved( Editor *editor );
 
-	//tabberlistener
 	void currentSet( Tabber *tabber,int index );
 
-	//htmlhelplistener
 	void helpOpen( HelpView *help,const std::string &file,bool dir );
 	void helpTitleChange( HelpView *help,const std::string &title );
 };

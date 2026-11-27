@@ -1,4 +1,3 @@
-;Process a Packet and its Messages
 Function udp_process(p.Tudp_ipq)
 	udp_indb=p\db
 	udp_indbp=0
@@ -10,17 +9,14 @@ Function udp_process(p.Tudp_ipq)
 
 		Select id
 			
-			;1 - Join Request
 			Case 1 
 				name$=udp_r_tiny()
 				pw$=udp_r_tiny()
 				mp_server_joinrequest(ip,port,name$,pw$)
 				
-			;2 - Join Answer
 			Case 2
 				sub=udp_r_byte()
 				Select sub
-					;1 - Ok
 					Case 1
 						mp_name$=udp_r_tiny()
 						mp_id=udp_r_byte()
@@ -29,52 +25,37 @@ Function udp_process(p.Tudp_ipq)
 						set_sv_map$=udp_r_tiny()
 						mapid$=udp_r_tiny()
 						mp_client_checkmap(set_sv_map$,mapid$)
-					;2 - Wrong Password
 					Case 2
 						RuntimeError("Join: Wrong Password")
-					;3 - Full
 					Case 3
 						RuntimeError("Join: Full")		
-					;4 - Banned
 					Case 2
 						RuntimeError("Join: Banned")
 				End Select
 						
-			;3 - Join Stuff
 			Case 3
 				sub=udp_r_byte()
 				Select sub
-					;1 - Ok
 					Case 1
 						If udp_host=1 Then
 							mp_server_sendplayerdata(ip,port)
 							if_msg("BLAAAH joined the game!",Cbmpf_green)
 						EndIf
-					;2 - Map Request
-					;3 - Map Send Start
-					;4 - Map Send Data
-					;5 - Map Send End
-					;7 - Map Differs
-					;100 - Player Data (existing Player)
 					Case 100
 						mp_getplayerdata(100)
-					;101 - Player Data (new Player)
 					Case 101
 						mp_getplayerdata(101)
 
 				End Select
 				
-			;5 - Ping
 			Case 5
 				sub=udp_r_byte()
 				Select sub
-					;1 - Request
 					Case 1
 						pingstamp=udp_r_int()
 						udp_send(ip,port,5,1)
 						udp_w_byte(2)
 						udp_w_int(pingstamp)
-					;2 - Answer
 					Case 2
 						pingstamp=udp_r_int()
 						If pingstamp<=MilliSecs() Then
@@ -89,7 +70,6 @@ Function udp_process(p.Tudp_ipq)
 								EndIf
 							Next
 						EndIf
-					;3 - Ping Data
 					Case 3
 						playerid=udp_r_byte()
 						ping=udp_r_short()
@@ -102,7 +82,6 @@ Function udp_process(p.Tudp_ipq)
 				End Select
 				con_add("GOT PING mode "+sub,Cbmpf_red)
 			
-			;50 -  Position
 			Case 50
 				playerid=udp_r_byte()
 				x#=udp_r_float()
@@ -118,11 +97,9 @@ Function udp_process(p.Tudp_ipq)
 				Next
 				con_add("GOT POS! #"+playerid)
 					
-			;100 - Message
 			Case 100
 				sub=udp_r_byte()
 				Select sub
-					;1 - Chat
 					Case 1
 						playerid=udp_r_byte()
 						msg$=udp_r_txt$()
@@ -143,7 +120,6 @@ Function udp_process(p.Tudp_ipq)
 							Next
 						EndIf
 					
-					;2 - Servermessage
 					Case 2
 						msg$=udp_r_txt()
 						col=udp_r_byte()
@@ -151,7 +127,6 @@ Function udp_process(p.Tudp_ipq)
 				End Select
 			
 			
-			;Trash
 			Default
 				con_add("ERROR: Got unexpected Message (#"+id+")")
 			

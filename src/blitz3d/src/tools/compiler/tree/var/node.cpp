@@ -1,8 +1,5 @@
 #include "node.h"
 
-//////////////////////////////////
-// Common get/set for variables //
-//////////////////////////////////
 TNode *VarNode::load( Codegen *g ){
 	TNode *t=translate( g );
 	if( sem_type==Type::string_type ) return call( "__bbStrLoad",t );

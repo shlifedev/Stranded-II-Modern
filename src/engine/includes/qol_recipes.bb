@@ -244,7 +244,6 @@ Function qol_recipe_draw()
  Color 127,98,53:Line 440,118,440,576
  bmpf_txt_rect(456,119,318,42,recipe\title$)
  Local part.Tqolpart,label$,have,col,base=174-qol_detail_scroll,lines,partclick
- ; The detail area scrolls independently. Clicks outside it cannot navigate.
  Viewport 450,170,326,342
  For part=Each Tqolpart
   If part\recipe=recipe\id Then

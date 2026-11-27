@@ -1,14 +1,11 @@
-;############################################ Load States
-
 Global state_count=0
 Const Cstate_count=70
 
-Dim Dstate_name$(Cstate_count)			;Name
-Dim Dstate_frame(Cstate_count)			;Icon Frame
-Dim Dstate_icon(Cstate_count)			;Icon Image
-Dim Dstate_script$(Cstate_count)		;Script
+Dim Dstate_name$(Cstate_count)
+Dim Dstate_frame(Cstate_count)
+Dim Dstate_icon(Cstate_count)
+Dim Dstate_script$(Cstate_count)
 
-;Active?
 Dim Dstate_a(Cstate_count)
 Dstate_a(Cstate_frostbite)=1
 Dstate_a(Cstate_fracture)=1
@@ -18,8 +15,6 @@ Dstate_a(Cstate_tame)=1
 Dstate_a(Cstate_ai_stick)=1
 Dstate_a(Cstate_speedmod)=1
 
-
-;### Load States
 
 Function load_states()
 	state_count=0

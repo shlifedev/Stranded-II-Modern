@@ -1,5 +1,3 @@
-;############################################ LOAD KEYNAMES
-
 Function load_keynames()
 	Local stream=ReadFile("sys\keys.inf")
 	If stream=0 Then RuntimeError("Unable to read sys\keys.inf")

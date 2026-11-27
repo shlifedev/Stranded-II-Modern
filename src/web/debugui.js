@@ -1,4 +1,3 @@
-/* Shared browser text/IME and focus bridge for the Dear ImGui overlay. */
 'use strict';
 function s2InstallDebugUi(module, canvas, onOpen) {
   const input = document.createElement('textarea');
@@ -26,8 +25,6 @@ function s2InstallDebugUi(module, canvas, onOpen) {
     }
     confirmed = ''; commit(input.value); input.value = '';
   });
-  // SDL still receives navigation and modifier keys, but text has one owner.
-  // Browser paste commits through textarea input; avoid a second SDL paste.
   input.addEventListener('keydown', event => {
     if ((event.ctrlKey || event.metaKey) && event.code === 'KeyV') event.stopImmediatePropagation();
     if (composing || event.isComposing) event.stopImmediatePropagation();

@@ -3,7 +3,6 @@
 
 #include "node.h"
 
-// Lor - short-circuiting logical or (unlike Or, which is an eager bitwise op)
 struct LogicExprNode : public ExprNode{
 	ExprNode *lhs,*rhs;
 	LogicExprNode( ExprNode *lhs,ExprNode *rhs ):lhs( lhs ),rhs( rhs ){}

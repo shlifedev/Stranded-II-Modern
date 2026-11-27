@@ -1,9 +1,6 @@
 #include "while.h"
 #include "../expr/const.h"
 
-/////////////////////
-// While statement //
-/////////////////////
 void WhileNode::semant( Environ *e ){
 	expr=expr->semant( e );
 	expr=expr->castTo( Type::int_type,e );
@@ -49,7 +46,6 @@ void WhileNode::translate2( Codegen_LLVM *g ){
 		auto body=llvm::BasicBlock::Create( *g->context,"body" );
 
 		auto v=expr->translate2( g );
-		// Every nonzero Blitz integer is true, including even values/handles.
 		v=g->builder->CreateICmpNE( v,llvm::ConstantInt::get( v->getType(),0 ) );
 
 		g->builder->CreateCondBr( v,body,next );

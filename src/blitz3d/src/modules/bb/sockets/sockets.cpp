@@ -68,7 +68,6 @@ static bool bind( SOCKET s,int port ){
 
 static int waitForRead( SOCKET s,int ms ){
 #ifdef BB_NX
-	// TODO: this should be investigated further
 	return 1;
 #endif
 #ifdef WIN32
@@ -186,7 +185,6 @@ int UDPStream::eof(){
 	return e ? e : in_get==in_buf.size();
 }
 
-//fill buffer, return sender
 int UDPStream::recv(){
 	if( e ) return 0;
 	int tout;
@@ -205,14 +203,13 @@ int UDPStream::recv(){
 		in_buf.resize( sz );in_get=0;
 		socklen_t len=sizeof(in_addr);
 		n=::recvfrom( sock,&in_buf[0],sz,0,(sockaddr*)&in_addr,&len );
-		if( n==SOCKET_ERROR ) continue;	//{ e=-1;return 0; }
+		if( n==SOCKET_ERROR ) continue;
 		in_buf.resize( n );
 		return getMsgIP();
 	}
 	return 0;
 }
 
-//send, empty buffer
 int UDPStream::send( int ip,int port ){
 	if( e ) return 0;
 	int sz=out_buf.size();

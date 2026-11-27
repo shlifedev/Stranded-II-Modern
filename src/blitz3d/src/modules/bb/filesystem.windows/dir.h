@@ -16,7 +16,6 @@ private:
 	HANDLE handle;
 	WIN32_FIND_DATAW findData;
 
-	/***** GX INTERFACE *****/
 public:
 	std::string getNextFile();
 };

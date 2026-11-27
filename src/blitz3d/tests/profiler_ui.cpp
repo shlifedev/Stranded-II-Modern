@@ -1,4 +1,3 @@
-// Offscreen UI with synthetic measurements: verifies layout, not rendering FPS.
 #include <bb/debugui/debugui.h>
 #include <bb/debugui/profiler.h>
 #include <bb/graphics.webgpu/canvas.webgpu.h>

@@ -1,23 +1,15 @@
-;############################################ Collisions
-
-;Set Collisions
 col_set()
 Function col_set()
-	Collisions Cworld_unitcol,Cworld_col,2,3		;UNITS -> WORLD (Radius->Polygon, slide)
-	Collisions Cworld_playercol,Cworld_col,2,2	;PLAYER -> WORLD (allow vertical wall sliding)
-	;Collisions Cworld_unitcol,Cworld_unitcol,1,3	;UNITS -> UNITS (Radius->Radius, slide)
-	Collisions Cworld_procol,Cworld_col,2,3			;PROJECTILES -> WORLD (Radius->Polygon, slide)
-	Collisions Cworld_procol,Cworld_unitcol,1,3		;PROJECTILES -> UNITS (Radius->Radius, slide)
-	Collisions Cworld_procol,Cworld_playercol,1,3	;PROJECTILES -> controlled player
-	Collisions Cworld_procol,Cworld_itemcol,2,1		;PROJECTILES -> ITEMS (Radius->Polygon, stop)
-	Collisions Cworld_itemcol,Cworld_col,2,3		;ITEMS -> WORLD (Radius->Polygon, slide)
+	Collisions Cworld_unitcol,Cworld_col,2,3
+	Collisions Cworld_playercol,Cworld_col,2,2
+	Collisions Cworld_procol,Cworld_col,2,3
+	Collisions Cworld_procol,Cworld_unitcol,1,3
+	Collisions Cworld_procol,Cworld_playercol,1,3
+	Collisions Cworld_procol,Cworld_itemcol,2,1
+	Collisions Cworld_itemcol,Cworld_col,2,3
 End Function
 
 
-; Remove only zero-area triangles from a loaded static mesh. In particular,
-; rock04.b3d contains faces such as (29,16,29); Blitz normalizes their zero
-; normal and poisons the entire swept collision. Keep vertices, normals,
-; UVs, brushes, valid triangle order and the source files unchanged.
 Function col_prepare_mesh(mesh)
  Local si,surface,tri,count,a,b,c,kept,bank,removed
  Local ax#,ay#,az#,bx#,by#,bz#,nx#,ny#,nz#
@@ -50,7 +42,6 @@ Function col_prepare_mesh(mesh)
 End Function
 
 
-;### Collision Center = Bottom?
 Function col_bottom(h,radius#)
 	Local c=CountCollisions(h)
 	Local x#,y#,z#
@@ -64,8 +55,6 @@ Function col_bottom(h,radius#)
 End Function
 
 
-; Player movement is collected after rendering and resolved at the next
-; UpdateWorld. Terrain correction must be part of that same swept movement.
 Const Cplayer_contact_epsilon#=0.05
 Global col_player_h,col_player_valid,col_player_grounded,col_player_ceiling,col_player_support
 Global col_player_x#,col_player_y#,col_player_z#
@@ -74,8 +63,6 @@ Global col_player_log_time,col_player_rejected
 Global col_player_contact_log$
 
 Function col_player_reset()
- ; EntityType resets Blitz's previous transform, so change it only when
- ; entering/leaving player control, never around every collision update.
  If col_player_h<>0 Then
   For unit.Tunit=Each Tunit
    If unit\h=col_player_h Then
@@ -126,9 +113,6 @@ Function col_player_prepare()
  EndIf
 End Function
 
-; Retain only contacts that still touch the final ellipsoid, rather than
-; contacts passed earlier during a slide. Blitz stores normals in the
-; vertically scaled sphere space; transform them back before measuring gaps.
 Function col_player_contacts()
  Local h=g_cplayer\h,typ=g_cplayer\typ
  Local rx#=Dunit_colxr#(typ),ry#=Dunit_colyr#(typ)
@@ -174,8 +158,6 @@ Function col_player_finish()
  col_player_rejected=0
  col_player_grounded=(EntityY(h)<=floor#+Cplayer_contact_epsilon#)
  col_player_contacts()
- ; The support probe must not create downhill drift while standing still.
- ; Reuse the verified resting pose only if the probe still finds support.
  If col_player_valid And oldground And col_player_grounded Then
   If col_player_request_x#=oldx# And col_player_request_z#=oldz# Then
    If col_player_request_y#<=oldy# And col_player_request_y#>=oldy#-Cplayer_contact_epsilon#*f#-0.001 Then
@@ -187,8 +169,6 @@ Function col_player_finish()
    EndIf
   EndIf
  EndIf
- ; Never lift a resolved position into a rock. Reject this move while
- ; retaining the last verified position from which retreat is possible.
  If EntityY(h)<floor#-Cplayer_contact_epsilon# Then
   col_player_rejected=1
   If col_player_valid Then
@@ -198,7 +178,6 @@ Function col_player_finish()
    col_player_support=oldsupport
    col_player_ceiling=0
   Else
-   ; No verified history after load/teleport: do not invent a recovery point.
    col_player_grounded=0
   EndIf
  Else
@@ -232,8 +211,6 @@ Function col_player_landsound()
  g_player_mst=ms
 End Function
 
-; Queue vertical movement using the same rates as the original land/swim
-; physics. Grounding comes from the resolved frame, never from a wall hit.
 Function col_player_physics()
  Local unit.Tunit=g_cplayer
  Local h=unit\h,par
@@ -253,7 +230,6 @@ Function col_player_physics()
   If col_player_grounded Then
    If gt-unit\phy_fall>300 Then col_player_landsound()
    unit\phy_ft=gt:unit\phy_fall=gt:unit\phy_fally#=EntityY(h)
-   ; A tiny downward sweep preserves contact with object floors at rest.
    TranslateEntity h,0,-Cplayer_contact_epsilon#*f#,0
   Else
    par=gt-unit\phy_fall
@@ -263,7 +239,6 @@ Function col_player_physics()
  EndIf
 End Function
 
-; Side contacts are not ceilings and must not prohibit an otherwise valid jump.
 Function col_jump()
  If col_player_managed(TCunit) Then Return Not col_player_ceiling
  Local c=CountCollisions(TCunit\h)

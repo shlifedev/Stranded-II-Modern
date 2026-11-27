@@ -35,9 +35,6 @@ void StmtSeqNode::reset( const std::string &file,const std::string &lab ){
 	fileMap[file]=lab;
 }
 
-////////////////////////
-// Statement Sequence //
-////////////////////////
 void StmtSeqNode::semant( Environ *e ){
 	for( int k=0;k<stmts.size();++k ){
 		try{ stmts[k]->semant( e ); }
@@ -98,9 +95,6 @@ json StmtSeqNode::toJSON( Environ *e ){
 	return tree;
 }
 
-/////////////////
-// An Include! //
-/////////////////
 void IncludeNode::semant( Environ *e ){
 
 	label=genLabel();

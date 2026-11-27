@@ -1,11 +1,5 @@
 #!/bin/sh
 
-##
-# Blitz3D "NG" Downloader
-#
-# This script will download a particular build of release from GitHub and then
-# ad-hoc sign the executables so that they can run without issues from Gatekeeper.
-#
 set -e
 
 ARCHIVE=blitz3d-ng-$TAG-$MACOS.zip

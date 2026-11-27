@@ -1,9 +1,6 @@
 #include "var_decl.h"
 #include "../expr/const.h"
 
-////////////////////////////
-// Simple var declaration //
-////////////////////////////
 void VarDeclNode::proto( DeclSeq *d,Environ *e ){
 
 	Type *ty=tagType( tag,e );

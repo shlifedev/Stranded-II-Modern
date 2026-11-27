@@ -12,7 +12,7 @@ wrapped = []
 for declaration in (Path(directory) / 'commands.decls').read_text().splitlines():
     match = pattern.fullmatch(declaration.strip())
     if not match:
-        continue  # Internal compiler intrinsics have their own pointer-aware ABI.
+        continue
     _, result, parameters, symbol = match.groups()
     args = []
     expressions = []
@@ -42,7 +42,6 @@ for declaration in (Path(directory) / 'commands.decls').read_text().splitlines()
         statement = f'return {invocation};'
     else:
         statement = invocation + ';'
-        # Freeing a resource invalidates its public handle permanently.
         if symbol.startswith(('bbFree', 'bbClose')) and len(pointers) == 1:
             statement += f' s2ForgetHandle({pointers[0]});'
     lines.append(f'extern "C" {signature} s2_{symbol}({", ".join(args)}) {{ {statement} }}')

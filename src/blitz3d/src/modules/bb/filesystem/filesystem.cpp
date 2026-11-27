@@ -70,8 +70,6 @@ std::streambuf *BBFileSystem::openFile( const std::string &file,std::ios_base::o
 	std::filebuf *buf=d_new std::filebuf();
 #ifdef BB_WINDOWS
     if(buf->open(bbWidePath(path),n|std::ios_base::binary)) return buf;
-    // The retry must not fall back to an ANSI name: for a write it could
-    // create a mojibake file beside the intended one.
     std::string real=bbResolvePath(file);
     if(!real.empty() && buf->open(bbWidePath(real),n|std::ios_base::binary)) return buf;
 #else

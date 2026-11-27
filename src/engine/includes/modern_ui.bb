@@ -1,4 +1,3 @@
-; Generated from the original UI drawing recipes.
 Function modern_create_borders()
 gfx_border(3)=CreateImage(set_scrx,16)
 SetBuffer ImageBuffer(gfx_border(3))

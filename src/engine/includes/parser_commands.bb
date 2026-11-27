@@ -1,54 +1,42 @@
-;############################################ Parse Commands
-
 Function parse_commands(jumptosemi=1,internal=0)
 	p_return$=""
 	p_internal=internal
 	
-	;Seq Debug
-	;If set_debug_seq
-	;	con_add("debug seq cmd: "+p_com$)
-	;EndIf
-		
-		
 	Select p_com$
 		
 		
-		;################################################# BASIC
-		
 		Case "terrain"
-			xpos#=param()									;X
+			xpos#=param()
 			parse_comma(1)
-			zpos#=param()									;Z
+			zpos#=param()
 			parse_comma(1)
-			mode=Int(param())								;Mode
+			mode=Int(param())
 			x#=(xpos#+(ter_size/2*Cworld_size))/Cworld_size
 			z#=(zpos#+(ter_size/2*Cworld_size))/Cworld_size
 			Select mode					
-				Case 0										;Get Height					
+				Case 0
 					p_return$=TerrainHeight(ter,x,z)*100.
-				Case 1										;Set Height
+				Case 1
 					parse_comma(1)	
 					height#=param()		
 					ModifyTerrain(ter,x,z,height#/100.)
-				Case 2										;Modify Height								
+				Case 2
 					parse_comma(1)	
 					height#=param()
 					height#=(TerrainHeight(ter,x,z)*100)+height#
 					If height#<0 Then height#=0
 					If height#>1000 Then height#=100
 					ModifyTerrain(ter,x,z,height#/100.)
-				Case 3										;Terrain Matrix X
+				Case 3
 					p_return$=Int(x)
-				Case 4										;Terrain Matrix Z
+				Case 4
 					p_return$=Int(z)
 			End Select
 		
 		Case "compass"
 			in_compass=param()
 		
-		;Eat/Drink/Consume
 		Case "eat","drink","consume"
-			;FX
 			Select p_com$
 				Case "eat"
 					sfx_emit sfx_eat,cam
@@ -65,18 +53,16 @@ Function parse_commands(jumptosemi=1,internal=0)
 						EndIf
 					EndIf
 			End Select
-			;Decrease Item Count
 			If p_env_class=Cclass_item Then
 				free_item(p_env_id,1)
 			EndIf
-			;Parameter Stuff
 			If parse_param() Then
 				cunit=g_player
-				chealth#=param()									;P1 - Health
-				If parse_comma(0) Then chunger#=param()				;P2 - Hunger
-				If parse_comma(0) Then cthirst#=param()				;P3 - Thirst
-				If parse_comma(0) Then cexhaustion#=param()			;P4 - Exhaustion
-				If parse_comma(0) Then cunit=param()				;P5 - Unit ID
+				chealth#=param()
+				If parse_comma(0) Then chunger#=param()
+				If parse_comma(0) Then cthirst#=param()
+				If parse_comma(0) Then cexhaustion#=param()
+				If parse_comma(0) Then cunit=param()
 				If con_unit(cunit) Then
 					TCunit\health#=TCunit\health#+chealth#
 					TCunit\hunger#=TCunit\hunger#-chunger#
@@ -86,7 +72,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			EndIf
 			
-		;Fry
 		Case "fry"
 			sfx(sfx_fizzle)
 			If m_menu=Cmenu_if_items Then
@@ -95,20 +80,19 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			EndIf
 			
-		;Max Health
 		Case "maxhealth"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			value#=0
 			If parse_comma(0) Then
-				value#=param()									;Maxhealth Change
+				value#=param()
 			EndIf
 			p_return$=0
 			Select classint
@@ -141,7 +125,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 					Next
 			End Select
 			
-		;Jade
 		Case "jade"
 			cvalue#=param()
 			If con_unit(g_player) Then
@@ -151,12 +134,10 @@ Function parse_commands(jumptosemi=1,internal=0)
 				unit_values()
 			EndIf
 			
-		;Con
 		Case "con"
 			in_conin$=params()
 			con_enter()
 			
-		;Exec
 		Case "exec"
 			exec$=params()
 			If gui_msgdecide("[[loc:engine.18326facba10]]"+exec$+"'?",Cbmpf_yellow) Then
@@ -166,14 +147,13 @@ Function parse_commands(jumptosemi=1,internal=0)
 				con_add("Permission denied to execute '"+exec$+"'.",Cbmpf_red)
 			EndIf
 						
-		;Definition Extend
 		Case "def_extend"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			parse_comma(1)
-			typ=param()										;Typ
+			typ=param()
 			parse_comma(1)
-			source$=params()								;Source
+			source$=params()
 			txt$=0
 			If Int(source$)<>0 Then
 				For Tx.Tx=Each Tx
@@ -212,14 +192,13 @@ Function parse_commands(jumptosemi=1,internal=0)
 				End Select
 			EndIf
 			
-		;Definition Override
 		Case "def_override"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			parse_comma(1)
-			typ=param()										;Typ
+			typ=param()
 			parse_comma(1)
-			source$=params()								;Source
+			source$=params()
 			txt$=0
 			If Int(source$)<>0 Then
 				For Tx.Tx=Each Tx
@@ -258,12 +237,11 @@ Function parse_commands(jumptosemi=1,internal=0)
 				End Select
 			EndIf
 			
-		;Defintion Free
 		Case "def_free"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			parse_comma(1)
-			typ=param()										;Typ
+			typ=param()
 			Select classint
 				Case Cclass_object
 					If typ<1 Or typ>Cobject_count Then parse_error("typerange",typ)
@@ -285,16 +263,15 @@ Function parse_commands(jumptosemi=1,internal=0)
 					parse_error("wrongclass",parse_getclasstxt$(classint))
 			End Select
 			
-		;Create
 		Case "create"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			parse_comma(1)
-			typ=param()										;Typ
+			typ=param()
 			If parse_comma(0)
-				xpos#=param()									;X
+				xpos#=param()
 				parse_comma(1)
-				zpos#=param()									;Z
+				zpos#=param()
 			Else
 				xpos#=EntityX(g_cplayer\h)
 				zpos#=EntityZ(g_cplayer\h)
@@ -330,72 +307,66 @@ Function parse_commands(jumptosemi=1,internal=0)
 					parse_error("wrongclass",parse_getclasstxt$(classint))
 			End Select
 			
-		;randomcreate
 		Case "randomcreate"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			parse_comma(1)
-			typ=param()										;Typ
+			typ=param()
 			xpos#=0
 			zpos#=1000000
 			count=1
 			If parse_comma(0)
-				xpos#=param()									;Y Min
+				xpos#=param()
 				If parse_comma(0) Then
-					zpos#=param()									;Y Max
+					zpos#=param()
 					If parse_comma(0) Then
-						count=param()									;Count
+						count=param()
 					EndIf
 				EndIf
 			EndIf
-			;Create
 			p_return$=randomcreate(classint,typ,xpos#,zpos#,count)
 			
 			
-		;Skipevent
 		Case "skipevent"
 			p_skipevent=1
 			tmp_skipevent=1
 			
-		;Event
 		Case "event"
 			event$=params$()
 			If parse_comma(0) Then
-				class$=param()									;Class
+				class$=param()
 				If class$="global" Then
 					parse_globalevent(event$,"triggered by event command")
 				Else
 					classint=parse_getclass(class$)
 					parse_comma(1)
-					id=param()										;ID
+					id=param()
 					parse_emuevent(classint,id,event$,"triggered by event command")
 				EndIf
 			Else
 				parse_emuevent(p_env_class,p_env_id,event$,"triggered by event command")
 			EndIf
 			
-		;Areal Event
 		Case "areal_event"
-			event$=params$()									;Event
+			event$=params$()
 			parse_comma(1)
-			x#=param()											;X
+			x#=param()
 			parse_comma(1)
-			y#=param()											;Y
+			y#=param()
 			parse_comma(1)
-			z#=param()											;Z
+			z#=param()
 			range=50
 			eventlimit=1
 			If parse_comma(0) Then
-				range=param()									;Range
+				range=param()
 			EndIf
 			If parse_comma(0) Then
-				eventlimit=param()								;Eventlimit
+				eventlimit=param()
 			EndIf
 			Local tempp=CreatePivot()
 			PositionEntity tempp,x#,y#,z#
 			skip=0
 			c=0
-			;Objects
 			For Tobject.Tobject=Each Tobject
 				If EntityDistance(Tobject\h,tempp)<range Then
 					skip=set_parsecache(Cclass_object,Tobject\id,event$)
@@ -409,7 +380,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 					EndIf
 				EndIf
 			Next
-			;Units
 			If c<eventlimit Or eventlimit=0 Then
 				For Tunit.Tunit=Each Tunit
 					If EntityDistance(Tunit\h,tempp)<range Then
@@ -425,7 +395,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 					EndIf
 				Next
 			EndIf
-			;Items
 			If c<eventlimit Or eventlimit=0 Then
 				For Titem.Titem=Each Titem
 					If Titem\parent_mode=Cpm_out Then
@@ -443,7 +412,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 					EndIf
 				Next
 			EndIf
-			;Infos
 			If c<eventlimit Or eventlimit=0 Then
 				For Tinfo.Tinfo=Each Tinfo
 					If EntityDistance(Tinfo\h,tempp)<range Then
@@ -462,37 +430,28 @@ Function parse_commands(jumptosemi=1,internal=0)
 			FreeEntity tempp
 			
 			
-		;Quicksave
 		Case "quicksave"
 			Tin_quicksave.Tin_quicksave=New Tin_quicksave
 			Tin_quicksave\mode=1
 			in_quicksave=1
-			;Quicksave performed in cull.bb (to avoid crossparsing)
 		
-		;Quickload
 		Case "quickload"
 			Tin_quicksave.Tin_quicksave=New Tin_quicksave
 			Tin_quicksave\mode=2
 			in_quicksave=2
-			;Quickload performed in cull.bb (to avoid crossparsing)
 			
-		;Autosave
 		Case "autosave"
 			Tin_quicksave.Tin_quicksave=New Tin_quicksave
 			Tin_quicksave\mode=3
 			in_quicksave=3
-			;Autosave performed in cull.bb (to avoid crossparsing)
 			
-		;Autoload
 		Case "autoload"
 			Tin_quicksave.Tin_quicksave=New Tin_quicksave
 			Tin_quicksave\mode=4
 			in_quicksave=4
-			;Autoload performed in cull.bb (to avoid crossparsing)
 			
-		;Loadmap
 		Case "loadmap"
-			path$=params()												;Path
+			path$=params()
 			ot_skills=0
 			ot_items=0
 			ot_vars=0
@@ -500,17 +459,17 @@ Function parse_commands(jumptosemi=1,internal=0)
 			ot_states=0
 			ot_locks=0
 			If parse_comma(0) Then
-				ot_skills=param()										;Skills
+				ot_skills=param()
 				If parse_comma(0) Then
-					ot_items=param()									;Items
+					ot_items=param()
 					If parse_comma(0) Then
-						ot_vars=param()									;Vars
+						ot_vars=param()
 						If parse_comma(0) Then
-							ot_diary=param()							;Diary
+							ot_diary=param()
 							If parse_comma(0) Then
-								ot_states=param()						;States
+								ot_states=param()
 								If parse_comma(0) Then
-									ot_locks=param()					;Locks
+									ot_locks=param()
 								EndIf
 							EndIf
 						EndIf
@@ -518,21 +477,17 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf	
 			EndIf
 			cachedata(1,ot_skills,ot_items,ot_vars,ot_diary,ot_states,ot_locks)
-			;Perform
 			tmp_loadmapcmdmap$=path$
 			in_quicksave=5
 			Tin_quicksave.Tin_quicksave=New Tin_quicksave
 			Tin_quicksave\mode=5
 			Tin_quicksave\map=tmp_loadmapcmdmap$
-			;Loadmap performed in cull.bb (to avoid crossparsing)
 			
-		;Loadmap Takeover
 		Case "loadmaptakeover"
 			p_return$=pv_loadmaploaded
 		
-		;savemap
 		Case "savemap"
-			path$=params()												;Path
+			path$=params()
 			ot_skills=1
 			ot_items=1
 			ot_vars=1
@@ -540,24 +495,23 @@ Function parse_commands(jumptosemi=1,internal=0)
 			ot_states=1
 			ot_locks=1
 			If parse_comma(0) Then
-				ot_skills=param()										;Skills
+				ot_skills=param()
 				If parse_comma(0) Then
-					ot_items=param()									;Items
+					ot_items=param()
 					If parse_comma(0) Then
-						ot_vars=param()									;Vars
+						ot_vars=param()
 						If parse_comma(0) Then
-							ot_diary=param()							;Diary
+							ot_diary=param()
 							If parse_comma(0) Then
-								ot_states=param()						;States
+								ot_states=param()
 								If parse_comma(0) Then
-									ot_locks=param()					;Locks
+									ot_locks=param()
 								EndIf
 							EndIf
 						EndIf
 					EndIf
 				EndIf	
 			EndIf
-			;Perform
 			tmp_loadmapcmdmap$=path$
 			in_quicksave=6
 			Tin_quicksave.Tin_quicksave=New Tin_quicksave
@@ -569,35 +523,28 @@ Function parse_commands(jumptosemi=1,internal=0)
 			Tin_quicksave\diary=ot_diary
 			Tin_quicksave\states=ot_states
 			Tin_quicksave\locks=ot_locks
-			;Savemap performed in cull.bb (to avoid crossparsing)
 			
-		;Echo
 		Case "echo"
 			con_add(params())
 			
-		;alteritem
 		Case "alteritem"
-			c=param()													;Req. Count
+			c=param()
 			parse_comma(1)
-			newtype=param()												;New Type / Old type
+			newtype=param()
 			newcount=1
 			newnewtype=0
 			If parse_comma(0) Then
-				newcount=param()										;New Count
+				newcount=param()
 				If parse_comma(0) Then
-					newnewtype=param()									;New Type!
+					newnewtype=param()
 				EndIf
 			EndIf
-			;Replace Current Item
 			If newnewtype=0 Then
 				If p_env_class=Cclass_item And p_env_event$="use" Then
 					If con_item(p_env_id) Then
 						If TCitem\count>=c Then
-							;FX
 							p_combine(TCitem\typ,newtype)
-							;Free C
 							free_item(p_env_id,c)
-							;New
 							itemid=set_item(-1,newtype,0,0,0,newcount)
 							If itemid>-1 Then
 								store_item(itemid,Cclass_unit,g_player)
@@ -607,18 +554,14 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Else
 					parse_error("'alteritem' only works in 'on:use'-events when it has got 3 or less parameters")
 				EndIf
-			;Replace Specific Item
 			Else
 				For Titem.Titem=Each Titem
 					If Titem\parent_class=Cclass_unit Then
 						If Titem\parent_id=g_player Then
 							If Titem\typ=newtype Then
 								If Titem\count>=c Then
-									;FX
 									p_combine(newtype,newnewtype)
-									;Free C
 									free_item(Titem\id,c)
-									;New
 									itemid=set_item(-1,newnewtype,0,0,0,newcount)
 									If itemid>-1 Then
 										store_item(itemid,Cclass_unit,g_player)
@@ -631,30 +574,27 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Next
 			EndIf
 			
-		;Quit
 		Case "quit"
 			menu_start()
 			jumptosemi=0
 			
-		;Credits
 		Case "credits"
 			menu_start()
 			menu_set(Cmenu_credits,0)
 			jumptosemi=0
 		
-		;Addscript
 		Case "addscript"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			parse_comma(1)
-			source$=params()								;Source
+			source$=params()
 			txt$=0
 			If Int(source$)<>0 Then
 				For Tx.Tx=Each Tx
@@ -671,24 +611,12 @@ Function parse_commands(jumptosemi=1,internal=0)
 			If txt$=0 Or txt$="" Then
 				parse_error("txtsource",source$)
 			Else
-				;Global
 				If classint=0 Then
-					;map_briefing$=map_briefing$+Chr(31)+txt$
 					map_briefing$=txt$
 					map_briefing_key$=preparse_string$(map_briefing$)
 				EndIf
-				;Local
 				scriptsaved=0
 				
-				;For Tx.Tx=Each Tx
-				;	If Tx\parent_class=classint Then
-				;		If Tx\parent_id=id Then
-				;			scriptsaved=1
-				;			Tx\value$=Tx\value$+Chr(31)+txt$
-				;			Tx\key$=preparse_string$(Tx\value$)
-				;		EndIf
-				;	EndIf
-				;Next
 				For Tx.Tx=Each Tx
 					If Tx\parent_class=classint Then
 						If Tx\parent_id=id Then
@@ -708,19 +636,18 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			EndIf
 
-		;Extendscript
 		Case "extendscript"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			parse_comma(1)
-			source$=params()								;Source
+			source$=params()
 			txt$=0
 			If Int(source$)<>0 Then
 				For Tx.Tx=Each Tx
@@ -740,14 +667,11 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("txtsource",source$)
 			Else
 				scriptsaved=0
-				;Global
 				If classint=0 Then
 					map_briefing$=map_briefing$+Chr(31)+txt$
-					;map_briefing$=txt$
 					map_briefing_key$=preparse_string$(map_briefing$)
 					scriptsaved=1
 				EndIf
-				;Local
 				For Tx.Tx=Each Tx
 					If Tx\parent_class=classint Then
 						If Tx\parent_id=id Then
@@ -770,24 +694,23 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			EndIf
 			
-		;Setpos / setat
 		Case "setpos","setat"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			If p_com$="setpos" Then
-				parse_comma(1):setpx$=param()					;X
-				parse_comma(1):setpy$=param()					;Y
-				parse_comma(1):setpz$=param()					;Z
+				parse_comma(1):setpx$=param()
+				parse_comma(1):setpy$=param()
+				parse_comma(1):setpz$=param()
 			Else
-				parse_comma(1):class2=parse_getclass(param())	;Class 2
-				parse_comma(1):id2=param()						;ID 2
+				parse_comma(1):class2=parse_getclass(param())
+				parse_comma(1):id2=param()
 				setath=parent_h(class2,id2)
 				If setath<>0 Then
 					setpx$=EntityX(setath)
@@ -800,9 +723,7 @@ Function parse_commands(jumptosemi=1,internal=0)
 				If setpx$="self" Then setpx$=EntityX(setph)
 				If setpy$="self" Then setpy$=EntityY(setph)
 				If setpz$="self" Then setpz$=EntityZ(setph)
-				;Setpos
 				If classint=Cclass_item Then
-					;Items can only set to a position if they are not stored inside sth.
 					For Titem.Titem=Each Titem
 						If Titem\id=id Then
 							If Titem\parent_class=0 Or Titem\parent_mode=Cpm_out Then
@@ -812,37 +733,34 @@ Function parse_commands(jumptosemi=1,internal=0)
 						EndIf
 					Next
 				Else
-					;Everything als can be set to any position anytime
 					ha_setpos(setph,classint,id,setpx$,setpy$,setpz$)
 				EndIf
 			Else
 				parse_error("object",id)
 			EndIf
 			
-		;Setrot
 		Case "setrot"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			parse_comma(1)
-			pitch$=param()									;Pitch
+			pitch$=param()
 			parse_comma(1)
-			yaw$=param()									;Yaw
+			yaw$=param()
 			parse_comma(1)
-			roll$=param()									;Roll
+			roll$=param()
 			setph=parent_h(classint,id)
 			If setph<>0 Then
 				If pitch$="self" Then pitch$=EntityPitch(setph)
 				If yaw$="self" Then yaw$=EntityYaw(setph)
 				If roll$="self" Then roll$=EntityRoll(setph)
 				RotateEntity setph,pitch$,yaw$,roll$
-				;Update FRAP Data
 				If classint=Cclass_object Then
 					For Tobject.Tobject=Each Tobject
 						If Tobject\id=id Then
@@ -873,7 +791,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 						Tfrap\roll#=EntityRoll(setph)
 					EndIf
 				EndIf
-				;Player? -> Rotate Cam
 				If classint=Cclass_unit Then
 					If id=1 Then
 						RotateEntity cam,EntityPitch(setph),EntityYaw(setph),EntityRoll(setph)
@@ -883,31 +800,29 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("object",id)
 			EndIf
 			
-		;Rpos
 		Case "rpos"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
-			parse_comma(1):setpx$=param()					;X
-			parse_comma(1):setpy$=param()					;Y
-			parse_comma(1):setpz$=param()					;Z
+			parse_comma(1):setpx$=param()
+			parse_comma(1):setpy$=param()
+			parse_comma(1):setpz$=param()
 			If parse_comma(0) Then
-				pitch$=param()									;Pitch
-				parse_comma(1):yaw$=param()						;Yaw
-				parse_comma(1):roll$=param()					;Roll
+				pitch$=param()
+				parse_comma(1):yaw$=param()
+				parse_comma(1):roll$=param()
 			EndIf
 			setph=parent_h(classint,id)
 			If setph<>0 Then
 				If pitch$="self" Then pitch$=EntityPitch(setph)
 				If yaw$="self" Then yaw$=EntityYaw(setph)
 				If roll$="self" Then roll$=EntityRoll(setph)
-				;Pivot Movement
 				Local p=CreatePivot()
 				PositionEntity p,EntityX(setph),EntityY(setph),EntityZ(setph)
 				RotateEntity p,Float(pitch$),Float(yaw$),Float(roll$)
@@ -916,9 +831,7 @@ Function parse_commands(jumptosemi=1,internal=0)
 				tmp_y#=EntityY(p)
 				tmp_z#=EntityZ(p)
 				FreeEntity p
-				;Setpos
 				If classint=Cclass_item Then
-					;Items can only set to a position if they are not stored inside sth.
 					For Titem.Titem=Each Titem
 						If Titem\id=id Then
 							If Titem\parent_class=0 Or Titem\parent_mode=Cpm_out Then
@@ -928,7 +841,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 						EndIf
 					Next
 				Else
-					;Everything als can be set to any position anytime
 					ha_setpos(setph,classint,id,tmp_x#,tmp_y#,tmp_z#)
 				EndIf
 			Else
@@ -936,25 +848,24 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf			
 			
 				
-		;Store
 		Case "store"
-			idstring$=param()								;Item ID
+			idstring$=param()
 			If idstring$="self" Then
 				If p_env_class=Cclass_item Then
 					idstring$=p_env_id
 				EndIf
 			EndIf
 			parse_comma(1)
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
-			mode=0											;Inside?
+			mode=0
 			If parse_comma(0) Then
 				mode=param()
 			EndIf
@@ -977,9 +888,8 @@ Function parse_commands(jumptosemi=1,internal=0)
 				p_return$=store_item(idstring$,classint,id,Cpm_out,x#,y#,z#)
 			EndIf
 			
-		;Unstore
 		Case "unstore"
-			idstring$=param()								;Item ID
+			idstring$=param()
 			If idstring$="self" Then
 				If p_env_class=Cclass_item Then
 					idstring$=p_env_id
@@ -987,16 +897,15 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			count=1
 			If parse_comma(0) Then
-				count=param()									;Count
+				count=param()
 			EndIf
 			unstore_item(idstring$,count,1)
 			If TCitem<>Null Then
 				p_return$=TCitem\id
 			EndIf
 			
-		;Kill
 		Case "kill"
-			idstring$=param()								;ID
+			idstring$=param()
 			If idstring$="self" Then
 				If p_env_class=Cclass_unit Then
 					idstring$=p_env_id
@@ -1006,46 +915,43 @@ Function parse_commands(jumptosemi=1,internal=0)
 				kill_unit()
 			EndIf
 			
-		;Damage
 		Case "damage"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			parse_comma(1)
-			damage#=param()									;Damage
+			damage#=param()
 			ha_damage(classint,id,damage#)
 			
-		;Heal
 		Case "heal","repair"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			parse_comma(1)
-			damage#=param()									;Damage
+			damage#=param()
 			ha_heal(classint,id,damage#)
 			
-		;Setcount
 		Case "setcount","setamount"
-			class$=param()									;ID
+			class$=param()
 			If class$="self" Then
 				id=p_env_id
 			Else
 				id=Int(class$)
 			EndIf
 			parse_comma(1)
-			count=param()									;Count
+			count=param()
 			For Titem.Titem=Each Titem
 				If Titem\id=id Then
 					If Titem\parent_class=0 Then
@@ -1058,37 +964,29 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 			
-		;Ride
 		Case "ride","drive"
 			If parse_param() Then
-				id=param()										;ID
+				id=param()
 			Else
 				id=p_env_id
 			EndIf
 			If con_unit(id) Then
-				;Set Drive
 				g_drive=id
-				;Rotate Cam to View of Vehicle
 				RotateEntity cam,EntityPitch(cam),EntityYaw(TCunit\h),EntityRoll(cam)
-				;Get Vehicle Stuff
 				game_input_vehicledata(TCunit\typ)
-				;Set Mode
 				TCunit\ai_mode=0
 				TCunit\ai_duration=5000
 				TCunit\ai_timer=gt
-				;Set Ani
 				Animate TCunit\mh,0
 				TCunit\ani=0
 			EndIf
 			
-		;Getoff
 		Case "getoff"
 			If con_unit(g_drive) Then
 				ai_mode(ai_idle)
 			EndIf
 			g_drive=0
 			
-		;Climate
 		Case "climate"
 			newclimate$=param()
 			Select newclimate$
@@ -1118,7 +1016,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 					parse_error("'"+newclimate$+"' is no valid climate")
 			End Select
 			
-		;Weather
 		Case "weather"
 			newclimate$=param()
 			Select newclimate$
@@ -1134,24 +1031,20 @@ Function parse_commands(jumptosemi=1,internal=0)
 					parse_error("'"+newclimate$+"' is no valid weather")
 			End Select
 			
-		;Rainratio
 		Case "rainratio"
 			map_rainratio=param()
 		
-		;Snowratio
 		Case "snowratio"
 			map_snowratio=param()
 			
-		;Timer
 		Case "timer"
 			timer_add()
 			
-		;Free Timer
 		Case "freetimers"
-			class$=param()									;Class
+			class$=param()
 			If class$="0" Then
 				class$=""
-				If parse_comma(0) Then						;Timer Source
+				If parse_comma(0) Then
 					class$=param()
 				EndIf
 				timer_free(0,0,class$)
@@ -1162,18 +1055,17 @@ Function parse_commands(jumptosemi=1,internal=0)
 					id=p_env_id
 				Else
 					parse_comma(1)
-					id=param()								;ID
+					id=param()
 				EndIf
 				class$=""
-				If parse_comma(0) Then						;Timer Source
+				If parse_comma(0) Then
 					class$=param()
 				EndIf
 				timer_free(classint,id,class$)
 			EndIf
 			
-		;Timer Count
 		Case "timercount"
-			class$=param()									;Class
+			class$=param()
 			If class$="0" Then
 				p_return$=timer_count(0,0)
 			Else
@@ -1183,33 +1075,30 @@ Function parse_commands(jumptosemi=1,internal=0)
 					id=p_env_id
 				Else
 					parse_comma(1)
-					id=param()								;ID
+					id=param()
 				EndIf
 				p_return$=timer_count(classint,id)
 			EndIf
 			
-		;downloadfile
 		Case "downloadfile"
-			server$=param()									;Server
+			server$=param()
 			parse_comma(1)
-			path$=param()									;Path
+			path$=param()
 			parse_comma(1)
-			loc$=param()									;Local
+			loc$=param()
 			tcp_loadfile(server$,path$,loc$)
 			
-		;callscript
 		Case "callscript"
-			server$=param()									;Server
+			server$=param()
 			parse_comma(1)
-			path$=param()									;Path
+			path$=param()
 			tcp_callscript(server$,path$)
 			If parse_comma(0) Then
-				If param()=1 Then							;Execute
+				If param()=1 Then
 					parse_task(0,0,"download","script loaded with callscript",pv_buffer$)
 				EndIf
 			EndIf
 			
-		;fileexists
 		Case "fileexists"
 			path$=param()
 			If FileType(path$)<>0 Then
@@ -1218,7 +1107,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				p_return$=0
 			EndIf
 		
-		;spawntimer
 		Case "spawntimer"
 			p_return$=0
 			idstring$=param()
@@ -1227,7 +1115,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 			Else
 				id=Int(idstring$)
 			EndIf
-			;Set
 			If parse_comma(0) Then
 				daytimervalue=param()
 				For Tobject.Tobject=Each Tobject
@@ -1235,16 +1122,13 @@ Function parse_commands(jumptosemi=1,internal=0)
 						Tobject\daytimer=daytimervalue
 						grow_object(Tobject)
 						p_return$=Tobject\daytimer
-						;con_add("set daytimer "+daytimervalue)
 						Exit
 					EndIf
 				Next
-			;Get
 			Else
 				For Tobject.Tobject=Each Tobject
 					If Tobject\id=id Then
 						p_return$=Tobject\daytimer
-						;con_add("get daytimer "+Tobject\daytimer)
 						Exit
 					EndIf
 				Next
@@ -1255,7 +1139,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			EndIf
 			
-		;growtime
 		Case "growtime"
 			id=param()
 			If id>=0 And id<=Cobject_count
@@ -1264,9 +1147,8 @@ Function parse_commands(jumptosemi=1,internal=0)
 				p_return$=0
 			EndIf
 			
-		;unitpath
 		Case "unitpath"
-			unitidstr$=param()						;Unit
+			unitidstr$=param()
 			If unitidstr$="self" Then
 				unitid=p_env_id
 			Else
@@ -1274,25 +1156,22 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			up_setup(unitid)
 			parse_comma(1)
-			id=param()								;Node 1
+			id=param()
 			up_addnode(unitid,id)
 			While parse_comma(0)
-				id=param()							;Node X
+				id=param()
 				up_addnode(unitid,id)
 			Wend
 			
-		;free unitpath
 		Case "freeunitpath"
-			unitid=param()							;Unit
+			unitid=param()
 			up_free(unitid)
 			
-		;wateralpha
 		Case "wateralpha"
-			EntityAlpha env_sea2,Float(param())		;Alpha
+			EntityAlpha env_sea2,Float(param())
 			
-		;watertexture
 		Case "watertexture"
-			path$=params()							;Path
+			path$=params()
 			If gfx_waterimg_custom<>0 Then FreeImage gfx_waterimg_custom
 			gfx_waterimg_custom=0
 			gfx_waterimg_custom=load_image(path$)
@@ -1313,9 +1192,8 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("unable to load water texture '"+path$+"'")
 			EndIf
 			
-		;terraintexture
 		Case "terraintexture"
-			path$=params()							;Path
+			path$=params()
 			grass=1
 			If parse_comma(0) Then
 				grass=param()
@@ -1343,30 +1221,25 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Else
 					editor_gencolormap(1)
 				EndIf
-				;Grass
 				If grass=1 Then
 					grass_map()
 					grass_heightmap()
 				EndIf
-				;Ground
 				e_terrainground()
 			Else
 				If e_terraincm(path$,0) Then
-					;Grass
 					If grass=1 Then
 						grass_map()
 						grass_heightmap()
 					EndIf
-					;Ground
 					e_terrainground()
 				Else
 					parse_error("unable to load terrain texture '"+path$+"'")
 				EndIf
 			EndIf
 			
-		;skytexture
 		Case "skytexture"
-			path$=params()							;Path
+			path$=params()
 			map_skybox$=path$
 			If env_sky<>0 Then FreeEntity env_sky
 			If map_skybox$="" Then
@@ -1378,7 +1251,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EntityOrder env_sky,3
 			PositionEntity env_sky,0,500,0
 			
-		;grasscolor
 		Case "grasscolor"
 			r=param()
 			parse_comma()
@@ -1388,12 +1260,11 @@ Function parse_commands(jumptosemi=1,internal=0)
 			grass_colors(r,g,b)
 			
 			
-		;alterobject
 		Case "alterobject"
-			idstr$=param()									;ID
+			idstr$=param()
 			If idstr$="self" Then idstr$=p_env_id
 			parse_comma()
-			newtype=param()									;New Type
+			newtype=param()
 			If con_object(Int(idstr$)) Then
 				xp#=EntityX(TCobject\h)
 				zp#=EntityZ(TCobject\h)
@@ -1403,7 +1274,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				set_object(id,newtype,xp#,zp#,yawrot#)
 			EndIf
 			
-		;exit
 		Case "exit"
 			If p_loopmode>0 Then
 				p_loopi=0
@@ -1416,22 +1286,20 @@ Function parse_commands(jumptosemi=1,internal=0)
 				jumptosemi=0
 			EndIf
 			
-		;speech
 		Case "speech"
-			idstr$=param()									;Speechfile
+			idstr$=param()
 			override=0
 			id=0
 			If parse_comma(0) Then
-				override=param()							;Override?
+				override=param()
 				If parse_comma(0) Then
-					id=param()								;ID
+					id=param()
 				EndIf
 			EndIf
 			speech(idstr$,override,id)
 		
-		;revive
 		Case "revive"
-			unitidstr$=param()									;Unit
+			unitidstr$=param()
 			If unitidstr$="self" Then
 				unitid=p_env_id
 			Else
@@ -1439,22 +1307,18 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			For TCunit.Tunit=Each Tunit
 				If TCunit\id=unitid Then
-					;Health
 					If TCunit\health_max#>0. Then
 						TCunit\health#=Dunit_health#(TCunit\typ)
 					Else
 						TCunit\health_max#=Dunit_health#(TCunit\typ)
 						TCunit\health#=Dunit_health#(TCunit\typ)
 					EndIf
-					;Picking/Collisions
 					If Dunit_col(TCunit\typ)>0 Then
 						EntityType TCunit\h,Dunit_col(TCunit\typ)
 						EntityRadius TCunit\h,Dunit_colxr#(TCunit\typ),Dunit_colyr#(TCunit\typ)	
 					EndIf
 					EntityPickMode TCunit\mh,2,1
-					;AI Initiale (without setting center)
 					ai_ini(0)
-					;Player?
 					If TCunit\id=g_player Then
 						g_player_dead=0
 					EndIf
@@ -1462,7 +1326,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 		
-		;Debug
 		Case "debug"
 			dbg1$=param()
 			If parse_comma(0) Then
@@ -1470,20 +1333,19 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			dbugcmd(dbg1$,dbg2$)
 			
-		;Freeze
 		Case "freeze"
 			p_return$=0
 			id=0
 			mode=1
 			If parse_param() Then
-				idstr$=param()							;ID
+				idstr$=param()
 				If idstr$="self" Then
 					id=p_env_id
 				Else
 					id=Int(idstr$)
 				EndIf
 				If parse_comma(0) Then
-					mode=param()						;Mode
+					mode=param()
 				EndIf
 			EndIf
 			If id=0 Then
@@ -1508,20 +1370,19 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			EndIf
 			
-		;Intersect
 		Case "intersect"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			If parse_comma(0) Then
-				class2=parse_getclass(param())					;Class 2
-				parse_comma(1):id2=param()						;ID 2
+				class2=parse_getclass(param())
+				parse_comma(1):id2=param()
 				p_return$=0
 				h1=parent_h(classint,id,1)
 				h2=parent_h(class2,id2,1)
@@ -1544,16 +1405,15 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			EndIf
 		
-		;storage
 		Case "storage"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			mode=0
 			If parse_comma(0) Then
@@ -1591,18 +1451,17 @@ Function parse_commands(jumptosemi=1,internal=0)
 					p_return$=0
 			End Select
 		
-		;Projectile
 		Case "projectile"
-			typ=param()									;Type
+			typ=param()
 			parse_comma(1)
-			x=param()									;X
+			x=param()
 			parse_comma(1)
-			y=param()									;Y
+			y=param()
 			parse_comma(1)
-			z=param()									;Z
+			z=param()
 			mode=0
 			parse_comma(1)
-			mode=param()								;Mode
+			mode=param()
 			offset=0
 			pr_wpn=0
 			pr_spd#=1
@@ -1611,19 +1470,19 @@ Function parse_commands(jumptosemi=1,internal=0)
 			p=CreatePivot()
 			p2=CreatePivot()
 			Select mode
-				Case 1									;Target Object
+				Case 1
 					parse_comma(1)
-					class$=param()							;Class
+					class$=param()
 					classint=parse_getclass(class$)
 					If classint=-1 Then
 						classint=p_env_class
 						id=p_env_id
 					Else
 						parse_comma(1)
-						id=param()							;ID
+						id=param()
 					EndIf
 					If parse_comma(0) Then
-						offset=param()						;Offset
+						offset=param()
 					EndIf
 					If parent_pos(classint,id) Then
 						PositionEntity p,x,y,z
@@ -1653,15 +1512,15 @@ Function parse_commands(jumptosemi=1,internal=0)
 						pro_add_script(typ,x,y,z,EntityPitch(p),EntityYaw(p),offset,pr_wpn,pr_spd#,pr_dmg#,pr_drag#)
 					Else
 					EndIf
-				Case 2									;Target Position
+				Case 2
 					parse_comma(1)
-					x2=param()								;X
+					x2=param()
 					parse_comma(1)
-					y2=param()								;Y
+					y2=param()
 					parse_comma(1)
-					z2=param()								;Z
+					z2=param()
 					If parse_comma(0) Then
-						offset=param()						;Offset
+						offset=param()
 					EndIf
 					PositionEntity p,x,y,z
 					PositionEntity p2,x2,y2,z2
@@ -1679,13 +1538,13 @@ Function parse_commands(jumptosemi=1,internal=0)
 						EndIf
 					EndIf			
 					pro_add_script(typ,x,y,z,EntityPitch(p),EntityYaw(p),offset,pr_wpn,pr_spd#,pr_dmg#,pr_drag#)
-				Case 3									;Direction								
+				Case 3
 					parse_comma(1)	
-					pitch=param()							;Pitch
+					pitch=param()
 					parse_comma(1)
-					yaw=param()								;Yaw
+					yaw=param()
 					If parse_comma(0) Then
-						offset=param()						;Offset
+						offset=param()
 					EndIf
 					If parse_comma(0) Then
 						pr_wpn=Int(param())
@@ -1700,9 +1559,9 @@ Function parse_commands(jumptosemi=1,internal=0)
 						EndIf
 					EndIf
 					pro_add_script(typ,x,y,z,pitch,yaw,offset,pr_wpn,pr_spd#,pr_dmg#,pr_drag#)
-				Case 4									;Target Player
+				Case 4
 					If parse_comma(0) Then
-						offset=param()						;Offset
+						offset=param()
 					EndIf
 					If g_cplayer<>Null Then
 						PositionEntity p,x,y,z
@@ -1805,7 +1664,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 			FreeEntity p
 			FreeEntity p2
 		
-		;Load Animation
 		Case "loadani"
 			id=param()
 			parse_comma(1)
@@ -1814,7 +1672,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 			f2=param()
 			p_return$=unit_loadani(id,f1,f2)
 		
-		;Animate
 		Case "animate"
 			id=param()
 			parse_comma(1)
@@ -1829,24 +1686,22 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			p_return$=unit_scriptani(id,f1,f2,fval#,mode)
 			
-		;Viewline
 		Case "viewline"
-			x=param()									;X
+			x=param()
 			parse_comma(1)
-			y=param()									;Y
+			y=param()
 			parse_comma(1)
-			z=param()									;Z
+			z=param()
 			parse_comma
-			x2=param()									;X 2
+			x2=param()
 			parse_comma(1)
-			y2=param()									;Y 2
+			y2=param()
 			parse_comma(1)
-			z2=param()									;Z 2
+			z2=param()
 			p_return=viewline(x,y,z,x2,y2,z2)
 		
-		;Text3D
 		Case "text3d"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			col=0
 			y=0
@@ -1856,13 +1711,13 @@ Function parse_commands(jumptosemi=1,internal=0)
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			parse_comma()
-			txt$=param()									;Text
-			If parse_comma(0) Then col=param()				;Color
-			If parse_comma(0) Then y=param()				;Offset
-			If parse_comma(0) Then z=param()				;Range
+			txt$=param()
+			If parse_comma(0) Then col=param()
+			If parse_comma(0) Then y=param()
+			If parse_comma(0) Then z=param()
 			If col<0 Or col>bmpf_count Then col=0
 			If ha_type(classint,id)>0 Then
 				found=0
@@ -1893,30 +1748,27 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			EndIf
 			
-		;Lensflares
 		Case "lensflares"
 			set_flarefx=param()
 			
-		;Skycolor
 		Case "skycolor"
 			in_skyoverride(4)=0
 			in_skyoverride(0)=param()
 			If parse_comma(0) Then
-				in_skyoverride(1)=param()		;R
+				in_skyoverride(1)=param()
 				parse_comma()
-				in_skyoverride(2)=param()		;G
+				in_skyoverride(2)=param()
 				parse_comma()
-				in_skyoverride(3)=param()		;B
+				in_skyoverride(3)=param()
 				If parse_comma(0) Then
-					in_skyoverride(4)=param()	;MIX
+					in_skyoverride(4)=param()
 				EndIf
 			EndIf
 			e_environment_update_light()
 		
-		;Behaviour
 		Case "behaviour"
 			p_return$=""
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			parse_comma(1)
 			id=param()
@@ -1942,10 +1794,9 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Default parse_error("wrongclass",class$)
 			End Select
 			
-		;Name
 		Case "name"
 			p_return$=""
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			parse_comma(1)
 			id=param()
@@ -1971,7 +1822,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Default parse_error("wrongclass",class$)
 			End Select
 			
-		;Make Dir
 		Case "mkdir"
 			class$=param()
 			p_return$=0
@@ -1982,16 +1832,15 @@ Function parse_commands(jumptosemi=1,internal=0)
 				p_return$=1
 			EndIf
 				
-		;copychilds
 		Case "copychilds","copychildren"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			cvars=1
 			citems=1
@@ -2005,16 +1854,15 @@ Function parse_commands(jumptosemi=1,internal=0)
 			If parse_comma(0) Then addtocache=param()
 			ha_copychilds(classint,id,cvars,citems,cstates,cscript,addtocache)
 
-		;pastechilds
 		Case "pastechilds","pastechildren"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			cvars=1
 			citems=1
@@ -2026,53 +1874,41 @@ Function parse_commands(jumptosemi=1,internal=0)
 			If parse_comma(0) Then cscript=param()
 			ha_pastechilds(classint,id,cvars,citems,cstates,cscript)			
 			
-		;################################################# PLAYER
-		
-		;Player Speed
 		Case "player_speed"
 			fval#=param()
 			Dunit_speed#(1)=fval#
 			
-		;Player Damage
 		Case "player_damage"
 			fval#=param()
 			Dunit_damage#(1)=fval#				
 			
-		;Player Attackrange
 		Case "player_attackrange"
 			fval#=param()
 			Dunit_attackrange(1)=fval#			
 		
-		;Maxweight
 		Case "player_maxweight"
 			fval#=param()
 			Dunit_maxweight(1)=fval#
 			
-		;Mat
 		Case "player_mat"
 			Dunit_mat(1)=get_material(param())
 			
-		;Player Weapon
 		Case "player_weapon"
 			typ=param()
 			game_weapon_bytype(typ)
 		
-		;Player Ammo
 		Case "player_ammo"
 			typ=param()
 			game_ammo_bytype(typ)
 		
-		;Jumptime
 		Case "jumptime"
 			fval#=param()
 			game_jumptime=Int(fval#)
 			
-		;Jumpfactpr
 		Case "jumpfactor"
 			fval#=param()
 			game_jumpfac#=fval#
 			
-		;Player Spotted
 		Case "playerspotted"
 			p_return$=0
 			For Tunit.Tunit=Each Tunit
@@ -2088,7 +1924,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 		
-		;Get Player Value
 		Case "getplayervalue"
 			typ=param()
 			If Handle(g_cplayer) Then
@@ -2101,7 +1936,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				End Select
 			EndIf
 		
-		;scantarget
 		Case "scantarget"
 			If parse_param() Then
 				range=param()
@@ -2110,27 +1944,22 @@ Function parse_commands(jumptosemi=1,internal=0)
 				game_target()
 			EndIf
 				
-		;targetx
 		Case "targetx" p_return$=tmp_tarx#
 		Case "targety" p_return$=tmp_tary#
 		Case "targetz" p_return$=tmp_tarz#
 		
-		;targetclass
 		Case "targetclass"
 			p_return$=tmp_tarclass 
 		
-		;targetid
 		Case "targetid"
 			p_return$=tmp_tarid
 			
-		;targetdistance
 		Case "targetdistance"
 			p=CreatePivot()
 			PositionEntity p,tmp_tarx#,tmp_tary#,tmp_tarz#
 			p_return$=EntityDistance(cam,p)
 			FreeEntity p
 		
-		;air
 		Case "air"
 			p=param()
 			If g_dive<>0 Then
@@ -2140,11 +1969,9 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			EndIf
 			
-		;sleep
 		Case "sleep"
 			game_sleep()
 			
-		;find
 		Case "find"
 			typ=param()
 			count=1
@@ -2157,9 +1984,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 			if_msg(ss$(sm$(180),Ditem_name$(typ),(count)),Cbmpf_green)
 			sfx sfx_collect
 		
-		;################################################# BUFFER
-		
-		;Add - add buffer line
 		Case "add"
 			If pv_buffer$="" Then
 				pv_buffer$=params()
@@ -2167,38 +1991,30 @@ Function parse_commands(jumptosemi=1,internal=0)
 				pv_buffer$=pv_buffer$+""+params()
 			EndIf
 
-		;Clear - free buffer
 		Case "clear"
 			pv_buffer$=""
 			
-		;Loadfile - load file to buffer
 		Case "loadfile"
-			filename$=params()								;Filename
+			filename$=params()
 			pv_buffer$=""
 			pv_buffer$=parse_loadscript$(filename$)
 			p_return$=pv_buffer$
 			
-		;Buffer
 		Case "buffer"
 			p_return$=pv_buffer$
 		
 		
-		;################################################# Interface
-		
-		;CloseMenu
 		Case "closemenu"
 			If m_section<>Csection_menu Then
 				m_menu=0
 				in_pc_menu=0
 			EndIf
 		
-		;Map
 		Case "map"
 			If m_section<>Csection_menu Then
 				m_menu=Cmenu_if_map
 			EndIf
 		
-		;Equip
 		Case "equip"
 			If parse_param() Then
 				typ=param()
@@ -2209,12 +2025,11 @@ Function parse_commands(jumptosemi=1,internal=0)
 				If m_menu=Cmenu_if_items Then if_quickslot()
 			EndIf
 			
-		;Message
 		Case "msg"
-			msg$=params()											;P1 - Message
+			msg$=params()
 			col=0:time=3000
-			If parse_comma(0) Then col=param()						;P2 - Color
-			If parse_comma(0) Then time=param()						;P3 - Time
+			If parse_comma(0) Then col=param()
+			If parse_comma(0) Then time=param()
 			If col<0 Then
 				col=0
 			ElseIf col>6 Then
@@ -2222,11 +2037,10 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			if_msg(msg$,col,time)
 			
-		;Messagebox
 		Case "msgbox"
-			in_msgtitle$=params()									;Title
+			in_msgtitle$=params()
 			If parse_comma(0) Then
-				source$=param()										;Source
+				source$=param()
 				txt$=0
 				If Int(source$)<>0 Then
 					For Tx.Tx=Each Tx
@@ -2249,22 +2063,19 @@ Function parse_commands(jumptosemi=1,internal=0)
 					EndIf
 				EndIf
 			Else
-				in_msgtext$=pv_buffer$:pv_buffer$=""					;Use Buffer as Source
+				in_msgtext$=pv_buffer$:pv_buffer$=""
 				If m_section<>Csection_menu Then
 					m_menu=Cmenu_if_msg
 				EndIf
 			EndIf
-			;Free Buttons
 			For i=0 To 9
 				in_sb(i)=0
 			Next
-			;Closeblock
 			in_blockclose=ms
 			
-		;Message Extend
 		Case "msg_extend"
 			If parse_comma(0) Then
-				source$=param()										;Source
+				source$=param()
 				txt$=0
 				If Int(source$)<>0 Then
 					For Tx.Tx=Each Tx
@@ -2284,78 +2095,65 @@ Function parse_commands(jumptosemi=1,internal=0)
 					in_msgtext$=in_msgtext$+""+txt$
 				EndIf
 			Else
-				in_msgtext$=in_msgtext$+""+pv_buffer$:pv_buffer$=""	;Use Buffer as Source
+				in_msgtext$=in_msgtext$+""+pv_buffer$:pv_buffer$=""
 			EndIf
 			
-		;Message Replace
 		Case "msg_replace"
-			txt$=param()											;From
+			txt$=param()
 			parse_comma()
-			title$=param()											;To
+			title$=param()
 			in_msgtext$=Replace(in_msgtext$,txt$,title$)
 		
 			
-		;Message Win
 		Case "msgwin"
 			col=0
-			title$=params()												;Title
-			If parse_comma(0) Then col=param()								;Color
-			If parse_comma(0) Then image$=params()							;Image
+			title$=params()
+			If parse_comma(0) Then col=param()
+			If parse_comma(0) Then image$=params()
 			If col<0 Or col>bmpf_count Then col=0
 			gui_msg(title$,col,image$)
 			
-		;Image Win
 		Case "imagewin"
-			image$=params()												;Image
+			image$=params()
 			gui_win_image(image$)
 			
-		;Decision Win
 		Case "decisionwin"
-			;con_add("DECISIONWIN",Cbmpf_green)
 			col=0
 			cancel$=""
 			okay$=""
-			title$=params()												;Title
-			;con_add("TITLE: "+title$)
-			If parse_comma(0) Then col=param()								;Color
-			If parse_comma(0) Then cancel$=params()							;Cancle Text
-			If parse_comma(0) Then okay$=params()							;Okay Text
-			If parse_comma(0) Then image$=params()							;Image
+			title$=params()
+			If parse_comma(0) Then col=param()
+			If parse_comma(0) Then cancel$=params()
+			If parse_comma(0) Then okay$=params()
+			If parse_comma(0) Then image$=params()
 			If col<0 Or col>bmpf_count Then col=0
 			p_return$=gui_msgdecide(title$,col,cancel$,okay$,image$)
-			;con_add("RETURN: "+p_return$)
 			
-		;Input Win
 		Case "inputwin"
-			;con_add("DECISIONWIN",Cbmpf_green)
 			col=0
 			cancel$=""
 			okay$=""
-			title$=params()												;Title
-			;con_add("TITLE: "+title$)
-			If parse_comma(0) Then col=param()								;Color
-			If parse_comma(0) Then cancel$=params()							;Cancle Text
-			If parse_comma(0) Then okay$=params()							;Okay Text
-			If parse_comma(0) Then image$=params()							;Image
+			title$=params()
+			If parse_comma(0) Then col=param()
+			If parse_comma(0) Then cancel$=params()
+			If parse_comma(0) Then okay$=params()
+			If parse_comma(0) Then image$=params()
 			If col<0 Or col>bmpf_count Then col=0
 			p_return$=gui_msginput(title$,col,cancel$,okay$,image$)
-			;con_add("RETURN: "+p_return$)			
 			
-		;Button
 		Case "button"
-			id=param()													;ID
+			id=param()
 			frame$=Cicon_ok
 			If id>=0 And id<10 Then
 				parse_comma(1)
-				title$=params()												;Text
+				title$=params()
 				If parse_comma(0) Then
-					frame$=param()											;Button Frame
+					frame$=param()
 				EndIf
 				If parse_comma(0) Then
-					source$=param()											;Source
+					source$=param()
 					txt$=0
 					If Int(source$)<>0 Then
-						;Info Script Source
 						For Tx.Tx=Each Tx
 							If Tx\parent_class=Cclass_info Then
 								If Tx\parent_id=Int(source$) Then
@@ -2365,22 +2163,16 @@ Function parse_commands(jumptosemi=1,internal=0)
 							EndIf
 						Next
 					Else
-						;File Source
-						;con_add("Loading Script Source...")
 						txt$=parse_loadscript$(source$)
 					EndIf
-					;Error
 					If txt$=0 Or txt$="" Then
 						parse_error("txtsource",source$)
-					;Assign
 					Else
 						in_sb_scr$(id)=txt$
 					EndIf
 				Else
-					;Buffer Source
-					in_sb_scr$(id)=pv_buffer$:pv_buffer$=""					;Use Buffer as Source
+					in_sb_scr$(id)=pv_buffer$:pv_buffer$=""
 				EndIf
-				;Setup Button
 				in_sb(id)=1
 				in_sb_icon(id)=frame
 				in_sb_txt$(id)=title$
@@ -2397,35 +2189,32 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("Button ID between 0 and 9 expected!")
 			EndIf
 					
-		;Exchange
 		Case "exchange"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			If parent_con(classint,id) Then
 				typ=1
-				If parse_comma(0) Then typ=param()			;Allowstore
+				If parse_comma(0) Then typ=param()
 				class$=""
 				While parse_comma(0)>0
 					If class$="" Then class$="|"
 					class$=class$+param()+"|"
 				Wend
 				if_exchange(classint,id,typ,class$)
-				;Closeblock
 				in_blockclose=ms
 			Else
 				If set_debug=1 Then con_add("ERROR: exchange - invalid class/id",Cbmpf_red)
 			EndIf
 			
-		;SelectPlace
 		Case "selectplace"
-			pc_sp_txt$=params()											;Title
+			pc_sp_txt$=params()
 			pc_sp_height#=100
 			If parse_comma(0) Then
 				pc_sp_height#=param()
@@ -2438,35 +2227,29 @@ Function parse_commands(jumptosemi=1,internal=0)
 			If m_section<>Csection_menu Then
 				m_menu=Cmenu_if_selplace
 			EndIf
-			;Closeblock
 			in_blockclose=ms
 			
-		;Selectplace Stuff
 		Case "selectplace_x"
 			p_return$=pc_sp_x#
 			
-		;Selectplace Stuff
 		Case "selectplace_y"
 			p_return$=pc_sp_y#
 			
-		;Selectplace Stuff
 		Case "selectplace_z"
 			p_return$=pc_sp_z#
 			
-		;Process
 		Case "process"
-			in_pc_custom$=params()										;Title
+			in_pc_custom$=params()
 			If parse_comma(0) Then
-				in_pc_customt=param()									;Time
+				in_pc_customt=param()
 			Else
 				in_pc_customt=5000
 			EndIf
-			If parse_comma(0) Then										;Event
+			If parse_comma(0) Then
 				in_pc_event$=params()
 			Else
 				in_pc_event$=""
 			EndIf
-			;Start Custom Process
 			pc_typ=Cstate_pc_custom
 			pc_gt=gt
 			in_focus=pc_typ
@@ -2480,84 +2263,77 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			EndIf
 			
-		;Crack Lock
 		Case "cracklock"
 			FlushKeys()
-			pl_cl_title$=params()										;Title
+			pl_cl_title$=params()
 			parse_comma()
-			pc_cl_mode=param()											;Mode
+			pc_cl_mode=param()
 			parse_comma()
-			pc_cl_code$=params()										;Code
+			pc_cl_code$=params()
 			pc_cl_class=p_env_class
 			pc_cl_id=p_env_id
 			pc_cl_pos=1
 			If m_section<>Csection_menu Then
 				m_menu=Cmenu_if_cracklock
 			EndIf
-			;Closeblock
 			in_blockclose=ms
 			
-		;interface txt
 		Case "text"
-			id=param()													;ID
+			id=param()
 			If id>=0 And id<20 Then
-				;Setup interface text
 				in_sitxt(id)=1
 				parse_comma(1)
-				in_sitxt_txt$(id)=param()								;Text
+				in_sitxt_txt$(id)=param()
 				in_sitxt_font(id)=0
 				in_sitxt_align(id)=-1
 				in_sitxt_x(id)=0
 				in_sitxt_y(id)=0
 				If parse_comma(0) Then
-					in_sitxt_font(id)=param()							;Font
+					in_sitxt_font(id)=param()
 					If in_sitxt_font(id)<0 Or in_sitxt_font(id)>bmpf_count Then in_sitxt_font(id)=0
 				EndIf
 				If parse_comma(0) Then
-					in_sitxt_x(id)=param()								;X
+					in_sitxt_x(id)=param()
 					parse_comma(1)
-					in_sitxt_y(id)=param()								;Y
+					in_sitxt_y(id)=param()
 					in_sitxt_align(id)=1
 					If parse_comma(0) Then
-						in_sitxt_align(id)=param()						;Ausrichtung
+						in_sitxt_align(id)=param()
 					EndIf
 				EndIf
 			Else
 				parse_error("Interface Text ID between 0 and 19 expected!")
 			EndIf
 			
-		;interface image
 		Case "image"
-			id=param()													;ID
+			id=param()
 			If id>=0 And id<39 Then
-				;Setup interface image
 				If in_siimg(id)<>0 Then
 					FreeImage in_siimg(id)
 					in_siimg(id)=0
 				EndIf
 				parse_comma(1)
-				path$=param()											;Image
+				path$=param()
 				in_siimg_mask(id)=1
 				If path$<>"" Then
 					in_siimg(id)=load_image(path$)
-					parse_comma(1)										;X
+					parse_comma(1)
 					in_siimg_x(id)=param()
-					parse_comma(1)										;Y
+					parse_comma(1)
 					in_siimg_y(id)=param()
 					If parse_comma(0) Then
-						in_siimg_mask(id)=param()						;Mask
+						in_siimg_mask(id)=param()
 					EndIf
 				EndIf
 			Else
 				parse_error("Interface Image ID between 0 and 39 expected!")
 			EndIf
 			
-		;Dialogue
 		Case "dialogue"
 			in_msgtitle$="[[loc:engine.a14bac75fafd]]"
-			in_dlg_page$=param()										;Page
+			in_dlg_page$=param()
 			parse_comma(1)
-			source$=param()												;Source
+			source$=param()
 			txt$=0
 			If Int(source$)<>0 Then
 				For Tx.Tx=Each Tx
@@ -2582,18 +2358,14 @@ Function parse_commands(jumptosemi=1,internal=0)
 					m_menu=Cmenu_if_dlg
 				EndIf
 				in_scr_scr=0
-				;Parse
 				parse_dialogue(in_dlg_page)
-				;Closeblock
 				in_blockclose=ms
 			EndIf
 			
-		;Menu
 		Case "menu"
 			p_return$=m_menu
 		
 		
-		;Clickscreen
 		Case "cscr"
 			If in_clickscreenimage<>0 Then
 				FreeImage in_clickscreenimage
@@ -2606,9 +2378,9 @@ Function parse_commands(jumptosemi=1,internal=0)
 			in_clickscreenx=1
 			image$=""
 			If parse_param() Then
-				image$=params()										;Image
+				image$=params()
 				If parse_comma(0) Then
-					in_clickscreenx=param()							;Close
+					in_clickscreenx=param()
 				EndIf
 			EndIf
 			If image$<>"" Then
@@ -2616,31 +2388,29 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			m_menu=Cmenu_if_clickscreen
 		
-		;Clickscreen Text
 		Case "cscr_text"
 			Tcscr.Tcscr=New Tcscr
 			Tcscr\typ=1
-			Tcscr\txt$=param()										;Text
-			parse_comma(1)											;X
+			Tcscr\txt$=param()
+			parse_comma(1)
 			Tcscr\x=param()
-			parse_comma(1)											;Y
+			parse_comma(1)
 			Tcscr\y=param()
 			Tcscr\col=-1
-			If parse_comma(0) Then									;Col
+			If parse_comma(0) Then
 				Tcscr\col=param()
 				If Tcscr\col<-1 Or Tcscr\col>bmpf_count Then Tcscr\col=-1
 			EndIf
 			If parse_comma(0) Then
-				Tcscr\align=param()									;Alignment
+				Tcscr\align=param()
 			EndIf
 			If parse_comma(0) Then
-				Tcscr\tooltip$=param()								;Tooltip
+				Tcscr\tooltip$=param()
 			EndIf
-			If parse_comma(0) Then									;Event
+			If parse_comma(0) Then
 				source$=param()
 				txt$=0
 				If Int(source$)<>0 Then
-				;Info Script Source
 					For Tx.Tx=Each Tx
 						If Tx\parent_class=Cclass_info Then
 							If Tx\parent_id=Int(source$) Then
@@ -2650,39 +2420,33 @@ Function parse_commands(jumptosemi=1,internal=0)
 						EndIf
 					Next
 				Else
-					;File Source
 					txt$=parse_loadscript$(source$)
 				EndIf
-				;Error
 				If txt$=0 Or txt$="" Then
 					parse_error("txtsource",source$)
-				;Assign
 				Else
 					Tcscr\event$=txt$
 				EndIf
 			Else
-				;Buffer Source
-				Tcscr\event$=pv_buffer$:pv_buffer$=""					;Use Buffer as Source
+				Tcscr\event$=pv_buffer$:pv_buffer$=""
 			EndIf
 		
-		;Clickscreen Image
 		Case "cscr_image"
 			Tcscr.Tcscr=New Tcscr
 			Tcscr\typ=2
-			path$=param()											;Image
+			path$=param()
 			Tcscr\image=load_image(path$)
-			parse_comma(1)											;X
+			parse_comma(1)
 			Tcscr\x=param()
-			parse_comma(1)											;Y
+			parse_comma(1)
 			Tcscr\y=param()
 			If parse_comma(0) Then
-				Tcscr\tooltip$=param()								;Tooltip
+				Tcscr\tooltip$=param()
 			EndIf
-			If parse_comma(0) Then									;Event
+			If parse_comma(0) Then
 				source$=param()
 				txt$=0
 				If Int(source$)<>0 Then
-				;Info Script Source
 					For Tx.Tx=Each Tx
 						If Tx\parent_class=Cclass_info Then
 							If Tx\parent_id=Int(source$) Then
@@ -2692,22 +2456,17 @@ Function parse_commands(jumptosemi=1,internal=0)
 						EndIf
 					Next
 				Else
-					;File Source
 					txt$=parse_loadscript$(source$)
 				EndIf
-				;Error
 				If txt$=0 Or txt$="" Then
 					parse_error("txtsource",source$)
-				;Assign
 				Else
 					Tcscr\event$=txt$
 				EndIf
 			Else
-				;Buffer Source
-				Tcscr\event$=pv_buffer$:pv_buffer$=""					;Use Buffer as Source
+				Tcscr\event$=pv_buffer$:pv_buffer$=""
 			EndIf
 		
-		;Savemapimage
 		Case "savemapimage"
 			path$=param()
 			classint=256
@@ -2720,7 +2479,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				If classint<>256 Then genmap(256)
 			EndIf
 			
-		;lockcombi
 		Case "lockcombi"
 			combistring$=params()
 			classint=0
@@ -2741,7 +2499,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Tx\key$=combistring$
 			EndIf
 		
-		;lockcombis - lock all combinations
 		Case "lockcombis"
 			For Tx.Tx=Each Tx
 				If Tx\mode=50 Then Delete Tx
@@ -2754,14 +2511,12 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 			
-		;unlockcombi
 		Case "unlockcombi"
 			combistring$=params()
 			For Tx.Tx=Each Tx
 				If Tx\mode=50 And Tx\key$=combistring Then Delete Tx
 			Next
 		
-		;lockcombis - lock all combinations
 		Case "unlockcombis"
 			For Tx.Tx=Each Tx
 				If Tx\mode=50 Then Delete Tx
@@ -2769,13 +2524,10 @@ Function parse_commands(jumptosemi=1,internal=0)
 
 		
 				
-		;################################################# Diary
-		
-		;Diary
 		Case "diary"
-			title$=params()												;Entry Title
+			title$=params()
 			If parse_comma(0) Then
-				source$=params()										;Source
+				source$=params()
 				txt$=0
 				If Int(source$)<>0 Then
 					For Tx.Tx=Each Tx
@@ -2798,13 +2550,12 @@ Function parse_commands(jumptosemi=1,internal=0)
 					Tx\value$=txt$
 				EndIf
 			Else				
-				Tx.Tx=New Tx											;Use Buffer as Source
+				Tx.Tx=New Tx
 				Tx\mode=2
 				Tx\key$=title$
 				Tx\value$=pv_buffer$
 				pv_buffer$=""
 			EndIf
-			;Set Menu
 			If m_menu<Cmenu_if_movie Then
 				If m_section<>Csection_menu Then
 					m_menu=Cmenu_if_diary
@@ -2825,17 +2576,14 @@ Function parse_commands(jumptosemi=1,internal=0)
 					EndIf
 				Next
 			EndIf
-			;FX
 			sfx sfx_diary
 			if_msg(sm$(182),Cbmpf_yellow)
-			;Closeblock
 			in_blockclose=ms
 			
 			
-		;Free Entry
 		Case "freeentry"
 			If parse_param() Then
-				entry$=params()											;Entry Title
+				entry$=params()
 				For Tx.Tx=Each Tx
 					If Tx\mode=2 Then 
 						If Tx\key$=entry$ Then
@@ -2852,11 +2600,10 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Next				
 			EndIf
 		
-		;Modify Entry
 		Case "modifyentry"
-			entry$=params()												;Entry Title
+			entry$=params()
 			If parse_comma(0) Then
-				source$=params()										;Source
+				source$=params()
 				txt$=0
 				If Int(source$)<>0 Then
 					For Tx.Tx=Each Tx
@@ -2883,7 +2630,7 @@ Function parse_commands(jumptosemi=1,internal=0)
 					Next
 				EndIf
 			Else				
-				For Tx.Tx=Each Tx										;Use Buffer as Source
+				For Tx.Tx=Each Tx
 					If Tx\mode=2 Then 
 						If Tx\key$=entry$ Then
 							Tx\value$=pv_buffer$
@@ -2894,13 +2641,12 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Next
 			EndIf
 			
-		;Modify Entry Line
 		Case "modifyentryline"
-			entry$=params()												;Entry Title
+			entry$=params()
 			parse_comma(1)
-			entryl=param()												;Line
+			entryl=param()
 			parse_comma(1)
-			newline$=params()											;New Line
+			newline$=params()
 			For Tx.Tx=Each Tx
 				If Tx\mode=2 Then 
 					If Tx\key$=entry$ Then
@@ -2916,11 +2662,10 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 			
-		;Extend Entry
 		Case "extendentry"
-			entry$=params()												;Entry Title
+			entry$=params()
 			If parse_comma(0) Then
-				source$=params()										;Source
+				source$=params()
 				txt$=0
 				If Int(source$)<>0 Then
 					For Tx.Tx=Each Tx
@@ -2947,7 +2692,7 @@ Function parse_commands(jumptosemi=1,internal=0)
 					Next
 				EndIf
 			Else				
-				For Tx.Tx=Each Tx										;Use Buffer as Source
+				For Tx.Tx=Each Tx
 					If Tx\mode=2 Then 
 						If Tx\key$=entry$ Then
 							Tx\value$=Tx\value$+""+pv_buffer$
@@ -2958,10 +2703,8 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Next
 			EndIf
 			
-		;Show Entiry
 		Case "showentry"
-			entry$=params()												;Entry Title
-			;Set Menu
+			entry$=params()
 			If m_menu<>Cmenu_if_movie Then
 				If m_section<>Csection_menu Then
 					m_menu=Cmenu_if_diary
@@ -2982,38 +2725,30 @@ Function parse_commands(jumptosemi=1,internal=0)
 					EndIf
 				EndIf
 			Next
-			;FX
 			sfx=1
 			If parse_comma(0) Then
-				sfx=param()												;SFX
+				sfx=param()
 			EndIf
 			If sfx Then
 				sfx sfx_diary
 			EndIf
-			;Closeblock
 			in_blockclose=ms
 			
-		;setday
 		Case "setday"
 			map_day=Abs(Int(param()))
 			
-		;sethour
 		Case "sethour"
 			map_hour=Abs(Int(param()))
 			If map_hour>23 Then map_hour=0
 			e_environment_update_light()
 			
-		;setminute
 		Case "setminute"
 			map_minute=Abs(Int(param()))
 			If map_minute>59 Then map_minute=0
 			e_environment_update_light()
 			
-		;################################################# MAP INDICATORS
-		
-		;hideindicator
 		Case "hideindicator"
-			id=param()													;ID
+			id=param()
 			If con_info(id) Then
 				If TCinfo\typ=36 Then
 					TCinfo\ints[1]=0
@@ -3025,9 +2760,8 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("object",id)
 			EndIf
 		
-		;showindicator
 		Case "showindicator"
-			id=param()													;ID
+			id=param()
 			If con_info(id) Then
 				If TCinfo\typ=36 Then
 					TCinfo\ints[1]=1
@@ -3039,7 +2773,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("object",id)
 			EndIf
 		
-		;hideindicators
 		Case "hideindicators"
 			For TCinfo.Tinfo=Each Tinfo
 				If TCinfo\typ=36 Then
@@ -3048,7 +2781,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 		
-		;showindicators
 		Case "showindicators"
 			For TCinfo.Tinfo=Each Tinfo
 				If TCinfo\typ=36 Then
@@ -3057,11 +2789,10 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 			
-		;setindicatorlook
 		Case "setindicatorlook"
-			id=param()													;ID
+			id=param()
 			parse_comma(1)
-			frame=param()												;Frame
+			frame=param()
 			If con_info(id) Then
 				If TCinfo\typ=36 Then
 					Select frame
@@ -3078,11 +2809,10 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("object",id)
 			EndIf
 			
-		;setindicatorinfo
 		Case "setindicatorinfo"
-			id=param()													;ID
+			id=param()
 			parse_comma(1)
-			infotxt$=params()											;Info
+			infotxt$=params()
 			If con_info(id) Then
 				If TCinfo\typ=36 Then
 					TCinfo\strings[0]=infotxt$
@@ -3096,11 +2826,8 @@ Function parse_commands(jumptosemi=1,internal=0)
 		
 			
 		
-		;################################################# INFOS
-		
-		;stoptrigger
 		Case "stoptrigger"
-			idstring$=param()											;ID
+			idstring$=param()
 			If idstring$="self" Then
 				id=p_env_id
 			Else
@@ -3113,9 +2840,8 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("object",id)
 			EndIf
 			
-		;starttrigger
 		Case "starttrigger"
-			idstring$=param()											;ID
+			idstring$=param()
 			If idstring$="self" Then
 				id=p_env_id
 			Else
@@ -3128,7 +2854,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("object",id)
 			EndIf
 		
-		;stoptriggers
 		Case "stoptriggers"
 			For TCinfo.Tinfo=Each Tinfo
 				If TCinfo\typ>=10 And TCinfo\typ<30 Then
@@ -3137,7 +2862,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 		
-		;starttriggers
 		Case "starttriggers"
 			For TCinfo.Tinfo=Each Tinfo
 				If TCinfo\typ>=10 And TCinfo\typ<30 Then
@@ -3146,7 +2870,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 			
-		;trigger
 		Case "trigger"
 			id=param()
 			If con_info(id) Then
@@ -3156,7 +2879,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("object",id)
 			EndIf
 			
-		;info_sprite
 		Case "info_sprite"
 			id=0
 			file$=""
@@ -3168,25 +2890,25 @@ Function parse_commands(jumptosemi=1,internal=0)
 			alpha#=1.0
 			mode=0
 			fix=0
-			id=param()						;ID
+			id=param()
 			If parse_comma(0) Then
-				file$=param()					;File
+				file$=param()
 				If parse_comma(0) Then
-					x#=param()						;X
+					x#=param()
 					parse_comma(1)
-					y#=param()						;y
+					y#=param()
 					If parse_comma(0) Then
-						r=param()						;R
+						r=param()
 						parse_comma(1)
-						g=param()						;G
+						g=param()
 						parse_comma(1)
-						b=param()						;B
+						b=param()
 						If parse_comma(0) Then
-							alpha#=param()					;Alpha
+							alpha#=param()
 							If parse_comma(0) Then
-								mode=param()					;Blendmode
+								mode=param()
 								If parse_comma(0) Then
-									fix=param()					;Fix
+									fix=param()
 								EndIf
 							EndIf
 						EndIf
@@ -3213,12 +2935,11 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 			
-		;info_sprite
 		Case "info_loudspeaker"
 			x#=-1.0
-			id=param()						;ID
+			id=param()
 			parse_comma(1)
-			file$=param()					;File
+			file$=param()
 			If parse_comma(0) Then
 				x#=param()
 			EndIf
@@ -3237,22 +2958,21 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 		
-		;info_spawncontrol
 		Case "info_spawncontrol"
-			id=param()						;ID
+			id=param()
 			parse_comma(1)
-			x#=param()						;Radius
+			x#=param()
 			parse_comma(1)
-			class=param()					;Class
+			class=param()
 			class=parse_getclass(class$,0)
 			parse_comma(1)					
-			typ=param()						;Typ
+			typ=param()
 			parse_comma(1)
-			part=param()					;Part
+			part=param()
 			parse_comma(1)
-			max=param()						;Max
+			max=param()
 			parse_comma(1)
-			days=param()					;Days
+			days=param()
 			For Tinfo.Tinfo=Each Tinfo
 				If Tinfo\id=id Then
 					If Tinfo\typ=45 Then
@@ -3270,9 +2990,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 			Next
 			
 		
-		;################################################# BUILDINGS
-		
-		;lockbuilding
 		Case "lockbuilding"
 			lockbuildingid=param()
 			For Tx.Tx=Each Tx
@@ -3282,7 +2999,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 			Tx\mode=3
 			Tx\key$=lockbuildingid
 		
-		;lockbuildings - lock all buildings
 		Case "lockbuildings"
 			For Tx.Tx=Each Tx
 				If Tx\mode=3 Then Delete Tx
@@ -3295,20 +3011,17 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 		
-		;unlockbuilding
 		Case "unlockbuilding"
 			lockbuildingid=param()
 			For Tx.Tx=Each Tx
 				If Tx\mode=3 And Tx\key$=lockbuildingid Then Delete Tx
 			Next
 			
-		;unlockbuildings
 		Case "unlockbuildings"
 			For Tx.Tx=Each Tx
 				If Tx\mode=3 Then Delete Tx
 			Next
 			
-		;builtat
 		Case "builtat"
 			p_return$=0
 			idstring$=param()
@@ -3326,7 +3039,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 			
-		;locked
 		Case "locked"
 			p_return$=0
 			lockid$=param()
@@ -3346,13 +3058,11 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Next				
 			EndIf
 			
-		;Lastbuildingsite
 		Case "lastbuildingsite"
 			p_return$=pv_lastbuilding
 			
-		;Buildsetuo
 		Case "buildsetup"
-			lockid$=param()				;Building ID
+			lockid$=param()
 			If parse_comma(0) Then
 				tmp_y#=param()
 			Else
@@ -3360,30 +3070,23 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			game_buildsetup_start(Int(lockid$),tmp_y#)
 			
-		;################################################# SEQUENCE
-		
-		;seqstart
 		Case "seqstart"
 			seq_start()
 			
-		;seqtimemode
 		Case "seqtimemode"
-			seq_tmod=param()									;Time Mode
+			seq_tmod=param()
 			If seq_tmod=0 Then seq_tmod=1
 			seq_tmod=Abs(seq_tmod)
 			seq_tabs=1
 			If parse_comma(0) Then
-				seq_tabs=param()								;Absolute
+				seq_tabs=param()
 			EndIf
 			
-		;Seq Events - Basic
 		Case "seqend" seq_addevent("end")
 		
-		;Seq Events - Messages
 		Case "seqmsg" seq_addevent("msg")
 		Case "seqmsgclear" seq_addevent("msgclear")
 		
-		;Seq Events - FX
 		Case "seqsound" seq_addevent("sound")
 		Case "seqbar" seq_addevent("bar")
 		Case "hidbar" seq_addevent("hidebar")
@@ -3394,12 +3097,10 @@ Function parse_commands(jumptosemi=1,internal=0)
 		Case "seqimage"	seq_addevent("image")
 		Case "seqimagetext"	seq_addevent("itxt")	
 		
-		;Seq Events - Stuff
 		Case "seqevent" seq_addevent("event")
 		Case "seqscript" seq_addevent("script")
 		Case "seqhideplayer" seq_addevent("hideplayer")
 		
-		;Seq Events - Camera
 		Case "setcam","sc" seq_addevent("setcam") 
 		Case "movecam","mc" seq_addevent("movecam")
 		Case "campath" seq_addevent("campath")
@@ -3408,47 +3109,42 @@ Function parse_commands(jumptosemi=1,internal=0)
 		Case "camfollow" seq_addevent("camfollow")
 
 
-		;################################################# EFFECTS
-
-		;Flash
 		Case "flash"
 			r=255
 			g=255
 			b=255
 			flashspeed#=0.05
 			flasha#=1.1
-			r=param():parse_comma()							;R
-			g=param():parse_comma()							;G
-			b=param()										;B
-			If parse_comma(0) Then flashspeed#=param()		;Fadespeed
-			If parse_comma(0) Then flasha#=param()			;Alpha
+			r=param():parse_comma()
+			g=param():parse_comma()
+			b=param()
+			If parse_comma(0) Then flashspeed#=param()
+			If parse_comma(0) Then flasha#=param()
 			p_add(0,0,0,Cp_flash,flashspeed#,flasha#)
-			;DebugLog "Flash "+flashspeed#+" / "+flasha#
 			EntityColor TCp\h,r,g,b
 			
-		;Corona
 		Case "corona"
-			x#=param()										;X
+			x#=param()
 			parse_comma()
-			z#=param()										;Z
+			z#=param()
 			y#=e_tery(x#,z#)
 			size#=20.
 			speed#=1.
 			id=0
 			If parse_comma(0) Then
-				size#=param()								;Size
+				size#=param()
 			EndIf
 			If parse_comma(0) Then
-				r=param()									;R
+				r=param()
 				parse_comma()
-				g=param()									;G
+				g=param()
 				parse_comma()
-				b=param()									;B
-				If parse_comma(0) Then						;Speed
+				b=param()
+				If parse_comma(0) Then
 					speed#=param()
 				EndIf
-				If parse_comma(0) Then						;Stick to Unit
-					idstring$=param()						;ID
+				If parse_comma(0) Then
+					idstring$=param()
 					If idstring$="self" Then
 						id=p_env_id
 					Else
@@ -3469,46 +3165,42 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Next
 			EndIf
 			
-		;Thunder
 		Case "thunder"
 			sfx sfx_thunder(Rand(0,2))
 			p_add(0,0,0,Cp_flash,Rnd(0.1,0.3),Rnd(1))
 			EntityColor TCp\h,255,255,255
 			EntityBlend TCp\h,3
 		
-		;Explosion	
 		Case "explosion","explode"
-			x#=param()											;X
+			x#=param()
 			parse_comma(1)
-			y#=param()											;Y
+			y#=param()
 			parse_comma(1)
-			z#=param()											;Z
+			z#=param()
 			range=50
 			If parse_comma(0) Then
-				range=param()										;Range
+				range=param()
 			EndIf
 			damage#=50
 			If parse_comma(0) Then
-				damage#=param()										;Damage
+				damage#=param()
 			EndIf
 			exstyle=1
 			If parse_comma(0) Then
-				exstyle=param()										;Style
+				exstyle=param()
 			EndIf
 			game_explosion(x#,y#,z#,range,damage#,exstyle)
 			
-		;Blur
 		Case "blur"
-			in_scriptblur#=Float(param())						;Set Blur
+			in_scriptblur#=Float(param())
 			If in_scriptblur#<0. Then
 				in_scriptblur#=0.
 			ElseIf in_scriptblur#>Cpeakblur# Then
 				in_scriptblur=Cpeakblur#
 			EndIf
 			
-		;Vomit
 		Case "vomit"
-			unitidstr$=param()									;Unit
+			unitidstr$=param()
 			If unitidstr$="self" Then
 				unitid=p_env_id
 			Else
@@ -3525,32 +3217,30 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Next
 			EndIf
 			
-		;Particle
 		Case "particle"
 			size#=1.
 			alpha#=1.
-			x#=param()										;X
+			x#=param()
 			parse_comma()
-			y#=param()										;Y
+			y#=param()
 			parse_comma()
-			z#=param()										;Z
+			z#=param()
 			parse_comma()
-			typ=param()										;Typ
+			typ=param()
 			If parse_comma(0) Then
-				size#=param()									;Size
+				size#=param()
 				If parse_comma(0) Then
-					alpha#=param()									;Alpha
+					alpha#=param()
 					p_add(x#,y#,z#,typ,size#,alpha#)
 				EndIf
 			EndIf
 			
-		;Particle Color
 		Case "particlec"
-			r=param()										;Red
+			r=param()
 			parse_comma(1)
-			g=param()										;Green
+			g=param()
 			parse_comma(1)
-			b=param()										;Blue
+			b=param()
 			If TCp<>Null Then
 				If TCp\h<>0 Then
 					EntityColor TCp\h,r,g,b
@@ -3558,58 +3248,49 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			
 
-		;################################################# SOUNDS
-		
-		;Play
 		Case "play"
 			file$=""
 			vol#=1.
 			pan#=0.
 			pitch=0
-			file$=params()									;File
-			If parse_comma(0) Then vol#=param()				;Volume
-			If parse_comma(0) Then pan#=param()				;Pan
-			If parse_comma(0) Then pitch=param()			;Pitch
+			file$=params()
+			If parse_comma(0) Then vol#=param()
+			If parse_comma(0) Then pan#=param()
+			If parse_comma(0) Then pitch=param()
 			sfx_play(file$,vol#,pan#,pitch)
 			
-		;Stopsounds
 		Case "stopsounds"
 			stopsounds()
 			
-		;Music
 		Case "music"
 			file$=""
 			vol#=1.
 			fade=0
-			file$=params()									;File
-			If parse_comma(0) Then vol#=param()				;Volume
+			file$=params()
+			If parse_comma(0) Then vol#=param()
 			sfx_music(file$,vol#)
-			If parse_comma(0) Then							;Fade
+			If parse_comma(0) Then
 				fade=param()
 				mfx_fade=1
 				mfx_fadestart=gt
 				mfx_fadeend=Abs(fade)
 			EndIf
 			
-		;Stopmusic
 		Case "stopmusic"
 			If mfx_file<>0 Then FreeSound(mfx_file)
 			mfx_file=0
 			mfx_chan=0
 			
-		;Fademusic
 		Case "fademusic"
 			fade=param()
 			mfx_fade=-1
 			mfx_fadestart=gt
 			mfx_fadeend=Abs(fade)
 			
-		;Musicvolume
 		Case "musicvolume"
 			mfx_fade=0
 			mfx_peakvol#=param()
 			
-		;Ambientsfx
 		Case "ambientsfx"
 			If amb_chan<>0 Then StopChannel amb_chan
 			If amb_file<>0 Then FreeSound amb_file
@@ -3619,20 +3300,17 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			
 			
-		;################################################# MODEL
-		
-		;Color
 		Case "color"
-			r=param()										;Red
+			r=param()
 			parse_comma(1)
-			g=param()										;Green
+			g=param()
 			parse_comma(1)
-			b=param()										;Blue
+			b=param()
 			If parse_comma(0) Then
-				class$=param()									;Class
+				class$=param()
 				classint=parse_getclass(class$)
 				parse_comma(1)
-				id=param()										;ID
+				id=param()
 				h=parent_h(classint,id,1)
 			Else
 				h=parent_h(p_env_class,p_env_id,1)
@@ -3643,14 +3321,13 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("model","color")
 			EndIf
 			
-		;Blend
 		Case "blend"
-			mode=param()									;Blendmode
+			mode=param()
 			If parse_comma(0) Then
-				class$=param()									;Class
+				class$=param()
 				classint=parse_getclass(class$)
 				parse_comma(1)
-				id=param()										;ID
+				id=param()
 				h=parent_h(classint,id,1)
 			Else
 				h=parent_h(p_env_class,p_env_id,1)
@@ -3661,14 +3338,13 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("model","blend")
 			EndIf
 			
-		;Alpha
 		Case "alpha"
-			alpha#=param()									;Alpha
+			alpha#=param()
 			If parse_comma(0) Then
-				class$=param()									;Class
+				class$=param()
 				classint=parse_getclass(class$)
 				parse_comma(1)
-				id=param()										;ID
+				id=param()
 				h=parent_h(classint,id,1)
 			Else
 				h=parent_h(p_env_class,p_env_id,1)
@@ -3682,18 +3358,17 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("model","alpha")
 			EndIf
 			
-		;Scale
 		Case "scale"
-			sx#=param()										;Scale X
+			sx#=param()
 			parse_comma(1)
-			sy#=param()										;Scale Y
+			sy#=param()
 			parse_comma(1)
-			sz#=param()										;Scale Z
+			sz#=param()
 			If parse_comma(0) Then
-				class$=param()									;Class
+				class$=param()
 				classint=parse_getclass(class$)
 				parse_comma(1)
-				id=param()										;ID
+				id=param()
 				h=parent_h(classint,id,1)
 			Else
 				classint=p_env_class
@@ -3702,21 +3377,18 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			If h<>0 Then
 				Select classint
-					;Object
 					Case Cclass_object
 						For Tobject.Tobject=Each Tobject
 							If Tobject\id=id Then
 								sx#=sx#*Dobject_size#(Tobject\typ,0)
 								sy#=sy#*Dobject_size#(Tobject\typ,1)
 								sz#=sz#*Dobject_size#(Tobject\typ,2)
-								;Scale Collisionmodel
 								If Tobject\ch<>0 Then
 									ScaleEntity Tobject\ch,sx#,sy#,sz#,1
 								EndIf
 								Exit
 							EndIf
 						Next
-					;Unit
 					Case Cclass_unit
 						For Tunit.Tunit=Each Tunit
 							If Tunit\id=id Then
@@ -3734,7 +3406,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 								Exit
 							EndIf
 						Next
-					;Item
 					Case Cclass_item
 						For Titem.Titem=Each Titem
 							If Titem\id=id Then
@@ -3750,20 +3421,18 @@ Function parse_commands(jumptosemi=1,internal=0)
 							EndIf
 						Next
 				End Select
-				;Scale Model
 				ScaleEntity h,sx#,sy#,sz#,1
 			Else
 				parse_error("model","scale")
 			EndIf
 			
-		;FX
 		Case "fx"
-			mode=param()									;FX
+			mode=param()
 			If parse_comma(0) Then
-				class$=param()									;Class
+				class$=param()
 				classint=parse_getclass(class$)
 				parse_comma(1)
-				id=param()										;ID
+				id=param()
 				h=parent_h(classint,id,1)
 			Else
 				h=parent_h(p_env_class,p_env_id,1)
@@ -3774,14 +3443,13 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("model","fx")
 			EndIf
 			
-		;Shininess
 		Case "shininess"
-			shininess#=param()									;Shininess
+			shininess#=param()
 			If parse_comma(0) Then
-				class$=param()									;Class
+				class$=param()
 				classint=parse_getclass(class$)
 				parse_comma(1)
-				id=param()										;ID
+				id=param()
 				h=parent_h(classint,id,1)
 			Else
 				h=parent_h(p_env_class,p_env_id,1)
@@ -3792,14 +3460,13 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("model","shininess")
 			EndIf
 			
-		;Model
 		Case "model"
 			model$=param()
 			If parse_comma(0) Then
-				class$=param()									;Class
+				class$=param()
 				classint=parse_getclass(class$)
 				parse_comma(1)
-				id=param()										;ID
+				id=param()
 				h=parent_h(classint,id,1)
 				modelclass=classint
 				modelid=id
@@ -3818,7 +3485,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 						tmp_z#=EntityZ(h)
 						tmp_yaw#=EntityYaw(h)
 						FreeEntity h
-						;Object
 						If modelclass=Cclass_object Then
 							con_object(modelid)
 							If TCobject\ch<>0 Then
@@ -3832,8 +3498,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 							If Dobject_col(TCobject\typ)=1 Then EntityType TCobject\h,Cworld_col
 							range=Float(Float(Dobject_autofade(TCobject\typ))*set_viewfac#)
 							If Dobject_autofade(TCobject\typ)<>0 Then EntityAutoFade TCobject\h,range,range+300	
-							;Collisions
-							;1 / 4
 							If Dobject_col(TCobject\typ)=1 Or Dobject_col(TCobject\typ)=4 Then
 								If Dobject_swayspeed#(TCobject\typ)<>0. Then
 									TCobject\ch=CopyEntity(newmodel)
@@ -3844,7 +3508,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 								Else
 									EntityType TCobject\h,Cworld_col
 								EndIf
-							;3
 							ElseIf Dobject_col(TCobject\typ)=3 Then
 								TCobject\ch=CopyEntity(newmodel)
 								PositionEntity TCobject\ch,tmp_x#,tmp_y#,tmp_z#
@@ -3852,7 +3515,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 								EntityAlpha TCobject\ch,0.0
 								EntityType TCobject\ch,Cworld_col
 							EndIf
-						;Item
 						ElseIf modelclass=Cclass_item Then
 							con_item(modelid)
 							TCitem\h=CopyEntity(newmodel)
@@ -3877,14 +3539,13 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("model","model")
 			EndIf
 			
-		;Texture
 		Case "texture"			
 			texture$=param()
 			If parse_comma(0) Then
-				class$=param()									;Class
+				class$=param()
 				classint=parse_getclass(class$)
 				parse_comma(1)
-				id=param()										;ID
+				id=param()
 				h=parent_h(classint,id,1)
 				modelclass=classint
 				modelid=id
@@ -3903,22 +3564,19 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			
 			
-		;################################################# STATES
-		
-		;Add State
 		Case "addstate"
 			p_return$=0
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			parse_comma(1)
-			state$=param()									;State
+			state$=param()
 			stateint=parse_getstate(state$)
 			If stateint<>0 Then
 				If parent_con(classint,id) Then
@@ -3928,26 +3586,25 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			EndIf
 			
-		;State Color
 		Case "statecolor"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			parse_comma(1)
-			state$=param()									;State
+			state$=param()
 			stateint=parse_getstate(state$)
 			parse_comma(1)
-			r=param()										;R
+			r=param()
 			parse_comma(1)
-			g=param()										;G
+			g=param()
 			parse_comma(1)
-			b=param()										;B
+			b=param()
 			If stateint<>0 Then
 				For TCstate.Tstate=Each Tstate
 					If TCstate\parent_class=classint Then
@@ -3965,22 +3622,21 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Next
 			EndIf
 			
-		;State Size
 		Case "statesize"		
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			parse_comma(1)
-			state$=param()									;State
+			state$=param()
 			stateint=parse_getstate(state$)
 			parse_comma(1)
-			size=param()									;Size
+			size=param()
 			If stateint<>0 Then
 				For TCstate.Tstate=Each Tstate
 					If TCstate\parent_class=classint Then
@@ -3995,22 +3651,21 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Next
 			EndIf
 			
-		;State Value
 		Case "statevalue"		
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			parse_comma(1)
-			state$=param()									;State
+			state$=param()
 			stateint=parse_getstate(state$)
 			parse_comma(1)
-			statevalue#=param()								;Value
+			statevalue#=param()
 			If stateint<>0 Then
 				For TCstate.Tstate=Each Tstate
 					If TCstate\parent_class=classint Then
@@ -4024,19 +3679,18 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Next
 			EndIf
 			
-		;getstatevalue
 		Case "getstatevalue"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			parse_comma(1)
-			state$=param()									;State
+			state$=param()
 			stateint=parse_getstate(state$)
 			valuetype=0
 			If parse_comma(0) Then
@@ -4061,19 +3715,18 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Next
 			EndIf
 			
-		;areal_state
 		Case "areal_state"
-			state$=param()									;State
+			state$=param()
 			stateint=parse_getstate(state$)
 			parse_comma(1)
-			x#=param()										;X
+			x#=param()
 			parse_comma(1)
-			y#=param()										;Y
+			y#=param()
 			parse_comma(1)
-			z#=param()										;Z
+			z#=param()
 			range=50
 			If parse_comma(0) Then
-				range=param()								;Radius
+				range=param()
 			EndIf
 			tempp=CreatePivot()
 			PositionEntity tempp,x#,y#,z#
@@ -4097,68 +3750,56 @@ Function parse_commands(jumptosemi=1,internal=0)
 			FreeEntity tempp
 						
 
-		;################################################# SKILLS
-		
-		;Set Skill
 		Case "setskill"
-			skill$=params()												;Skill
+			skill$=params()
 			skillval=0
 			caption$=skill$
-			If parse_comma(0) Then skillval=param()						;Value
-			If parse_comma(0) Then caption$=param()						;Caption
+			If parse_comma(0) Then skillval=param()
+			If parse_comma(0) Then caption$=param()
 			set_skill(skill$,skillval,caption$)
 			
-		;Inc Skill
 		Case "incskill"
-			skill$=params()												;Skill
+			skill$=params()
 			skillval=1
 			caption$=skill$
-			If parse_comma(0) Then skillval=param()						;Value
-			If parse_comma(0) Then caption$=param()						;Caption
+			If parse_comma(0) Then skillval=param()
+			If parse_comma(0) Then caption$=param()
 			inc_skill(skill$,skillval,caption$)
 		
-		;Got Skill
 		Case "gotskill"
-			skill$=params()												;Skill
+			skill$=params()
 			p_return$=free_skill(skill$)
 			
-		;Skill Value
 		Case "skillvalue"
-			skill$=params()												;Skill
+			skill$=params()
 			p_return$=skill_value(skill$)
 			
-		;Skill Name
 		Case "skillname"
-			skill$=param()												;Skill
+			skill$=param()
 			parse_comma(1)
 			caption$=param()
 			p_return$=skill_name(skill$,caption$)
 		
 
-		;################################################# FREE
-		
-		;freediary - delete all diary entries
 		Case "freediary"
 			For Tx.Tx=Each Tx
 				If Tx\mode=2 Then Delete Tx
 			Next
 		
-		;freescripts	
 		Case "freescripts"
 			For Tx.Tx=Each Tx
 				If Tx\mode=0 Then Delete Tx
 			Next
 			
-		;freescript
 		Case "freescript"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			For Tx.Tx=Each Tx
 				If Tx\parent_class=classint Then
@@ -4168,7 +3809,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 		
-		;freevars - delete all vars
 		Case "freevars"
 			For Tx.Tx=Each Tx
 				If Tx\mode=1 Then Delete Tx
@@ -4183,7 +3823,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Next
 			EndIf
 			
-		;freevar
 		Case "freevar","unset"
 			var$=param(1)
 			If Left(var$,1)="$" Then
@@ -4198,12 +3837,9 @@ Function parse_commands(jumptosemi=1,internal=0)
 				var_free(var$)
 			Wend
 			
-		;free
 		Case "free"
 			class$=param()
 			classint=parse_getclass(class$)
-			;con_add("FREE! - Class: "+class$+" int: "+classint)
-			;Item
 			If (((classint=-1) And (p_env_class=Cclass_item)) Or (classint=Cclass_item)) Then
 				If classint=-1 Then
 					classint=p_env_class
@@ -4217,7 +3853,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 					count=param()
 				EndIf
 				free_item(id,count)
-			;Other Stuff
 			Else
 				If classint=0 Then
 					Select class$
@@ -4232,24 +3867,23 @@ Function parse_commands(jumptosemi=1,internal=0)
 						parse_comma(0)
 						ha_free(classint,param())
 					Else
-						ha_free(classint,-1)	;Self
+						ha_free(classint,-1)
 					EndIf
 				EndIf
 			EndIf
 			
-		;Free State
 		Case "freestate"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			If parse_comma(0) Then
-				state$=param()									;State
+				state$=param()
 				stateint=parse_getstate(state$)
 				If stateint<>0 Then
 					If parent_con(classint,id) Then
@@ -4268,29 +3902,26 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Next
 			EndIf
 			
-		;Free Skill
 		Case "freeskill"
-			skill$=param()												;Skill
+			skill$=param()
 			free_skill(skill$)
 			
 			
-		;Free Stored Item
 		Case "freestored"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			If parse_comma(0) Then
-				typstr$=param()								;Typ
+				typstr$=param()
 			Else
 				typstr$="all"
 			EndIf
-			;All
 			If typstr$="all" Then
 				For Titem.Titem=Each Titem
 					If Titem\parent_class=classint Then
@@ -4299,11 +3930,10 @@ Function parse_commands(jumptosemi=1,internal=0)
 						EndIf
 					EndIf
 				Next
-			;Special
 			Else
 				count=-1
 				If parse_comma(0) Then
-					count=param()						;Count
+					count=param()
 				EndIf
 				For Titem.Titem=Each Titem
 					If Titem\parent_class=classint Then
@@ -4317,18 +3947,16 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Next
 			EndIf
 			
-		;Free Button
 		Case "freebutton"
-			id=param()													;ID
+			id=param()
 			If id>=0 And id<10 Then
 				in_sb(id)=0
 			Else
 				parse_error("Button ID between 0 and 9 expected!")
 			EndIf
 			
-		;free interface txt
 		Case "freetext"
-			id=param()													;ID
+			id=param()
 			If id>=0 And id<19 Then
 				in_sitxt(id)=0
 			Else
@@ -4337,70 +3965,56 @@ Function parse_commands(jumptosemi=1,internal=0)
 			
 			
 					
-		;################################################# RETURN
-		
-		
-		;Loop ID
 		Case "loop_id"
 			p_return$=p_loopi
 		
 		
-		;Return (rather senseless - for debug purposes only)
 		Case "return"
 			p_return$=param()
 			
-		;Int
 		Case "int"
 			tointvalue=Int(param())
 			p_return$=tointvalue
 		
-		;Playergotitem
 		Case "playergotitem"
-			itemtyp=param()									;Item Typ
+			itemtyp=param()
 			itemcount=countstored_items(Cclass_unit,g_player,itemtyp)
 			p_return$=itemcount
 			
-		;Day
 		Case "day"
 			p_return$=map_day
 		
-		;Hour
 		Case "hour"
 			p_return$=map_hour
 		
-		;Minute
 		Case "minute"
 			p_return$=map_minute
 			
-		;Random
 		Case "random"
-			peak=param()									;Peak
+			peak=param()
 			If parse_comma(0) Then
-				bottom=param()									;Bottom
+				bottom=param()
 				p_return$=Rand(bottom,peak)
-				;con_add("rand "+bottom+"-"+peak+" -> "+p_return$)
 			Else
 				p_return$=Rand(peak)
-				;con_add("rand "+peak+" -> "+p_return$)
 			EndIf
 				
-		;In Range
 		Case "inrange"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			If parse_comma(0)
-				range=param()									;Range
+				range=param()
 				If parse_comma(0) Then
-					class2=parse_getclass(param())				;Class 2
+					class2=parse_getclass(param())
 					parse_comma(1)
-					id2=param()									;ID 2
+					id2=param()
 					If ha_distance(classint,id,class2,id2)<=range Then
 						p_return$=1
 					Else
@@ -4415,48 +4029,43 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			
 		
-		;Count In Range
 		Case "count_inrange"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			parse_comma(1)
-			typ=param()										;Type
+			typ=param()
 			If parse_comma(0) Then
-				range=param()									;Range
+				range=param()
 				If parse_comma(0) Then
 					parse_classid()
-					class2=tmp_gclass							;Class 2
-					id2=tmp_gid									;ID 2
+					class2=tmp_gclass
+					id2=tmp_gid
 					countinrangehandle=parent_h(class2,id2)
 					If countinrangehandle<>0 Then
 						p_return$=ha_inrange(countinrangehandle,range,classint,typ)
-						;con_add("count_inrange object "+range+","+classint+","+typ+" -> "+p_return$)
 					Else
 						p_return$=0
 					EndIf
 				Else
 					p_return$=ha_inrange(cam,range,classint,typ)
-					;con_add("count_inrange cam "+range+","+classint+","+typ+" -> "+p_return$)
 				EndIf
 			Else
 				range=300
 				p_return$=ha_inrange(cam,range,classint,typ)
-				;con_add("count_inrange cam "+range+","+classint+","+typ+" -> "+p_return$)
 			EndIf
 		
-		;Count Behaviourinrange
 		Case "count_behaviourinrange"
 			countinrangehandle=cam
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			parse_comma(1)
-			behaviour$=params()								;Behaviour
+			behaviour$=params()
 			If parse_comma(0) Then
-				range=param()									;Range
+				range=param()
 				If parse_comma(0) Then
-					class2=parse_getclass(param())				;Class 2
+					class2=parse_getclass(param())
 					parse_comma(1)
-					id2=param()									;ID 2
+					id2=param()
 					countinrangehandle=parent_h(class2,id2)
 				EndIf
 			Else
@@ -4464,7 +4073,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			p_return$=0
 			Select classint
-				;Object
 				Case Cclass_object
 					For Tobject.Tobject=Each Tobject
 						If Dobject_behaviour$(Tobject\typ)=behaviour$ Then
@@ -4473,7 +4081,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 							EndIf
 						EndIf
 					Next
-				;Unit
 				Case Cclass_unit	
 					behaviourint=ai_getbehaviour(behaviour$)
 					For Tunit.Tunit=Each Tunit
@@ -4483,7 +4090,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 							EndIf
 						EndIf
 					Next
-				;Item
 				Case Cclass_item
 					For Titem.Titem=Each Titem
 						If Titem\parent_class=0 Then
@@ -4494,36 +4100,28 @@ Function parse_commands(jumptosemi=1,internal=0)
 							EndIf
 						EndIf
 					Next
-				;Default
 				Default 
 					parse_error("wrongclass",parse_getclasstxt$(classint))
 			End Select
 			
-		;Hit Damage
 		Case "hit_damage"
 			p_return$=pv_attack_damage#
 			
-		;Hit Weapon
 		Case "hit_weapon"
 			p_return$=pv_attack_weapon
 			
-		;Hit Ammo
 		Case "hit_ammo"
 			p_return$=pv_attack_ammo
 			
-		;Impact Class
 		Case "impact_class"
 			p_return$=pv_impact_class
 		
-		;Impact ID
 		Case "impact_id"
 			p_return$=pv_impact_id
 			
-		;Impact Kill
 		Case "impact_kill"
 			p_return$=pv_impact_kill
 			
-		;Impact First
 		Case "impact_first"
 			If pv_impact_num=1 Then
 				p_return$=1
@@ -4531,41 +4129,34 @@ Function parse_commands(jumptosemi=1,internal=0)
 				p_return$=0
 			EndIf
 			
-		;Impact Amount
 		Case "impact_amount"
 			p_return$=pv_impact_amount
 			
-		;Impact Ground
 		Case "impact_ground"
 			p_return$=pv_impact_ground
 			
-		;Impact X
 		Case "impact_x"
 			p_return$=pv_impact_x#
 			
-		;Impact Y
 		Case "impact_y"
 			p_return$=pv_impact_y#
 		
-		;Impact Z
 		Case "impact_z"
 			p_return$=pv_impact_z#
 			
-		;Count Stored
 		Case "count_stored"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			p_return$=0
 			If parse_comma(0) Then
-				;Count Special One
-				typ=param()										;Item Type
+				typ=param()
 				For Titem.Titem=Each Titem
 					If Titem\parent_class=classint Then
 						If Titem\parent_id=id Then
@@ -4578,7 +4169,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 					EndIf
 				Next
 			Else
-				;Count All
 				For Titem.Titem=Each Titem
 					If Titem\parent_class=classint Then
 						If Titem\parent_id=id Then								
@@ -4589,21 +4179,19 @@ Function parse_commands(jumptosemi=1,internal=0)
 					EndIf
 				Next
 			EndIf
-			;con_add("count stored @"+classint+","+id+" = "+p_return$)
 			
-		;Got State
 		Case "gotstate"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			parse_comma(1)
-			state$=param()									;State
+			state$=param()
 			stateint=parse_getstate(state$)
 			p_return$=0
 			For Tstate.Tstate=Each Tstate
@@ -4617,9 +4205,8 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 			
-		;Count States
 		Case "count_state"
-			state$=param()									;State
+			state$=param()
 			stateint=parse_getstate(state$)
 			p_return$=0
 			For Tstate.Tstate=Each Tstate
@@ -4628,22 +4215,21 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 			
-		;Distance
 		Case "distance"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			parse_comma(1)
-			class$=param()									;Class 2
+			class$=param()
 			classint2=parse_getclass(class$)
 			parse_comma(1)
-			id2=param()										;ID 2
+			id2=param()
 			h1=parent_h(classint,id)
 			h2=parent_h(classint2,id2)
 			If h1<>0 And h2<>0 Then
@@ -4657,16 +4243,15 @@ Function parse_commands(jumptosemi=1,internal=0)
 				p_return$=0
 			EndIf
 			
-		;Player Distance
 		Case "playerdistance"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			h1=parent_h(classint,id)
 			If h1<>0 Then
@@ -4680,16 +4265,15 @@ Function parse_commands(jumptosemi=1,internal=0)
 				p_return$=0
 			EndIf
 			
-		;In View
 		Case "inview"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			h1=parent_h(classint,id,1)
 			If h1<>0 Then
@@ -4699,27 +4283,20 @@ Function parse_commands(jumptosemi=1,internal=0)
 				p_return$=0
 			EndIf
 			
-		;Get X / Y / Z / pitch / yaw, roll
 		Case "getx","gety","getz","getpitch","getyaw","getroll"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			h=parent_h(classint,id)
 			If h=0 Then
-				;If tmp_killclass=classint Then
-				;	If tmp_killid=id Then
-				;		h=tmp_killmodel
-				;	EndIf
-				;EndIf
 				h=parse_kill_get(classint,id)
 			EndIf
-			;Position of Parent in Case of stored Item
 			If classint=Cclass_item Then
 				For Titem.Titem=Each Titem
 					If Titem\id=id Then
@@ -4743,117 +4320,107 @@ Function parse_commands(jumptosemi=1,internal=0)
 				p_return$=0
 			EndIf
 			
-		;Exists
 		Case "exists"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			p_return$=parent_con(classint,id)
 			
-		;Lives
 		Case "lives"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf									
 			p_return$=(1-ha_killed(classint,id))
 			
-		;gt
 		Case "gt"
 			p_return$=gt
 			
-		;currentclass
 		Case "currentclass","cclass","current_class"
 			p_return$=p_env_class
 		
-		;currentid
 		Case "currentid","cid","current_id"
 			p_return$=p_env_id
 			
-		;inarea_freshwater
 		Case "inarea_freshwater"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			h=parent_h(classint,id)
 			If h<>0 Then
 				p_return$=info_area(41,EntityX(h),EntityZ(h))
 			EndIf
 		
-		;inarea_dig
 		Case "inarea_dig"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			h=parent_h(classint,id)
 			If h<>0 Then
 				p_return$=info_area(42,EntityX(h),EntityZ(h))
 			EndIf
 		
-		;inarea_fish
 		Case "inarea_fish"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			h=parent_h(classint,id)
 			If h<>0 Then
 				p_return$=info_area(43,EntityX(h),EntityZ(h))
 			EndIf
 		
-		;inarea
 		Case "inarea"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			h=parent_h(classint,id)
 			If h<>0 Then
 				p_return$=info_area(44,EntityX(h),EntityZ(h))
 			EndIf
 			
-		;Get Stored Item ID
 		Case "getstored"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			parse_comma(1)
-			id=param()										;ID
+			id=param()
 			typ=0
 			If parse_comma(0) Then
-				typ=param()										;Typ
+				typ=param()
 			EndIf
 			p_return$=0
 			For Titem.Titem=Each Titem
@@ -4867,9 +4434,8 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 			
-		;Get Amount
 		Case "getamount"
-			id=param()										;ID
+			id=param()
 			For Titem.Titem=Each Titem
 				If Titem\id=id Then
 					p_return$=Titem\count
@@ -4877,44 +4443,39 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 			
-		;Riding
 		Case "riding"
 			p_return$=g_drive
 			
-		;Player Weapon
 		Case "getplayerweapon"
 			If Handle(g_cplayer)<>0 Then p_return$=g_cplayer\player_weapon
 		
-		;Player Ammo
 		Case "getplayerammo"
 			If Handle(g_cplayer)<>0 Then p_return$=g_cplayer\player_ammo
 			
-		;Weather
 		Case "getweather"
 			p_return$=env_cweather
 			
-		;Freespace
 		Case "freespace"
-			x=param()									;X
+			x=param()
 			parse_comma(1)
-			y=param()									;Y
+			y=param()
 			parse_comma(1)
-			z=param()									;Z
+			z=param()
 			range=300
 			check_objects=1
 			check_units=1
 			check_items=1
 			check_infos=0
 			If parse_comma(0) Then
-				range=param()							;Range
+				range=param()
 				If parse_comma(0) Then
-					check_objects=param()				;Objects
+					check_objects=param()
 					If parse_comma(0) Then
-						check_units=param()				;Units
+						check_units=param()
 						If parse_comma(0) Then
-							check_items=param()			;Items
+							check_items=param()
 							If parse_comma(0) Then
-								check_infos=param()		;Infos
+								check_infos=param()
 							EndIf
 						EndIf
 					EndIf
@@ -4922,20 +4483,19 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			p_return$=ha_freespace(x,y,z,range,check_objects,check_units,check_items,check_infos)
 
-		;Compare Material
 		Case "compare_material"
 			p_return$=0
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			parse_comma()
-			mat=get_material(param$())						;Compare Value (Material)
+			mat=get_material(param$())
 			Select classint
 				Case Cclass_object
 					If con_object(id) Then
@@ -4951,20 +4511,19 @@ Function parse_commands(jumptosemi=1,internal=0)
 					EndIf
 			End Select
 		
-		;Compare Behaviour
 		Case "compare_behaviour"
 			p_return$=0
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			parse_comma()
-			behaviour$=param()								;Compare Value (Behaviour)
+			behaviour$=param()
 			Select classint
 				Case Cclass_object
 					If con_object(id) Then
@@ -4980,20 +4539,19 @@ Function parse_commands(jumptosemi=1,internal=0)
 					EndIf
 			End Select
 			
-		;Health
 		Case "health"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			value#=0
 			If parse_comma(0) Then
-				value#=param()								;Health Change
+				value#=param()
 			EndIf
 			p_return$=0
 			Select classint
@@ -5029,39 +4587,33 @@ Function parse_commands(jumptosemi=1,internal=0)
 					Next
 			End Select
 			
-		;Type
 		Case "type"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			If classint=-1 Then
 				classint=p_env_class
 				id=p_env_id
 			Else
 				parse_comma(1)
-				id=param()									;ID
+				id=param()
 			EndIf
 			p_return$=ha_type(classint,id)
 			
-		;Use Stuff
 		Case "use_x"
 			p_return$=pc_use_x#
 			
-		;Use Stuff
 		Case "use_y"
 			p_return$=pc_use_y#
 			
-		;Use Stuff
 		Case "use_z"
 			p_return$=pc_use_z#
 			
-		;TerrainY
 		Case "terrainy"
-			x#=param()										;X
+			x#=param()
 			parse_comma(1)
-			z#=param()										;Z
+			z#=param()
 			p_return$=e_tery(x#,z#)
 			
-		;Sin
 		Case "sin"
 			x#=param()
 			classint=1
@@ -5072,7 +4624,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				p_return$=Sin(x#)
 			EndIf
 		
-		;Cos
 		Case "cos"
 			x#=param()
 			classint=1
@@ -5083,7 +4634,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				p_return$=Cos(x#)
 			EndIf
 		
-		;Tan
 		Case "tan"
 			x#=param()
 			classint=1
@@ -5094,9 +4644,8 @@ Function parse_commands(jumptosemi=1,internal=0)
 				p_return$=Tan(x#)
 			EndIf
 			
-		;Parent Class / Parent ID
 		Case "parent_class","parent_id"
-			idstring$=param()								;Item ID
+			idstring$=param()
 			If idstring$="self" Then
 				If p_env_class=Cclass_item Then
 					idstring$=p_env_id
@@ -5113,17 +4662,14 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 			
-		;Mapsize
 		Case "mapsize"
 			p_return$=(ter_size*Cworld_size)
 		
-		;Count
 		Case "count"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			parse_comma(1)
-			id=param()										;Type
-			;con_add("count "+classint+" id "+id)
+			id=param()
 			p_return$=0
 			Select classint
 				Case Cclass_object
@@ -5153,12 +4699,11 @@ Function parse_commands(jumptosemi=1,internal=0)
 					Next
 			End Select
 		
-		;Defparam
 		Case "defparam"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			parse_comma(1)
-			id=param()										;Type
+			id=param()
 			parse_comma(1)
 			file$=param()
 			p_return$=0
@@ -5173,18 +4718,13 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 			
-		;Impact Class
 		Case "sleeping"
 			p_return$=g_sleep
 		
 			
-		;################################################# VARS
-		
-		;Abs
 		Case "abs"	
 			p_return$=Abs(Float(param()))
 			
-		;Save Vars
 		Case "savevars"
 			file$="varcache"
 			varlist$="-"
@@ -5196,7 +4736,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			p_return$=var_cache_save(file$,varlist$)
 		
-		;Load Vars
 		Case "loadvars"
 			file$="varcache"
 			If parse_param() Then
@@ -5204,7 +4743,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			p_return$=var_cache_load(file$)
 			
-		;Var Exists
 		Case "varexists"
 			var$=param(1)
 			If Left(var$,1)="$" Then
@@ -5212,7 +4750,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 			EndIf
 			p_return$=var_exists(var$)
 			
-		;Rename
 		Case "rename"
 			var$=param(1)
 			If Left(var$,1)="$" Then
@@ -5229,7 +4766,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 			
-		;temp
 		Case "temp"
 			var$=param(1)
 			var_temp(var$)
@@ -5238,7 +4774,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				var_temp(var$)
 			Wend
 			
-		;tempall
 		Case "tempall"
 			For Tx.Tx=Each Tx
 				If Tx\mode=1 Then
@@ -5246,7 +4781,6 @@ Function parse_commands(jumptosemi=1,internal=0)
 				EndIf
 			Next
 			
-		;local
 		Case "local"
 			var$=param(1)
 			var_local(var$)
@@ -5255,38 +4789,35 @@ Function parse_commands(jumptosemi=1,internal=0)
 				var_local(var$)
 			Wend
 		
-		;getlocal
 		Case "getlocal"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			parse_comma(1)
-			id=param()										;ID
+			id=param()
 			parse_comma(1)
-			var$=param(1)									;Var
+			var$=param(1)
 			If Left(var$,1)="$" Then
 				var$=Mid(var$,2,-1)
 			EndIf
 			p_return$=var_get_local(classint,id,var$)
 		
-		;setlocal
 		Case "setlocal"
-			class$=param()									;Class
+			class$=param()
 			classint=parse_getclass(class$)
 			parse_comma(1)
-			id=param()										;ID
+			id=param()
 			parse_comma(1)
-			var$=param(1)									;Var
+			var$=param(1)
 			If Left(var$,1)="$" Then
 				var$=Mid(var$,2,-1)
 			EndIf
 			strvalue$=0
-			If parse_comma(0) Then							;Value
+			If parse_comma(0) Then
 				strvalue=param()
 			EndIf
 			DebugLog "set local  "+strvalue
 			var_set_local(classint,id,var$,strvalue)
 			
-		;getsetting
 		Case "getsetting"
 			p_return$=0
 			class$=param()
@@ -5306,120 +4837,107 @@ Function parse_commands(jumptosemi=1,internal=0)
 				Default parse_error("Settings '"+class$+"' does not exist!")
 			End Select
 		
-		;state
 		Case "state"
 			p_return$=pv_state
 		
 		
-		;################################################# AI
-		
-		;ai_signal
 		Case "ai_signal"
-			mode=parse_getaisignal(param())					;Mode
+			mode=parse_getaisignal(param())
 			rangeadd=300
 			If parse_comma(0)
-				rangeadd=param()								;Range
+				rangeadd=param()
 			EndIf
 			If parse_comma(0) Then
-				class$=param()									;Class
+				class$=param()
 				classint=parse_getclass(class$)
 				parse_comma(1)
-				id=param()										;ID
+				id=param()
 			Else
 				classint=p_env_class
 				id=p_env_id
 			EndIf
 			ai_signal(classint,id,mode,rangeadd)
 			
-		;ai_typesignal
 		Case "ai_typesignal"
-			mode=parse_getaisignal(param())					;Mode
+			mode=parse_getaisignal(param())
 			parse_comma(1)
-			unittype=param()								;Type
+			unittype=param()
 			rangeadd=300
 			If parse_comma(0)
-				rangeadd=param()								;Rangeadd
+				rangeadd=param()
 			EndIf
 			If parse_comma(0) Then
-				class$=param()									;Class
+				class$=param()
 				classint=parse_getclass(class$)
 				parse_comma(1)
-				id=param()										;ID
+				id=param()
 			Else
 				classint=p_env_class
 				id=p_env_id
 			EndIf
 			ai_typesignal(classint,id,mode,unittype,rangeadd)
 			
-		;ai_behavioursignal
 		Case "ai_behavioursignal"
-			mode=parse_getaisignal(param())					;Mode
+			mode=parse_getaisignal(param())
 			parse_comma(1)
-			unittype=ai_getbehaviour(param())				;Type
+			unittype=ai_getbehaviour(param())
 			rangeadd=300
 			If parse_comma(0)
-				rangeadd=param()								;Rangeadd
+				rangeadd=param()
 			EndIf
 			If parse_comma(0) Then
-				class$=param()									;Class
+				class$=param()
 				classint=parse_getclass(class$)
 				parse_comma(1)
-				id=param()										;ID
+				id=param()
 			Else
 				classint=p_env_class
 				id=p_env_id
 			EndIf
 			ai_behavioursignal(classint,id,mode,unittype,rangeadd)	
 		
-		;ai_mode
 		Case "ai_mode"
-			unitidstr$=param()								;Unit
+			unitidstr$=param()
 			If unitidstr$="self" Then
 				unitid=p_env_id
 			Else
 				unitid=Int(unitidstr$)
 			EndIf
 			parse_comma(1)
-			mode=parse_getaimode(param())					;Mode
+			mode=parse_getaimode(param())
 			classint=0
 			id=0
 			If parse_comma(0) Then
-				class$=param()									;Class
+				class$=param()
 				classint=parse_getclass(class$)
 				parse_comma(1)
-				id=param()										;ID
+				id=param()
 			EndIf
 			ai_unitmode(unitid,mode,classint,id)
 			
-		;ai_eater
 		Case "ai_eater"
-			;con_add("ai_eater: "+pv_ai_eater)
 			p_return$=pv_ai_eater
 			
-		;ai_stay
 		Case "ai_stay"
-			unitidstr$=param()								;Unit
+			unitidstr$=param()
 			If unitidstr$="self" Then
 				unitid=p_env_id
 			Else
 				unitid=Int(unitidstr$)
 			EndIf
 			id=1
-			If parse_comma(0) Then							;Set/Delete
+			If parse_comma(0) Then
 				id=param()
 			EndIf
 			If id=1 Then
-				;Set
 				set_state(Cstate_ai_stick,Cclass_unit,unitid)
 			Else
-				;Delete
 				free_state(Cstate_ai_stick,Cclass_unit,unitid)
 			EndIf
 			
-		;ai_center
 		Case "ai_center"
 			If parse_param() Then
-				unitidstr$=param()								;Unit
+				unitidstr$=param()
 				If unitidstr$="self" Then
 					unitid=p_env_id
 				Else
@@ -5440,44 +4958,37 @@ Function parse_commands(jumptosemi=1,internal=0)
 			Next			
 			
 		
-		;##################################### Strings
-		
-		;length
 		Case "length"
-			unitidstr$=param()								;String
+			unitidstr$=param()
 			p_return$=Len(unitidstr$)
 			
-		;trim
 		Case "trim"
-			unitidstr$=param()								;String
+			unitidstr$=param()
 			p_return$=trimtext(unitidstr$)
 			
-		;replace
 		Case "replace"
-			unitidstr$=param()								;String
+			unitidstr$=param()
 			parse_comma(1)
-			search$=param()									;Search
+			search$=param()
 			parse_comma(1)
-			repl$=param()									;Replace
+			repl$=param()
 			p_return$=Replace(unitidstr$,search$,repl$)
 
-		;split
 		Case "split"
-			unitidstr$=param()								;String
+			unitidstr$=param()
 			parse_comma(1)
-			search$=param()									;Sign
+			search$=param()
 			parse_comma(1)
-			repl$=param()									;Substring
+			repl$=param()
 			split$(unitidstr$,search$,Int(repl$)+1)
 			p_return$=splits(Int(repl$))
 			
-		;extract
 		Case "extract"
-			unitidstr$=param()								;String
+			unitidstr$=param()
 			parse_comma(1)
-			search$=param()									;Start
+			search$=param()
 			repl$=-1
-			If parse_comma(0) Then repl$=param()			;Length
+			If parse_comma(0) Then repl$=param()
 			If Int(search$)<=0 Then search$=1
 			If Int(repl$)=-1 Or Int(repl$)>0 Then
 				p_return$=Mid(unitidstr$,Int(search$),Int(repl$))
@@ -5485,25 +4996,20 @@ Function parse_commands(jumptosemi=1,internal=0)
 				parse_error("extract length has to be either -1 or >0")
 			EndIf
 			
-		;join
 		Case "join"
 			p_return$=""
-			p_return$=params()								;Var
+			p_return$=params()
 			While parse_comma(0)
 				var$=params()
 				p_return$=p_return$+var$
 			Wend
 		
-		;DEFAULT ERROR	
 		Default parse_error("uk")
 	End Select
 	
-	;Find and jump to Semi (;)
 	If jumptosemi=1 Then
-		;con_add "parse semi for cmd '"+p_com$+"'"
 		parse_semi()
 	EndIf
 	
-	;Disbale Internal Parsing
 	p_internal=0
 End Function

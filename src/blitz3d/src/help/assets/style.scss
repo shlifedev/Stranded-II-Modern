@@ -145,7 +145,6 @@ main {
   }
 }
 
-// TODO: make prettier
 @mixin code {
   background-color: $code-bg;
   color: #eeeeee;
@@ -198,7 +197,6 @@ code {
       &:first-child { border-right: 1px solid #ffffff; }
       &:last-child { border-left: 1px solid #ffffff; }
 
-      //color: color.adjust($bgcolor, $lightness: 2%);
     }
   }
 

@@ -69,8 +69,6 @@ For ix=0 To 15:For iz=0 To 15
  grass_rgb(ix,iz,3)=1
 Next:Next
 grass_rgb(9,9,3)=0
-; All patches start outside the main view, but remain eligible for the next
-; camera orientation and other render views. Native culling selects the pixels.
 test_in_view=0:in_t100go=0:grass_spread()
 check(shown()=8,"terrain-eligible patches remain available outside the current camera view")
 check(test_shown(5)=0,"terrain-disabled patch stays hidden")
@@ -81,7 +79,6 @@ test_yaw=180:test_in_view=0:in_t100go=1:grass_spread()
 test_yaw=-179:test_in_view=1:in_t100go=0:grass_spread()
 check(shown()=8,"rapid reversal across the yaw wrap does not retain hidden patches")
 check(test_positions=9,"turning the camera does not rebuild the grass grid")
-; A pitch-only change can alter visibility without changing the grid or yaw.
 test_in_view=0:in_t100go=1:grass_spread()
 test_in_view=1:in_t100go=0:grass_spread()
 check(shown()=8,"pitch-only turns use the current render view")
@@ -151,7 +148,6 @@ Function test_shadows(camera,light,distance#)
    If test_visible(h) And test_alpha(h)>0.99 Then test_captured=test_captured Or (1 Shl h)
   Next
  EndIf
- ; Collision-only child meshes must never be included by the shadow wrapper.
  check(test_alpha(10)=0 And test_alpha(11)=0,"collision meshes retain zero alpha during capture")
 End Function
 Dobject_afc(1)=1200:Dobject_col(1)=1:remaster_enabled(2)=1
@@ -166,7 +162,6 @@ For i=1 To 8
  If i=6 Then obj\alpha=0:test_alpha(i)=0
  If i=7 Then obj\alpha=0.35:test_alpha(i)=0.35:test_dist(i)=700
 Next
-; Start in view, then turn just far enough to cull each caster.
 For i=1 To 8:test_inview(i)=1:Next
 test_cull_objects():remaster_shadow_frame()
 Local expected=test_captured
@@ -201,7 +196,6 @@ def check_shadows(output):
     types = (includes / 'load_vars.bb').read_text('utf8')
     object_type = re.search(r'(?ms)^Type Tobject\n.*?^End Type', types)[0]
     cull = function((includes / 'cull.bb').read_text('utf8'), 'cull')
-    # Execute the actual object loop, without unrelated AI, timers or scripts.
     cull = 'Function test_cull_objects()\n' + cull[cull.index('\t;Object'):cull.index('\t;Unit')] + 'End Function'
     shadow = function((includes / 'remaster.bb').read_text('utf8'), 'remaster_shadow_frame')
     body = object_type + '\n' + SHADOW_FIXTURE + '\n' + cull + '\n' + shadow

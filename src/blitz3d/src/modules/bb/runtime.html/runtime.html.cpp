@@ -35,8 +35,6 @@ public:
 		bbSceneDriver=this;
 	}
 
-	// context
-
 	int numGraphicsDrivers(){
 		return 1;
 	}
@@ -67,22 +65,17 @@ public:
 	void flip( bool vwait ){
 	}
 
-	// graphics
-
 	void backup(){
 	}
 	bool restore(){
 	}
 
-	//MANIPULATORS
 	void vwait(){
 	}
 
-	//SPECIAL!
 	void copy( BBCanvas *dest,int dx,int dy,int dw,int dh,BBCanvas *src,int sx,int sy,int sw,int sh ){
 	}
 
-	//NEW! Gamma control!
 	void setGamma( int r,int g,int b,float dr,float dg,float db ){
 	}
 	void getGamma( int r,int g,int b,float *dr,float *dg,float *db ){
@@ -90,7 +83,6 @@ public:
 	void updateGamma( bool calibrate ){
 	}
 
-	//ACCESSORS
 	int getWidth()const{
 		return 0;
 	}
@@ -123,7 +115,6 @@ public:
 		return 0;
 	}
 
-	//OBJECTS
 	BBCanvas *createCanvas( int width,int height,int flags ){
 		return 0;
 	}
@@ -132,8 +123,6 @@ public:
 	}
 
 
-	// b2dgraphics
-
 	BBMovie *openMovie( const std::string &file,int flags ){
 		return 0;
 	}
@@ -141,8 +130,6 @@ public:
 	BBFont *loadFont( const std::string &font,int height,int flags ){
 		return 0;
 	}
-
-	// runtime
 
 	void asyncStop(){}
 	void asyncRun(){}
@@ -160,7 +147,6 @@ BBRuntime *bbCreateHTMLRuntime(){
 	return d_new HtmlRuntime();
 }
 
-// TODO: find a more sensible approach...
 BBRuntime *bbCreateOpenGLRuntime() {
 	return bbCreateHTMLRuntime();
 }

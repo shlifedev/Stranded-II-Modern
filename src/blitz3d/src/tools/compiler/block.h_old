@@ -1,10 +1,4 @@
 
-/*
-
-  A block represents a function - code & data.
-
-  */
-
 #ifndef BLOCK_H
 #define BLOCK_H
 

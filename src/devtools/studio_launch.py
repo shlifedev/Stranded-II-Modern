@@ -42,7 +42,6 @@ def python_dependencies():
         if installed != version:
             run([sys.executable, '-m', 'pip', 'install', '--disable-pip-version-check', '-r', requirements])
             break
-    # Windows builds discover CMake/Ninja in the installed MSVC tools.
     if os.name != 'nt':
         missing = [name for name in ('cmake', 'ninja') if not shutil.which(name)]
         if missing:
@@ -103,8 +102,6 @@ def prepare(npm, inputs):
     if not node_dependencies_ready():
         run([npm, '--prefix', 'src/studio', 'ci'])
     cli = [sys.executable, '-X', 'utf8', ROOT / 'src/devtools/studio.py', 'engine']
-    # Refresh resources and rebuild on every launch, so changed catalogs, assets,
-    # engine sources and partially removed build output are all picked up.
     run([*cli, 'setup', '--game', inputs['game'], '--font', inputs['font']])
     run([*cli, 'build'])
     run([*cli, 'check'])

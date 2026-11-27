@@ -46,8 +46,6 @@ def main():
     shutil.copytree(ROOT / 'build/runtime', runtime,
         ignore=shutil.ignore_patterns('preserved', 'saves', '*.log', '*.exe'))
     (runtime / 'mods/Stranded II/saves').mkdir(exist_ok=True)
-    # Decode the same web-prepared audio in both engines. The old Windows
-    # decoder also rejects some original GSM files; player runtimes stay intact.
     for path in audio:
         relative = Path('mods/Stranded II') / path
         prepared = BUILD / 'audio' / relative

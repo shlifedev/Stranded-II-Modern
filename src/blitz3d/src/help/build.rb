@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
 
-## WARNING: This file is VERY ugly & quite the hackjob.
-
 ENV['BUNDLE_GEMFILE'] = File.expand_path("./Gemfile", __dir__)
 require 'bundler'
 Bundler.require :default

@@ -51,8 +51,6 @@ def inputs():
 
 def prepare_assets(settings):
     game, font = Path(settings['game']), Path(settings['font'])
-    # CI unpacks its hash-verified dependency ZIP inside build/. Permit only
-    # that input directory; generated runtimes and their player data stay out.
     resolved_game = game.resolve()
     build = (ROOT / 'build').resolve()
     if resolved_game.is_relative_to(build) and resolved_game != build / 'ci/deps/game':
@@ -139,7 +137,6 @@ def pack_assets(env):
     audio = prepare_audio(allowed, BUILD / 'audio')
     command = [sys.executable, sdk / 'upstream/emscripten/tools/file_packager.py', SITE / 'assets.data',
                '--js-output=' + str(SITE / 'assets.js'), '--preload']
-    # Use a preload directory instead of thousands of command-line arguments.
     package = BUILD / 'package'
     expected = {target.removeprefix('/game/') for _, target in allowed}
     for old in package.rglob('*') if package.exists() else ():
@@ -149,8 +146,6 @@ def pack_assets(env):
         destination = package / target.removeprefix('/game/')
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(audio.get(target, path), destination)
-    # Emscripten uses @ as its source/destination separator. Escape actual @ in
-    # checkout paths, otherwise e.g. /work/@src would select the parent folder.
     command += [str(package).replace('@', '@@') + '@/game']
     web_toolchain.run(command, env=env)
     writable = [target for path, target in allowed
@@ -201,7 +196,7 @@ def build(args):
     web_toolchain.run([upstream.BLITZCC, '-target', 'emscripten', '-o', SITE / 'game', ENTRY],
                       cwd=ROOT / 'src/engine', env=env)
     pack_assets(env)
-    (SITE / 'game.html').unlink() # The custom index owns storage and startup.
+    (SITE / 'game.html').unlink()
     for name in ('index.html', 'shell.js', 'debugui.js'):
         shutil.copy2(ROOT / 'src/web' / name, SITE / name)
     write(SITE / 'version.json', info)

@@ -1,4 +1,3 @@
-; Disposable rendering scene. Actions run at the input boundary, never during ImGui drawing.
 Const Cbench_limit=10000
 Global bench_action,bench_job,bench_remove,bench_serial,bench_selected,bench_catalog=1,bench_search$
 Global bench_layout=1,bench_seed=57013,bench_random,bench_ai,bench_animation,bench_camera_index
@@ -68,7 +67,6 @@ Function bench_refresh()
  remaster_settings_apply()
  settings_apply_viewrange():prepare_cache_viewranges():mb_reset()
  If env_sea Then
-  ; Recreate capture storage when changing modes, including a deterministic OFF texture.
   If env_watertex Then FreeTexture env_watertex:env_watertex=0
   e_environment_setup_water()
   If bench_reflection=0 And env_watertex Then
@@ -107,7 +105,6 @@ Function bench_enter()
   Next
  Next
  in_opt(4)=0:editor_gencolormap():e_environment():grass_map():grass_heightmap()
- ; A hidden passive player supplies the references expected by AI and culling.
  tmp_loading=1:set_unit(-1,1,-1000000.,-1000000.):tmp_loading=0
  If TCunit<>Null Then g_player=TCunit\id:g_cplayer.Tunit=TCunit:TCunit\freeze=1:HideEntity TCunit\h
  set_water=6:set_grass=4:set_viewrange=4:bench_refresh()
@@ -184,7 +181,6 @@ Function bench_random#()
 End Function
 
 Function bench_position(group.TbenchGroup,index)
- ; Stable square spiral: growing the count never moves the previous cells.
  Local ring=Ceil((Sqr(Float(index+1))-1.)/2.),side=ring*2,delta=(ring*2+1)^2-index-1
  Local x,z
  If side=0 Then
@@ -331,7 +327,6 @@ Function bench_condition_add(condition,repetition)
    Local effect=condition-4
    If effect<=10 And bench_compare(effect) Then bench_trial_add(condition,repetition,1.,effect,0,bench_effect_name(effect))
    If effect=8 And bench_compare(effect) Then
-    ; Compare all three reflection paths; omit the path already used by the baseline.
     Delete Last TbenchTrial:bench_trial_total=bench_trial_total-1
     For mode=0 To 2
      If mode<>bench_base(9) Then bench_trial_add(100+mode,repetition,1.,8,mode,bench_effect_name(8)+" / "+mode)
@@ -359,7 +354,6 @@ Function bench_start(automatic)
  bench_trial_total=0:bench_trial_index=0:bench_auto=automatic:DebugUiBenchmarkClear()
  If automatic Then
   For repetition=1 To 3
-   ; Reverse the middle repetition to reduce systematic temperature/order bias.
    If repetition=2 Then
     For condition=14 To 0 Step -1:bench_condition_add(condition,repetition):Next
    Else
@@ -395,7 +389,6 @@ Function bench_trial_prepare()
  End Select
  bench_refresh():bench_targets(bench_current\multiplier,1,1)
  bench_remove=0:bench_job=3:bench_run=1:bench_trial_index=bench_trial_index+1
- ; AI and animation also start from the same creation seed for each trial.
  SeedRnd bench_seed
 End Function
 
@@ -493,7 +486,6 @@ Function bench_frame()
  If bench_active=0 Then DebugUiProfileEnd 0:Return
  Local phase=DebugUiBenchmarkState()
  If bench_run=3 And (phase=1 Or phase=2 Or phase=4) Then
-  ; While draining, keep events/UI responsive without submitting another scene.
   endinput(0,0,0):DebugUiProfileEnd 0:Return
  EndIf
  bench_camera():bench_unit_animation()

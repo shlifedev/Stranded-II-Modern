@@ -1,27 +1,16 @@
-;############################################ Engine Environment
-;Build Environment Objects
-;- Sea
-;- Sky
-;- Ground
-;- Sun/Moon
-;- Light
 Function e_environment(update=1)
 
-	;Sea 1
 	If env_sea<>0 Then FreeEntity env_sea
 	env_sea=CreatePlane(10)
 	EntityColor env_sea, 80,255,240
 	EntityAlpha env_sea,0.25
 	PositionEntity env_sea,0,1,0
-	;Sea 2
 	If env_sea2<>0 Then FreeEntity env_sea2
 	env_sea2=CreatePlane()
 	EntityTexture env_sea2,gfx_water
-	;ScaleTexture gfx_water,0.001,0.001
 	ScaleTexture gfx_water,200,200
 	RotateEntity env_sea2,0,0,0
 	
-	;Sky
 	If env_sky<>0 Then FreeEntity env_sky
 	If map_skybox$="" Then
 		env_sky=e_skybox("skies\sky")
@@ -32,7 +21,6 @@ Function e_environment(update=1)
 	EntityOrder env_sky,3
 	PositionEntity env_sky,0,500,0
 	
-	;Lensflares
 	For Tlensf.Tlensf=Each Tlensf
 		FreeEntity Tlensf\h
 		Delete Tlensf
@@ -49,9 +37,6 @@ Function e_environment(update=1)
 	EntityAlpha env_lenssun,0
 	EntityRadius env_lenssun,30
 	EntityPickMode env_lenssun,1,1
-	;HideEntity env_lenssun
-	;Add Flares
-	;e_addflare(sprite,scale#,alpha#,order,offset#)
 	e_addflare(1,0.125,0.4,-1,1)
 	e_addflare(0,0.3,0.1,-2,2)
 	e_addflare(1,0.25,0.3,-3,3)
@@ -59,14 +44,12 @@ Function e_environment(update=1)
 	e_addflare(0,0.4,0.2,-4,-3)
 	e_addflare(1,0.2,0.2,-5,-2)
 	
-	;Moon
 	If env_moon<>0 Then FreeEntity env_moon
 	env_moon=CreateSprite()
 	EntityTexture env_moon,gfx_moon
 	ScaleSprite env_moon,200,200
 	EntityFX env_moon,1+8
 	
-	;Weatherbox
 	If env_wbox<>0 Then FreeEntity env_wbox
 	env_wbox=CreateCube()
 	ScaleMesh env_wbox,1000,1000,1000
@@ -76,13 +59,10 @@ Function e_environment(update=1)
 	EntityOrder env_wbox,3
 	PositionEntity env_wbox,0,500,0
 	
-	;Ground
 	If env_ground<>0 Then FreeEntity env_ground
 	env_ground=CreatePlane(1)
 	EntityColor env_ground,255,0,0
 	EntityFX env_ground,16
-	;EntityTexture env_ground,gfx_terstruc,0,2
-	;EntityTexture env_ground,gfx_terraindirt,0,1
 	EntityTexture env_ground,gfx_tergrounddirt
 	Select set_terrain
 		Case 0
@@ -94,24 +74,8 @@ Function e_environment(update=1)
 	End Select
 	e_terrainground()
 		
-	;Sun/Moon Light
-	;If env_light=0 Then
-		;env_light=CreateLight(1)
-		;LightColor env_light,50,50,50
-		;LightColor env_light,80,80,80
-	;EndIf
-	
-	;Set Gametime Timer Cache Var
 	in_tgametime=gt
 	
-	;Weather
-	;If env_weather<>0 Then FreeEntity env_weather
-	;env_weather=CreateSphere(8)
-	;FlipMesh env_weather
-	;EntityBlend env_weather,3
-	;ScaleEntity env_weather,5,5,5
-	;PositionEntity env_weather,EntityX(cam),EntityY(cam),EntityZ(cam)
-	;EntityParent env_weather,cam
 	Select map_climate
 		Case 0
 		Case 1
@@ -127,7 +91,6 @@ Function e_environment(update=1)
 	EndIf
 	
 	
-	;Update
 	If update Then
 		e_environment_update()
 		e_environment_update_light()
@@ -139,31 +102,19 @@ End Function
 
 
 
-;############################################ Engine Environment Update
-;Update Environment Objects
-;- Sea (waves, wateranimations etc.)
-;- Sky (day, night, brightness
-;- Sun/Moon (Position, color, sun or moon?)
-;- Light (Position at Sun/Moon)
-;- Timer
 Function e_environment_update()
 	
-	;Time
 	If m_section<>Csection_editor Then
 		If Not map_freezetime Then
-			;Inc. Minute?
 			If (gt-in_tgametime)>=Cworld_minute_ms Then
-				;Set Last Time Update
 				If map_timeupdate=0 Then
-					map_lday=map_day						;Map Time Update last Day
-					map_lhour=map_hour						;Map Time Update last Hour
-					map_lminute=map_minute					;Map Time Update last Minute
+					map_lday=map_day
+					map_lhour=map_hour
+					map_lminute=map_minute
 					map_lminute=map_lminute+1
-					;Inc. Hour
 					If map_lminute>=60 Then
 						map_lminute=0
 						map_lhour=map_lhour+1
-						;Inc. Day
 						If map_lhour>=24 Then
 							map_lhour=0
 							map_lday=map_lday+1
@@ -173,15 +124,12 @@ Function e_environment_update()
 				EndIf
 				in_tgametime=gt
 				map_minute=map_minute+1
-				;Inc. Hour
 				If map_minute>=60 Then
 					map_minute=0
 					map_hour=map_hour+1
-					;Inc. Day
 					If map_hour>=24 Then
 						map_hour=0
 						map_day=map_day+1
-						;Change Day Update Stuff
 						game_cd()
 					EndIf
 				EndIf
@@ -190,10 +138,8 @@ Function e_environment_update()
 		EndIf
 	EndIf
 	
-	;Sky
 	PositionEntity env_sky,EntityX(cam),EntityY(cam),EntityZ(cam)
 	
-	;Greybox
 	PositionEntity env_wbox,EntityX(cam),EntityY(cam),EntityZ(cam)
 	If env_cweather<>0 Then
 		env_wa#=env_wa#+(0.002*f#)
@@ -210,12 +156,9 @@ Function e_environment_update()
 	EndIf
 	
 	
-	;Weather
-	;Over Water
 	lensaf#=1.0
 	If g_dive=0 Then	
 		Select env_cweather
-			;0 - None
 			Case 0
 				If env_weatherchan<>0 Then
 					If ChannelPlaying(env_weatherchan) Then
@@ -223,11 +166,9 @@ Function e_environment_update()
 						env_weatherchan=0
 					EndIf
 				EndIf
-			;1 - Rain
 			Case 1
 				lensaf#=0.35
 				
-				;SFX
 				If env_weatherchan=0 Then
 					env_weatherchan=sfx_emit(sfx_rain,cam)
 				Else
@@ -235,7 +176,6 @@ Function e_environment_update()
 						env_weatherchan=sfx(sfx_rain)
 					EndIf
 				EndIf
-				;Thunder
 				If g_unpaused=1 Then
 					If in_t2000go=1 Then
 						If Rand(10)=1 Then
@@ -249,7 +189,6 @@ Function e_environment_update()
 					EndIf
 				EndIf
 					
-				;Particles
 				If g_unpaused=1 Then
 					If in_gt20go Then
 						For i=1 To 3
@@ -258,7 +197,6 @@ Function e_environment_update()
 					EndIf
 				EndIf
 					
-			;2 - Snow
 			Case 2
 				lensaf#=0.35
 			
@@ -269,7 +207,6 @@ Function e_environment_update()
 					EndIf
 				EndIf
 				
-				;Particles
 				If g_unpaused=1 Then
 					If in_gt20go Then
 						For i=1 To 2
@@ -278,7 +215,6 @@ Function e_environment_update()
 					EndIf
 				EndIf
 					
-			;3 - Thunder
 			Case 3
 				lensaf#=0.4
 			
@@ -289,7 +225,6 @@ Function e_environment_update()
 					EndIf
 				EndIf
 				
-				;Thunderclap
 				If g_unpaused=1 Then
 					If in_t1000go=1 Then
 						If Rand(5)=1 Then
@@ -304,7 +239,6 @@ Function e_environment_update()
 				EndIf
 					
 		End Select
-	;Under Water	
 	Else
 		lensaf#=0.3
 	
@@ -316,7 +250,6 @@ Function e_environment_update()
 		EndIf
 	EndIf
 	
-	;Moon
 	If map_hour>=19 Then
 		If map_hour=19 Then
 			a#=Float(map_minute)/60.0
@@ -341,11 +274,9 @@ Function e_environment_update()
 		HideEntity env_moon
 	EndIf
 	
-	;Lensflares
 	ShowEntity env_lenssun
 	If set_lightfx=1 And set_flarefx=1 Then
 	
-		;Disable Lensflares at night
 		If map_hour>=18 Then
 			If map_hour=18 Then
 				a#=Float(60-map_minute)/60.0
@@ -363,65 +294,50 @@ Function e_environment_update()
 			EndIf
 		EndIf
 		
-		;Show?
 		showf=0
 		
-		;Setup Virtual Sun
 		PositionEntity env_lenssun,EntityX(cam)-2000,EntityY(cam)+1000,EntityZ(cam)-1500
 		If remaster_enabled(Cremaster_light) Or remaster_enabled(Cremaster_shadows) Then
 			TFormVector 0,0,-3000,env_light,0
 			PositionEntity env_lenssun,EntityX(cam)+TFormedX(),EntityY(cam)+TFormedY(),EntityZ(cam)+TFormedZ()
 		EndIf
 		
-		;Check
 		If EntityInView(env_lenssun,cam) Then
 			If EntityVisible(cam,env_lenssun) = True
 				
-				;Show!	
 				showf=1
 				
-				;determine sun visible x/y coords using camera 3d to 2d conversion
 				CameraProject cam, EntityX(env_lenssun,1),EntityY(env_lenssun,1),EntityZ(env_lenssun,1)
 			    lx=ProjectedX()
 			    ly=ProjectedY()
-				;determine center of screen
 				cx=set_scrx/2
 				cy=set_scry/2
 		
-				;determine vector from center to sun's x/y screen position
 				vx=cx-lx
 				vy=cy-ly
 				If vx=0 And vy=0
-					distance#=1.0 ;to fix sqr(0) fail
+					distance#=1.0
 				Else
-					distance#=Sqr( (vx*vx)+(vy*vy) )	;determine length of vector (pythagoras)
+					distance#=Sqr( (vx*vx)+(vy*vy) )
 				EndIf
-				;normalise vector (determine 1 unit size in x and y coordinates)
 				nx# = vx / distance#
 				ny# = vy / distance#
 				
-				;Setup each Flare
 				For fl.Tlensf=Each Tlensf
-					;Calc Position
 					fx = cx - (nx#*(distance/fl\offset))
 					fy = cy - (ny#*(distance/fl\offset))
-					;Set Position
 					PositionEntity fl\h,fx,fy,1
-					;Alpha Fadein
 					If fl\ca#<fl\ra# Then
 						fl\ca#=fl\ca#+(0.02*f#)
 						If fl\ca#>fl\ra# Then fl\ca#=fl\ra#
 					EndIf
 					EntityAlpha fl\h,fl\ca#*lensaf#
-					;Show
 					ShowEntity fl\h
 				Next
 			
 			EndIf
 		EndIf
-		;Do not Show
 		If showf=0 Then
-			;Alpha Fadeout
 			For fl.Tlensf=Each Tlensf
 				If fl\ca#>0.0 Then
 					ShowEntity fl\h
@@ -434,7 +350,6 @@ Function e_environment_update()
 			Next
 		EndIf
 	Else
-		;Hide when disabled
 		For fl.Tlensf=Each Tlensf
 			HideEntity fl\h
 		Next
@@ -444,29 +359,23 @@ Function e_environment_update()
 End Function
 
 
-;### Update Light
 Function e_environment_update_light()
-	Local h1,h2			;Hour 1/Hour 2
-	Local rf,gf,bf		;RGB Final
-	Local ra,ga,ba		;RGB Ambient
-	Local percent#		;Percent
-	;Determine Hours
+	Local h1,h2
+	Local rf,gf,bf
+	Local ra,ga,ba
+	Local percent#
 	h1=map_hour
 	h2=map_hour+1
 	If h2>=24 Then h2=0
-	;Determine Final Color by Mixing the Colors of both Hours in Relation to Minutes
 	percent#=Float(Float(map_minute)/59.)
 	rf=(Dlightcycle(h1,0)*(1.-percent#)) + (Dlightcycle(h2,0)*(percent#))
 	gf=(Dlightcycle(h1,1)*(1.-percent#)) + (Dlightcycle(h2,1)*(percent#))
 	bf=(Dlightcycle(h1,2)*(1.-percent#)) + (Dlightcycle(h2,2)*(percent#))
-	;Sky Override?
 	If in_skyoverride(0)=1 Then
-		;Unmixed
 		If in_skyoverride(4)=0 Then
 			rf=in_skyoverride(1)
 			gf=in_skyoverride(2)
 			bf=in_skyoverride(3)
-		;Mixed
 		Else
 			p1#=Float(in_skyoverride(4))/100.0
 			If p1#<0.0 Then p1#=0.0
@@ -477,17 +386,14 @@ Function e_environment_update_light()
 			bf=Float(in_skyoverride(3))*p2#+Float(bf)*p1#		
 		EndIf
 	EndIf
-	;Cache Colors in global env_col Array
 	env_col(0)=rf
 	env_col(1)=gf
 	env_col(2)=bf
-	;Use Colors!
 	EntityColor env_sky,rf,gf,bf
 	ra=rf-55:If ra<0 Then ra=0
 	ga=gf-55:If ga<0 Then ga=0
 	ba=bf-55:If ba<0 Then ba=0
 	AmbientLight ra,ga,ba
-	;Greybox
 	grey=(rf+gf+bf)/3
 	grey=grey-85
 	If grey<0 Then grey=0
@@ -495,18 +401,14 @@ Function e_environment_update_light()
 End Function
 
 
-;### Update Water
 Function e_environment_update_water(forced=0)
 	remaster_frame()
  DebugUiProfileBegin 4:remaster_shadow_frame():DebugUiProfileEnd 4
-	;Scroll Water Textures
 	env_seascr#=(env_seascr#+0.0003*f#) Mod 128
 	PositionTexture gfx_water,env_seascr#,env_seascr#
 	
-	;Water Sinus
 	env_seasinus#=(env_seasinus#+2.*f#) Mod 360
 	
-	;Water Textur
 	size=TextureHeight(gfx_water)
 	isin=env_seasinus#
 	SetBuffer TextureBuffer(gfx_water)
@@ -542,15 +444,12 @@ Function e_environment_update_water(forced=0)
 	End Select	
 	SetBuffer BackBuffer()
 	
-	;Over Water
 	If EntityY(cam)>0 Then
 		
-		;Surface + Sky
 		RotateEntity env_sea2,0,0,0
 		EntityFX env_sky,1+8
 		EntityFX env_wbox,1+8
 		
-		;Dive
 		If g_dive=1 Then
 			g_dive=0
 			sfx sfx_splash2
@@ -559,10 +458,8 @@ Function e_environment_update_water(forced=0)
 			EndIf
 		EndIf
 		
-		;Air Timer
 		g_airtimer=gt
 			
-		;Fog
 		If set_fog=1 Or map_fog(3)>0 Then
 			CameraFogMode cam,1
 			CameraFogRange cam,(500.*set_viewfac#)-250,(500.*set_viewfac#)+600-250
@@ -575,15 +472,12 @@ Function e_environment_update_water(forced=0)
 		EndIf
 		
 		
-		;Waves
 		If m_section<>Csection_editor Then
 			If gt-in_waverate>game_waverate Then
 				in_waverate=gt
 				If g_unpaused Then
 					closewave=0
-					;Waves?
 					If set_effects>0 Then
-						;Smome
 						If set_effects=1 Then
 							For Twave.Twave=Each Twave
 								If Rand(2)=1 Then
@@ -598,7 +492,6 @@ Function e_environment_update_water(forced=0)
 									EndIf
 								EndIf
 							Next
-						;Many
 						Else
 							For Twave.Twave=Each Twave
 								dist=EntityDistance(cam,Twave\h)
@@ -613,7 +506,6 @@ Function e_environment_update_water(forced=0)
 							Next
 						EndIf
 					EndIf
-					;Wave SFX
 					If closewave=1 Then
 						sfx(sfx_wave(Rand(0,2)),Rnd(0.3,0.6))
 					EndIf
@@ -621,38 +513,30 @@ Function e_environment_update_water(forced=0)
 			EndIf
 		EndIf
 		
-		;Cubemap Stuff?
 		If set_water_texsize>0 And (bench_active=0 Or bench_reflection<>0)
-			;Update Time?
 			If ((ms-set_water_updatet)>=set_water_updaterate) Or forced=1 Then
 				set_water_updatet=ms
 				
-				;In View?
 				If 1=1
 					
-					;Hide/Show
 					HideEntity env_sea
 					HideEntity env_sea2
 					HideEntity cam
 					ShowEntity env_watercam
 					
-					;Setup Cam
 					PositionEntity env_watercam,EntityX(cam),-EntityY(cam),EntityZ(cam)
 					size=TextureHeight(env_watertex)
 					CameraClsMode env_watercam,1,1
 				   	CameraViewport env_watercam,0,0,size,size
 					
-					;Choose the optional planar reflection or the original six-view capture.
 					If remaster_enabled(Cremaster_water) Then
 						DebugUiProfileBegin 6:RenderWorldPlanar cam,env_watertex,0:DebugUiProfileEnd 6
 					Else
 						DebugUiProfileBegin 6:RenderWorldCube env_watercam,env_watertex:DebugUiProfileEnd 6
 					EndIf
 
-					;Assign
 					EntityTexture env_sea,env_watertex
 					
-					;Show/Hide
 					ShowEntity env_sea
 					ShowEntity env_sea2
 					ShowEntity cam
@@ -663,21 +547,17 @@ Function e_environment_update_water(forced=0)
 			EndIf
 		EndIf
 		
-	;Under Water
 	Else
 		
-		;Surface + Sky
 		RotateEntity env_sea2,0,0,-180
 		EntityFX env_sky,1
 		EntityFX env_wbox,1
 		
-		;Dive
 		If g_dive=0 Then
 			sfx sfx_startdive
 			g_dive=1
 		EndIf
 		
-		;Fog
 		CameraFogMode cam,1
 		CameraFogRange cam,1,500
 		wr=env_col(0)-env_wcol(0):If wr<0 Then wr=0
@@ -685,13 +565,10 @@ Function e_environment_update_water(forced=0)
 		wb=env_col(2)-env_wcol(2):If wb<0 Then wb=0
 		CameraFogColor cam,wr,wg,wb
 		
-		;Bubbles + Stuff
 		If g_unpaused And in_gt20go Then
-			;Bubbles
 			If Rand(10)=1 Then
 				p_add(EntityX(cam)+Rnd(-5,5),EntityY(cam)-10,EntityZ(cam)+Rnd(-5,5),10,Rnd(1,3))
 			EndIf
-			;Hover
 			If set_effects>0 Then
 				If set_effects=1 Then
 					If Rand(4)=1 Then
@@ -711,7 +588,6 @@ Function e_environment_update_water(forced=0)
 	
 	EndIf
 	
-	;Cam Pos
 	If Abs(EntityY(cam))<1.3 Then
 		If EntityY(cam)>0. Then
 			PositionEntity cam,EntityX(cam),1.3,EntityZ(cam)
@@ -722,7 +598,6 @@ Function e_environment_update_water(forced=0)
 End Function
 
 
-;### Setup Waterstuff
 Function e_environment_setup_water()
 	Local waterflags=1+128+256
 	EntityFX env_sea,262144:EntityFX env_sea2,262144
@@ -732,7 +607,6 @@ Function e_environment_setup_water()
 		EntityFX env_sea,65536:EntityAlpha env_sea,1
 		If set_water>0 Then EntityFX env_sea2,131072
 	EndIf
-	;Setup Values
 	Select set_water
 		Case 0 set_water_texsize=0
 		Case 1 set_water_texsize=0
@@ -742,10 +616,8 @@ Function e_environment_setup_water()
 		Case 5 set_water_texsize=128 : set_water_updaterate=1
 		Case 6 set_water_texsize=256 : set_water_updaterate=0
 	End Select
-	;Setup Texture / Cam
 	If set_water_texsize>0 Then
 		ShowEntity env_sea
-		;Texture
 		If env_watertex=0 Then
 			env_watertex=CreateTexture(set_water_texsize,set_water_texsize,waterflags)
 		Else
@@ -754,7 +626,6 @@ Function e_environment_setup_water()
 				env_watertex=CreateTexture(set_water_texsize,set_water_texsize,waterflags)
 			EndIf
 		EndIf
-		;Cam
 		If env_watercam=0 Then
 			env_watercam=CreateCamera()
 			CameraRange env_watercam,1,1500
@@ -762,12 +633,10 @@ Function e_environment_setup_water()
 		EndIf
 	Else
 		HideEntity env_sea
-		;Free Texture & Cam when unused
 		If env_watertex<>0 Then FreeTexture env_watertex:env_watertex=0
 		If env_watercam<>0 Then FreeEntity env_watercam:env_watercam=0
 	EndIf
 	
-	;The Wavematrix
 	For Twave.Twave=Each Twave
 		FreeEntity Twave\h
 		Delete Twave
@@ -782,13 +651,10 @@ Function e_environment_setup_water()
 	Local hzp#,hzm#
 	Local x,z
 	Local cnt
-	;Basic Scan
 	For x=-(ter_size/2)*Cworld_size To (ter_size/2)*Cworld_size Step 8
 		For z=-(ter_size/2)*Cworld_size To (ter_size/2)*Cworld_size Step 8
-			;Scan Height
 			h#=TerrainY(ter,x,0,z)
 			env_wavematrixy((x+os)/sizef,(z+os)/sizef)=h#
-			;Shore?
 			If Abs(h#)<5 Then
 				env_wavematrix((x+os)/sizef,(z+os)/sizef)=1
 				cnt=cnt+1
@@ -796,49 +662,40 @@ Function e_environment_setup_water()
 		Next
 	Next
 	If set_debug=1 Then con_add("Wave Spawns (PreCleanup): "+cnt)
-	;Matrix Cleanup
-	Local rabs# ;Root Abs
+	Local rabs#
 	For x=1 To size-1
 		For z=1 To size-1
 			If env_wavematrix(x,z)=1 Then
 				rabs#=env_wavematrixy#(x,z)
 				
-				;X-1,Z
 				If Abs(env_wavematrixy(x-1,z))>rabs# Then
 					env_wavematrix(x-1,z)=0
 				EndIf
 				
-				;X+1,Z
 				If Abs(env_wavematrixy(x+1,z))>rabs# Then
 					env_wavematrix(x+1,z)=0
 				EndIf
 				
-				;X,Z-1
 				If Abs(env_wavematrixy(x,z-1))>rabs# Then
 					env_wavematrix(x,z-1)=0
 				EndIf
 				
-				;X,Z+1
 				If Abs(env_wavematrixy(x,z+1))>rabs# Then
 					env_wavematrix(x,z+1)=0
 				EndIf
 				
-				;X-1,Z-1
 				If Abs(env_wavematrixy(x-1,z-1))>rabs# Then
 					env_wavematrix(x-1,z-1)=0
 				EndIf
 				
-				;X+1,Z+1
 				If Abs(env_wavematrixy(x+1,z+1))>rabs# Then
 					env_wavematrix(x+1,z+1)=0
 				EndIf
 				
-				;X+1,Z-1
 				If Abs(env_wavematrixy(x+1,z-1))>rabs# Then
 					env_wavematrix(x+1,z-1)=0
 				EndIf
 				
-				;X-1,Z+1
 				If Abs(env_wavematrixy(x-1,z+1))>rabs# Then
 					env_wavematrix(x-1,z+1)=0
 				EndIf
@@ -846,7 +703,6 @@ Function e_environment_setup_water()
 			EndIf
 		Next
 	Next
-	;Create + Direction Detection
 	Local a
 	Local hdifa
 	Local hdifv#
@@ -857,20 +713,14 @@ Function e_environment_setup_water()
 		For z=0 To size
 			If env_wavematrix(x,z)=1 Then
 				
-				;Create
 				Twave.Twave=New Twave
 				Twave\x#=-os+(x*sizef)+(sizef/2)
 				Twave\z#=-os+(z*sizef)+(sizef/2)
 				
-				;c=CreateCube()
 				c=CreatePivot()
-				;PositionEntity c,Twave\x#,0,Twave\z#
-				;ScaleEntity c,3,20,15
-				;EntityColor c,0,0,255
 				HideEntity c
 				Twave\h=c
 				
-				;Direction
 				hdifa=0
 				hdifv#=0
 				For a=0 To 360 Step 30
@@ -896,12 +746,10 @@ Function e_environment_setup_water()
 			EndIf
 		Next
 	Next
-	;Remove Waves in small Waters
 	For Twave.Twave=Each Twave
 		x=EntityX(Twave\h)
 		z=EntityZ(Twave\h)
 		free=0
-		;Scan
 		RotateEntity Twave\h,0,Twave\dir,0
 		For i=0 To game_minwavespace Step 10
 			MoveEntity Twave\h,0,0,-10
@@ -910,44 +758,35 @@ Function e_environment_setup_water()
 				Exit
 			EndIf
 		Next
-		;Evaluate
 		If free=1 Then
-			;Free
 			FreeEntity Twave\h
 			Delete Twave
 		Else
-			;Keep
 			PositionEntity Twave\h,x,0,z
 		EndIf
 	Next
-	;Free Arrays
 	Dim env_wavematrix(0,0)
 	Dim env_wavematrixy#(0,0)
 	If set_debug=1 Then con_add("Wave Spawns: "+cnt)
 End Function
 
 
-;### Water 2D FX
-;Use sinus to create a 2d wave watereffect while diving
 Function e_environment_water2dfx()
 	If set_2dfx Then
 		If EntityY(cam)<0 Then
 			env_watersin#=env_watersin#+(6.*f#)
 			ws#=env_watersin#
 			Select set_water
-				;Low Steprate
 				Case 0,1
 					For y=0 To set_scry Step 20
 						CopyRect 0,y,set_scrx,20,Sin(ws#)*6.,y
 						ws#=ws#+20.
 					Next
-				;Normal Steprate
 				Case 2,3,4
 					For y=0 To set_scry Step 10
 						CopyRect 0,y,set_scrx,10,Sin(ws#)*6.,y
 						ws#=ws#+15.
 					Next
-				;High Steprate
 				Case 5,6
 					For y=0 To set_scry Step 5
 						CopyRect 0,y,set_scrx,10,Sin(ws#)*6.,y
@@ -959,10 +798,8 @@ Function e_environment_water2dfx()
 End Function
 
 
-;### Set Weather
 Function e_environment_setweather(weather)
 	env_cweather=weather
-	;Deplete Fire on Rain / Snow
 	If weather=1 Or weather=2 Then
 		For Tstate.Tstate=Each Tstate
 			If Tstate\typ=Cstate_fire Then
@@ -973,11 +810,8 @@ Function e_environment_setweather(weather)
 End Function
 
 
-;############################################ Engine Terrain
-;Build Terrain
 Function e_terrain(size,tex_color$)
 
-	;Size Check
 	Local texsize
 	Local scalefac#
 	Local sizecheck#
@@ -985,10 +819,8 @@ Function e_terrain(size,tex_color$)
 	If Int(sizecheck#)<>sizecheck# Or size<16 Then RuntimeError("'"+size+"' is an invalid Terrainsize! ")
 	ter_size=size
 
-	;Build Terrain
 	If ter<>0 Then FreeEntity ter
 	ter=CreateTerrain(ter_size)
-	;DebugLog "ter in e_terrain: "+ter
 	Select set_ter
 		Case 0 TerrainDetail ter,5000,1
 		Case 1 TerrainDetail ter,7500,1
@@ -998,7 +830,6 @@ Function e_terrain(size,tex_color$)
 	PositionEntity ter,-(Cworld_size*ter_size/2),-(Cworld_height/2),-(Cworld_size*ter_size/2)
 	EntityPickMode ter,2,1
 	TerrainShading ter,1
-	;EntityType ter,Cworld_col
 	For x=0 To ter_size
 	For z=0 To ter_size
 		ModifyTerrain(ter,x,z,Rnd(0.5,0.52))
@@ -1006,9 +837,7 @@ Function e_terrain(size,tex_color$)
 	Next
 	Next
 	
-	;Colortexture (Load from File or use already generated Texture)
 	If tex_color$<>"generated" Then
-		;Load
 		If ter_tex_color<>0 Then FreeTexture ter_tex_color
 		If (FileType(tex_color$)=1) Then
 			ter_tex_color=LoadTexture(tex_color$)
@@ -1018,14 +847,12 @@ Function e_terrain(size,tex_color$)
 			EntityTexture ter,ter_tex_color,0,0
 		EndIf
 	Else
-		;Use generated
 		EntityTexture ter,ter_tex_color,0,0
 	EndIf
 	texsize=TextureHeight(ter_tex_color)
 	scalefac#=Float(Float(Float(ter_size)/Float(texsize))*Float(Cworld_size))*(Float(texsize)/Float(Cworld_size))
 	ScaleTexture ter_tex_color,scalefac#,-scalefac#
 		
-	;Texture Stuff
 	Select set_terrain
 		Case 0
 			EntityColor ter, 120,120,120
@@ -1039,13 +866,11 @@ Function e_terrain(size,tex_color$)
 			EntityTexture ter,gfx_terstruc,0,2
 	End Select
 	
-	;Grass
 	grass_map()
 	
 End Function
 
 
-;### Smooth Terrain
 Function e_terrainsmooth()
 	Local h#
 	For x=1 To ter_size-1
@@ -1066,7 +891,6 @@ Function e_terrainsmooth()
 End Function
 
 
-;### Distort Terrain
 Function e_terraindistort(power#)
 	Local h#
 	For x=1 To ter_size-1
@@ -1081,7 +905,6 @@ Function e_terraindistort(power#)
 End Function
 
 
-;### Chance Height Randomly
 Function e_terrainrandom(x,z,max#=0.3,mode=0)
 	Local h#=TerrainHeight(ter,x,z)
 	Select mode
@@ -1092,7 +915,6 @@ Function e_terrainrandom(x,z,max#=0.3,mode=0)
 End Function
 
 
-;### Load Heightmap
 Function e_terrainhm(file$,scale#)
 	If scale#<-1. Then scale#=-1.
 	If scale>1. Then scale#=1.
@@ -1118,7 +940,6 @@ Function e_terrainhm(file$,scale#)
 End Function
 
 
-;### Load Colormap
 Function e_terraincm(file$,loadscreen=1)
 	If loadscreen=1 Then bmpf_loadscreen("Loading Colormap")
 	If (FileType(file$)=1) Then
@@ -1128,19 +949,15 @@ Function e_terraincm(file$,loadscreen=1)
 	Else
 		Return 0
 	EndIf
-	;Scale
 	texsize=TextureHeight(ter_tex_color)
 	scalefac#=Float(Float(Float(ter_size)/Float(texsize))*Float(Cworld_size))*(Float(texsize)/Float(Cworld_size))
 	ScaleTexture ter_tex_color,scalefac#,-scalefac#
-	;Okay
 	Return 1
 End Function
 
 
-;### Scale Colormap
 Function e_terraincmscale(newscale)
 	bmpf_loadscreen("[[loc:engine.d28d2fe1eabe]]")
-	;Change new scale to a power of 2 value
 	Local p2_num,p2_c
 	p2_num=newscale
 	p2_c=0
@@ -1153,32 +970,26 @@ Function e_terraincmscale(newscale)
 	Else
 		newscale=2^(p2_c+1)
 	EndIf
-	;Keep value in bounds
 	If newscale<8 Then newscale=8:gui_msg("[[loc:engine.b34e96a411e9]]")
 	If newscale>4096 Then newscale=4096:gui_msg("[[loc:engine.12415a055a32]]")
-	;Perform scale
 	editor_textobuffer(ter_tex_color)
 	ResizeImage in_editor_buffer,newscale,newscale
 	FreeTexture ter_tex_color
 	ter_tex_color=CreateTexture(newscale,newscale)
 	If ter_tex_color=0 Then RuntimeError("Failed to create "+newsize+"x"+newsize+" terrain texture")
 	editor_buffertotex(ter_tex_color)
-	;Update
 	grass_map()
 	grass_heightmap()
 	editor_textobuffer(ter_tex_color)
 	p_kill2d()
-	;Scale
 	texsize=TextureHeight(ter_tex_color)
 	scalefac#=Float(Float(Float(ter_size)/Float(texsize))*Float(Cworld_size))*(Float(texsize)/Float(Cworld_size))
 	ScaleTexture ter_tex_color,scalefac#,-scalefac#
 	EntityTexture ter,ter_tex_color,0,0
-	;Okay
 	Return newscale
 End Function
 
 
-;### Terrain Complete Height Change
 Function e_terraincompleteh(change#)
 	For x=1 To ter_size-1
 		For z=1 To ter_size-1
@@ -1192,9 +1003,7 @@ Function e_terraincompleteh(change#)
 End Function
 
 
-;### Terrain Border
 Function e_terrainborder(absh#,change#=0)
-	;Set Absolute
 	If absh#<>-1. Then
 		For x=0 To ter_size		
 			ModifyTerrain(ter,x,0,absh#)
@@ -1202,7 +1011,6 @@ Function e_terrainborder(absh#,change#=0)
 			ModifyTerrain(ter,0,x,absh#)
 			ModifyTerrain(ter,ter_size,x,absh#)
 		Next
-	;Change
 	Else
 		h#=TerrainHeight(ter,0,0)
 		h#=h#+change#
@@ -1218,7 +1026,6 @@ Function e_terrainborder(absh#,change#=0)
 End Function
 
 
-;### Terrain Transform (with round brush)
 Function e_terraintrans(rx,rz,change#,r=1)
 	Local h#,perc#,dist#
 	For x=(rx-r) To (rx+r)
@@ -1242,7 +1049,6 @@ Function e_terraintrans(rx,rz,change#,r=1)
 End Function
 
 
-;### Terrain Flatten (with round brush)
 Function e_terrainflatten(rx,rz,r=1)
 	Local h#,perc#,dist#
 	Local c#=TerrainHeight(ter,rx,rz)
@@ -1254,7 +1060,6 @@ Function e_terrainflatten(rx,rz,r=1)
 					If z>0 And z<ter_size Then
 						perc#=(dist#/Float(r))
 						If perc#>1.0 Then perc#=1.0
-						;perc#=1.-perc#
 						h#=(TerrainHeight(ter,x,z))*perc#
 						h#=h#+(c#*(1.-perc#))
 						If h#>1. Then h#=1.
@@ -1271,7 +1076,6 @@ Function e_terrainflatten(rx,rz,r=1)
 End Function
 
 
-;### Terrain Smooth (with round brush)
 Function e_terrainsmoothp(rx,rz,r=1)
 	Local h#,perc#,dist#
 	For x=(rx-r) To (rx+r)
@@ -1299,7 +1103,6 @@ Function e_terrainsmoothp(rx,rz,r=1)
 End Function
 
 
-;### Terrain Distort (with round brush)
 Function e_terraindistortp(rx,rz,change#,r=1)
 	Local h#,perc#,dist#
 	For x=(rx-r) To (rx+r)
@@ -1323,12 +1126,9 @@ Function e_terraindistortp(rx,rz,change#,r=1)
 End Function
 
 
-;### Terrain Ground
 Function e_terrainground(fx=1)
-	;Position
 	ter_groundy=TerrainY(ter,-((ter_size/2)*Cworld_size),0,-((ter_size/2)*Cworld_size))
 	PositionEntity env_ground,0,ter_groundy,0
-	;Color & Stuff
 	If fx=1 Then
 		LockBuffer TextureBuffer(ter_tex_color)
 		Local rgb=ReadPixelFast(0,0,TextureBuffer(ter_tex_color))
@@ -1348,7 +1148,6 @@ Function e_terrainground(fx=1)
 End Function
 
 
-;### Set Terraincolor
 Function e_tercol(r,g,b,id)
 	in_tercol(0,id)=r
 	in_tercol(1,id)=g
@@ -1358,11 +1157,9 @@ End Function
 
 ;### Skybox (Borrowed from Blitz 3D Castle Sample... ;) - and slightly modified)
 Function e_skybox(file$)
-	;Free old Texture
 	For i=0 To 5
 		If env_skytex(i)<>0 Then FreeTexture env_skytex(i)
 	Next
-	;Get Extension
 	Local ext$=""
 	If FileType(file$+"_fr.jpg")=1 Then
 		ext$="jpg"
@@ -1375,9 +1172,7 @@ Function e_skybox(file$)
 	ElseIf FileType(file$+"_fr.png")=1 Then
 		ext$="png"
 	EndIf
-	;Mesh
 	m=CreateMesh()
-	;FRont face
 	env_skytex(0)=LoadTexture(file$+"_fr."+ext$,49)
 	b=CreateBrush()
 	If env_skytex(0)<>0 Then
@@ -1388,7 +1183,6 @@ Function e_skybox(file$)
 	AddVertex sf,+1,-1,-1,1,1:AddVertex sf,-1,-1,-1,0,1
 	AddTriangle sf,0,1,2:AddTriangle sf,0,2,3
 	FreeBrush b
-	;LeFt face
 	env_skytex(1)=LoadTexture(file$+"_lf."+ext$,49)
 	b=CreateBrush()
 	If env_skytex(1)<>0 Then
@@ -1399,7 +1193,6 @@ Function e_skybox(file$)
 	AddVertex sf,+1,-1,+1,1,1:AddVertex sf,+1,-1,-1,0,1
 	AddTriangle sf,0,1,2:AddTriangle sf,0,2,3
 	FreeBrush b
-	;BacK face
 	env_skytex(2)=LoadTexture(file$+"_bk."+ext$,49)
 	b=CreateBrush()
 	If env_skytex(2)<>0 Then
@@ -1410,7 +1203,6 @@ Function e_skybox(file$)
 	AddVertex sf,-1,-1,+1,1,1:AddVertex sf,+1,-1,+1,0,1
 	AddTriangle sf,0,1,2:AddTriangle sf,0,2,3
 	FreeBrush b
-	;RighT face
 	env_skytex(3)=LoadTexture(file$+"_rt."+ext$,49)
 	b=CreateBrush()
 	If env_skytex(3)<>0 Then
@@ -1421,7 +1213,6 @@ Function e_skybox(file$)
 	AddVertex sf,-1,-1,-1,1,1:AddVertex sf,-1,-1,+1,0,1
 	AddTriangle sf,0,1,2:AddTriangle sf,0,2,3
 	FreeBrush b
-	;top face (UP)
 	env_skytex(4)=LoadTexture(file$+"_up."+ext$,49)
 	b=CreateBrush()
 	If env_skytex(4)<>0 Then
@@ -1432,7 +1223,6 @@ Function e_skybox(file$)
 	AddVertex sf,+1,+1,-1,1,0:AddVertex sf,-1,+1,-1,1,1
 	AddTriangle sf,0,1,2:AddTriangle sf,0,2,3
 	FreeBrush b
-	;bottom face (DowN)	
 	env_skytex(5)=LoadTexture(file$+"_dn."+ext$,49)
 	b=CreateBrush()
 	If env_skytex(5)<>0 Then
@@ -1443,25 +1233,20 @@ Function e_skybox(file$)
 	AddVertex sf,+1,-1,+1,0,1:AddVertex sf,-1,-1,+1,0,0
 	AddTriangle sf,0,1,2:AddTriangle sf,0,2,3
 	FreeBrush b
-	;Setup
 	ScaleMesh m,1000,1000,1000
 	FlipMesh m
 	Return m
 End Function
 
 
-;### Terrain Y
 Function e_tery#(x#,z#)
 	Local y#=TerrainY(ter,x#,0,z#)
 	If y#<ter_groundy# Then Return ter_groundy#
 	Return y#
 End Function
 
-;### Ground Collision
 Function e_gc(h,add#)
-	;DEBUG
 	Return
-	;DEBUG
 	Local y#=TerrainY#(ter,EntityX#(h),0,EntityZ#(h))
 	If y#<ter_groundy#+add# Then y#=ter_groundy#
 	hy#=EntityY#(h)
@@ -1471,7 +1256,6 @@ Function e_gc(h,add#)
 End Function
 
 
-;### Terrain Pitch
 Function e_terpitch#(x#,z#,s#=1.)
 	p1=CreatePivot()
 	p2=CreatePivot()
@@ -1485,7 +1269,6 @@ Function e_terpitch#(x#,z#,s#=1.)
 End Function
 
 
-;### Terrain Roll
 Function e_terroll#(x#,z#,s#=1.)
 	p1=CreatePivot()
 	p2=CreatePivot()
@@ -1499,7 +1282,6 @@ Function e_terroll#(x#,z#,s#=1.)
 End Function
 
 
-;### Terrain Align
 Function e_teralign(h,s#=1.)
 	Local x#=EntityX(h)
 	Local z#=EntityZ(h)
@@ -1519,7 +1301,6 @@ Function e_teralign(h,s#=1.)
 End Function
 
 
-;### Addflare
 Function e_addflare(sprite,scale#,alpha#,order,offset#)
 	fl.Tlensf=New Tlensf
 	fl\h=CreateSprite(env_lenspivot)

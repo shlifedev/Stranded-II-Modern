@@ -1,4 +1,3 @@
-REM A quick script.
 @echo off
 
 IF "%Platform%" == "x64" (

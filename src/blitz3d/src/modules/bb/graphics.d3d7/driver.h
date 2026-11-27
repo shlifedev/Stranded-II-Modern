@@ -19,7 +19,6 @@ protected:
   std::vector<GfxDriver*> drivers;
   GfxDriver *curr_driver;
 
-	//for modes 1 and 2
 	int mod_cnt;
 	MMRESULT timerID;
 	IDirectDrawClipper *clipper;

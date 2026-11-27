@@ -1,22 +1,18 @@
-;############################################ Load Infos
-
 Global info_count=0
 Const Cinfo_count=100
 
-Dim Dinfo_name$(Cinfo_count)			;Name
-Dim Dinfo_frame(Cinfo_count)			;Icon Frame
+Dim Dinfo_name$(Cinfo_count)
+Dim Dinfo_frame(Cinfo_count)
 
-Dim Dinfo_script$(Cinfo_count)			;Script Stuff?
-Dim Dinfo_scriptk$(Cinfo_count)			;Script Key
-Dim Dinfo_scripto$(Cinfo_count)			;Script Override
+Dim Dinfo_script$(Cinfo_count)
+Dim Dinfo_scriptk$(Cinfo_count)
+Dim Dinfo_scripto$(Cinfo_count)
 
-Dim Dinfo_group$(Cinfo_count)			;Group
+Dim Dinfo_group$(Cinfo_count)
 
-Dim Dinfo_descr$(Cinfo_count)			;Description
+Dim Dinfo_descr$(Cinfo_count)
 
 
-
-;### Load Infos
 
 Function load_infos()
 	Local in$,var$,val$
@@ -72,11 +68,9 @@ Function load_infos()
 							EndIf
 							
 						
-						;Group
 						Case "group"
 							Dinfo_group$(i)=group_set$(Cclass_info,val$)						
 						
-						;Description
 						Case "description"
 							If val$="start" Then
 								While Not Eof(stream)

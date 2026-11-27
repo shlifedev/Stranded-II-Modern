@@ -1,4 +1,3 @@
-; UTF-8 byte boundaries, per-language bitmap glyphs and display aliases.
 ; Original Stranded II copyright remains with Unreal Software.
 Dim ko_pages(6,63)
 Dim ko_index(65535)
@@ -9,9 +8,6 @@ Global ko_editing=0
 Type Tkoalias
  Field original$,translated$,link
 End Type
-; Drawn labels repeat every frame, but resolving their catalog references and
-; decoding UTF-8 through Mid copies the whole string for every byte. Runs keep
-; the decoded codes of each source text until a catalog entry changes.
 Type Tkorun
  Field source$,editing,codes,count,link
 End Type
@@ -23,7 +19,6 @@ Function ko_cont(b)
  Return b>=128 And b<192
 End Function
 
-; Positions used by the editor are zero-based byte boundaries.
 Function ko_floor(t$,p)
  If p<0 Then Return 0
  If p>Len(t$) Then p=Len(t$)
@@ -92,7 +87,6 @@ Function ko_localize$(t$)
  Return loc_resolve(t$)
 End Function
 
-; Length and tail spread catalog references and numbers without a full byte walk.
 Function ko_run_hash(t$)
  Local tail$=Right(t$,8),h=Len(t$),i
  For i=1 To Len(tail$)
@@ -112,7 +106,6 @@ Function ko_run_clear()
  ko_run_generation=loc_generation
 End Function
 
-; The run stays valid until the next ko_run call, which may flush the cache.
 Function ko_run.Tkorun(t$)
  If ko_run_generation<>loc_generation Then ko_run_clear()
  Local h=ko_run_hash(t$)

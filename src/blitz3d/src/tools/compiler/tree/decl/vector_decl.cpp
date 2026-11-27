@@ -1,9 +1,6 @@
 #include "vector_decl.h"
 #include "../expr/const.h"
 
-////////////////////////
-// Vector declaration //
-////////////////////////
 void VectorDeclNode::proto( DeclSeq *d,Environ *env ){
 
 	Type *ty=tagType( tag,env );if( !ty ) ty=Type::int_type;
@@ -26,7 +23,6 @@ void VectorDeclNode::proto( DeclSeq *d,Environ *env ){
 }
 
 void VectorDeclNode::translate( Codegen *g ){
-	//type tag!
 	g->align_data( 4 );
 	VectorType *v=sem_type->vectorType();
 	g->i_data( 6,v->label );
@@ -47,9 +43,7 @@ void VectorDeclNode::translate( Codegen *g ){
 
 #ifdef USE_LLVM
 void VectorDeclNode::translate2( Codegen_LLVM *g ){
-	// VectorType *v=sem_type->vectorType();
 
-	// if( kind==DECL_GLOBAL ) g->i_data( 0,"_v"+ident );
 }
 #endif
 

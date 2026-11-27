@@ -1,4 +1,4 @@
-add_compile_options(-w) # suppress warnings
+add_compile_options(-w)
 
 add_library(crossguid STATIC src/guid.h src/guid.cpp)
 target_output_to_toolchain(crossguid)

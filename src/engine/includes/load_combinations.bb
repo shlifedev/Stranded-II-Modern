@@ -1,8 +1,4 @@
-;############################################ Load Combinations
-
-;### Load Combinations
 Function load_combinations()
-	;Delete Old
 	For Tcom.Tcom=Each Tcom:Delete Tcom:Next
 	
 	Local in$,var$,val$
@@ -17,7 +13,6 @@ Function load_combinations()
 		file$=NextFile(dir)
 		If Left(file$,12)="combinations" And Lower(Right(file$,4))=".inf" Then
 	
-			;Read
 			stream=ReadFile("sys\"+file$)
 			If stream=0 Then RuntimeError("Unable to read sys\"+file$)
 		
@@ -29,7 +24,7 @@ Function load_combinations()
 					var$=Trim(Left(in$,equal-1))
 					val$=trimspace(Mid(in$,equal+1,-1))
 					Select var$
-						Case "name" ;Skip (for Editor)
+						Case "name"
 						Case "combi"
 							If val$="start" Then
 								Tcom_serial=Tcom_serial+1
@@ -62,16 +57,13 @@ Function load_combinations()
 							Tcom\id=Tcom_serial
 							Tcom\mode=0
 							split$(val$,",",2)
-							;Typ
 							Tcom\typ=Int(Trim(splits$(0)))
 							If ha_typeexists(Cclass_item,Tcom\typ)=0 Then
 								RuntimeError("Invalid ITEM ID for COMBINATION ("+Tcom\typ+")")
 							EndIf
-							;Count
 							splits$(1)=Trim(splits$(1))
 							If Int(splits$(1))<=0 Then splits$(1)=1
 							Tcom\count=Int(splits$(1))
-							;Del?
 							If Trim(splits$(2))="stay" Then
 								Tcom\del=0
 							Else
@@ -83,12 +75,10 @@ Function load_combinations()
 							Tcom\id=Tcom_serial
 							Tcom\mode=1
 							split$(val$,",",1)
-							;Typ
 							Tcom\typ=Int(Trim(splits$(0)))
 							If ha_typeexists(Cclass_item,Tcom\typ)=0 Then
 								RuntimeError("Invalid ITEM ID for COMBINATION ("+Tcom\typ+")")
 							EndIf
-							;Count
 							splits$(1)=Trim(splits$(1))
 							If Int(splits$(1))<=0 Then splits$(1)=1
 							Tcom\count=Int(splits$(1))
@@ -146,12 +136,10 @@ End Function
 load_combinations()
 
 Function combinations_similar()
-	;Grouping Similar Combinations
 	For Trcom.Tcom=Each Tcom
 		If Trcom\mode=2 Then
 			If Trcom\gid=0 Then
 				
-				;Count Reqs
 				creq=0
 				For Tcreq.Tcom=Each Tcom
 					If Tcreq\mode=0 Then
@@ -161,25 +149,19 @@ Function combinations_similar()
 					EndIf
 				Next
 				
-				;Find Similar
 				For Tsrcom.Tcom=Each Tcom
 					If Tsrcom\mode=2 Then
 						If Tsrcom\id<>Trcom\id Then
-							;DebugLog ">>> check sim "+Tsrcom\id
-							tsreq=0				;Total Req
-							ssreq=0				;Similar Req
-							;Req
+							tsreq=0
+							ssreq=0
 							For Tsccom.Tcom=Each Tcom
 								If Tsccom\id=Tsrcom\id Then
 									If Tsccom\mode=0 Then
 										tsreq=tsreq+1
-										;DebugLog "> req "+Ditem_name$(Tsccom\typ)
-										;Same?
 										For Tscccom.Tcom=Each Tcom
 											If Tscccom\id=Trcom\id Then
 												If Tscccom\mode=0 Then
 													If Tscccom\typ=Tsccom\typ Then
-														;DebugLog "> sim req "+Ditem_name$(Tscccom\typ)
 														ssreq=ssreq+1
 													EndIf
 												EndIf
@@ -188,23 +170,17 @@ Function combinations_similar()
 									EndIf
 								EndIf
 							Next
-							;All Same?
 							If tsreq=ssreq Then
 								If creq=tsreq Then
 								
-									;Existing group
 									If Tsrcom\gid<>0 Then
 										Trcom\gid=Tsrcom\gid
-										;DebugLog ">>>>>>>>> SAME! Group: "+Tsrcom\gid
 									ElseIf Trcom\gid<>0 Then
 										Tsrcom\gid=Trcom\gid
-										;DebugLog ">>>>>>>>> SAME! Group: "+Tsrcom\gid
-									;New Group
 									Else
 										coms_serial=coms_serial+1
 										Trcom\gid=coms_serial
 										Tsrcom\gid=coms_serial
-										;DebugLog ">>>>>>>>> SAME! NEW Group: "+Tsrcom\gid
 									EndIf
 								
 								EndIf
@@ -217,7 +193,6 @@ Function combinations_similar()
 		EndIf
 	Next
 	
-	;Ungrouped
 	negid=-1
 	For Trcom.Tcom=Each Tcom
 		If Trcom\mode=2 Then

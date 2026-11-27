@@ -1,7 +1,5 @@
 Global modern_saving,modern_continue_path$
 
-; Cheap preflight for the legacy format: header, mode, preview, end marker.
-; This is not a complete parser for arbitrary corrupt or malicious files.
 Function modern_save_valid(path$)
  If FileType(path$)<>1 Then Return False
  Local size=FileSize(path$)
@@ -146,7 +144,6 @@ Function modern_process_saves()
   End Select
   count=count+1
   If count>=64 Then Exit
-  ; Loading clears the world and queue. Never keep an iterator into freed data.
   request=First Tin_quicksave
  Wend
  request=First Tin_quicksave

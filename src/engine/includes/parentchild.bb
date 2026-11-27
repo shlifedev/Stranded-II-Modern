@@ -1,7 +1,3 @@
-;############################################ PARENT/CHILD STUFF
-
-
-;### Parent H (Get Handle of Parent)
 Function parent_h(parentclass,parentid,model=0)
 	Select parentclass
 		Case Cclass_object
@@ -41,7 +37,6 @@ Function parent_h(parentclass,parentid,model=0)
 End Function
 
 
-;### Parent Position (Get Position of Parent)
 Function parent_pos(parentclass,parentid)
 	Select parentclass
 		Case Cclass_object
@@ -85,7 +80,6 @@ Function parent_pos(parentclass,parentid)
 End Function
 
 
-;### Parent Con (Cache in Container Var)
 Function parent_con(parentclass,parentid)
 	Select parentclass
 		Case Cclass_object
@@ -109,10 +103,8 @@ Function parent_con(parentclass,parentid)
 End Function
 
 
-;### Parent State Position (Get State Position of an Object)
 Function parent_statepos(parentclass,parentid)
 	Select parentclass
-		;Object
 		Case Cclass_object
 			For Tobject.Tobject=Each Tobject
 				If Tobject\id=parentid Then
@@ -137,7 +129,6 @@ Function parent_statepos(parentclass,parentid)
 					EndIf
 				EndIf
 			Next
-		;Unit
 		Case Cclass_unit
 			For Tunit.Tunit=Each Tunit
 				If Tunit\id=parentid Then
@@ -162,7 +153,6 @@ Function parent_statepos(parentclass,parentid)
 					EndIf
 				EndIf
 			Next
-		;Item
 		Case Cclass_item
 			For Titem.Titem=Each Titem
 				If Titem\id=parentid Then
@@ -187,7 +177,6 @@ Function parent_statepos(parentclass,parentid)
 					EndIf
 				EndIf
 			Next
-		;Info
 		Case Cclass_info
 			For Tinfo.Tinfo=Each Tinfo
 				If Tinfo\id=parentid Then
@@ -203,10 +192,8 @@ Function parent_statepos(parentclass,parentid)
 End Function
 
 
-;### Is Parent State Position Static?
 Function parent_stateposstatic(parentclass,parentid)
 	Select parentclass
-		;Object
 		Case Cclass_object
 			For Tobject.Tobject=Each Tobject
 				If Tobject\id=parentid Then
@@ -217,7 +204,6 @@ Function parent_stateposstatic(parentclass,parentid)
 					EndIf
 				EndIf
 			Next
-		;Unit
 		Case Cclass_unit
 			For Tunit.Tunit=Each Tunit
 				If Tunit\id=parentid Then
@@ -228,7 +214,6 @@ Function parent_stateposstatic(parentclass,parentid)
 					EndIf
 				EndIf
 			Next
-		;Item
 		Case Cclass_item
 			For Titem.Titem=Each Titem
 				If Titem\id=parentid Then
@@ -240,17 +225,14 @@ Function parent_stateposstatic(parentclass,parentid)
 					EndIf
 				EndIf
 			Next
-		;Info
 		Case Cclass_info
 			Return 1	
 	End Select
 End Function
 
 
-;### Parent State Position by Vertex
 Function parent_stateposvertex(parentclass,parentid,randomoffset#=5.)
 	Select parentclass
-		;Object
 		Case Cclass_object
 			For Tobject.Tobject=Each Tobject
 				If Tobject\id=parentid Then
@@ -268,7 +250,6 @@ Function parent_stateposvertex(parentclass,parentid,randomoffset#=5.)
 					Return 1
 				EndIf
 			Next
-		;Unit
 		Case Cclass_unit
 			For Tunit.Tunit=Each Tunit
 				If Tunit\id=parentid Then
@@ -286,7 +267,6 @@ Function parent_stateposvertex(parentclass,parentid,randomoffset#=5.)
 					Return 1
 				EndIf
 			Next
-		;Item
 		Case Cclass_item
 			For Titem.Titem=Each Titem
 				If Titem\id=parentid Then
@@ -304,7 +284,6 @@ Function parent_stateposvertex(parentclass,parentid,randomoffset#=5.)
 					Return 1
 				EndIf
 			Next
-		;Info
 		Case Cclass_info
 			For Tinfo.Tinfo=Each Tinfo
 				If Tinfo\id=parentid Then
@@ -320,7 +299,6 @@ Function parent_stateposvertex(parentclass,parentid,randomoffset#=5.)
 End Function
 
 
-;### Parent Material
 Function parent_material(parentclass,parentid)
 	Select parentclass
 		Case Cclass_object
@@ -340,9 +318,7 @@ Function parent_material(parentclass,parentid)
 End Function
 
 
-;### Drop Childs (Childs=Items)
 Function drop_childs(parentclass,parentid,in=0,h=0)
-	;Drop Outside Object
 	For Titem.Titem=Each Titem
 		If Titem\parent_class=parentclass Then
 			If Titem\parent_id=parentid Then
@@ -354,7 +330,6 @@ Function drop_childs(parentclass,parentid,in=0,h=0)
 			EndIf
 		EndIf
 	Next
-	;Drop Inside Objects
 	If in=1 Then
 		xs#=MeshWidth(h)/2.
 		ys#=MeshHeight(h)
@@ -376,9 +351,7 @@ Function drop_childs(parentclass,parentid,in=0,h=0)
 End Function
 
 
-;### Free Childs
 Function free_childs(parent_class,parent_id)
-	;Scan
 	Local items=1
 	Local states=1
 	Local scripts=1
@@ -390,7 +363,6 @@ Function free_childs(parent_class,parent_id)
 		Case Cclass_state items=0:states=0
 	End Select
 	
-	;Free Child Items
 	If items Then
 		For Titem.Titem=Each Titem
 			If Titem\parent_class=parent_class Then
@@ -400,7 +372,6 @@ Function free_childs(parent_class,parent_id)
 			EndIf
 		Next
 	EndIf
-	;Free Child States
 	If states Then
 		For Tstate.Tstate=Each Tstate
 			If Tstate\parent_class=parent_class Then
@@ -410,18 +381,15 @@ Function free_childs(parent_class,parent_id)
 			EndIf
 		Next
 	EndIf
-	;Free Child Scripts and Vars
 	If scripts Then
 		For Tx.Tx=Each Tx	
 			If Tx\parent_class=parent_class Then
 				If Tx\parent_id=parent_id Then
 					If (Tx\mode Mod 2=0) Then
 						If Tx\mode<6 Then
-							;Mark Locals to be deleted (allows access for on:kill event!)
 							If Tx\mode=4 Then
 								Tx\typ=1
 								tmp_dumpvars=1
-							;Delete other Stuff
 							Else
 								Delete Tx
 							EndIf
@@ -431,7 +399,6 @@ Function free_childs(parent_class,parent_id)
 			EndIf
 		Next
 	EndIf
-	;Free Child Timers
 	For Ttimer.Ttimer=Each Ttimer
 		If Ttimer\parent_class=parent_class Then
 			If Ttimer\parent_id=parent_id Then
@@ -439,7 +406,6 @@ Function free_childs(parent_class,parent_id)
 			EndIf
 		EndIf
 	Next
-	;Free Child FRAPs
 	For Tfrap.Tfrap=Each Tfrap
 		If Tfrap\parent_class=parent_class Then
 			If Tfrap\parent_id=parent_id Then
@@ -448,7 +414,6 @@ Function free_childs(parent_class,parent_id)
 			EndIf
 		EndIf
 	Next
-	;Free Units Paths
 	If parent_class=Cclass_unit Then
 		For Tup.Tup=Each Tup
 			If parent_id=Tup\unit Then

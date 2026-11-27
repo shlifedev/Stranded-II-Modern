@@ -3,9 +3,6 @@
 #include "float_const.h"
 #include "string_const.h"
 
-///////////////////////////
-// arithmetic expression //
-///////////////////////////
 ExprNode *ArithExprNode::semant( Environ *e ){
 	lhs=lhs->semant(e);
 	rhs=rhs->semant(e);
@@ -13,14 +10,11 @@ ExprNode *ArithExprNode::semant( Environ *e ){
 		ex( "Arithmetic operator cannot be applied to custom type objects" );
 	}
 	if( lhs->sem_type==Type::string_type || rhs->sem_type==Type::string_type ){
-		//one side is a string - only + operator...
 		if( op!='+' ) ex( "Operator cannot be applied to strings" );
 		sem_type=Type::string_type;
 	}else if( op=='^' || lhs->sem_type==Type::float_type || rhs->sem_type==Type::float_type ){
-		//It's ^, or one side is a float
 		sem_type=Type::float_type;
 	}else{
-		//must be 2 ints
 		sem_type=Type::int_type;
 	}
 	lhs=lhs->castTo( sem_type,e );

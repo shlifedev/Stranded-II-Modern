@@ -5,8 +5,6 @@
 
 typedef unsigned int uint32;
 
-// some stuff missing from the headers...
-
 struct SteamTVRegion_t{
 	uint32 unMinX;
 	uint32 unMinY;

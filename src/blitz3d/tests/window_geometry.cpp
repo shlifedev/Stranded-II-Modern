@@ -1,5 +1,3 @@
-// Real SDL/Win32 geometry; creates only this fixture's window, sends no OS input.
-// Run separately at the DPI settings to be verified. Not an Alt-Tab UI test.
 #include <bb/platform.windows/platform.windows.h>
 #include <SDL.h>
 #include <SDL_syswm.h>
@@ -45,8 +43,6 @@ int main(){
     for(int iteration=0;iteration<3;++iteration){
         expect(s2WinBorderless()!=0,"enter desktop fullscreen");
         geometry(win,info.info.win.window);
-        // Exercise SDL geometry updates after the transition, not just the
-        // immediate SetWindowPos result that previously appeared correct.
         SDL_SetWindowSize(win,800+iteration*64,600+iteration*32);
         SDL_SetWindowTitle(win,"Stranded II - fullscreen geometry recheck");
         expect(s2WinBorderless()!=0,"repeated request is idempotent");

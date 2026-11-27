@@ -8,7 +8,7 @@ protected:
 	int row,col;
 public:
 	void debugRun(){}
-	void debugStop(){}// bbruntime_panic(0); }
+	void debugStop(){}
 	void debugStmt( int srcpos,const char *f ){
 		file=f;
 		row=(srcpos>>16)&0xffff;

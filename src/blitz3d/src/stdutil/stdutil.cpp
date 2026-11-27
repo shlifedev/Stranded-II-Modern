@@ -162,40 +162,39 @@ std::string ltoa( long n ){
 	return std::string( buff );
 }
 
-static int _bb_finite( double n ){		// definition: exponent anything but 2047.
+static int _bb_finite( double n ){
 
-	int e;					// 11 bit exponent
-	const int eMax = 2047;	// 0x7ff, all bits = 1
+	int e;
+	const int eMax = 2047;
 
 	int *pn = (int *) &n;
 
-	e = *++pn;				// Intel order!
+	e = *++pn;
 	e = ( e >> 20 ) & eMax;
 
 	return e != eMax;
 }
 
-static int _bb_isnan( double n ){		// definition: exponent 2047, nonzero fraction.
+static int _bb_isnan( double n ){
 
-	int e;					// 11 bit exponent
-	const int eMax = 2047;	// 0x7ff, all bits = 1
+	int e;
+	const int eMax = 2047;
 
 	int *pn = (int *) &n;
 
-	e = *++pn;				// Intel order!
+	e = *++pn;
 	e = ( e >> 20 ) & eMax;
 
-	if ( e != 2047 ) return 0;	// almost always return here
+	if ( e != 2047 ) return 0;
 
-	int fHi, fLo;				// 52 bit fraction
+	int fHi, fLo;
 
-	fHi = ( *pn ) & 0xfffff;	// first 20 bits
-	fLo = *--pn;				// last 32 bits
+	fHi = ( *pn ) & 0xfffff;
+	fLo = *--pn;
 
-	return  ( fHi | fLo ) != 0;	// returns 0,1 not just 0,nonzero
+	return  ( fHi | fLo ) != 0;
 }
 
-// these functions are not available in the bionic stdlib
 #if defined(__BIONIC__) || defined(BB_NX)
 extern "C" {
 char *ecvt(double arg, int ndigits, int *decptp, int *signp);
@@ -203,23 +202,17 @@ char *gcvt(double value, int ndigit, char *buf);
 }
 #endif
 
-/////////////
-//By FLOYD!//
-/////////////
 std::string ftoa( float n ){
 
 	static const int digits=6;
 
-	int eNeg = -4, ePos = 8;	// limits for e notation.
+	int eNeg = -4, ePos = 8;
 
-	char buffer[50]; // from MSDN example, 25 would probably suffice
+	char buffer[50];
 	std::string t;
 	int dec, sign;
 
 	if ( _bb_finite( n ) ){
-
-//		if ( digits < 1 ) digits = 1;	// less than one digit is nonsense
-//		if ( digits > 8 ) digits = 8;	// practical maximum for float
 
 		t = ecvt( n, digits, &dec, &sign );
 
@@ -230,13 +223,10 @@ std::string ftoa( float n ){
 			return t;
 		}
 
-		// Here is the tricky case. We want a nicely formatted
-		// number with no e-notation or multiple trailing zeroes.
-
 		if ( dec <= 0 ){
 
 			t = "0." + std::string( -dec, '0' ) + t;
-			dec = 1;	// new location for decimal point
+			dec = 1;
 
 		}
 		else if( dec < digits ){
@@ -251,15 +241,13 @@ std::string ftoa( float n ){
 
 		}
 
-		// Finally, trim off excess zeroes.
-
 		int dp1 = dec + 1, p = t.length();
 		while( --p > dp1 && t[p] == '0' );
 		t = std::string( t, 0, ++p );
 
 		return sign ? "-" + t : t;
 
-	}	// end of finite case
+	}
 
 	if ( _bb_isnan( n ) )	return "NaN";
 	if ( n > 0.0 )		return "Infinity";
@@ -267,43 +255,6 @@ std::string ftoa( float n ){
 
 	abort();
 }
-
-/*
-string ftoa( float n ){
-
-	static const float min=.000001f,max=9999999.0f;
-
-	int i=*(int*)&n;
-	int e=(i>>23)&0xff;
-	int f=i&0x007fffff;
-
-	if( e==0xff && f ) return "NAN";
-
-	string t;
-	int s=(i>>31)&0x01;
-
-	if( e==0xff ){
-		t="INFINITY";
-	}else if( !e && !f ){
-		t="0.000000";
-	}else if( n>=min && n<=max ){
-		int dec,sgn;
-		t=_fcvt( fabs(n),6,&dec,&sgn );
-		if( dec<=0 ){
-			t="0."+string( -dec,'0' )+t;
-		}else if( dec<t.size() ){
-			t=t.substr( 0,dec )+"."+t.substr( dec );
-		}else{
-			t=t+string( '0',dec-t.size() )+".000000";
-		}
-	}else{
-		char buff[32];
-		_gcvt( fabs(n),7,buff );
-		t=buff;
-	}
-	return s ? "-"+t : t;
-}
-*/
 
 std::string tolower( const std::string &s ){
 	std::string t=s;
@@ -319,7 +270,6 @@ std::string toupper( const std::string &s ){
 
 std::string fullfilename( const std::string &t ){
 #if defined(BB_NDK)||defined(BB_NX)
-	// TODO: this may not be the correct thing...
 	return t;
 #endif
 
@@ -333,7 +283,7 @@ std::string fullfilename( const std::string &t ){
 	return std::string( buff );
 }
 
-#ifdef WIN32 // FIXME: port these to POSIX envs.
+#ifdef WIN32
 std::string filenamepath( const std::string &t ){
 	char buff[MAX_PATH+1],*p;
 	GetFullPathName( t.c_str(),MAX_PATH,buff,&p );
@@ -450,17 +400,3 @@ HBITMAP ScaleBitmap( HBITMAP bmp,int width,int height ){
 	return result;
 }
 #endif
-// HBITMAP ScaleBitmap( HBITMAP bmp,int width,int height ){
-// 	CDC src,dest;
-// 	src.CreateCompatibleDC( NULL );
-// 	dest.CreateCompatibleDC( NULL );
-// 	BITMAP bm;
-// 	::GetObject( bmp,sizeof(bm),&bm );
-// 	HBITMAP result=::CreateCompatibleBitmap( CClientDC(NULL),width,height );
-// 	HBITMAP old_src=(HBITMAP)::SelectObject( src.m_hDC,bmp );
-// 	HBITMAP old_dest=(HBITMAP)::SelectObject( dest.m_hDC,result );
-// 	dest.StretchBlt( 0,0,width,height,&src,0,0,bm.bmWidth,bm.bmHeight,SRCCOPY );
-// 	::SelectObject( src.m_hDC, old_src );
-// 	::SelectObject( dest.m_hDC, old_dest );
-// 	return result;
-// }

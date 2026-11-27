@@ -1,8 +1,5 @@
 #include "exit.h"
 
-///////////
-// Break //
-///////////
 void ExitNode::semant( Environ *e ){
 	sem_brk=e->breakLabel;
 	if( !sem_brk.size() ) ex( "break must appear inside a loop" );

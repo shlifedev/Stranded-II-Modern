@@ -63,8 +63,6 @@ function startServer() {
 app.whenReady().then(async () => {
   storagePath = path.join(app.getPath('userData'),'authoring-drafts.json');
   if(fs.existsSync(storagePath)) saved=JSON.parse(fs.readFileSync(storagePath,'utf8'));
-  // The HTTP port changes between sessions; Electron owns persistent drafts so
-  // their lifetime does not depend on the renderer's temporary origin.
   ipcMain.on('studio:storage',(event,action,key,value) => {
     try{
       trusted(event);

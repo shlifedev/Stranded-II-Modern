@@ -1,7 +1,3 @@
-//
-//This is generated code - do not modify!!!!!
-//
-
 #include "../std.h"
 
 

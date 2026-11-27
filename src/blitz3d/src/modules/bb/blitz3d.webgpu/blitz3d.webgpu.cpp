@@ -21,8 +21,6 @@ static const float rtod=1/dtor;
 
 class WebGPUScene;
 
-// Extra mesh versions are retained for reuse, with a shared memory bound.
-// Queue writes after a submission are ordered after its earlier draws.
 static size_t mesh_version_bytes=0;
 static const size_t MAX_MESH_VERSION_BYTES=32u*1024u*1024u;
 static const size_t MAX_MESH_VERSIONS=16;
@@ -165,8 +163,6 @@ public:
 		if( n+1>dirty_v1 ) dirty_v1=n+1;
 	}
 
-	// Keep edits on the CPU until the mesh is actually drawn. Sprites share a
-	// mesh, so their separate lock/unlock calls become one contiguous upload.
 	void unlock(){}
 	void upload();
 
@@ -1410,10 +1406,6 @@ public:
 			es.alpha=( flags&BBCanvas::CANVAS_TEX_ALPHA )?1:0;
 			es.flags=ts.flags;
 
-			// WebGPU uploads, 2D draws and render targets all use a top-left
-			// texture origin. Flipping GPU-written textures here mirrors the
-			// CopyRect history used by motion blur (and every dynamic texture).
-
 			views[used]=view;
 			samps[used]=getSampler( flags );
 			used++;
@@ -1439,8 +1431,6 @@ public:
 		ensurePipelineObjects();
 		if( !shader ) return false;
 
-		// Camera changes only require a new pass. Keep earlier camera uniforms
-		// and draws until a real submission or a conflicting mesh update.
 		endPass();
 		res->endPass();
 
@@ -1508,7 +1498,6 @@ public:
 		BBWebGPUClearState cs={};
 		cs.color[0]=rgb[0];cs.color[1]=rgb[1];cs.color[2]=rgb[2];cs.color[3]=alpha;
 		cs.z=z;
-		// Seeding may submit full 2D arenas. Do it before staging 3D uniforms.
 		if( targetSamples(target)>1 && !ensurePass() ) return;
 		uint32_t offset=pushUniforms( &cs,sizeof(cs) );
 
@@ -1573,8 +1562,6 @@ public:
 		memcpy( instance_stage.data()+instance_used,&instance,sizeof(instance) );
 		instance_used+=sizeof(instance);
 
-		// Only adjacent draws are merged, in their original instance order.
-		// This preserves back-to-front blending of transparent grass and fades.
 		bool batchable=!wireframe;
 		if( pending_instances&&(!batchable||pipeline!=bound_pipeline||
 		    !bound_frame||bound_frame_offset!=frame_offset||!bound_entity||bound_entity_offset!=entity_offset||
@@ -1708,15 +1695,11 @@ bool WebGPUMesh::renameBuffers(){
 		versions.push_back( createVersion() );
 		mesh_version_bytes+=bytes;
 	}
-	// Pending instances still refer to the old buffers. Encode them before
-	// changing handles, but keep their commands in the current submission.
 	scene->flushPendingDraw();
 	active_version=next;
 	vertex_buffer=versions[next].vertices;
 	index_buffer=versions[next].indices;
 	drawn_marker=0;
-	// A recycled version can contain an older pose. Copy the complete live
-	// prefix, including vertices/indices untouched by this particular edit.
 	dirty_v0=dirty_t0=0;
 	dirty_v1=uploaded_v1;
 	dirty_t1=uploaded_t1;
@@ -1780,12 +1763,9 @@ void WebGPUMesh::upload(){
 	uploaded_v1=std::max(uploaded_v1,dirty_v1);
 	uploaded_t1=std::max(uploaded_t1,dirty_t1);
 
-	// Unused ranges can be updated in place. Used ranges get another buffer
-	// version so animated copies and reflection views do not force a submit.
 	bool vertex_overlap=verts_dirty&&dirty_v0<drawn_v1&&dirty_v1>drawn_v0;
 	bool index_overlap=tris_dirty&&dirty_t0<drawn_t1&&dirty_t1>drawn_t0;
 	if( drawn_marker==scene->submit_marker&&(vertex_overlap||index_overlap) ){
-		// Wire indices have a separate cache; preserve its existing hazard path.
 		if( wire_buffer || !renameBuffers() ) scene->flushAll();
 		verts_dirty=dirty_v1>dirty_v0;
 		tris_dirty=dirty_t1>dirty_t0;

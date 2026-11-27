@@ -100,7 +100,6 @@ export function App(){
     if(dragLock.current)return;
     await run(async()=>{
       const state=current.current;
-      // Refresh the authoritative saved state even if the CLI edited it just now.
       await refresh(state.project,state.activeMap);
       await fullPreview(state.project,current.current.activeMap);
     });
@@ -194,8 +193,6 @@ export function App(){
       if(data.type==='drag-commit'){
         void (async()=>{
           const ok=await mutate([{op:'entities.move',map:state.activeMap,selection:data.selection,delta:data.delta,terrain:data.terrain}],data.revision);
-          // On a revision conflict restore the transient pose, then reconcile the
-          // latest saved scene. No losing edit is silently replayed.
           if(!ok)try{await refresh(state.project,state.activeMap);}catch(reason){setError(String(reason));}
           post('drag-result',{id:data.id,ok});dragLock.current=false;setDragActive(false);
         })();return;

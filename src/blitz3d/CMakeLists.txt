@@ -1,7 +1,6 @@
 cmake_minimum_required (VERSION 3.24)
 project (Blitz3D)
 
-# Stranded II's editable engine. Dependencies and generated files stay outside it.
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
   message(FATAL_ERROR "Use an out-of-source build directory under build/.")
 endif()
@@ -39,9 +38,7 @@ if(ANDROID)
   set(ANDROID_JAR $ENV{ANDROID_HOME}/platforms/android-${ANDROID_PLATFORM}/android.jar)
 endif()
 
-# TODO: make this toggleable
 if(MSVC)
-  # Keep UTF-8 source and string literals independent of the Windows code page.
   add_compile_options(/utf-8)
   set(BB_STATIC true)
   set(BB_SHARED false)
@@ -56,7 +53,6 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   set(BB_GNU true)
 endif()
 
-# TODO: this will be extended a bit...
 if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES x86_64 OR CMAKE_HOST_SYSTEM_PROCESSOR MATCHES AMD64)
   set(BB_HOST_ARCH "x86_64")
 elseif(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL arm64)
@@ -77,7 +73,6 @@ else()
   endif()
 endif()
 
-# set symbol visibility to hidden to make dead code elimination more effective
 if (NOT MSVC)
   add_compile_options(-fvisibility=hidden -fdata-sections -ffunction-sections)
 endif()
@@ -149,9 +144,6 @@ ELSEIF(BB_PLATFORM MATCHES ovr)
 ELSEIF(BB_PLATFORM MATCHES emscripten)
   set (BB_EMSCRIPTEN true)
   add_definitions(-DBB_EMSCRIPTEN)
-  # WebGPU render backend (graphics.webgpu/blitz3d.webgpu instead of the GL
-  # modules as the *active* driver; the GL modules stay linked). OFF keeps the
-  # WebGL build byte-identical - see src/modules/bb/graphics.webgpu/INTEGRATION.md.
   option(BB_WEBGPU "use the WebGPU render backend" OFF)
   if(BB_WEBGPU)
     add_definitions(-DBB_WEBGPU)
@@ -203,7 +195,7 @@ ENDIF()
 IF(BB_EMSCRIPTEN)
   set (BB_WEB true)
   add_definitions(-DBB_WEB)
-  set(CMAKE_SYSTEM_PROCESSOR wasm) # defaults to x86? not sure that makes sense.
+  set(CMAKE_SYSTEM_PROCESSOR wasm)
 ENDIF()
 
 IF(NOT BB_ENV)
@@ -215,16 +207,13 @@ IF(BB_ENV MATCHES debug OR BB_ENV MATCHES test)
   set (BB_DEBUG true)
   add_definitions(-DBB_DEBUG)
 
-  # TODO: work to remove the need for this...
   add_definitions(-D_DEBUG)
 ELSE()
-  # Native game and compatibility runtimes favour frame time over binary size.
   if(S2_NATIVE_GAME OR S2_CONSOLE_ONLY)
     set(CMAKE_BUILD_TYPE Release)
   else()
     set(CMAKE_BUILD_TYPE MinSizeRel)
   endif()
-  # set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
   set(BB_RELEASE true)
   if(NOT BB_MINGW)
     set(ENABLE_LTO true)
@@ -341,7 +330,6 @@ endfunction()
 IF(BB_MSVC)
   IF(BB_STATIC)
     if(S2_NATIVE_GAME)
-      # Official Dawn Windows archives use the shared release CRT.
       set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreadedDLL)
       add_compile_options(/MD)
     elseif(NOT BB_DEBUG)
@@ -405,7 +393,7 @@ if(S2_NATIVE_GAME)
 endif()
 
 if(APPLE)
-  enable_language(OBJC OBJCXX) # TODO: needed after adding SDL...seems like a deep root cmake bug
+  enable_language(OBJC OBJCXX)
 endif()
 add_subdirectory(deps EXCLUDE_FROM_ALL)
 if(BB_LEGACY32)
@@ -415,12 +403,6 @@ if(BB_LEGACY32)
     add_compile_options(-fwrapv -ffp-contract=off)
   endif()
 endif()
-
-#if(NOT MSVC)
-#  add_compile_options(-Wall -Werror
-#    -Wno-error=deprecated-declarations
-#  )
-#endif()
 
 add_definitions(-DBB_PLATFORM="${BB_PLATFORM}")
 add_definitions(-DBB_ENV="${BB_ENV}")
@@ -435,7 +417,6 @@ ENDIF()
 
 add_definitions(-DBB_SOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
-# Get the current working branch
 execute_process(
   COMMAND git rev-parse --abbrev-ref HEAD
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -443,7 +424,6 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-# Get the latest abbreviated commit hash of the working branch
 execute_process(
   COMMAND git log -1 --format=%h
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -451,10 +431,9 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-# legacy flags. TODO: remove them
-add_definitions(-DPRO) # Blitz3D vs. Blitz2D
+add_definitions(-DPRO)
 IF(BB_WINDOWS)
-  add_definitions(-DDIRECTSOUND_VERSION=0x700) # this one may not be needed
+  add_definitions(-DDIRECTSOUND_VERSION=0x700)
 ENDIF()
 
 add_definitions(-DBB_COMMIT_HASH="${GIT_COMMIT_HASH}")
@@ -493,7 +472,6 @@ if(S2_NATIVE_GAME)
   endif()
 endif()
 if(S2_NATIVE_GAME AND BB_WINDOWS)
-  # Actual SDL/Win32 fullscreen geometry; no OS input or player data.
   add_executable(s2_window_check EXCLUDE_FROM_ALL tests/window_geometry.cpp)
   target_include_directories(s2_window_check PRIVATE src/modules)
   target_compile_definitions(s2_window_check PRIVATE SDL_MAIN_HANDLED)
@@ -501,7 +479,6 @@ if(S2_NATIVE_GAME AND BB_WINDOWS)
   get_filename_component(S2_WINDOW_OPENAL_LIBDIR "${OPENAL_LIBRARY}" DIRECTORY)
   target_link_directories(s2_window_check PRIVATE "${S2_WINDOW_OPENAL_LIBDIR}" "${S2_DAWN_ROOT}/lib")
 
-  # Exercises the real SDL event queue without creating a window or GPU device.
   add_executable(s2_input_check EXCLUDE_FROM_ALL tests/runtime_input.cpp)
   target_include_directories(s2_input_check PRIVATE src/modules)
   target_compile_definitions(s2_input_check PRIVATE SDL_MAIN_HANDLED)
@@ -509,7 +486,6 @@ if(S2_NATIVE_GAME AND BB_WINDOWS)
   get_filename_component(S2_OPENAL_LIBDIR "${OPENAL_LIBRARY}" DIRECTORY)
   target_link_directories(s2_input_check PRIVATE "${S2_OPENAL_LIBDIR}" "${S2_DAWN_ROOT}/lib")
 
-  # ImGui font rasterization and widget input, without a window or OS input.
   add_executable(s2_debugui_check EXCLUDE_FROM_ALL tests/debugui_widgets.cpp)
   target_include_directories(s2_debugui_check PRIVATE src/modules "${S2_DEP_IMGUI}")
   target_link_libraries(s2_debugui_check PRIVATE runtime.s2windows.static)
@@ -521,7 +497,6 @@ if(S2_NATIVE_GAME AND BB_WINDOWS)
   target_link_libraries(s2_debugui_render_check PRIVATE runtime.s2windows.static dawn::webgpu_dawn)
   target_link_directories(s2_debugui_render_check PRIVATE "${S2_OPENAL_LIBDIR}" "${S2_DAWN_ROOT}/lib")
 
-  # Render to textures with the production scene/shader, without an SDL window.
   add_executable(s2_render_check EXCLUDE_FROM_ALL tests/runtime_render.cpp)
   target_include_directories(s2_render_check PRIVATE src/modules
     "${CMAKE_BINARY_DIR}/src/modules/bb/blitz3d.webgpu")
@@ -534,9 +509,6 @@ if(S2_CONSOLE_ONLY OR S2_NATIVE_GAME)
 elseif(NOT BB_EMSCRIPTEN)
   add_subdirectory(src/tools/compiler)
 endif()
-
-# extras...
-# The project builds the compiler and game runtimes, not upstream IDE/bindings.
 
 file(WRITE ${TOOLCHAIN_PATH}/toolchain.toml "id = \"${BB_TRIPLE}\"
 platform = \"${BB_PLATFORM}\"

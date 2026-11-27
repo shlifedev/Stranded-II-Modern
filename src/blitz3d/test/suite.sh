@@ -10,8 +10,6 @@ function interrupt() {
 
 TARGET=${1:-host}
 
-# if valgrind is available, we'll use it. right now, we're ignoring leaked
-# memory. this should change when there's time.
 if [ "$MEMCHECK" = "true" ]
 then
   VALGRIND="valgrind --leak-check=no --track-origins=yes --error-exitcode=101"
@@ -21,7 +19,6 @@ then
   fi
 fi
 
-# appears it only required for debian-10, but this is a quick fix
 if [ "$(uname)" = "Linux" ]
 then
   XVFBRUN="xvfb-run -a"
@@ -33,7 +30,6 @@ GRY='\033[0;90m'
 NC='\033[0m'
 
 cleanup () {
-  # rm -rf tmp/
   find . -name "*.gcda" -exec rm {} \;
   find . -name "*.gcov" -exec rm {} \;
 }
@@ -123,16 +119,13 @@ $BLITZCC -c -r test -a test/all.bb > /dev/null 2>&1
 $BLITZCC -c -r test -c test/all.bb > /dev/null 2>&1
 $BLITZCC -c -r test -j test/all.bb > /dev/null 2>&1
 
-# test for syntax errors
 $BLITZCC -c -r test -j test/syntax-errors/arithmetic-on-type.bb > /dev/null 2>&1
 $BLITZCC -c -r test -j test/syntax-errors/division-by-zero.bb > /dev/null 2>&1
 
-# invalid runtime
 $BLITZCC -r d3d1 test/all.bb > /dev/null 2>&1
 
 if [ "$TARGET" = "host" ]
 then
-  # run the proper suite
   blitzcc_stream test/all.bb -d -r test test/all.bb
   RESULT=$?
   if [ $RESULT -eq 101 ]; then
@@ -143,7 +136,6 @@ then
 
   blitzcc test/all.bb -r test -o `pwd`/tmp/test test/all.bb
 
-  # run the old win32 codegen just because we can
   blitzcc test/all.bb -llvm=off -c -a -r test test/all.bb
   blitzcc test/all.bb -d -llvm=off -c -a -r test test/all.bb
 
@@ -262,7 +254,6 @@ then
   blitzcc "test.nro" -r test -o `pwd`/tmp/test.nro test/all.bb
 fi
 
-# generate the report...
 ENV=$($BLITZCC -e)
 if [ "$ENV" = "test" ]; then
   echo "Generating coverage report..."

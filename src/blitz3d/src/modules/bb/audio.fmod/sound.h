@@ -22,13 +22,10 @@ private:
 
 	void setDefaults();
 
-	/***** GX INTERFACE *****/
 public:
-	//actions
 	BBChannel *play();
 	BBChannel *play3d( const float pos[3],const float vel[3] );
 
-	//modifiers
 	void setLoop( bool loop );
 	void setPitch( int hertz );
 	void setVolume( float volume );

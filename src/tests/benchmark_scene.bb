@@ -1,4 +1,3 @@
-; Included by isolated full-engine fixtures. Short trials check semantics, not performance.
 compat_check(bench_enter()=0,"benchmark rejects entry from gameplay")
 menu_start():m_menu=Cmenu_main
 Local test_water=set_water,test_grass=set_grass,test_view=set_viewrange,test_wind=set_windsway,test_fps=modern_fps

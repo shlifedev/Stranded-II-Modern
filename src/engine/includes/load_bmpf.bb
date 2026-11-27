@@ -1,5 +1,3 @@
-;############################################ Vars
-
 Const bmpf_count=6
 Dim bmpf_image(bmpf_count)
 Dim bmpf_frames(bmpf_count)
@@ -29,23 +27,19 @@ bmpf_load_font("sys\gfx\font_norm_good.bmp","sys\gfx\font_norm.bmpf",4)
 bmpf_loadscreen("[[loc:engine.429b9f7a9f1e]]",5)
 bmpf_load_font("sys\gfx\font_handwriting.bmp","sys\gfx\font_norm.bmpf",6)
 
-;### Rect Scroll Type
 Type Tbmpf_s
 	Field s$
 End Type
 
-;### Rect Image Type
 Type Tbmpf_img
 	Field file$
 	Field h
 End Type
 
 
-;############################################ Load Font
 Function bmpf_load_font(bmp$,bmpf$,id)
 	Local def,i,sign
 	If set_debug Then con_add("Loading Font: "+bmp$+" (Inf: "+bmpf+")")
-	;Definition laden
 	def=ReadFile(bmpf$)
 	If Not def Then RuntimeError("Unable to load Bitmapfont "+bmp$)
 	ReadLine(def)
@@ -58,16 +52,13 @@ Function bmpf_load_font(bmp$,bmpf$,id)
 		bmpf_framesw(sign,id)=ReadShort(def)
 	Next
 	CloseFile def
-	;Image laden
 	bmpf_image(id)=LoadAnimImage(bmp$,bmpf_framesx(id),bmpf_framesy(id),0,bmpf_frames(id))
 	MaskImage bmpf_image(id),255,0,255
 	ko_font_load(id)
-	;Ok
 	Return 1
 End Function
 
 
-;############################################ Draw Font (left)
 Function bmpf_txt(x,y,txt$,id=0)
 	Local run.Tkorun=ko_run(txt$)
 	Local i,sign
@@ -83,7 +74,6 @@ Function bmpf_txt(x,y,txt$,id=0)
 End Function
 
 
-;############################################ Draw Font (center)
 Function bmpf_txt_c(x,y,txt$,id=0)
 	Local run.Tkorun=ko_run(txt$)
 	Local i,sign,offset
@@ -108,7 +98,6 @@ Function bmpf_txt_c(x,y,txt$,id=0)
 End Function
 
 
-;############################################ Draw Font (right)
 Function bmpf_txt_r(x,y,txt$,id=0)
 	Local run.Tkorun=ko_run(txt$)
 	Local i,sign
@@ -124,7 +113,6 @@ Function bmpf_txt_r(x,y,txt$,id=0)
 End Function
 
 
-;############################################ Font len
 Function bmpf_len(txt$,id=0)
 	Local run.Tkorun=ko_run(txt$)
 	Local x,i,sign
@@ -139,7 +127,6 @@ Function bmpf_len(txt$,id=0)
 	Return x
 End Function
 
-;############################################ Trimlen
 Function bmpf_trim$(txt$,id,maxlen)
  txt$=ko_localize(txt$)
  While bmpf_len(txt$,id)>maxlen
@@ -150,7 +137,6 @@ Function bmpf_trim$(txt$,id,maxlen)
 End Function
 
 
-;############################################ Draw Font in Rect
 Function bmpf_txt_rect(x,y,w,h,txt$,id=0,scroll=0)
 	txt$=ko_localize(txt$)
 	Local strlen=Len(txt$)
@@ -159,12 +145,10 @@ Function bmpf_txt_rect(x,y,w,h,txt$,id=0,scroll=0)
 	Local i,lastspace,sign,add
 	Local lastbreak=1
 	
-	;Alte Lines in Types löschen
 	For Tbmpf_s.Tbmpf_s=Each Tbmpf_s
 		Delete Tbmpf_s
 	Next
 	
-	;String Keyvars Replacen
 	If Instr(txt$,"$key_") Then
 		txt$=Replace(txt$,"$key_forward",in_keyname$(in_keys(Ckey_forward)))
 		txt$=Replace(txt$,"$key_backward",in_keyname$(in_keys(Ckey_backward)))
@@ -190,7 +174,6 @@ Function bmpf_txt_rect(x,y,w,h,txt$,id=0,scroll=0)
 	EndIf
 	
 	txt$=loc_resolve(txt$)
-	;String nach anderen Vars durchgehen
 	Local offset
 	Repeat
 		If offset>0 Then
@@ -203,7 +186,6 @@ Function bmpf_txt_rect(x,y,w,h,txt$,id=0,scroll=0)
 		Else
 			offset=i+1
 			nomorecheck=0
-			;Image
 			If Mid(txt$,i,5)="$img=" Then
 				nomorecheck=1
 				pend=Instr(txt$,"",i+1)
@@ -235,7 +217,6 @@ Function bmpf_txt_rect(x,y,w,h,txt$,id=0,scroll=0)
 				EndIf
 				txt$=Left(txt$,pend)+addstr$+Mid(txt$,pend,-1)
 			EndIf
-			;Normal Vars (per Line)
 			If nomorecheck=0 Then
 				pend=Instr(txt$,"",i+1)
 				If pend>0 Then
@@ -258,7 +239,6 @@ Function bmpf_txt_rect(x,y,w,h,txt$,id=0,scroll=0)
 	
 
  txt$=loc_resolve(txt$)
- ; Wrap only at UTF-8 boundaries. Prefer spaces; allow breaks between Hangul syllables.
  x=0:tmp_lines=0:tmp_linesvisible=0
  strlen=Len(txt$):i=1:lastbreak=1:lastspace=0:add=0
  While i<=strlen
@@ -290,14 +270,12 @@ Function bmpf_txt_rect(x,y,w,h,txt$,id=0,scroll=0)
  Tbmpf_s\s$=trimspace(Mid(txt$,lastbreak,-1))
  tmp_lines=tmp_lines+1
 
-	;Ausgeben unter Berücksichtigung des Scrolls
 	x=rx
 	y=ry
 	i=0
 	For Tbmpf_s.Tbmpf_s=Each Tbmpf_s
 		If i>=scroll Then
 			tmp_linesvisible=tmp_linesvisible+1
-			;Image
 			If Left(Tbmpf_s\s$,5)="$img=" Then
 				path$=Trim(Mid(Tbmpf_s\s$,6,-1))
 				For Tbmpf_img.Tbmpf_img=Each Tbmpf_img
@@ -308,7 +286,6 @@ Function bmpf_txt_rect(x,y,w,h,txt$,id=0,scroll=0)
 				Next
 				y=y+20
 				If y+18>ry+h Then Return 0
-			;Text
 			Else
 				If Left(Tbmpf_s\s$,1)="!" Then
 					tid=Int(Mid(Tbmpf_s\s$,2,1))
@@ -324,7 +301,6 @@ Function bmpf_txt_rect(x,y,w,h,txt$,id=0,scroll=0)
 		EndIf
 		i=i+1
 	Next
-	;Lines Left
 	Repeat
 		tmp_linesvisible=tmp_linesvisible+1
 		y=y+20
@@ -334,7 +310,6 @@ Function bmpf_txt_rect(x,y,w,h,txt$,id=0,scroll=0)
 End Function
 
 
-;############################################ Draw Font (scroll)
 Function bmpf_txt_scroll(x#,y,txt$,id=0,ml,scroll#)
 	Local run.Tkorun=ko_run(txt$)
 	Local sx#=x#
@@ -354,17 +329,11 @@ Function bmpf_txt_scroll(x#,y,txt$,id=0,ml,scroll#)
 End Function
 
 
-;############################################ Loadscreen
 Function bmpf_loadscreen(txt$,percent=-1)
 	SetBuffer BackBuffer()
 	ClsColor 0,0,0
 	Cls
 	bmpf_txt_c(set_scrx/2,set_scry/2-20,txt$,5)
-	;Local stripes$=""
-	;For i=1 To percent
-	;	stripes$=stripes$+"|"
-	;Next
-	;bmpf_txt_c(set_scrx/2,set_scry/2,stripes$,5)
 	
 	If percent>-1 Then
 		If percent>100 Then percent=100
@@ -384,7 +353,6 @@ Function bmpf_loadscreen(txt$,percent=-1)
 End Function
 
 
-;############################################ Draw Font (left, maxlength)
 Function bmpf_txt_ml(x,y,txt$,id,maxlen)
 	Local strlen=Len(txt$)
 	Local i,sign
@@ -402,7 +370,6 @@ Function bmpf_txt_ml(x,y,txt$,id,maxlen)
 End Function
 
 
-;############################################ Maxlength Text lenght
 Function bmpf_txt_ml_len(x,y,txt$,id,maxlen)
 	Local strlen=Len(txt$)
 	Local i,sign
@@ -420,7 +387,6 @@ Function bmpf_txt_ml_len(x,y,txt$,id,maxlen)
 End Function
 
 
-;############################################ Draw Font Marked (left, maxlength)
 Function bmpf_txt_ml_marked(x,y,txt$,id,maxlen,ms,me)
 	Color 84,51,0
 	Local strlen=Len(txt$)
@@ -445,7 +411,6 @@ Function bmpf_txt_ml_marked(x,y,txt$,id,maxlen,ms,me)
 End Function
 
 
-;############################################ Position
 Function bmpf_txt_pos(txt$,id,pos)
 	Local strlen=Len(txt$)
 	Local i,sign,os

@@ -48,7 +48,6 @@ public:
 		k0=mix( 0,(unsigned long long)rs.fx );
 		k0=mix( k0,(unsigned long long)rs.blend );
 #ifdef BB_WEBGPU
-		// Keep copies of the same surface together for opaque instancing.
 		k0=mix( k0,(unsigned long long)(size_t)mesh );
 #endif
 		k1=0;

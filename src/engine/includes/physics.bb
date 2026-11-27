@@ -1,6 +1,3 @@
-;############################################ Physics
-
-;Set Physics
 Function phy_set(class,id,x#,y#,z#,mx#=1.,my#=1.,mz#=1.)
 	Local found=0
 	For Tstate.Tstate=Each Tstate

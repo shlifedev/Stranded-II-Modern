@@ -1,13 +1,8 @@
-;############################################ INPUT
-
-;### Get Input
 Function getinput(gametimer=1)
 	
-	;Millisecs
 	modern_frame()
 	dev_input()
 	If dev_paused Then gametimer=0:modern_step#=0.:f#=0.
-	; Raw look input during play; menus and Unicode controls keep normal clicks.
 	Local capturemouse=0
 	If in_console=0 And (m_section=Csection_game_sp Or m_section=Csection_game_mp) Then
 		capturemouse=(m_menu=0) Or (m_menu=Cmenu_if_movie And seq_cpoint=4)
@@ -15,14 +10,12 @@ Function getinput(gametimer=1)
 	If DebugUiOpen() Then capturemouse=0
 	modern_mouse_capture(capturemouse)
 	
-	;Mouse
 	Local downcache
 	For i=1 To 5
 		in_mhit(i)=MouseHit(i)
 		downcache=MouseDown(i)
 		If in_mdown(i)=1 And downcache=0 Then
 			in_mrelease(i)=1
-			;Mouse Release 1
 			If i=1 Then
 				if_drop()
 			EndIf
@@ -44,7 +37,6 @@ Function getinput(gametimer=1)
 	in_mys#=MouseYSpeed()
 	in_mzs#=MouseZSpeed()
 	
-	;FRAP (Editor only!)
 	If m_section=Csection_editor Then
 		If in_opt(0)>=1 And in_opt(0)<=4 Then
 			If in_fraph<>0 Then
@@ -64,13 +56,10 @@ Function getinput(gametimer=1)
 		EndIf
 	EndIf
 	
-	;Mark
 	If in_mhit(1) Then in_mark=0
 	
-	;Keys
 	If m_section=Csection_game_sp Or m_section=Csection_game_mp
 		For i=0 To 20
-			;Normal Key
 			If in_keys(i)<255 Then
 				in_keyhit(i)=KeyHit(in_keys(i))
 				downcache=KeyDown(in_keys(i))
@@ -95,7 +84,6 @@ Function getinput(gametimer=1)
 						If in_mzs<0 Then in_keyhit(i)=1
 				End Select
 			EndIf
-			;Script Keys
 			If game_scriptkeys>0 Then
 				If game_scriptkey(i)<255 Then
 					in_keyhit(i+21)=KeyHit(game_scriptkey(i))
@@ -125,7 +113,6 @@ Function getinput(gametimer=1)
 		Next
 	EndIf
 	
-	;Jump Rehit
 	If in_keyhit(Ckey_jump) Then
 		If m_menu=0 Then
 			in_jumprehit=1
@@ -134,13 +121,10 @@ Function getinput(gametimer=1)
 		EndIf
 	EndIf
 	
-	;Escape
 	in_escape=KeyHit(1)
 	
-	;Picking
 	in_pe=0
 	
-	;Focus
 	If in_mdown(1) Then
 		in_inputfocus=-1
 	ElseIf in_mrelease(1) Then
@@ -166,26 +150,20 @@ Function getinput(gametimer=1)
 		in_mx=-500
 	EndIf
 	
-	;Free Tool Tip Text
 	in_ttt$=""
 	
-	;Key
 	in_key=GetKey()
 	
-	;Cursor
 	in_cursorf=0
 	If ms-in_cursorms>200 Then
 		in_cursorms=ms
 		in_cursor=Not in_cursor
 	EndIf
 	
-	;Color Angle
 	in_ca#=(in_ca#+5.*f#) Mod 360
 	
-	;Water Angle
 	in_wa#=(in_wa#+3.*f#) Mod 360
 	
-	;Timers
 	in_t50go=0
 	If ms-in_t50>=50 Then in_t50=ms-((ms-in_t50) Mod 50):in_t50go=1
 	in_t100go=0
@@ -209,14 +187,12 @@ Function getinput(gametimer=1)
 		If in_t10000=10 Then in_t10000=0:in_t10000go=1
 	EndIf
 	
-	;Game Timer
 	If gametimer=1 Then
 		If lastms<>0 Then
 			modern_game_time()
 		EndIf
 	EndIf
 	
-	;Game Time Timer
 	in_gt20go=0
 	If gt-in_gt20>=20 Then in_gt20=gt-((gt-in_gt20) Mod 20):in_gt20go=1
 	in_gt50go=0
@@ -230,7 +206,6 @@ Function getinput(gametimer=1)
 	in_gt5000go=0
 	If gt-in_gt5000>=5000 Then in_gt5000=gt-((gt-in_gt5000) Mod 5000):in_gt5000go=1
 	
-	;Statefx
 	If ms-in_statefxt>100 Then
 		in_statefxt=ms
 		in_statefxf=in_statefxf+1
@@ -241,17 +216,14 @@ Function getinput(gametimer=1)
 	qol_frame()
 End Function
 
-;### End Input
 Function endinput(tooltip=1,cursor=1,scripthelper=1)
 	
-	;Blackframe
 	If blackframe>0 Then
 		blackframe=blackframe-f#
 		ClsColor 0,0,0
 		Cls
 	EndIf
 	
-	;Tool Tip
 	If tooltip=1 Then
 		If in_mpt>-1 Then
 			If ms-in_mpt>500 Then
@@ -264,7 +236,6 @@ Function endinput(tooltip=1,cursor=1,scripthelper=1)
 		EndIf
 	EndIf
 	
-	;Script Helper
 	If scripthelper=1 Then
 		If m_section=Csection_editor Then
 			If m_menu=Cmenu_ed_scripts Then
@@ -277,13 +248,11 @@ Function endinput(tooltip=1,cursor=1,scripthelper=1)
 		EndIf
 	EndIf
 	
-	;Drag and Drop
 	If in_dnd=1 Then
 		If m_menu=Cmenu_if_items Or m_menu=Cmenu_if_exchange Then
 			If Ditem_iconh(in_dnd_typ)<>0 Then
 				If in_dnd_show=1 Then
 					DrawImage Ditem_iconh(in_dnd_typ),in_mx-in_dnd_pivotx-1,in_my-in_dnd_pivoty-1
-					;Drop (Inventory only)
 					If in_mx<215 Or in_mx>795 Or in_my>595 Then
 						If in_dnd_src=0 Then
 							DrawImage gfx_icons,in_mx+6,in_my-10,Cicon_x
@@ -300,19 +269,15 @@ Function endinput(tooltip=1,cursor=1,scripthelper=1)
 		EndIf
 	EndIf
 	
-	;Cursor
 	If cursor Then
 		If in_cursorf>=0 Then DrawImage gfx_cursor(in_cursorf),in_mx,in_my	
 	EndIf
 		
-	;FPS-only overlay (F2), independent of debug output and its extra work.
 	If KeyHit(60) Then fps_visible=Not fps_visible
 	If fps_visible And set_debug=0 Then bmpf_txt_r(set_scrx-3,0,fps+" FPS",Cbmpf_tiny)
 
-	;Debug Outputs (FPS etc.)
 	debug()
 	
-	;FPS
 	If ms-fpsms>999 Then
 		fps=fpsf
 		fpsf=0
@@ -320,16 +285,10 @@ Function endinput(tooltip=1,cursor=1,scripthelper=1)
 	EndIf
 	fpsf=fpsf+1
 	
-	;FPS Factor
-	; Pacing is performed once, at presentation.
-	
 End Function
 
-;Key Hit?
 Function inputhit(key)
-	;Hit?
 	If KeyHit(key) Then Return 1
-	;Settings Keys / Script Keys
 	For i=0 To 20
 		If in_keys(i)=key Then
 			If in_keyhit(i)=1 Then Return 1
@@ -340,19 +299,14 @@ Function inputhit(key)
 			EndIf
 		EndIf
 	Next
-	;Others
 	Select key
-		;Escape
 		Case 1 Return in_escape
 	End Select
-	;Not Hit
 	Return 0
 End Function
 
 
-;Flush
 Function flushinput(keys=1,mouse=1)
-	;Key
 	If keys=1 Then
 		FlushKeys()
 		For i=0 To 20
@@ -365,7 +319,6 @@ Function flushinput(keys=1,mouse=1)
 		Next
 		in_escape=0
 	EndIf
-	;Mouse
 	If mouse=1 Then
 		FlushMouse()
 		For i=1 To 5

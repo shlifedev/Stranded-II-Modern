@@ -17,7 +17,6 @@ void createNRO( const std::string &out,const std::string &home,const std::string
 	RUN( "mkdir -p "+romDir );
 	bundleFiles( bundle,romDir );
 
-	// must be a jpg? 256x256
 	std::string icon=home+"/cfg/bbexe.jpg";
 
 	RUN( devkitpro+"/tools/bin/nacptool --create \""+bundle.appName+"\" \"Unspecified Author\" \"1.0.0\" "+nacpPath );

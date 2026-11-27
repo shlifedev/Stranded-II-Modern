@@ -1,4 +1,3 @@
-; Actual engine/renderer, isolated assets and synthetic sequence time. No GUI input.
 Global compat_report=WriteFile(set_rootdir$+"web-compatibility.txt"),compat_failures
 Global compat_clock,compat_phase$,compat_start,compat_shipx#,compat_shipz#
 
@@ -44,7 +43,6 @@ Function compat_colormap(label$)
  compat_check(matches=size*size,label$+" colour map feeds grass")
 End Function
 
-; Colour keys must work with GPU-created images as well as file-backed atlases.
 Global compat_image=CreateImage(4,4)
 SetBuffer ImageBuffer(compat_image):ClsColor 255,0,255:Cls
 Color 255,255,255:Rect 1,1,2,2,1
@@ -71,7 +69,6 @@ WritePixelFast 1,1,$FF00FF,ImageBuffer(compat_copy)
 UnlockBuffer ImageBuffer(compat_copy)
 DrawImageRect compat_copy,24,0,0,0,4,4
 compat_pixel(25,1,$112233,"colour key after LockBuffer write")
-; Crop a real glyph atlas: every magenta source pixel must preserve the backdrop.
 Local glyphIndex=ko_index($AC00)-1
 Local glyph=ko_pages(0,glyphIndex/1024),maskedPixels,inkPixels
 Local glyphX=(glyphIndex Mod 32)*ko_cellw,glyphY=((glyphIndex Mod 1024)/32)*ko_cellh
@@ -103,8 +100,6 @@ compat_check(glyph<>0 And maskedPixels>0 And inkPixels>0,"real Korean atlas crop
 If animated<>0 Then FreeImage animated
 FreeImage compat_image:FreeImage compat_copy
 
-; A copied frame must keep its top/bottom orientation when reused in 3D.
-; This is the same BackBuffer -> TextureBuffer -> sprite path as event blur.
 HideEntity cam
 Local frameCamera=CreateCamera(),frameSprite=CreateSprite(frameCamera)
 Local frameTexture=CreateTexture(64,64,1+16+32+256)
@@ -120,7 +115,6 @@ CopyRect 0,0,64,64,0,0,BackBuffer(),TextureBuffer(frameTexture)
 RenderWorld()
 compat_pixel(16,16,$FF0000,"copied texture keeps top row in 3D")
 compat_pixel(16,48,$0000FF,"copied texture keeps bottom row in 3D")
-; Repeated feedback must not blend a vertically mirrored previous frame.
 EntityAlpha frameSprite,0.5
 For frameTick=1 To 3
  CopyRect 0,0,64,64,0,0,BackBuffer(),TextureBuffer(frameTexture)
@@ -136,8 +130,6 @@ ClsColor 0,0,0
 set_musicvolume#=0:set_fxvolume#=0
 ; AUDIO_CHECKS
 
-; Generated worlds take a different path from scenarios with saved textures.
-; Use real elapsed time here: per-pixel GPU readbacks used to stall this path.
 Local generationStart=MilliSecs()
 m_section=Csection_editor
 editor_ini()
@@ -159,7 +151,6 @@ compat_check(p_error=0,"random island scripts complete without parser errors")
 compat_colormap("random island")
 RenderWorld():Flip False
 
-; Menu scripts must initialise the moving camera and restart their 80 s cycle.
 compat_phase$="menu"
 menu_start():parse_all():seq_update()
 compat_check(seq_cstart<>0 And seq_cend<>0,"menu camera path starts")
@@ -171,7 +162,6 @@ For compat_tick=1 To 801
 Next
 compat_check(seq_start>=80000,"menu sequence restarts")
 
-; Run the original adventure script and paths with controlled 20 ms steps.
 compat_phase$="intro"
 m_section=Csection_game_sp:m_menu=0:g_unpaused=1
 compat_check(load_map("maps\adventure\map01.s2","")=1,"load original intro map")
@@ -201,7 +191,6 @@ m_menu=0:load_map("maps\adventure\map01.s2",""):parse_all():seq_update()
 parse_globalevent("skipsequence"):parse_all():modern_process_saves()
 compat_check(Lower(map_path$)="maps\adventure\map02.s2","skip uses original map transition")
 
-; Exercise script safety through the actual parser, live entities and renderer.
 Function compat_script(script$)
  parse_env(0,0,"compat","Script safety fixture")
  loadstring_parsecache(script$,Chr(31))
@@ -235,7 +224,6 @@ Function compat_script_safety()
  compat_check(Abs(EntityYaw(item\h)-37)<0.001,"item model accepts null current object")
  compat_check(Abs(EntityX(item\h)-10)<0.001 And Abs(EntityY(item\h)-20)<0.001 And Abs(EntityZ(item\h)-30)<0.001,"item model preserves position")
 
- ; Include both boundaries, the hover sentinel and clearly invalid values.
  For sample=0 To 5
   Select sample
    Case 0:font=-2
@@ -267,7 +255,6 @@ Function compat_script_safety()
  in_sitxt(19)=0
  compat_script("text3d "+quote$+"item"+quote$+","+item\id+","+quote$+quote$+";")
 
- ; Compare actual centred/right-aligned pixels for hover and normal fonts.
  Local previous_menu=m_menu,normal=CreateImage(400,32),hover=CreateImage(400,32)
  click=New Tcscr:click\typ=1:click\txt$="Hover alignment":click\x=400:click\y=300
  m_menu=Cmenu_if_clickscreen:in_mx=0:in_my=0:in_mrelease(1)=0
@@ -290,7 +277,6 @@ Function compat_script_safety()
  Delete click:FreeImage normal:FreeImage hover:m_menu=previous_menu
  free_item(item\id):free_object(decoy\id)
 
- ; A valid unit recipe with no ingredients reaches the real completion path.
  Local unit_script$=Dunit_script$(2),unit_events$=Dunit_scriptk$(2)
  Dunit_script$(2)="on:build_finish { $compat_build_finish=currentid(); }"
  Dunit_scriptk$(2)=Chr(31)+"build_finish"

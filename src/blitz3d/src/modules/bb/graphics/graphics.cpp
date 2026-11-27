@@ -334,7 +334,7 @@ void BBCALL bbGraphics3D( bb_int_t w,bb_int_t h,bb_int_t d,bb_int_t mode ){
 	case 1:break;
 	case 2:flags|=BBGraphics::GRAPHICS_WINDOWED;break;
 	case 3:flags|=BBGraphics::GRAPHICS_WINDOWED|BBGraphics::GRAPHICS_SCALED;break;
-	case 4:flags|=BBGraphics::GRAPHICS_WINDOWED;break; // "borderless windowed" - no distinct OS chrome in a browser canvas, so treat like windowed
+	case 4:flags|=BBGraphics::GRAPHICS_WINDOWED;break;
 	case 6:flags|=BBGraphics::GRAPHICS_WINDOWED|BBGraphics::GRAPHICS_AUTOSUSPEND;break;
 	case 7:flags|=BBGraphics::GRAPHICS_WINDOWED|BBGraphics::GRAPHICS_SCALED|BBGraphics::GRAPHICS_AUTOSUSPEND;break;
 	default:RTEX( "Illegal Graphics3D mode" );
@@ -627,7 +627,6 @@ static bool saveCanvas( BBCanvas *c,const std::string &f ){
     if(w<=0 || h<=0 || w>32768 || h>32768) return false;
     const uint32_t stride=(uint32_t(w)*3+3)&~3u;
 #ifdef BB_WINDOWS
-    // LoadImage opens UTF-8 names through the file system; save the same way.
     std::ofstream output(bbWidePath(canonicalpath(f)),std::ios::binary|std::ios::trunc);
 #else
     std::ofstream output(canonicalpath(f),std::ios::binary|std::ios::trunc);

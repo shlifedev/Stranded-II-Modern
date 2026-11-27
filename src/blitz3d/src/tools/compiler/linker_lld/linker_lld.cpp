@@ -509,8 +509,6 @@ void Linker_LLD::createExe( bool debug,const std::string &rt,const Target &targe
 	bool success=false;
 #if defined(BB_MACOS) && defined(BB_LEGACY32)
     if(target.type=="macos") {
-        // Use the installed Apple linker: LLVM 19 cannot parse newer SDK TAPI
-        // architecture names. Pass argv directly to preserve Unicode and spaces.
         std::vector<std::string> command={"xcrun","--sdk","macosx","ld"};
         for(const auto &arg:args) if(arg.rfind("--error-limit=",0)!=0) command.push_back(arg);
         std::vector<char*> argv;

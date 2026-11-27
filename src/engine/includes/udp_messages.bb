@@ -1,27 +1,16 @@
-;################################################# Initiale Message for Sending
-
-;Send Message
 Function udp_send(ip,port,msgid,reliable=1)
-	;Create new Message
 	Tudp_msg.Tudp_msg=New Tudp_msg
 	Tudp_msg\ip=ip
 	Tudp_msg\port=port
-	;Reliability
 	Tudp_msg\reliable=reliable
-	;Bank
 	Tudp_msg\db=CreateBank()
-	;Message ID
 	udp_w_byte(msgid)
-	;Set to Start
 	If msgid>=Cudp_sys Then
 		Tudp_msg\system=1
 	EndIf
 End Function
 
 
-;################################################# Write Commands
-
-;Write Byte
 Function udp_w_byte(value)
 	Tudp_msg.Tudp_msg=Last Tudp_msg
 	size=BankSize(Tudp_msg\db)
@@ -29,7 +18,6 @@ Function udp_w_byte(value)
 	PokeByte Tudp_msg\db,size,value
 End Function
 
-;Write Short
 Function udp_w_short(value)
 	Tudp_msg.Tudp_msg=Last Tudp_msg
 	size=BankSize(Tudp_msg\db)
@@ -37,7 +25,6 @@ Function udp_w_short(value)
 	PokeShort Tudp_msg\db,size,value
 End Function
 
-;Write Int
 Function udp_w_int(value)
 	Tudp_msg.Tudp_msg=Last Tudp_msg
 	size=BankSize(Tudp_msg\db)
@@ -45,7 +32,6 @@ Function udp_w_int(value)
 	PokeShort Tudp_msg\db,size,value
 End Function
 
-;Write Float
 Function udp_w_float(value#)
 	Tudp_msg.Tudp_msg=Last Tudp_msg
 	size=BankSize(Tudp_msg\db)
@@ -53,7 +39,6 @@ Function udp_w_float(value#)
 	PokeFloat Tudp_msg\db,size,value#
 End Function
 
-;Write Tiny Text
 Function udp_w_tiny(value$)
 	Tudp_msg.Tudp_msg=Last Tudp_msg
 	size=BankSize(Tudp_msg\db)
@@ -66,7 +51,6 @@ Function udp_w_tiny(value$)
 	Next
 End Function
 
-;Write Text
 Function udp_w_txt(value$)
 	Tudp_msg.Tudp_msg=Last Tudp_msg
 	size=BankSize(Tudp_msg\db)
@@ -80,9 +64,6 @@ Function udp_w_txt(value$)
 End Function
 
 
-;################################################# Read Commands
-
-;Read Byte
 Function udp_r_byte()
 	If udp_indbp<=udp_indbs-Cudp_size_byte Then
 		value=PeekByte(udp_indb,udp_indbp)
@@ -93,7 +74,6 @@ Function udp_r_byte()
 	EndIf
 End Function
 
-;Read Short
 Function udp_r_short()
 	If udp_indbp<=udp_indbs-Cudp_size_short Then
 		value=PeekShort(udp_indb,udp_indbp)
@@ -104,7 +84,6 @@ Function udp_r_short()
 	EndIf
 End Function
 
-;Read Int
 Function udp_r_int()
 	If udp_indbp<=udp_indbs-Cudp_size_int Then
 		value=PeekInt(udp_indb,udp_indbp)
@@ -115,7 +94,6 @@ Function udp_r_int()
 	EndIf
 End Function
 
-;Read Float
 Function udp_r_float#()
 	If udp_indbp<=udp_indbs-Cudp_size_float Then
 		value#=PeekFloat(udp_indb,udp_indbp)
@@ -126,7 +104,6 @@ Function udp_r_float#()
 	EndIf
 End Function
 
-;Read Tiny
 Function udp_r_tiny$()
 	l=PeekByte(udp_indb,udp_indbp)
 	value$=""
@@ -138,7 +115,6 @@ Function udp_r_tiny$()
 	Return value$
 End Function
 
-;Read Text
 Function udp_r_txt$()
 	l=PeekShort(udp_indb,udp_indbp)
 	value$=""

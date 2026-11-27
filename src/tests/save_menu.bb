@@ -1,5 +1,3 @@
-; Shared by native macOS and both Windows edition smoke checks.
-; Requires a loaded scene and an isolated runtime with no existing saves.
 Local preview_count=0,preview_image=map_image,preview_cwd$
 load_savegames(0)
 For preview_entry.Tsg=Each Tsg

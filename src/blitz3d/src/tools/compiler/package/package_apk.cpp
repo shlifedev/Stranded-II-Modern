@@ -35,7 +35,6 @@ void createApk( const std::string &out,const std::string &tmpdir,const std::stri
 	std::string zipalign=buildtools+"/zipalign";
 	std::string androidjar=androidsdk+"/platforms/android-"+target.version+"/android.jar";
 
-	// TODO: support release keys...
 	std::string keystore=home+"/cfg/debug.keystore";
 	std::string keystorepass="pass:android";
 
@@ -45,7 +44,6 @@ void createApk( const std::string &out,const std::string &tmpdir,const std::stri
 
 	RUN( "mkdir -p "+resdir );
 
-	// icons...
 	RUN( "mkdir -p "+resdir+"/mipmap-hdpi" );
 	RUN( "mkdir -p "+resdir+"/mipmap-mdpi" );
 	RUN( "mkdir -p "+resdir+"/mipmap-xhdpi" );
@@ -58,7 +56,6 @@ void createApk( const std::string &out,const std::string &tmpdir,const std::stri
 	RUN( "cp "+home+"/cfg/bbexe.png "+resdir+"/mipmap-xxhdpi/ic_launcher.png" );
 	RUN( "cp "+home+"/cfg/bbexe.png "+resdir+"/mipmap-xxxhdpi/ic_launcher.png" );
 
-	// values...
 	RUN( "mkdir -p "+resdir+"/values" );
 
 	std::ofstream colors;
@@ -88,7 +85,6 @@ void createApk( const std::string &out,const std::string &tmpdir,const std::stri
 	styles<<"</resources>\n";
 	styles.close();
 
-	// manifest...
 	std::ofstream m;
 	m.open( manifest );
 	m<<"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
@@ -112,11 +108,9 @@ void createApk( const std::string &out,const std::string &tmpdir,const std::stri
 	m<<"</manifest>\n";
 	m.close();
 
-	// assets...
 	RUN( "mkdir -p "+tmpdir+"/assets" );
 	bundleFiles( bundle,tmpdir+"/assets" );
 
-	// build the apk...
 	std::string jars="";
 
 	const Target::Runtime &rti=target.runtimes.at( rt );
@@ -145,7 +139,6 @@ void createApk( const std::string &out,const std::string &tmpdir,const std::stri
 	RUN( aapt2+" compile -v --dir "+resdir+" -o "+tmpdir+"/resources.zip" );
 	RUN( aapt2+" link -v -o "+tmpdir+"/unaligned.apk -I "+androidjar+" --manifest "+manifest+" -A "+tmpdir+"/assets "+tmpdir+"/resources.zip" );
 
-	// since relative paths create issues...
 	char dir[PATH_MAX];
 	getcwd( dir,PATH_MAX );
 	std::string currdir=dir;

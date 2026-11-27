@@ -3,11 +3,10 @@ if(BB_OVR OR BB_NX)
 endif()
 
 set(CMAKE_UNITY_BUILD false)
-add_compile_options(-w) # suppress warnings
+add_compile_options(-w)
 add_compile_definitions(SDL_LEAN_AND_MEAN)
 add_compile_definitions(GL_SILENCE_DEPRECATION GLES_SILENCE_DEPRECATION)
 
-# no need...
 file(READ tree/CMakeLists.txt FILE_CONTENTS)
 string(REPLACE "\"SDL2-static\"" "\"SDL2\"" FILE_CONTENTS "${FILE_CONTENTS}")
 file_write_changes(tree/CMakeLists.txt "${FILE_CONTENTS}")

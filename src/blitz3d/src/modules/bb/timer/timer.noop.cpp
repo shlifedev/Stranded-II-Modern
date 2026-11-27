@@ -8,7 +8,7 @@ public:
 	~NoopTimer(){}
 
 	int wait(){
-		return 0; // FIXME: implement this properly.
+		return 0;
 	}
 };
 

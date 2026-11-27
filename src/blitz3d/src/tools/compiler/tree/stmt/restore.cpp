@@ -1,8 +1,5 @@
 #include "restore.h"
 
-//////////////////
-// Restore data //
-//////////////////
 void RestoreNode::semant( Environ *e ){
 	if( e->level>0 ) e=e->globals;
 

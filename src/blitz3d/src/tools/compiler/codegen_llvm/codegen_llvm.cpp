@@ -1,5 +1,5 @@
 #include "codegen_llvm.h"
-extern bool bbTarget32; // defined in tree/type.cpp; selects 32-bit Blitz int/float
+extern bool bbTarget32;
 #include <llvm/ADT/Any.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/PassManager.h>
@@ -37,7 +37,6 @@ Codegen_LLVM::Codegen_LLVM( bool debug ):debug(debug),breakBlock(0) {
 	intTy=bbTarget32 ? llvm::Type::getInt32Ty( *context ) : llvm::Type::getInt64Ty( *context );
 	voidPtr=llvm::PointerType::get( *context,0 );
 
-	// initialize stdlib constructs...
 	bbType=llvm::StructType::create( *context,"BBType" );
 	bbField=llvm::StructType::create( *context,"BBField" );
 	bbObj=llvm::StructType::create( *context,"BBObj" );
@@ -48,31 +47,30 @@ Codegen_LLVM::Codegen_LLVM( bool debug ):debug(debug),breakBlock(0) {
 	bbObjPtr=llvm::PointerType::get( bbObj,0 );
 
 	std::vector<llvm::Type*> objels;
-	objels.push_back( llvm::PointerType::get( bbField,0 ) );   // fields
-	objels.push_back( bbObjPtr );     // next
-	objels.push_back( bbObjPtr );     // prev
-	objels.push_back( llvm::PointerType::get( bbObjType,0 ) ); // type
-	objels.push_back( intTy );    // ref_cnt
+	objels.push_back( llvm::PointerType::get( bbField,0 ) );
+	objels.push_back( bbObjPtr );
+	objels.push_back( bbObjPtr );
+	objels.push_back( llvm::PointerType::get( bbObjType,0 ) );
+	objels.push_back( intTy );
 	bbObj->setBody( objels );
 
 	std::vector<llvm::Type*> objtypeels;
-	objtypeels.push_back( intTy ); // type
-	objtypeels.push_back( bbObj );                              // used
-	objtypeels.push_back( bbObj );                              // free
-	objtypeels.push_back( intTy ); // fieldCnt
-	// fieldTypes does not need to be added. seems to only be used to make pointer math easier in stdlib code
+	objtypeels.push_back( intTy );
+	objtypeels.push_back( bbObj );
+	objtypeels.push_back( bbObj );
+	objtypeels.push_back( intTy );
 	bbObjType->setBody( objtypeels );
 
 	std::vector<llvm::Type*> arrayels;
-	arrayels.push_back( voidPtr );  // data
-	arrayels.push_back( intTy ); // elementType
-	arrayels.push_back( intTy ); // dims
+	arrayels.push_back( voidPtr );
+	arrayels.push_back( intTy );
+	arrayels.push_back( intTy );
 	bbArray->setBody( arrayels );
 
 	std::vector<llvm::Type*> vecels;
-	vecels.push_back( intTy ); // type
-	vecels.push_back( intTy ); // size
-	vecels.push_back( llvm::PointerType::get( bbType,0 ) ); // elementType
+	vecels.push_back( intTy );
+	vecels.push_back( intTy );
+	vecels.push_back( llvm::PointerType::get( bbType,0 ) );
 	bbVecType->setBody( vecels );
 
 	if( debug ){
@@ -92,7 +90,6 @@ void Codegen_LLVM::SetTarget( const ::Target &t ){
 		llvm::InitializeAllAsmPrinters();
 	}
 
-	// TODO: remove this bad hack
 	auto tt=t.triple;
 	if( tt.rfind("armeabi-v7a", 0) == 0) {
 		tt="arm";
@@ -184,9 +181,9 @@ llvm::BasicBlock *Codegen_LLVM::getLabel( std::string &ident ){
 llvm::GlobalVariable *Codegen_LLVM::getArray( std::string &ident, int dims ){
 	if( !arrays[ident] ){
 		std::vector<llvm::Type*> els;
-		els.push_back( bbArray );  // base
+		els.push_back( bbArray );
 		for( int k=0;k<dims;++k ) {
-			els.push_back( intTy ); // scales
+			els.push_back( intTy );
 		}
 		arrayTypes[ident]=llvm::StructType::create( *context,els,"_a"+ident+"data" );
 		arrays[ident]=(llvm::GlobalVariable*)module->getOrInsertGlobal( "_a"+ident,arrayTypes[ident] );
@@ -200,8 +197,6 @@ void Codegen_LLVM::optimize(){
 		return;
 	}
 
-	// until the gosub implementation is improved, we have to relax optimization
-	// to avoid long build times...
 	if( gosubUsed ){
 		targetMachine->setOptLevel( llvm::CodeGenOptLevel::None );
 		targetMachine->setFastISel( false );
@@ -249,7 +244,6 @@ bool Codegen_LLVM::verify(){
 
 void Codegen_LLVM::injectMain(){
 	std::string mainsym="main";
-	// TODO: not the cleanest, but works for now...
 	if( target=="ios"||target=="ios-sim"||target=="android" ){
 		mainsym="SDL_main";
 	}else if( target=="ovr" ){

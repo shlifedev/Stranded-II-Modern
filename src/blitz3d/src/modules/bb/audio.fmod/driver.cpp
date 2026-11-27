@@ -41,10 +41,10 @@ struct SoundChannel : public BBChannel{
 		return FSOUND_IsPlaying( channel ) ? true : false;
 	}
 	float getDuration(){
-		return 0.0; // TODO: fix this
+		return 0.0;
 	}
 	float getPosition(){
-		return 0.0; // TODO: fix this
+		return 0.0;
 	}
 private:
 	int channel;
@@ -78,10 +78,10 @@ struct CDChannel : public BBChannel{
 		return true;
 	}
 	float getDuration(){
-		return 0.0; // TODO: fix this
+		return 0.0;
 	}
 	float getPosition(){
-		return 0.0; // TODO: fix this
+		return 0.0;
 	}
 };
 
@@ -118,10 +118,10 @@ struct StreamChannel : public StaticChannel{
 		return FSOUND_IsPlaying( channel ) ? true : false;
 	}
 	float getDuration(){
-		return 0.0; // TODO: fix this
+		return 0.0;
 	}
 	float getPosition(){
-		return 0.0; // TODO: fix this
+		return 0.0;
 	}
 private:
 	FSOUND_STREAM *stream;
@@ -157,10 +157,10 @@ struct MusicChannel : public StaticChannel{
 		return FMUSIC_IsFinished( module ) ? false : true;
 	}
 	float getDuration(){
-		return 0.0; // TODO: fix this
+		return 0.0;
 	}
 	float getPosition(){
-		return 0.0; // TODO: fix this
+		return 0.0;
 	}
 private:
 	FMUSIC_MODULE *module;
@@ -205,9 +205,7 @@ FMODAudioDriver::FMODAudioDriver(){
 
 FMODAudioDriver::~FMODAudioDriver(){
 	while( sound_set.size() ) freeSound( *sound_set.begin() );
-	//free all channels
 	for( ;channels.size();channels.pop_back() ) delete channels.back();
-	//free all sound_set
 	soundChannels.clear();
 	songs.clear();
 

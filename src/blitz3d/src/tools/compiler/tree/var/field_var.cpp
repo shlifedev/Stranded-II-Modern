@@ -1,8 +1,5 @@
 #include "field_var.h"
 
-///////////////
-// Field var //
-///////////////
 void FieldVarNode::semant( Environ *e ){
 	expr=expr->semant( e );
 	StructType *s=expr->sem_type->structType();
@@ -26,7 +23,6 @@ llvm::Value *FieldVarNode::translate2( Codegen_LLVM *g ){
 	indices.push_back( llvm::ConstantInt::get( *g->context,llvm::APInt( 32,sem_field->offset/4+1 ) ) );
 
 	#ifdef BB_LEGACY32
-    // C++ stores Type fields in pointer-sized BBField union slots.
     auto obj=expr->translate2(g);
     auto fields=g->builder->CreateLoad(g->voidPtr,g->builder->CreateStructGEP(g->bbObj,obj,0));
     auto slot=llvm::IntegerType::get(*g->context,g->module->getDataLayout().getPointerSizeInBits());

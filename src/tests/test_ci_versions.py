@@ -116,7 +116,6 @@ class PublicationTests(unittest.TestCase):
             yield path.with_suffix('.mounted')
         patch.object(release, 'mounted_image', side_effect=mount).start()
         patch.object(release, 'payload_records').start()
-        # Model Unix modes independently of the host running the coordinator tests.
         patch.object(release, 'tree_records', side_effect=lambda app: self.mac_records[app]).start()
         patch.object(release, 'verify_signature').start()
         patch.object(release, 'verify_dmg_signature').start()

@@ -22,9 +22,9 @@ private:
 
 	Tile *genCompare( TNode *t,std::string &func,bool negate );
 
-	Tile *munch( TNode *t );		//munch and discard result
-	Tile *munchReg( TNode *t );		//munch and put result in a CPU reg
-	Tile *munchFP( TNode *t );		//munch and put result on FP stack
+	Tile *munch( TNode *t );
+	Tile *munchReg( TNode *t );
+	Tile *munchFP( TNode *t );
 
 	Tile *munchCall( TNode *t );
 	Tile *munchUnary( TNode *t );

@@ -1,28 +1,20 @@
-;############################################ GUI TEXTBOX FUNCTIONS (gui_tb_)
-
-;### Textbox (Main Function, Draws Textbox, in_inputfocus=1337)
 Function gui_tb(rx,ry,w,rowsh,info=0,scripthelper=0)
 ko_editing=1
 	Local h=rowsh*15
-	;BG
 	Color 0,0,0
 	Rect rx,ry,w,h	
-	;Text
 	Local y=ry
 	Local i
 	Local cursorline$
 	Local cursorx,cursory
 	Local cursordraw=0
 	Local rows=Floor(h/15)
-	;Scripthelper Update?
 	Local shu=0
 	If in_sh_update=1 Then
 		shu=1
 		in_sh_update=0
 	EndIf
 	
-	;Mark
-	;Bring Mark Start/End Row and Col in correct Order!
 	If in_mark>0 Then
 		Local ms_row,ms_col
 		Local me_row,me_col
@@ -43,18 +35,13 @@ ko_editing=1
 		EndIf
 	EndIf
 	
-	;Draw Lines
 	i=0
 	For Ttbt.Ttbt=Each Ttbt
-		;Cache selected Row
 		If i=in_tb_row Then cursorline$=Ttbt\txt$
-		;Is Line in visible Area?
 		If i>=in_tb_scry And y<=(ry+h-15) Then
-			;Darkback
 			Color 28,17,0
 			Rect rx+1,y+1,w-2,14,1
 			
-			;Markback if marked
 			If in_mark>0 Then
 				If i>ms_row And i<me_row Then
 					Color 84,51,0
@@ -64,31 +51,25 @@ ko_editing=1
 				EndIf
 			EndIf
 			
-			;Clickline/Releaseline - Set Cursorpos
 			If in_mx>=rx-15 And in_mx<=rx+w Then
 				If in_my>=y And in_my<y+15 Then
 				
 					in_cursorf=5
 					
-					;Click
 					If in_mhit(1) Then
-						;Set Cursor
 						cursorline$=Ttbt\txt$
 						in_tb_row=i
 						in_tb_col=in_tb_scrx+bmpf_txt_pos(Mid(Ttbt\txt$,in_tb_scrx+1,-1),Cbmpf_tiny,in_mx-(rx+2))
 						If in_tb_col<0 Then in_tb_col=0
 						If in_tb_col>Len(cursorline$) Then in_tb_col=Len(cursorline$)
-						;Set Mark Start
 						in_mark=1
 						in_ms_col=in_tb_col
 						in_ms_row=in_tb_row
 						in_me_col=999999
 						in_me_row=999999
-						;Script Helper Update
 						shu=1
 					EndIf
 					
-					;Down
 					If in_mdown(1) Then
 						If in_mark=1 Then
 							cursorline$=Ttbt\txt$
@@ -96,48 +77,37 @@ ko_editing=1
 							in_tb_col=in_tb_scrx+bmpf_txt_pos(Mid(Ttbt\txt$,in_tb_scrx+1,-1),Cbmpf_tiny,in_mx-(rx+2))
 							If in_tb_col<0 Then in_tb_col=0
 							If in_tb_col>Len(cursorline$) Then in_tb_col=Len(cursorline$)
-							;Set
 							in_me_col=in_tb_col
 							in_me_row=in_tb_row
-							;Script Helper Reset
 							shu=-1
 						EndIf
 					EndIf
 					
-					;Release
 					If in_mrelease(1) Then
 						in_inputfocus=1337
 						If in_mark=1 Then
-							;Set Cursor
 							cursorline$=Ttbt\txt$
 							in_tb_row=i
 							in_tb_col=in_tb_scrx+bmpf_txt_pos(Mid(Ttbt\txt$,in_tb_scrx+1,-1),Cbmpf_tiny,in_mx-(rx+2))
 							If in_tb_col<0 Then in_tb_col=0
 							If in_tb_col>Len(cursorline$) Then in_tb_col=Len(cursorline$)
-							;Set Mark End
 							in_mark=2
 							in_me_col=in_tb_col
 							in_me_row=in_tb_row
-							;Swap Mark Start/End?
 							If (in_me_row<in_ms_row) Or ((in_ms_row=in_me_row)And(in_me_col<in_ms_col)) Then
 								x=in_me_row:in_me_row=in_ms_row:in_ms_row=x
 								x=in_me_col:in_me_col=in_ms_col:in_ms_col=x
 							EndIf
-							;Nothing Selected?
 							If in_ms_row=in_me_row Then
 								If in_ms_col=in_me_col Then in_mark=0
 							EndIf
 							
-							;DebugLog "MARK: "+in_mark+" FROM: "+in_ms_row+","+in_ms_col+" TO "+in_me_row+","+in_me_col
-							
-							;Script Helper Update
 							shu=1
 						EndIf
 					EndIf
 				EndIf
 			EndIf
 			
-			;Draw Text
 			If in_mark>0 Then
 				If i=ms_row Or i=me_row Then
 					If i=ms_row And i=me_row Then
@@ -154,7 +124,6 @@ ko_editing=1
 				bmpf_txt_ml(rx+2,y,Mid(Ttbt\txt$,in_tb_scrx+1,-1),Cbmpf_tiny,rx+w-3)
 			EndIf
 			
-			;Cursor
 			If i=in_tb_row Then
 				If in_tb_col-in_tb_scrx>=0 Then
 					cursordraw=1
@@ -166,37 +135,32 @@ ko_editing=1
 				EndIf
 			EndIf
 			
-			;Inc Y
 			y=y+15	
 			
 		EndIf
 		
-		;Inc Line
 		i=i+1
 	Next
 	
-	;Input - Control Cursor
 	If in_inputfocus=1337 And in_console=0 Then
-		If KeyHit(200) Then in_tb_row=in_tb_row-1:in_mark=0:shu=1 			;Cursor Up
-		If KeyHit(208) Then in_tb_row=in_tb_row+1:in_mark=0:shu=1			;Cursor Down
-		If KeyHit(203) Then in_tb_col=ko_prev(cursorline$,in_tb_col):in_mark=0:shu=1			;Cursor Left
-		If KeyHit(205) Then in_tb_col=ko_next(cursorline$,in_tb_col):in_mark=0:shu=1			;Cursor Right
-		If KeyHit(199) Then in_tb_col=0:in_tb_scrx=0:in_mark=0:shu=1		;Cursor Pos 1
-		If KeyHit(207) Then in_tb_col=Len(cursorline$):in_mark=0:shu=1		;Cursor End
-		If KeyHit(201) Then in_tb_row=0:in_mark=0:shu=1						;Cursor PgUp
-		If KeyHit(209) Then in_tb_row=i-1:in_mark=0:shu=1					;Cursor PgDown
-		If in_mzs#<>0.0 Then												;Cursor Up/Down Wheel
+		If KeyHit(200) Then in_tb_row=in_tb_row-1:in_mark=0:shu=1
+		If KeyHit(208) Then in_tb_row=in_tb_row+1:in_mark=0:shu=1
+		If KeyHit(203) Then in_tb_col=ko_prev(cursorline$,in_tb_col):in_mark=0:shu=1
+		If KeyHit(205) Then in_tb_col=ko_next(cursorline$,in_tb_col):in_mark=0:shu=1
+		If KeyHit(199) Then in_tb_col=0:in_tb_scrx=0:in_mark=0:shu=1
+		If KeyHit(207) Then in_tb_col=Len(cursorline$):in_mark=0:shu=1
+		If KeyHit(201) Then in_tb_row=0:in_mark=0:shu=1
+		If KeyHit(209) Then in_tb_row=i-1:in_mark=0:shu=1
+		If in_mzs#<>0.0 Then
 			in_tb_row=in_tb_row+in_mzs#*(-5)
 		EndIf
 	EndIf
 
-	;Check
 	If in_tb_row<0 Then in_tb_row=0
 	If in_tb_row>i-1 Then in_tb_row=i-1
 	If in_tb_col<0 Then in_tb_col=0
 	If in_tb_col>Len(cursorline$) Then in_tb_col=Len(cursorline$)
 	
-	;Get Cursorline
 	i=0
 	For gl.Ttbt=Each Ttbt
 		If i=in_tb_row Then
@@ -207,34 +171,27 @@ ko_editing=1
 	Next
 	
 	in_tb_col=ko_floor(cursorline$,in_tb_col)
-	;Input - Write
 	If in_inputfocus=1337 And in_console=0 Then
 		
-		;Get Ctrl
 		Local ctrlkey=0
 		ctrlkey=(KeyDown(29) Or KeyDown(157))
 		
-		;Cut / Copy / Paste
 		Local cutkey=KeyHit(45)
 		Local copykey=KeyHit(46)
 		Local pastekey=KeyHit(47)
 		
-		;##################################### UNMARKED
 		If in_mark=0 Then
 			
 			Local key=in_key
 			Local changed=0
-			;INS
 			If (key>31 And key<127) Or (Instr("ÄäÖöÜüß",Chr(key))>0) Then
 				cursorline$=gui_tb_act_ins$(cursorline$,in_tb_col,Chr(key))
 				changed=1
 				shu=1
-			;TAB
 			ElseIf key=9 Then
 				cursorline$=gui_tb_act_ins$(cursorline$,in_tb_col,"   ")
 				changed=1
 				shu=1
-			;DEL
 			ElseIf key=4 Then
 				shu=1
 				cache$=cursorline$
@@ -256,7 +213,6 @@ ko_editing=1
 				Else
 					changed=1
 				EndIf
-			;BS
 			ElseIf key=8 Then
 				shu=1
 				cache$=cursorline$
@@ -280,15 +236,12 @@ ko_editing=1
 				Else
 					changed=1
 				EndIf
-			;Break
 			ElseIf key=13 Then
 				shu=1
 				gui_tb_act_break()
 			EndIf
-			;Ctrl
 			If ctrlkey Then
 				shu=1
-				;Paste
 				If pastekey Then
 					cursorline$=gui_tb_act_ins$(cursorline$,in_tb_col,gui_tb_tr2(paste()))
 					jmod=0
@@ -302,7 +255,6 @@ ko_editing=1
 					gui_tb_resplit()
 				EndIf
 			EndIf			
-			;Modify
 			If changed=1 Then
 				jmod=0
 				For Tmodify.Ttbt=Each Ttbt 
@@ -315,50 +267,40 @@ ko_editing=1
 				changed=0
 			EndIf
 			
-		;##################################### MARKED
 		Else
 			
 			key=in_key
-			;INS
 			If (key>31 And key<127) Then
 				shu=1
 				gui_tb_replacemarked(Chr(key))
 				in_mark=0
-			;TAB
 			ElseIf key=9 Then
 				shu=1
 				gui_tb_replacemarked("   ")
 				in_mark=0
-			;DEL
 			ElseIf key=4 Then
 				shu=1
 				gui_tb_replacemarked("")
 				in_mark=0
-			;BS
 			ElseIf key=8 Then
 				shu=1
 				gui_tb_replacemarked("")
 				in_mark=0
-			;Break
 			ElseIf key=13 Then
 				shu=1
 				gui_tb_replacemarked("")
 				in_mark=0
 			EndIf
 			
-			;Ctrl
 			If ctrlkey Then
-				;Cut
 				If cutkey Then
 					copy(gui_tb_tr1(gui_tb_tostrmarked$()))
 					gui_tb_replacemarked("")
 					in_mark=0
 					shu=1
-				;Copy
 				ElseIf copykey Then
 					copy(gui_tb_tr1(gui_tb_tostrmarked$()))
 					shu=1
-				;Paste
 				ElseIf pastekey Then
 					gui_tb_replacemarked(gui_tb_tr2(paste()))
 					gui_tb_resplit()
@@ -371,7 +313,6 @@ ko_editing=1
 		
 	EndIf
 		
-	;Scroll to Cursor X
 	While cursorx>=(rx+w-5)
 		in_tb_scrx=ko_next(cursorline$,in_tb_scrx)
 		cursorx=rx+bmpf_len(Mid(cursorline$,in_tb_scrx+1,in_tb_col-in_tb_scrx),Cbmpf_tiny)
@@ -381,7 +322,6 @@ ko_editing=1
 		If in_tb_scrx<=0 Then in_tb_scrx=0:Exit
 		cursorx=rx+bmpf_len(Mid(cursorline$,in_tb_scrx+1,in_tb_col-in_tb_scrx),Cbmpf_tiny)
 	Wend
-	;Scroll to Cursor Y
 	If cursordraw=0 Then
 		While in_tb_row<in_tb_scry
 			in_tb_scry=in_tb_scry-1
@@ -393,11 +333,9 @@ ko_editing=1
 		Wend
 	EndIf
 	
-	;Info
 	ko_editing=0
 	If info Then bmpf_txt(rx,ry+h+1,sm$(37)+": "+in_tb_row+" "+sm$(38)+": "+in_tb_col,Cbmpf_tiny)
 	
-	;Scripthelper
 	If in_inputfocus=1337 Then
 		If scripthelper Then
 			If shu=1 Then
@@ -411,7 +349,6 @@ ko_editing=1
 ko_editing=0
 End Function
 
-;### Textbox Clear
 Function gui_tb_clear(oneline=0)
 	in_tb_row=0
 	in_tb_col=0
@@ -423,13 +360,11 @@ Function gui_tb_clear(oneline=0)
 	If oneline Then Ttbt.Ttbt=New Ttbt
 End Function
 
-;### Textbox Add Line
 Function gui_tb_addline(txt$)
 	Ttbt.Ttbt=New Ttbt
 	Ttbt\txt$=txt$
 End Function
 
-;### Textbox Action: Insert
 Function gui_tb_act_ins$(txt$,pos,ins$)
 	Local strlen=Len(txt$)
 	Local p1$,p2$
@@ -441,38 +376,32 @@ Function gui_tb_act_ins$(txt$,pos,ins$)
 	Return (p1$+ins$+p2$)
 End Function
 
-;### Textbox Action: Del
 Function gui_tb_act_del$(txt$,pos)
  pos=ko_floor(txt$,pos)
  Return Left(txt$,pos)+Mid(txt$,ko_next(txt$,pos)+1,-1)
 End Function
 
-;### Textbox Action: BS
 Function gui_tb_act_bs$(txt$,pos)
  pos=ko_floor(txt$,pos)
  in_tb_col=ko_prev(txt$,pos)
  Return Left(txt$,in_tb_col)+Mid(txt$,pos+1,-1)
 End Function
 
-;### Textbox Action: break
 Function gui_tb_act_break()
 	Local j=0
 	Local p1$,p2$
 	Local pos=in_tb_col
 	For Ttbt.Ttbt=Each Ttbt
 		If j=in_tb_row Then
-			;New empty Line after current
 			If in_tb_col=Len(Ttbt\txt$) Then
 				TtbtNEW.Ttbt=New Ttbt
 				Insert TtbtNEW.Ttbt After Ttbt
 				in_tb_row=in_tb_row+1
 				in_tb_col=0:in_tb_scrx=0
-			;New empty Line before current
 			ElseIf  in_tb_col=0 Then
 				TtbtNEW.Ttbt=New Ttbt
 				Insert TtbtNEW.Ttbt Before Ttbt
 				in_tb_col=0:in_tb_scrx=0
-			;New Line with splittet content
 			Else
 				p1$=Mid(Ttbt\txt$,1,pos)
 				p2$=Mid(Ttbt\txt$,pos+1,-1)
@@ -489,26 +418,21 @@ Function gui_tb_act_break()
 	Next
 End Function
 
-;### Replace Marked
 Function gui_tb_replacemarked(txt$)
 	Local i
 	Local s$,e$
 	For Ttbt.Ttbt=Each Ttbt
-		;Start or End Row
 		If i=in_ms_row Or i=in_me_row Then
 			
-			;One Line
 			If i=in_ms_row And i=in_me_row Then
 				s$=Left(Ttbt\txt$,in_ms_col)
 				e$=Mid(Ttbt\txt$,in_me_col+1,-1)
 				Ttbt\txt$=s$+txt$+e$
 				Return 1
-			;Start
 			ElseIf i=in_ms_row Then
 				If in_ms_col>0 Then
 					s$=Left(Ttbt\txt$,in_ms_col+1)
 				EndIf
-			;End
 			Else
 				If in_me_col<Len(Ttbt\txt$+1) Then
 					e$=Mid(Ttbt\txt$,in_me_col+1,-1)
@@ -516,10 +440,8 @@ Function gui_tb_replacemarked(txt$)
 			EndIf
 		EndIf
 		
-		;Delete Row
 		If i=>in_ms_row And i<=in_me_row Then Delete Ttbt
 		
-		;Add
 		If i=in_me_row Then
 			Ttbt.Ttbt=New Ttbt
 			Ttbt\txt$=s$+txt$+e$
@@ -531,29 +453,23 @@ Function gui_tb_replacemarked(txt$)
 End Function
 
 
-;### To String Marked
 Function gui_tb_tostrmarked$()
 	Local i
 	Local s$,e$,full$
 	Local endingbreak=0
 	For Ttbt.Ttbt=Each Ttbt
-		;Start or End Row
 		If i=in_ms_row Or i=in_me_row Then
 			
-			;One Line
 			If i=in_ms_row And i=in_me_row Then
 				Return Mid(Ttbt\txt$,in_ms_col+1,(in_me_col-in_ms_col))
-			;Start
 			ElseIf i=in_ms_row Then
 				s$=Mid(Ttbt\txt$,in_ms_col+1,-1)
-			;End
 			Else
 				e$=Left(Ttbt\txt$,in_me_col+1)
 				If e$=Ttbt\txt$ Then endingbreak=1
 			EndIf
 		EndIf
 		
-		;Add Row
 		If i>in_ms_row And i<in_me_row Then
 			full$=full$+""+Ttbt\txt$
 		EndIf
@@ -572,14 +488,12 @@ Function gui_tb_tostrmarked$()
 End Function
 
 
-;### Resplit (after Paste!)
 Function gui_tb_resplit()
 	tmp$=gui_tb_savestring("")
 	gui_tb_loadstring(tmp$,"",0)
 End Function
 
 
-;### Textbox Loadstring
 Function gui_tb_loadstring(txt$,sep$="",clearmode=1)
 	If clearmode=1 Then
 		gui_tb_clear()
@@ -607,7 +521,6 @@ Function gui_tb_loadstring(txt$,sep$="",clearmode=1)
 End Function
 
 
-;### Textbox Savestring
 Function gui_tb_savestring$(sep$="")
 	Local txt$
 	For Ttbt.Ttbt=Each Ttbt
@@ -617,7 +530,6 @@ Function gui_tb_savestring$(sep$="")
 End Function
 
 
-;### Textbox Loadfile
 Function gui_tb_loadfile(file$)
 	stream=ReadFile(file$)
 	If stream=0 Then Return 0
@@ -634,7 +546,6 @@ Function gui_tb_loadfile(file$)
 End Function
 
 
-;### Textbox Savefile
 Function gui_tb_savefile(file$)
 	stream=WriteFile(file$)
 	If stream=0 Then Return 0
@@ -647,7 +558,6 @@ Function gui_tb_savefile(file$)
 End Function
 
 
-;### Textbox filled?
 Function gui_tb_filled()
 	For Ttbt.Ttbt=Each Ttbt
 		If Len(Trim(Ttbt\txt$))>0 Then Return 1
@@ -656,17 +566,13 @@ Function gui_tb_filled()
 End Function
 
 
-;### Textbox insert
 Function gui_tb_insert(txt$)
-	;Replace
-	txt$=Replace(txt$,Chr(9),"   ")			;Tabs
-	txt$=Replace(txt$,Chr(13)+Chr(10),"")	;Linebreaks
+	txt$=Replace(txt$,Chr(9),"   ")
+	txt$=Replace(txt$,Chr(13)+Chr(10),"")
 	
-	;DebugLog "insert: "+txt$
 	Local row=0
 	Local p1$,p2$
 	For Ttbt.Ttbt=Each Ttbt
-		;DebugLog row+" -> "+in_tb_row
 		If row=in_tb_row Then
 			p1$=Left(Ttbt\txt$,in_tb_col)
 			p2$=Mid(Ttbt\txt$,in_tb_col+1,-1)
@@ -681,15 +587,11 @@ End Function
 
 
 
-;### Textbox Scripthelper
 Function gui_tb_scripthelper(txt$,col,x,y)
-	;Reset
 	in_sh=0
 	in_sh_txt$=""
 	in_sh_cmd$=""
-	;Cancel on Empty / 1 Sign Line
 	If col<2 Then Return 0
-	;Extract possible Command
 	txt$=Left(txt$,col)
 	Local cmd$
 	Local s
@@ -707,29 +609,25 @@ Function gui_tb_scripthelper(txt$,col,x,y)
 	EndIf
 	If Len(cmd$)<2 Then Return 0
 	in_sh_cmd$=cmd$
-	;Find Command in Reference
 	For Tsc.Tsc=Each Tsc
 		If Tsc\cmd$=cmd$ Then
 			in_sh=1
-			in_sh_txt$=Tsc\cmd$+Tsc\params$ ;+" ("+Tsc\groups$+")"
+			in_sh_txt$=Tsc\cmd$+Tsc\params$
 			in_sh_x=x+20
 			in_sh_y=y-20
 			Exit
 		EndIf
 	Next
 	
-	;DebugLog cmd$
 End Function
 
 
-;### Textbox Scripthelper List
 Function gui_tb_scripthelper_list()
 	Local l=Len(in_sh_cmd$)
 	If l<2 Then Return 0
 	Local ble
 	Local x=236+37+37+37+5+37+37
 	Local y=0
-	;Find Similiar Commands
 	For Tsc.Tsc=Each Tsc
 		If Left(Tsc\cmd$,l)=in_sh_cmd$ Then
 			ble=bmpf_len(Tsc\cmd$,Cbmpf_tiny)+3
@@ -750,24 +648,14 @@ Function gui_tb_scripthelper_list()
 End Function
 
 
-;### Transform Functions
-
-;SII -> Normal
 Function gui_tb_tr1$(t$)
-	;Tab
 	t$=Replace(t$,"   ",Chr(9))
-	;Break
 	t$=Replace(t$,"",Chr(13)+Chr(10))
-	;Return
 	Return t$
 End Function
 
-;Normal -> SII
 Function gui_tb_tr2$(t$)
-	;Tab
 	t$=Replace(t$,Chr(9),"   ")
-	;Break
 	t$=Replace(t$,Chr(13)+Chr(10),"")
-	;Return
 	Return t$
 End Function

@@ -37,10 +37,10 @@ def instrument(source):
                                  'RenderWorld()', 'mb_update()', 'grass_spread()')):
         tail = ':bench_triangles=TrisRendered()' if slot == 3 else ''
         if slot == 1:
-            tail = ':m_menu=0:g_unpaused=1'  # Suppress scripted diary overlays in the test scene.
+            tail = ':m_menu=0:g_unpaused=1'
         text = replace_once(text, call, f'bench_begin({slot}):{call}:bench_end({slot}){tail}')
     text = replace_once(text, '\tgame_setcam()', '\tgame_setcam():bench_camera()')
-    text = text.replace('MoveMouse set_scrx/2,set_scry/2', '; Benchmark does not warp the pointer.')
+    text = text.replace('MoveMouse set_scrx/2,set_scry/2', '')
     path.write_text(text, encoding='utf8')
     path = source / 'includes/e_environment.bb'
     text = path.read_text('utf8')
@@ -126,7 +126,6 @@ def prepare(edition):
     runtime = profile.runtime(ROOT)
     folder = Path(tempfile.mkdtemp(prefix='benchmark-', dir=ROOT / 'build'))
     target = folder / 'runtime'
-    # The official resource manifest excludes personal maps, saves and caches.
     names = set(json.loads((ROOT / 'config/game-files.json').read_text('utf8')))
     names.update(override_files(ROOT, edition))
     for relative in sorted(names):
@@ -138,7 +137,6 @@ def prepare(edition):
         shutil.copy2(src, dst)
     shutil.copytree(runtime / 'core', target / 'core', dirs_exist_ok=True,
                     ignore=shutil.ignore_patterns('*.log'))
-    # Copy this edition's settings as the baseline, never across editions.
     settings = runtime / 'mods/Stranded II/sys/settings.cfg'
     if settings.exists():
         shutil.copy2(settings, target / 'mods/Stranded II/sys/settings.cfg')
@@ -262,8 +260,6 @@ def run(folder, args):
     log = folder / f'{prefix}run-{args.width}x{args.height}.log'
     print('Running:', folder, flush=True)
     with log.open('w', encoding='utf8') as output:
-        # A fresh process per trial prevents retained scene/driver state from
-        # biasing later options. Keep the generated maps and immutable resources.
         for index, (line, row) in enumerate(zip(plan, rows), 1):
             (target / 'benchmark-plan.csv').write_text(line+'\n', encoding='utf8')
             print(f"[{index}/{len(rows)}] {row['name']}", flush=True)

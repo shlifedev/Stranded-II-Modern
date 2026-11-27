@@ -72,7 +72,7 @@ class EditionTests(unittest.TestCase):
         self.assertEqual(catalog_text(self.root, 'en'), before)
         self.assertNotIn('qol.sort', validate(self.root)['en'])
         self.assertEqual(validate(self.root, 'extended')['en']['item.axe'], 'New axe')
-        self.assertNotIn('qol.sort', validate(self.root, 'extended')['ko'])  # English fallback
+        self.assertNotIn('qol.sort', validate(self.root, 'extended')['ko'])
         self.put('resources/locales/editions/extended/en.tsv', 'qol.sort\tSort\nqol.sort\tDuplicate\n')
         validate(self.root)
         with self.assertRaisesRegex(ValueError, 'duplicate'):

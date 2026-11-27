@@ -1,58 +1,54 @@
-;############################################ Load Objects
-
 Global object_count=0
-Global object_count_e=0					;Object Count Editor
+Global object_count_e=0
 
-Dim Dobject_name$(Cobject_count)		;Name
+Dim Dobject_name$(Cobject_count)
 
-Dim Dobject_icon$(Cobject_count)		;Icon Path
-Dim Dobject_iconh(Cobject_count)		;Icon Handle
+Dim Dobject_icon$(Cobject_count)
+Dim Dobject_iconh(Cobject_count)
 
-Dim Dobject_model$(Cobject_count)		;Model Path
-Dim Dobject_modelh(Cobject_count)		;Model Handle
-Dim Dobject_size#(Cobject_count,2)		;Model Size (x,y,z)
-Dim Dobject_color(Cobject_count,2)		;Model Color (r,g,b)
-Dim Dobject_fx(Cobject_count)			;Model FX
-Dim Dobject_autofade(Cobject_count)		;Model Autofade
-Dim Dobject_alpha#(Cobject_count)		;Model Alpha
-Dim Dobject_shininess#(Cobject_count)	;Model Shininess
+Dim Dobject_model$(Cobject_count)
+Dim Dobject_modelh(Cobject_count)
+Dim Dobject_size#(Cobject_count,2)
+Dim Dobject_color(Cobject_count,2)
+Dim Dobject_fx(Cobject_count)
+Dim Dobject_autofade(Cobject_count)
+Dim Dobject_alpha#(Cobject_count)
+Dim Dobject_shininess#(Cobject_count)
 
-Dim Dobject_detailtex$(Cobject_count)	;Detail Texture
+Dim Dobject_detailtex$(Cobject_count)
 
-Dim Dobject_col(Cobject_count)			;Collision Mode
-Dim Dobject_mat(Cobject_count)			;Material
-Dim Dobject_health#(Cobject_count)		;Health
-Dim Dobject_healthchange#(Cobject_count);Health Change
-Dim Dobject_swayspeed#(Cobject_count)	;Swayspeed
-Dim Dobject_swaypower#(Cobject_count)	;Swaypower
-Dim Dobject_maxweight(Cobject_count)	;Max Weight
-Dim Dobject_gt(Cobject_count)			;Game Timer
-Dim Dobject_state#(Cobject_count,3)		;State Mode (0) + Offsets
-Dim Dobject_searchratio#(Cobject_count)	;Search Ratio
+Dim Dobject_col(Cobject_count)
+Dim Dobject_mat(Cobject_count)
+Dim Dobject_health#(Cobject_count)
+Dim Dobject_healthchange#(Cobject_count)
+Dim Dobject_swayspeed#(Cobject_count)
+Dim Dobject_swaypower#(Cobject_count)
+Dim Dobject_maxweight(Cobject_count)
+Dim Dobject_gt(Cobject_count)
+Dim Dobject_state#(Cobject_count,3)
+Dim Dobject_searchratio#(Cobject_count)
 
-Dim Dobject_active(Cobject_count)		;Per-frame behaviour (fountain/closekill/closetrigger); sway is driven by swayspeed alone
-Dim Dobject_behaviour$(Cobject_count)	;Behaviour
+Dim Dobject_active(Cobject_count)
+Dim Dobject_behaviour$(Cobject_count)
 
-Dim Dobject_spawn$(Cobject_count)		;Spawn (item typ, day rate, xz-range, y-range, y-offset, limit, count)
+Dim Dobject_spawn$(Cobject_count)
 
-Dim Dobject_script$(Cobject_count)		;Script Stuff?
-Dim Dobject_scriptk$(Cobject_count)		;Script Key
-Dim Dobject_scripto$(Cobject_count)		;Script Override
+Dim Dobject_script$(Cobject_count)
+Dim Dobject_scriptk$(Cobject_count)
+Dim Dobject_scripto$(Cobject_count)
 
-Dim Dobject_align(Cobject_count)		;Align
+Dim Dobject_align(Cobject_count)
 
-Dim Dobject_afc(Cobject_count)			;Autofade Cache
+Dim Dobject_afc(Cobject_count)
 
-Dim Dobject_descr$(Cobject_count)		;Description
+Dim Dobject_descr$(Cobject_count)
 
-Dim Dobject_ined(Cobject_count)			;In Editor?
+Dim Dobject_ined(Cobject_count)
 
-Dim Dobject_growtime(Cobject_count)		;Growtime
+Dim Dobject_growtime(Cobject_count)
 
-Dim Dobject_group$(Cobject_count)		;Group
+Dim Dobject_group$(Cobject_count)
 
-
-;### Load Objects
 
 Function load_objects()
 	object_count=0
@@ -101,7 +97,6 @@ Function load_objects()
 							Dobject_ined(i)=1
 							Dobject_growtime(i)=10
 														
-							;Progress 20 - 60
 							If load_objects_c>0 Then
 								perc#=Float(Float(object_count)/Float(load_objects_c))
 								bmpf_loadscreen(s$(3),20+(40.*perc#))
@@ -118,10 +113,6 @@ Function load_objects()
 							Dobject_iconh(i)=load_res(Dobject_icon$(i),Cres_image,0)
 						Case "model"
 							Dobject_model$(i)=val$
-							;If Dobject_modelh(i)<>0 Then FreeEntity Dobject_modelh(i):Dobject_modelh(i)=0
-							;Dobject_modelh(i)=load_res(Dobject_model$(i),Cres_mesh)
-							;If Dobject_modelh(i)=0 Then RuntimeError("Unable to load "+Dobject_model$(i))
-							;HideEntity Dobject_modelh(i)		 
 						Case "x" Dobject_size#(i,0)=Float(val$)
 						Case "y" Dobject_size#(i,1)=Float(val$)
 						Case "z" Dobject_size#(i,2)=Float(val$)
@@ -145,10 +136,6 @@ Function load_objects()
 						Case "detailtex" Dobject_detailtex$(i)=Trim(val$)
 						
 						Case "col" Dobject_col(i)=Int(val$)
-									;0 - no collision
-									;1 - normal collision
-									;2 - climbable collision
-									;3 - wall collision
 							
 						Case "mat" Dobject_mat(i)=get_material(val$)
 						Case "health"	Dobject_health#(i)=Float(val$)
@@ -156,7 +143,6 @@ Function load_objects()
 						Case "healthchange" Dobject_healthchange#(i)=Float(val$)
 						Case "swayspeed" Dobject_swayspeed#(i)=Float(val$)
 						Case "swaypower" Dobject_swaypower#(i)=Float(val$)
-						;Case "gt" Dobject_gt(i)=Int(val$)
 						Case "maxweight" Dobject_maxweight(i)=Int(val$)
 						
 						Case "state"
@@ -170,7 +156,6 @@ Function load_objects()
 								Dobject_state#(i,3)=Float(Trim(splits$(2)))	
 							EndIf
 						
-						;Case "active" Dobject_active(i)=1
 						Case "behaviour"
 							Dobject_behaviour$(i)=val$
 							If val$<>"" Then
@@ -203,7 +188,6 @@ Function load_objects()
 						Case "findratio" Dobject_searchratio#(i)=Float(Trim(val$))
 						
 						Case "find"
-							;Add
 							split$(val$,",",4)
 							Tfind.Tfind=New Tfind
 							Tfind\class=Cclass_object
@@ -214,7 +198,6 @@ Function load_objects()
 							Tfind\min=Int(Trim(splits$(3)))
 							Tfind\reqtyp=Int(Trim(splits$(4)))
 							
-							;Ceck
 							If Tfind\ratio<=0 Then Tfind\ratio=1
 							If Tfind\max<=1 Then Tfind\max=1
 							If Tfind\min<=1 Then Tfind\min=1
@@ -222,19 +205,18 @@ Function load_objects()
 							
 						Case "spawn"
 							split(val$)
-							s_item=Int(splits$(0))				;Item (Def. ID)
-							s_rate=Int(splits$(1))				;Rate (Days)
+							s_item=Int(splits$(0))
+							s_rate=Int(splits$(1))
 							If s_rate<1 Then s_rate=1
-							s_xzr#=Float(splits$(2))			;XZ Spawn Radius
-							s_yr#=Float(splits$(3))				;Y Spawn Radius
-							s_yo#=Float(splits$(4))				;Y Spawn Offset
-							s_limit=Int(splits$(5))				;Spawn Limit
+							s_xzr#=Float(splits$(2))
+							s_yr#=Float(splits$(3))
+							s_yo#=Float(splits$(4))
+							s_limit=Int(splits$(5))
 							If s_limit<1 Then s_limit=3
-							s_count=Int(splits$(6))				;Count (per spawned Item)
+							s_count=Int(splits$(6))
 							If s_count<0 Then s_count=1
 							Dobject_spawn$(i)=s_item+","+s_rate+","+s_xzr#+","+s_yr#+","+s_yo#+","+s_limit+","+s_count
 							
-						;Description
 						Case "description"
 							If val$="start" Then
 								While Not Eof(stream)
@@ -247,29 +229,24 @@ Function load_objects()
 								Wend
 							EndIf
 							
-						;In Editor
 						Case "editor"
 							Dobject_ined(i)=Int(val$)
 							
-						;Def Param
 						Case "param"
 							split(val$)
 							Tdefparam.Tdefparam=New Tdefparam
 							Tdefparam\class=Cclass_object
 							Tdefparam\typ=i
 							Tdefparam\key$=splits$(0)
-							Tdefparam\value=splits$(1) ;Int(splits$(1))
+							Tdefparam\value=splits$(1)
 							
-						;Growtime
 						Case "growtime"
 							Dobject_growtime(i)=Int(val$)
 							
-						;Var
 						Case "var"
 							split(val$)
 							defvar_set(Cclass_object,i)
 							
-						;Group
 						Case "group"
 							Dobject_group$(i)=group_set$(Cclass_object,val$)
 							
@@ -286,7 +263,6 @@ Function load_objects()
 	Forever
 	CloseDir(dir)
 	
-	;Editor Count
 	For i=0 To Cobject_count
 		If Dobject_name(i)<>"" Then
 			If Dobject_ined(i)<>0 Then
@@ -298,7 +274,6 @@ End Function
 
 load_objects()
 
-;Load Object Model
 Function load_object_model(i)
 	If Dobject_modelh(i)=0 Then
 		Dobject_modelh(i)=load_res(Dobject_model$(i),Cres_mesh)
@@ -307,7 +282,6 @@ Function load_object_model(i)
 				RuntimeError("Unable to load "+Dobject_model$(i))
 			EndIf
 		Else
-			; Zero-area faces can produce NaN collision normals in Blitz3D.
 			col_prepare_mesh(Dobject_modelh(i))
 			HideEntity Dobject_modelh(i)
 		EndIf

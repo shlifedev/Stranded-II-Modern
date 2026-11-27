@@ -1,10 +1,4 @@
 
-/*
-
-  The parser builds an abstact syntax tree from input tokens.
-
-*/
-
 #ifndef PARSER_H
 #define PARSER_H
 
@@ -59,13 +53,13 @@ private:
 	ExprSeqNode *parseExprSeq();
 
 	ExprNode *parseExpr( bool opt );
-	ExprNode *parseExpr1( bool opt );	//And, Or, Eor
-	ExprNode *parseExpr2( bool opt );	//<,=,>,<=,<>,>=
-	ExprNode *parseExpr3( bool opt );	//+,-
-	ExprNode *parseExpr4( bool opt );	//Lsr,Lsr,Asr
-	ExprNode *parseExpr5( bool opt );	//*,/,Mod
-	ExprNode *parseExpr6( bool opt );	//^
-	ExprNode *parseUniExpr( bool opt );	//+,-,Not,~
+	ExprNode *parseExpr1( bool opt );
+	ExprNode *parseExpr2( bool opt );
+	ExprNode *parseExpr3( bool opt );
+	ExprNode *parseExpr4( bool opt );
+	ExprNode *parseExpr5( bool opt );
+	ExprNode *parseExpr6( bool opt );
+	ExprNode *parseUniExpr( bool opt );
 	ExprNode *parsePrimary( bool opt );
 };
 

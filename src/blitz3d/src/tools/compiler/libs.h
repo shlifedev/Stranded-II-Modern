@@ -18,14 +18,12 @@ extern int lnk_ver;
 extern int run_ver;
 extern int dbg_ver;
 
-//openLibs
 extern std::string home;
 extern Linker *linkerLib;
 extern Runtime *runtimeLib;
 
 extern BBRuntimeDylib rtdl;
 
-//linkLibs
 extern Module *runtimeModule;
 extern Environ *runtimeEnviron;
 extern std::vector<std::string> modules;

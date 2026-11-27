@@ -151,7 +151,6 @@ def main():
     body += '\nDim Dunit_maxweight(Cunit_count),Dobject_maxweight(Cobject_count)\n'
     for name in ('qol.bb', 'qol_inventory.bb', 'qol_recipes.bb'):
         body += declarations((inc/name).read_text('utf8'))
-    # qol_query belongs to the omitted native text-input module.
     body += DOUBLES
     body += (inc/'modern_files.bb').read_text('utf8') + '\n'
     body += (inc/'localization.bb').read_text('utf8') + '\n'
@@ -186,7 +185,6 @@ def main():
         for name in names:
             body += function(text, name) + '\n'
     body += '\ntest_trace("startup")\nset_rootdir$=SystemProperty("APPDIR"):loc_boot():modern_capture_settings()\ntest_trace("catalogs")\n'
-    # Use actual prepared item names, groups, weights and tool rates.
     for p in (runtime/'mods/Stranded II/sys').glob('items*.inf'):
         for section in re.split(r'(?m)^id=', p.read_text('utf8'))[1:]:
             lines = section.splitlines()

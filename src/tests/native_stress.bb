@@ -1,5 +1,3 @@
-; Runs only in the isolated source/runtime copy made by benchmark_native.py.
-; Real game loop, real clock, real window/swapchain; no synthetic input.
 Global bench_bank=CreateBank(8),bench_low,bench_high,bench_focus_lost
 Global bench_minimized,bench_sync
 Global bench_active,bench_pitch#,bench_yaw#,bench_x#,bench_y#,bench_z#
@@ -94,7 +92,6 @@ Function bench_load(scene$,count,water,grass,view,terrain,wind,blur,effects,fog)
  SeedRnd 57013
  If load_map(path$,"")=0 Then RuntimeError "Stress scene did not load"
  parse_all()
- ; The island's on:load opens the diary. Close it in test state before timing.
  m_menu=0:g_unpaused=1:game_setcam()
  map_freezetime=1:map_hour=12:map_minute=0:e_environment_update_light()
  If scene$="night" Then map_hour=0:e_environment_update_light()
@@ -126,8 +123,6 @@ Function bench_trial(name$,warmup,duration,screenshot)
  Wend
  If m_menu<>0 Then RuntimeError "Benchmark scene opened a menu"
  If screenshot Then SaveBuffer(BackBuffer(),set_rootdir$+"captures\"+name$+".bmp")
- ; Drain warm-up work before starting. Readback waits for the actual GPU,
- ; so background submission speed cannot be mistaken for completed FPS.
  pixel=ReadPixel(0,0,BackBuffer())
  bench_reset_timer():previous=bench_now()
  bench_focus_lost=0:bench_minimized=0
@@ -199,7 +194,6 @@ While Not Eof(bench_plan)
  If bench_line$<>"" Then
   split(bench_line$,",",17)
   bench_name=splits(0):bench_scene=splits(1):bench_count=Int(splits(2))
-  ; Copy all parameters before calling game functions that reuse splits().
   Local bw=Int(splits(3)),bg=Int(splits(4)),bv=Int(splits(5)),bt=Int(splits(6))
   Local bwi=Int(splits(7)),bmb=Int(splits(8)),be=Int(splits(9)),bf=Int(splits(10))
   bench_pitch=Float(splits(11)):modern_fps=Int(splits(12))

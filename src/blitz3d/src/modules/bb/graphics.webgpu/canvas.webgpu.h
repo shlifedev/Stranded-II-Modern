@@ -37,9 +37,6 @@ protected:
 	WGPUTextureView level0_view;
 	bool mips_dirty;
 
-	// A snapshot may serve consecutive self-blits while their source rectangles
-	// do not overlap writes made since the snapshot. Water/underwater strips
-	// then share one copy and one render pass per independent group.
 	WGPUTexture blit_texture=0;
 	WGPUTextureView blit_view=0;
 	int blit_width=0,blit_height=0;

@@ -1,4 +1,3 @@
-; The actual app bootstrap installs resources into an isolated writable profile.
 root$=SystemProperty("AppDir")
 If FileType(root$+"mods\Stranded II")<>2 Then RuntimeError "Bundle resources missing"
 If FileType(root$+"core\modern.ini")<>1 Then RuntimeError "Bundle settings missing"

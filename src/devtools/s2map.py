@@ -27,7 +27,7 @@ class Map:
         formats = (self.headers[6] + b'000')[:3]
         self.skip(96 * 72 * 3)
         self.skip(1)
-        self.line()  # encoded password
+        self.line()
         self.skip(7)
         self.string('skybox')
         self.skip(2)

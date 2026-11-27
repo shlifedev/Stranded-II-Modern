@@ -8,8 +8,6 @@ Wend
 
 Expect a = 10, "a should be 10"
 
-;------
-
 t = 0
 While True
 	t = t + 4
@@ -19,8 +17,6 @@ Wend
 
 Expect t = 64, "t should be 64"
 
-;------
-
 countdown = 100
 Repeat
 	countdown = countdown - 1
@@ -28,17 +24,13 @@ Until countdown = 0
 
 Expect countdown = 0, "countdown should have been reached"
 
-;---
-
 h = 123
 Repeat
 	h = 456
-	Exit ; JK, nothing lasts forever.
+	Exit
 Forever
 
 Expect h = 456, "entered repeat/forever and then bailed"
-
-;------
 
 count = 0
 For i = 0 To 99
@@ -47,16 +39,12 @@ Next
 
 Expect count = 100, "should have iterated 100 times, counting up"
 
-;------
-
 count = 100
 For i = 99 To 0 Step -1
 	count = count - 1
 Next
 
 Expect count = 0, "should have iterated 100 times, counting down"
-
-;------
 
 count = 0
 For i = 0 To 99

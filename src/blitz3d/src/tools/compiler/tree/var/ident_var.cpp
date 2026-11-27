@@ -1,8 +1,5 @@
 #include "ident_var.h"
 
-///////////////
-// Ident var //
-///////////////
 void IdentVarNode::semant( Environ *e ){
 	if( sem_decl ) return;
 	Type *t=tagType( tag,e );if( !t ) t=Type::int_type;
@@ -14,7 +11,6 @@ void IdentVarNode::semant( Environ *e ){
 		if( ty->constType() ) ty=ty->constType()->valueType;
 		if( tag.size() && t!=ty ) ex( "Variable type mismatch" );
 	}else{
-		//ugly auto decl!
 		sem_decl=e->decls->insertDecl( ident,t,DECL_LOCAL );
 	}
 	sem_type=sem_decl->type;

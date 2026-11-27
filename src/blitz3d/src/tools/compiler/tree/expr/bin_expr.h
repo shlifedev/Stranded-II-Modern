@@ -3,7 +3,6 @@
 
 #include "node.h"
 
-// and, or, eor, lsl, lsr, asr
 struct BinExprNode : public ExprNode{
 	int op;ExprNode *lhs,*rhs;
 	BinExprNode( int op,ExprNode *lhs,ExprNode *rhs ):op( op ),lhs( lhs ),rhs( rhs ){}

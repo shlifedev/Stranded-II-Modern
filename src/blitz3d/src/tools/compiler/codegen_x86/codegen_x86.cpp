@@ -3,8 +3,6 @@
 #include "codegen_x86.h"
 #include "tile.h"
 
-//#define NOOPTS
-
 Codegen_x86::Codegen_x86( std::ostream &out,bool debug ):Codegen( out,debug ),inCode(false){
 }
 
@@ -110,9 +108,6 @@ Tile *Codegen_x86::genCompare( TNode *t,std::string &func,bool negate ){
 	return d_new Tile( q,ql ? munchReg( ql ) : 0,qr ? munchReg( qr ) : 0 );
 }
 
-////////////////////////////////////////////////
-// Integer expressions returned in a register //
-////////////////////////////////////////////////
 Tile *Codegen_x86::munchUnary( TNode *t ){
 	std::string s;
 	switch( t->op ){
@@ -203,9 +198,6 @@ Tile *Codegen_x86::munchRelop( TNode *t ){
 	return q;
 }
 
-////////////////////////////////////////////////
-// Float expressions returned on the FP stack //
-////////////////////////////////////////////////
 Tile *Codegen_x86::munchFPUnary( TNode *t ){
 	std::string s;
 	switch( t->op ){
@@ -245,9 +237,6 @@ Tile *Codegen_x86::munchFPRelop( TNode *t ){
 	return q;
 }
 
-///////////////////////////
-// Generic Call handling //
-///////////////////////////
 Tile *Codegen_x86::munchCall( TNode *t ){
 	Tile *q;
 	if( t->l->op==IR_GLOBAL ){
@@ -261,9 +250,6 @@ Tile *Codegen_x86::munchCall( TNode *t ){
 	return q;
 }
 
-/////////////////////////////
-// munch and dicard result //
-/////////////////////////////
 Tile *Codegen_x86::munch( TNode *t ){
 	if( !t ) return 0;
 	Tile *q=0;
@@ -341,9 +327,6 @@ Tile *Codegen_x86::munch( TNode *t ){
 	return q;
 }
 
-///////////////////////////////////////////
-// munch and return result in a register //
-///////////////////////////////////////////
 Tile *Codegen_x86::munchReg( TNode *t ){
 	if( !t ) return 0;
 
@@ -364,7 +347,6 @@ Tile *Codegen_x86::munchReg( TNode *t ){
 		q=munchCall( t );
 		break;
 	case IR_MOVE:
-		//MUST BE MOVE TO MEM!
 		if( matchMEM( t->r,s ) ){
 			q=d_new Tile( "\tmov\t"+s+",%l\n",munchReg( t->l ) );
 		}else if( t->r->op==IR_MEM ){
@@ -424,9 +406,6 @@ Tile *Codegen_x86::munchReg( TNode *t ){
 	return q;
 }
 
-/////////////////////////////////////////
-// munch and return result on FP stack //
-/////////////////////////////////////////
 Tile *Codegen_x86::munchFP( TNode *t ){
 	if( !t ) return 0;
 

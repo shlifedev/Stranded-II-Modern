@@ -1,6 +1,3 @@
-;############################################ Prepare
-
-;Cache Viewrange
 Function prepare_cache_viewranges()
 	For i=0 To Cobject_count
 		Dobject_afc(i)=(Dobject_autofade(i)*set_viewfac#)+300

@@ -58,7 +58,6 @@ bool Operand::parseReg( int *reg ){
 
 bool Operand::parseFPReg( int *reg ){
 
-	//eg: st(0)
 	if( s.size()<5 ) return false;
 	if( s[0]!='s' || s[1]!='t' || s[2]!='(' || s[4]!=')' ) return false;
 	if( s[3]<'0' || s[3]>'7' ) return false;
@@ -135,7 +134,7 @@ void Operand::parse(){
 			if( n<16 ) throw Ex( "register must be 32 bit" );
 			n&=7;
 			if( parseChar( '*' ) ){
-				if( n==4 ) break;		//esp cannot be index reg!
+				if( n==4 ) break;
 				if( indexReg>=0 ) break;
 				if( parseChar( '1' ) ) shift=0;
 				else if( parseChar( '2' ) ) shift=1;

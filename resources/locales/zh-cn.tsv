@@ -1,4 +1,3 @@
-# Stable key<TAB>text; escapes: \\, \n, \r, \t. UTF-8 without BOM.
 engine.02baca8b3656	作弊 - 获取物品
 engine.0c4ca94aab31	显示上次解析的脚本
 engine.0ed0fcccb937	调试脚本
@@ -2596,7 +2595,6 @@ ui.compass_east	东
 ui.keybinding	按键
 ui.fishing	钓鱼
 
-# Shared quality-of-life UI and interaction guides.
 qol.tab	便捷功能
 qol.recipes	配方书
 qol.storage	快速转移物品

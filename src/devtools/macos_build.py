@@ -68,7 +68,6 @@ def prepare_assets(settings):
     (RUNTIME / 'mods/Stranded II/saves').mkdir(parents=True, exist_ok=True)
     (RUNTIME / 'core').mkdir(exist_ok=True)
     if not (RUNTIME / 'core/modern.ini').exists():
-        # Keep this experiment windowed and bounded on high-resolution screens.
         (RUNTIME / 'core/modern.ini').write_text(default_ini(), encoding='utf8')
     _, report = prepare(ROOT, game, RUNTIME, 'classic')
     for relative, source in override_files(ROOT, 'classic').items():

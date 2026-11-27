@@ -4,9 +4,9 @@
 
 #pragma warning(disable:4786)
 
-#include <afxwin.h>         // Core
-#include <afxrich.h>		// CRich edit
-#include <afxhtml.h>		// CHtmlView
+#include <afxwin.h>
+#include <afxrich.h>
+#include <afxhtml.h>
 
 #include "../../../stdutil/stdutil.h"
 

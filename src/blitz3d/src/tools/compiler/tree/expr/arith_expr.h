@@ -3,7 +3,6 @@
 
 #include "node.h"
 
-// *,/,Mod,+,-
 struct ArithExprNode : public ExprNode{
 	int op;ExprNode *lhs,*rhs;
 	ArithExprNode( int op,ExprNode *lhs,ExprNode *rhs ):op( op ),lhs( lhs ),rhs( rhs ){}

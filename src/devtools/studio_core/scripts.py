@@ -114,7 +114,7 @@ def perform(project, operation):
         if 'expectedHash' not in operation: raise ValueError('script.write requires expectedHash (null for a new file)')
         return write(project, operation['path'], operation['text'], operation['expectedHash'])
     target = operation['target']; key = target_key(target)
-    text = target_text(project, target)  # Validate the target before changing anything.
+    text = target_text(project, target)
     if op == 'script.unbind':
         project.data.setdefault('scriptBindings', {}).pop(key, None)
         project._texts = project._catalog = None
@@ -168,7 +168,7 @@ def overlay_definitions(project, files):
         if target['scope'] != 'definition' or path not in project.script_files: continue
         matches = [r for name,text in files.items() for r in content.records(name,text)
                    if r.kind == target['kind'] and str(r.identifier) == str(target['id'])]
-        if len(matches) != 1: continue  # A diagnostic reports a removed target.
+        if len(matches) != 1: continue
         r = matches[0]; text = files[r.path]
         files[r.path] = text[:r.start]+content.edit(r.text, {'script':project.script_files[path]})+text[r.end:]
     return files
@@ -188,7 +188,6 @@ def resources(project):
     from .project import MOD
     files = dict(project.data['files'])
     effective = project.text_files()
-    # Bound definitions may come from an otherwise untouched base INF.
     for key in project.data.get('scriptBindings', {}):
         target = json.loads(key)
         if target['scope'] == 'definition':
@@ -211,7 +210,6 @@ def analyze(text, path):
         if c=='"':
             start=i; line=row; column=col;i+=1;col+=1
             while i<len(text) and text[i] not in ('"','\n'):
-                # The native language uses quotes as delimiters, not JS escapes.
                 i+=1;col+=1
             if i==len(text) or text[i]!='"': issue('Unterminated string',line,column)
             else:

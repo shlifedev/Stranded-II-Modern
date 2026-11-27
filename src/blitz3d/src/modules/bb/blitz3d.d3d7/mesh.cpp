@@ -17,19 +17,8 @@ gxMesh::~gxMesh(){
 bool gxMesh::lock( bool all ){
 	if( locked_verts ) return true;
 
-	//V1.104
-	//int flags=all ? DDLOCK_DISCARDCONTENTS : 0;
-
-	//V1.105
-	//int flags=all ? DDLOCK_DISCARDCONTENTS : DDLOCK_NOOVERWRITE;
-
-	//V1.104/1.105
-	//if( vertex_buff->Lock( DDLOCK_WRITEONLY|DDLOCK_WAIT|flags,(void**)&locked_verts,0 )>=0 ){
-
-	//V1.1.06...
 	int flags=DDLOCK_WAIT|DDLOCK_WRITEONLY;
 
-	//XP or less?
 	if( bbWindowsSystemDriver->isXPorLess() ){
 		flags|=(all ? DDLOCK_DISCARDCONTENTS : DDLOCK_NOOVERWRITE);
 	}
@@ -59,39 +48,6 @@ void gxMesh::backup(){
 void gxMesh::restore(){
 	mesh_dirty=true;
 }
-
-/*
-void gxMesh::backup(){
-
-	unlock();
-
-	if( backup_verts ){
-		delete[] backup_verts;
-		backup_verts=0;
-	}
-
-	dxVertex *verts;
-	if( vertex_buff->Lock( DDLOCK_READONLY|DDLOCK_WAIT,(void**)&verts,0 )>=0 ){
-		backup_verts=d_new dxVertex[ max_verts ];
-		memcpy( backup_verts,verts,sizeof(dxVertex)*max_verts );
-		vertex_buff->Unlock();
-	}
-}
-
-void gxMesh::restore(){
-
-	if( !backup_verts ) return;
-
-	dxVertex *verts;
-	if( vertex_buff->Lock( DDLOCK_WRITEONLY|DDLOCK_WAIT,(void**)&verts,0 )>=0 ){
-		memcpy( verts,backup_verts,sizeof(dxVertex)*max_verts );
-		vertex_buff->Unlock();
-	}
-
-	delete[] backup_verts;
-	backup_verts=0;
-}
-*/
 
 void gxMesh::render( int first_vert,int vert_cnt,int first_tri,int tri_cnt ){
 	unlock();

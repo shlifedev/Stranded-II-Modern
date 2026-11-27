@@ -5,8 +5,6 @@
 #include "math.h"
 
 #ifdef BB_WINDOWS
-// LLVM lowers round-to-even conversions to this C23 function on Windows;
-// the MSVC CRT does not provide it. Keep Blitz's original banker rounding.
 extern "C" float roundevenf(float value){
     if(!std::isfinite(value) || std::fabs(value)>=8388608.0f) return value;
     float lower=std::floor(value),fraction=value-lower;

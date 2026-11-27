@@ -1,11 +1,6 @@
 #include "logic_expr.h"
 #include "../../codegen.h"
 
-////////////////////////////////////////////////////////////
-// short-circuit boolean expression (Lor)                   //
-// unlike BinExprNode (And/Or), the rhs is only evaluated   //
-// when the lhs is false                                     //
-////////////////////////////////////////////////////////////
 ExprNode *LogicExprNode::semant( Environ *e ){
 	lhs=lhs->semant(e);lhs=lhs->castTo( Type::int_type,e );
 	rhs=rhs->semant(e);rhs=rhs->castTo( Type::int_type,e );

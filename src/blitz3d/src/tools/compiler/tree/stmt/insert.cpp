@@ -1,8 +1,5 @@
 #include "insert.h"
 
-///////////////////////////
-// Insert object in list //
-///////////////////////////
 void InsertNode::semant( Environ *e ){
 	expr1=expr1->semant( e );
 	expr2=expr2->semant( e );

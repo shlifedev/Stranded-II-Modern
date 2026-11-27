@@ -54,8 +54,6 @@ bool WAVAudioStream::readHeader(){
 	bits  = buf[1]<<8;
 	bits |= buf[0];
 
-	// The OpenAL path only has 8/16-bit mono/stereo formats; reject anything else here
-	// so LoadSound returns 0 instead of PlaySound raising a runtime error later.
 	if( (channels!=1 && channels!=2) || (bits!=8 && bits!=16) ){
 		LOGD( "unsupported PCM layout %u channels %u bits",channels,bits );
 		return false;

@@ -7,17 +7,10 @@
 class Frame{
 public:
   Frame( HWND hwnd );
-public: // TODO: make these protected
+public:
   HWND hwnd;
 
 protected:
-  //current gfx mode
-  //
-  //0=NONE
-  //1=SCALED WINDOW
-  //2=FIXED SIZE WINDOW
-  //3=EXCLUSIVE
-  //
   int gfx_mode;
 
   RECT t_rect;

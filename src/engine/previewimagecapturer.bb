@@ -1,40 +1,17 @@
-;Preview Image Capturer
-;-------------------------------- 
-;Läd ein Model welches danach in Pose gebracht werden kann,
-;um ein Thumbnail/Preview Bild zu erstellen.
-;
-;ACHTUNG:	Thumbnail wird unter dem Dateinamen + ".bmp" gespeichert
-;			Achte darauf, dass diese Datei nicht existiert sonst wird sie überschrieben
-;
-;
-;STEUERUNG: Linke Maustaste drücken + Maus bewegen: Model bewegen
-;			Rechte Maustaste drücken + Maus bewegen: Model drehen
-;			Mausrad: ein-/auszoomen
-;			1: Obere linke Ecke des Capturebereiches setzen (an der Position der Maus)
-;			2: Untere rechte Ecke des Capturebereiches setzen (an der Position der Maus)
-;			Enter: Bild 'capturen'. Bild wird danach oben links angezeigt und sofort gespeichert.
-
-
-
-;-------------------------------- File Name (ohne .b3d Extension)
 file$="parrot"
 
 
-;-------------------------------- File Path
 path$="mods/Stranded II/gfx/"
 
 
-;-------------------------------- Setup
 Graphics3D 800,600,32,2
 
-;Filters
 TextureFilter("_a",2)
 TextureFilter("_m",4)
 TextureFilter("_c",16+32)
 TextureFilter("_hc",512)
 TextureFilter("_sm",64)
 
-;Cam
 cam=CreateCamera()
 If FileType(path$+file$+".b3d")<>1 Then RuntimeError("NO FILE "+path$+file$+".b3d")
 mesh=LoadMesh(path$+file$+".b3d")
@@ -42,29 +19,21 @@ CameraClsColor cam,0,0,0
 PositionEntity cam,0,0,-50
 SetBuffer BackBuffer()
 
-;Light
 ambl=255
 AmbientLight ambl,ambl,ambl
 sun=CreateLight(1)
 PositionEntity sun,0,1000,0
-;LightColor sun,155,155,155
 LightColor sun,50,50,50
 CameraClsColor  cam,0,0,0
 
-;Image
 Global x,y,w,h,image
 image=CreateImage(32,32)
 
 
 
-;-------------------------------- FX (Hier bei Bedarf das Model modifizieren!)
-;EntityBlend mesh,3
-;EntityShininess mesh,0.1
-;EntityColor mesh,0,50,255
 EntityFX mesh,16
 
 
-;-------------------------------- Runtime
 While Not KeyHit(1)
 
 	mxs=MouseXSpeed()
@@ -86,7 +55,7 @@ While Not KeyHit(1)
 		CopyRect(x+1,y+1,w-2,h-2,0,0,BackBuffer(),ImageBuffer(image))
 		TFormFilter 0
 		ResizeImage image,40,40
-		;file$="coffeefruits"
+		; Capturing overwrites the BMP beside the model.
 		SaveImage(image,path$+file$+".bmp")
 	EndIf
 	

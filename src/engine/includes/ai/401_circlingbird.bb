@@ -1,11 +1,9 @@
-;Stay?
 If TCunit\states=1
 	If get_state(Cstate_ai_stick,Cclass_unit,TCunit\id)=1 Then
 		ai_mode(ai_idle)
 	EndIf
 EndIf
 
-;Action
 Select TCunit\ai_mode
 	Case ai_movel
 		ai_movesound()

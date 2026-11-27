@@ -1,4 +1,3 @@
-; Presentation snapshots never reorder the engine's Titem list.
 Type Tqolitem
  Field itemid,typ,rank,name$
 End Type
@@ -41,7 +40,6 @@ End Function
 
 Function qol_view(class,id)
  Local item.Titem,row.Tqolitem,other.Tqolitem,player=(class=Cclass_unit And id=g_player)
- ; Freeze the view during a drag. Rebuild after its release.
  If in_dnd And qol_view_class=class And qol_view_parent=id Then Return
  For row=Each Tqolitem:Delete row:Next
  qol_view_class=class:qol_view_parent=id
@@ -156,7 +154,6 @@ Function qol_move(id,count)
  Return qol_max(0,qol_count(typ,class,parent)-previouscount)
 End Function
 
-; IDs are snapshotted before callbacks can merge/delete items.
 Type Tqoltransfer
  Field itemid,count
 End Type
@@ -182,7 +179,6 @@ Function qol_bulk(deposit)
   EndIf
  Next
  For move=Each Tqoltransfer
-  ; A script may open a different exchange. Never continue into that target.
   If in_ex_class=class And in_ex_id=parent Then moved=moved+qol_move(move\itemid,move\count)
   Delete move
  Next
@@ -228,7 +224,6 @@ Function qol_storage_grid(class,id,basey,rows,source,offset)
  Return offset
 End Function
 
-; getinput may already have consumed a key assigned to an engine/script action.
 Function qol_shortcut_hit(scan)
  Local hit=KeyHit(scan),i
  For i=0 To 20

@@ -5,7 +5,7 @@
 #include "../node.h"
 
 struct StmtNode : public Node{
-	int pos;	//offset in source stream
+	int pos;
 	StmtNode():pos(-1){}
 	void debug( int pos,Codegen *g );
 #ifdef USE_LLVM

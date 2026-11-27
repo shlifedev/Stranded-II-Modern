@@ -1,8 +1,3 @@
-;######################################################################################################
-
-;############################################ SYSTEM GFX
-
-;### Buttons
 Dim gfx_bigbutton(1)
 gfx_bigbutton(0)=load_image("sys\gfx\bigbutton.bmp")
 gfx_bigbutton(1)=load_image("sys\gfx\bigbutton_over.bmp")
@@ -11,26 +6,22 @@ Dim gfx_iconbutton(1)
 gfx_iconbutton(0)=load_image("sys\gfx\iconbutton.bmp")
 gfx_iconbutton(1)=load_image("sys\gfx\iconbutton_over.bmp")
 
-;### Checkbox
 Dim gfx_check(2)
 gfx_check(0)=load_image("sys\gfx\check.bmp")
 gfx_check(1)=load_image("sys\gfx\check_over.bmp")
 gfx_check(2)=load_image("sys\gfx\check_sel.bmp")
 
-;### Option
 Dim gfx_opt(2)
 gfx_opt(0)=load_image("sys\gfx\opt.bmp")
 gfx_opt(1)=load_image("sys\gfx\opt_over.bmp")
 gfx_opt(2)=load_image("sys\gfx\opt_sel.bmp")
 
-;### Slider
 Dim gfx_slider(3)
 gfx_slider(0)=load_image("sys\gfx\slider.bmp")
 gfx_slider(1)=load_image("sys\gfx\slider_over.bmp")
 gfx_slider(2)=load_image("sys\gfx\slider_sel.bmp"):MidHandle gfx_slider(2)
 gfx_slider(3)=load_image("sys\gfx\slider_sec.bmp"):MidHandle gfx_slider(3)
 
-;### Input
 Dim gfx_input(5)
 gfx_input(0)=load_image("sys\gfx\input_left.bmp")
 gfx_input(1)=load_image("sys\gfx\input_left_over.bmp")
@@ -39,7 +30,6 @@ gfx_input(3)=load_image("sys\gfx\input_middle_over.bmp")
 gfx_input(4)=load_image("sys\gfx\input_right.bmp")
 gfx_input(5)=load_image("sys\gfx\input_right_over.bmp")
 
-;Scroll
 Dim gfx_scroll(1)
 gfx_scroll(0)=load_image("sys\gfx\scroll.bmp")
 gfx_scroll(1)=load_image("sys\gfx\scroll_over.bmp")
@@ -51,7 +41,6 @@ Global gfx_scrollspace=load_image("sys\gfx\edscrollspace.bmp")
 
 bmpf_loadscreen(s$(1),8)
 
-;### Icons
 Global gfx_icons=load_animimage("sys\gfx\icons.bmp",32,32,100)
 Global gfx_icons_passive
 If  FileType("sys\gfx\icons_passive.bmp")<>1 Then
@@ -97,14 +86,12 @@ EndIf
 MaskImage gfx_icons_passive,255,0,255
 Global gfx_defaulticon=load_image("sys\gfx\defaulticon.bmp",0)
 
-;### Borders
 Dim gfx_border(4)
 gfx_border(0)=load_image("sys\gfx\border_corn.bmp")
 gfx_border(1)=load_image("sys\gfx\border_hori.bmp")
 gfx_border(2)=load_image("sys\gfx\border_vert.bmp")
 modern_create_borders()
 
-;### Cursor
 Dim gfx_cursor(6)
 gfx_cursor(0)=load_image("sys\gfx\cursor.bmp")
 gfx_cursor(1)=load_image("sys\gfx\cursor_height.bmp")
@@ -114,26 +101,22 @@ gfx_cursor(4)=load_image("sys\gfx\cursor_rotate.bmp")
 gfx_cursor(5)=load_image("sys\gfx\cursor_text.bmp"):HandleImage gfx_cursor(5),3,5
 gfx_cursor(6)=load_image("sys\gfx\cursor_crosshair.bmp"):MidHandle gfx_cursor(6)
 
-;### Background
 Dim gfx_bg(5)
 gfx_bg(0)=load_image("sys\gfx\woodback.bmp",0)
 gfx_bg(1)=load_image("sys\gfx\woodback_dark.bmp",0)
 Global gfx_paperback=load_image("sys\gfx\paperback.bmp")
 
-;### Windows
 Global gfx_sidebar,gfx_win,gfx_winbar
 modern_create_windows()
 modern_ui_ready=1
 
 bmpf_loadscreen(s$(1),10)
 
-;### Bars
 Global gfx_bars=load_animimage("sys\gfx\progress_small.bmp",100,5,2)
 Global gfx_bar_hunger=load_animimage("sys\gfx\progress_hunger.bmp",100,5,2)
 Global gfx_bar_thirst=load_animimage("sys\gfx\progress_thirst.bmp",100,5,2)
 Global gfx_bar_exhaustion=load_animimage("sys\gfx\progress_exhaustion.bmp",100,5,2)
 
-;### Interface
 Global gfx_if_barback=load_image("sys\gfx\if_barback.bmp")
 Global gfx_if_itemback=load_image("sys\gfx\if_itemback.bmp")
 Global gfx_if_itemshade=load_image("sys\gfx\if_itemshade.bmp")
@@ -141,27 +124,21 @@ Global gfx_if_values=load_image("sys\gfx\if_values.bmp")
 Global gfx_if_weapon=load_image("sys\gfx\if_weapon.bmp")
 Global gfx_if_compass=load_image("sys\gfx\if_compass.bmp")
 
-;### States
 Global gfx_state=load_animimage("sys\gfx\state.bmp",21,21,9)
 Global gfx_states=load_animimage("sys\gfx\states.bmp",21,21,30)
 
-;### Arrows
 Global gfx_arrows=load_animimage("sys\gfx\arrows.bmp",16,16,12):MidHandle gfx_arrows
 
-;### Title
 Global gfx_title=load_image("sys\gfx\title.bmp"):MidHandle gfx_title
 
-;### Editor
 Global gfx_ex=load_image("sys\gfx\editor_x.bmp"):MidHandle gfx_ex
 Global gfx_ey=load_image("sys\gfx\editor_y.bmp"):MidHandle gfx_ey
 Global gfx_ez=load_image("sys\gfx\editor_z.bmp"):MidHandle gfx_ez
 Global gfx_esel=load_image("sys\gfx\editor_sel.bmp"):MidHandle gfx_esel
 
-;### Tutor
 Global gfx_tutor=load_image("sys\gfx\tutor.bmp")
 HandleImage gfx_tutor,1,ImageHeight(gfx_tutor)
 
-;### Structure Tex.
 Global gfx_terstruc=load_texture("sys\gfx\terrainstructure.bmp",256+512)
 ScaleTexture gfx_terstruc,2,2
 TextureBlend gfx_terstruc,5
@@ -169,27 +146,22 @@ Global gfx_struc=load_texture("sys\gfx\structure.bmp",256+512)
 ScaleTexture gfx_struc,2,2
 TextureBlend gfx_struc,5
 
-;### Terrain Dirt Tex.
 Global gfx_terraindirt=load_texture("sys\gfx\terraindirt.bmp")
 ScaleTexture gfx_terraindirt,0.5,0.5
 TextureBlend gfx_terraindirt,5
 
-;### Terrain Ground
 Global gfx_tergrounddirt=load_texture("sys\gfx\terraindirt.bmp")
 ScaleTexture gfx_tergrounddirt,30,30
 TextureBlend gfx_tergrounddirt,5
 
 
-;### Terrain Grassspread Stuff
 Global gfx_grasspreadtex=load_texture("gfx\grasspread_a.png")
 Global gfx_grasspread=load_mesh("gfx\grasspread.b3d"):HideEntity gfx_grasspread
 
-;### Water
 Global gfx_water=load_texture("gfx\water.jpg",256+512)
 Global gfx_waterimg=load_image("gfx\water.jpg")
 Global gfx_waterimg_custom=0
 
-;### Weather
 Global gfx_rain=load_texture("sys\gfx\rain_a.bmp")
 ScaleTexture gfx_rain,1,3
 Global gfx_snow=load_texture("sys\gfx\snow_a.bmp")
@@ -198,7 +170,6 @@ Global gfx_snow=load_texture("sys\gfx\snow_a.bmp")
 bmpf_loadscreen(s$(1),12)
 
 
-;### Particles / Sprites
 Dim gfx_p_flare(2)
 For i=0 To 2
 	gfx_p_flare(i)=load_texture("sprites\flare"+i+"_a.bmp")
@@ -233,7 +204,6 @@ For i=0 To 4
 Next
 Dim gfx_p_flames(0)
 For i=0 To 0
-	;gfx_p_flames(0)=LoadAnimTexture("sprites\flames"+i+"_a.png",2,64,64,0,4)
 	gfx_p_flames(0)=load_texture("sprites\flames"+i+"_a.png")
 Next
 Global gfx_p_starflare=load_texture("sprites\starflare_a.bmp")
@@ -251,7 +221,6 @@ Dim gfx_p_attack(1)
 gfx_p_attack(0)=load_texture("sprites\attack1_a.bmp")
 gfx_p_attack(1)=load_texture("sprites\attack2_a.bmp")
 
-;### Moon
 Global gfx_moon=load_texture("sprites\moon_a.png")
 
 
@@ -260,9 +229,6 @@ bmpf_loadscreen(s$(1),16)
 
 
 
-;############################################ SYSTEM SFX
-
-;Basic
 Global sfx_click=load_res("sfx\click.wav",Cres_sound)
 Global sfx_switch=load_res("sfx\switch.wav",Cres_sound)
 Global sfx_menu=load_res("sfx\menu.wav",Cres_sound)
@@ -380,14 +346,11 @@ sfx_mat_leaf(3)=load_res("sfx\mat_leaf4.wav",Cres_sound)
 
 
 
-;######################################################################################################
-
 Function makedark(image,darkf#=4.5)
 	If image=0 Then Return 0
 	Local w=ImageHeight(image)
 	Local h=ImageWidth(image)
 	img=CreateImage(w,h)
-	;If img=0 Then Return image
 	w=w-1
 	h=h-1
 	SetBuffer ImageBuffer(img)
@@ -412,7 +375,6 @@ Function makedark(image,darkf#=4.5)
 		Next
 	Next
 	UnlockBuffer ImageBuffer(img)
-	;MaskImage img,255,0,255
 	Return img
 End Function
 
@@ -420,5 +382,4 @@ End Function
 
 
 
-;### Buffer
 SetBuffer BackBuffer()

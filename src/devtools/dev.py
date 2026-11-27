@@ -36,12 +36,10 @@ def setup(args):
     files=read(ROOT/'config/game-files.json')
     for relative,digest in files.items():checked(game/relative,digest,'official game resource')
     catalogs=validate(ROOT,PROFILE.name)
-    # Validate before writing. Never import source installation saves or caches.
     BUILD.mkdir(parents=True,exist_ok=True)
     for relative in files:
         target=RUNTIME/relative
         target.parent.mkdir(parents=True,exist_ok=True)
-        # User settings must survive repeated setup.
         if target.exists() and (target.suffix=='.cfg' or relative.endswith('/settings.inf')):continue
         shutil.copy2(game/relative,target)
     (RUNTIME/'mods/Stranded II/saves').mkdir(exist_ok=True)

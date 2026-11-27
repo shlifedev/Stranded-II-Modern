@@ -1059,13 +1059,9 @@ bool WebGPUGraphics::init(){
 void WebGPUGraphics::present(){
 	if( !res.device || !fb ) return;
 
-	// Finish the framebuffer pass, but submit it together with presentation.
 	res.endPass();
 
 #ifdef BB_WINDOWS
-    // The game keeps its selected render resolution while borderless mode
-    // changes the HWND's client size. Present at that actual size so scaling
-    // is explicit, with linear filtering instead of a stretched swap chain.
     int output_width=0,output_height=0;
     SDL_GetWindowSize(wnd,&output_width,&output_height);
     if(output_width>0 && output_height>0 &&
@@ -1082,7 +1078,6 @@ void WebGPUGraphics::present(){
 	WGPUTextureView dst=res.acquireSurfaceView();
 	if( !dst ){ res.finishProfile();return; }
 
-	// Reserve both arenas before taking either offset; an overflow resets both.
 	if( ((res.vertex_used+15)&~(size_t)15)+6*sizeof(BBWebGPUVertex)>res.vertex_capacity ||
 	    ((res.uniform_used+255)&~(size_t)255)+256>res.uniform_capacity ) res.flush();
 
@@ -1094,8 +1089,6 @@ void WebGPUGraphics::present(){
 	state.texscale[0]=1.0f;state.texscale[1]=1.0f;
 	state.color[0]=state.color[1]=state.color[2]=1.0f;
 #ifdef BB_WINDOWS
-    // Native bitmap text is already quantized to the intended RGB values.
-    // Preserve it during presentation instead of adding grain to the UI.
     state.texenabled=1;
 #else
     state.texenabled=2;
@@ -1218,8 +1211,6 @@ bool WebGPUGraphics::absoluteMousePosition(int &x,int &y)const{
     if(!GetCursorPos(&point) || !ScreenToClient(hwnd,&point)) return false;
     int w=0,h=0;SDL_GetWindowSize(wnd,&w,&h);
     if(w<=0 || h<=0) return false;
-    // Match SDL's ordinary client bounds, allowing outside coordinates while
-    // a mouse-button drag has captured the window.
     if(!(SDL_GetWindowFlags(wnd)&SDL_WINDOW_MOUSE_CAPTURE)){
         point.x=std::max<LONG>(0,std::min<LONG>(point.x,w-1));
         point.y=std::max<LONG>(0,std::min<LONG>(point.y,h-1));
@@ -1371,7 +1362,7 @@ void WebGPUContextDriver::flip( bool vwait ){
 #endif
 
 	g->present();
-	s2DebugUiRender(nullptr,0,0); // Discard UI if surface acquisition failed.
+	s2DebugUiRender(nullptr,0,0);
 #ifdef BB_EMSCRIPTEN
 	double now=emscripten_get_now();
 	if( now-bb_load_report_time>=1000.0 ){

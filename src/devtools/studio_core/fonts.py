@@ -24,7 +24,7 @@ def project_fonts(project):
     chars = sorted(repertoire(catalogs, packs))
     glyphfile = project.base/'core/locales/ko/glyphs.dat'
     if not glyphfile.is_file():
-        return {}  # CLI-only projects can use a minimal prepared base.
+        return {}
     data = glyphfile.read_bytes()
     known = {struct.unpack_from('<i',data,offset)[0] for offset in range(16,len(data),28)}
     if set(chars) <= known:
@@ -42,7 +42,7 @@ def project_fonts(project):
             with redirect_stdout(sys.stderr):
                 make_fonts(catalogs,packs,font,project.base/'mods/Stranded II/sys/gfx',stage,ROOT)
             try: stage.rename(cache)
-            except FileExistsError: pass  # Another reader prepared the same glyphs.
+            except FileExistsError: pass
         finally:
             if stage.exists():shutil.rmtree(stage)
     return {p.relative_to(cache).as_posix():p.read_bytes() for p in cache.rglob('*')

@@ -1,6 +1,5 @@
 Context "Types"
 
-; make sure an empty type is ok
 Type EmptyDef
 End Type
 
@@ -9,7 +8,7 @@ Delete emd
 
 Type Game
 	Field name$
-	Field meshes[5] ; here to make sure a particular codegen issue is fixed
+	Field meshes[5]
 	Field player.Player[5]
 	Field self.Game
 End Type
@@ -20,7 +19,6 @@ Type Player
 End Type
 
 Function EchoPlayer.Player(p.Player)
-	; verifying casting of null ret
 	return p
 End Function
 
@@ -76,8 +74,6 @@ Expect p3\x = 63, "Player 2 x = 40"
 Expect p3\y = 12, "Player 2 y = 23"
 Expect p3\game\name = "Demo", "Player 1 game = Demo"
 
-; players exprs...
-
 Expect First Player = p1, "p1 is first"
 Expect Last Player = p3, "p3 is last"
 
@@ -110,8 +106,6 @@ Expect Last Player = p2, "p2 is now last"
 Delete Each Player
 Expect First Player = Null, "No more players..."
 
-; game exprs
-
 Expect First Game = game, "game is first"
 Expect Last Game = game, "game is last"
 
@@ -124,8 +118,6 @@ For g.Game = Each Game
 Next
 
 Expect count = 1, "There should be 1 games."
-
-; for each exit test...
 
 count = 0
 For g.Game = Each Game

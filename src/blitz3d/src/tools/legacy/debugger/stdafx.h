@@ -4,9 +4,9 @@
 
 #pragma warning(disable:4786)
 
-#include <afxwin.h>         // Core
-#include <afxcmn.h>			// Common Controls
-#include <afxrich.h>		// CRich edit
+#include <afxwin.h>
+#include <afxcmn.h>
+#include <afxrich.h>
 
 #include <map>
 #include <list>

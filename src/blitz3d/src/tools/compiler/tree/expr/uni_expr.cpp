@@ -3,9 +3,6 @@
 #include "float_const.h"
 #include "string_const.h"
 
-////////////////////
-// Unary operator //
-////////////////////
 ExprNode *UniExprNode::semant( Environ *e ){
 	expr=expr->semant( e );
 	sem_type=expr->sem_type;

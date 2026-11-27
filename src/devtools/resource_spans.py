@@ -14,7 +14,6 @@ def spans(text, location, mode='mixed'):
     """Yield (start,end,kind). Offsets are in the original decoded resource."""
     seen=[]
     def add(a,b,kind):
-        # Keep leading/trailing spacing and font/color/key markup intact.
         while a<b and text[a].isspace():a+=1
         while b>a and text[b-1].isspace():b-=1
         if a==b or not re.search('[A-Za-zÀ-ÿ]',text[a:b]):return
@@ -33,7 +32,6 @@ def spans(text, location, mode='mixed'):
     if mode=='strings':
         for m in re.finditer(r'^[me0]\d+=(.*)',text,re.M):add(m.start(1),m.end(1),'ui')
         return seen
-    # Text sections, dialogues, descriptions and definition fields.
     block=False; comment=False; depth=0; offset=0
     for line in text.splitlines(keepends=True):
         raw=line.rstrip('\r\n'); t=raw.strip(); start=offset+len(raw)-len(raw.lstrip())
@@ -56,11 +54,9 @@ def spans(text, location, mode='mixed'):
                 a=t.index(',',t.index(',')+1)+1;add(start+a,start+len(t),'button')
             elif t and not re.match(r'[\w_]+\s*=',t) and not re.search(r'[{};]',t) and not t.startswith(('$','on:', 'elseif', 'else')):
                 add(start+(2 if re.match('![0-6]',t) else 0),start+len(t),'prose')
-        # Braces in quoted strings/comments do not affect script depth.
         clean=re.sub(r'"[^"\n]*"|//.*','',t)
         depth=max(0,depth+clean.count('{')-clean.count('}'))
         offset+=len(line)
-    # Script display literals, including concatenated fragments. IDs stay aliases.
     command=None; arg=0; nest=0
     for m in LEX.finditer(text):
         tok=m.group()
@@ -85,7 +81,7 @@ def resources(BASE):
         if rel=='sys/strings.inf':mode='strings'
         if rel=='sys/groups.inf':mode='groups'
         if rel.startswith(('tutorial/','sys/skillinfos/')):mode='plain'
-        if rel=='sys/credits.inf':continue # dedicated credit heading aliases
+        if rel=='sys/credits.inf':continue
         yield rel,source_text(p),mode
     for p in sorted((BASE/'maps').rglob('*.s2')):
         rel=p.relative_to(BASE).as_posix()

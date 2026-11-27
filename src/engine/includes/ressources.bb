@@ -1,10 +1,4 @@
-;######################################################################################################
-
-;############################################ FUNCTIONS
-
-;### Load Ressource
 Function load_res(path$,typ,mode=1)
-	;Link
 	If FileType(path$)=0 Then
 		Local dot=Instr(path$,".")
 		If dot=0 Then Return 0
@@ -24,7 +18,6 @@ Function load_res(path$,typ,mode=1)
 			Return 0
 		EndIf
 	EndIf
-	;Exists
 	For Tres.Tres=Each Tres
 		If Tres\typ=typ Then
 			If Tres\file$=path$ Then
@@ -32,7 +25,6 @@ Function load_res(path$,typ,mode=1)
 			EndIf
 		EndIf
 	Next
-	;Load
 	If set_debug Then con_add("Loading Res.: "+path$+" (Type: "+typ+", Mode: "+mode+")")
 	Tres.Tres=New Tres
 	Tres\file$=path$
@@ -47,7 +39,6 @@ Function load_res(path$,typ,mode=1)
 		Case Cres_music Tres\h=LoadSound(path$)
 	End Select
 	set_debug=debug
-	;Return
 	If Tres\h=0 Then
 		If Left(path$,11)<>"sfx\speech\" Then
 			con_add("ERROR: Unable to load "+path$,Cbmpf_red)
@@ -60,15 +51,12 @@ Function load_res(path$,typ,mode=1)
 End Function
 
 
-;### Load Soundset
 Function load_soundset(name$)
-	;Exists?
 	For Tsoundset.Tsoundset=Each Tsoundset
 		If Tsoundset\name$=name$ Then
 			Return 1
 		EndIf
 	Next
-	;Load
 	Tsoundset.Tsoundset=New Tsoundset
 	Tsoundset\name$=name$
 	Tsoundset\spot=load_res("sfx\"+name$+"_spot.wav",Cres_sound)
@@ -79,12 +67,10 @@ Function load_soundset(name$)
 	Tsoundset\die=load_res("sfx\"+name$+"_die.wav",Cres_sound)
 	Tsoundset\flee=load_res("sfx\"+name$+"_flee.wav",Cres_sound)
 	Tsoundset\move=load_res("sfx\"+name$+"_move.wav",Cres_sound)
-	;DebugLog "loadsoundset "+name$
 	Return 1
 End Function
 
 
-;### Play Soundset Sound of a Unit Type (set resolved in load_units)
 Function play_unitsound(typ,sound,entity)
 	Local soundset.Tsoundset=Object.Tsoundset(Dunit_soundset(typ))
 	If soundset=Null Then Return 0

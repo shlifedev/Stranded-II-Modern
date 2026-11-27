@@ -19,20 +19,13 @@ static Client client;
 static Box gameboard;
 static std::vector<GlassesConfig> glasses;
 
-// Shim C++14 chrono_literals ms
 constexpr std::chrono::milliseconds operator""_ms(unsigned long long ms) {
     return std::chrono::milliseconds(ms);
 }
 
-/// Find the first pair of available glasses
-//
-/// \param[in] client - std::unique_ptr to a ::Client
-/// \return ::Glasses representing the first found glasses or an error
-/// [WaitForGlasses]
 auto waitForGlasses(Client& client) -> tiltfive::Result<Glasses> {
     std::cout << "Looking for glasses..." << std::flush;
 
-    // Loop until we find glasses
     auto glassesList = client->listGlasses();
     if (!glassesList) {
         return glassesList.error();
@@ -41,22 +34,18 @@ auto waitForGlasses(Client& client) -> tiltfive::Result<Glasses> {
         std::cout << "." << std::flush;
         std::this_thread::sleep_for(100_ms);
 
-        // Request a list of the available glasses
         glassesList = client->listGlasses();
         if (!glassesList) {
             return glassesList.error();
         }
     }
 
-    // Print out the found glasses
     for (auto& glassesInstance : *glassesList) {
         std::cout << "Found : " << glassesInstance << std::endl;
     }
 
-    // Return the first found glasses
     return tiltfive::obtainGlasses(glassesList->front(), client);
 }
-/// [WaitForGlasses]
 
 auto doThingsWithWands(const Wand& wand) -> tiltfive::Result<void> {
     std::cout << "Doing something with wand : " << wand << std::endl;
@@ -94,7 +83,6 @@ auto waitForWand(Glasses& glasses) -> tiltfive::Result<Wand> {
     }
 }
 
-/// [ExclusiveOps]
 auto readPoses(Glasses& glasses) -> tiltfive::Result<void> {
     auto start = std::chrono::steady_clock::now();
     do {
@@ -112,12 +100,10 @@ auto readPoses(Glasses& glasses) -> tiltfive::Result<void> {
 
     return tiltfive::kSuccess;
 }
-/// [ExclusiveOps]
 
 auto doThingsWithGlasses(Glasses& glasses) -> tiltfive::Result<void> {
     std::cout << "Doing something with : " << glasses << std::endl;
 
-    // Wait for a wand to connect
     auto wand = waitForWand(glasses);
     if (wand) {
         auto result = doThingsWithWands(*wand);
@@ -131,8 +117,6 @@ auto doThingsWithGlasses(Glasses& glasses) -> tiltfive::Result<void> {
     }
 
     {
-        /// [Connect]
-        // Wait for exclusive glasses connection
         auto connectionHelper = glasses->createConnectionHelper("Awesome game - Player 1");
         auto connectionResult = connectionHelper->awaitConnection(10000_ms);
         if (connectionResult) {
@@ -142,9 +126,7 @@ auto doThingsWithGlasses(Glasses& glasses) -> tiltfive::Result<void> {
                       << std::endl;
             return connectionResult.error();
         }
-        /// [Connect]
 
-        // Reading poses
         auto result = readPoses(glasses);
         if (!result) {
             std::cerr << "Error reading poses : " << result << std::endl;
@@ -152,8 +134,6 @@ auto doThingsWithGlasses(Glasses& glasses) -> tiltfive::Result<void> {
         }
     }
 
-    // The connectionHelper is destroyed at the end of the previous scope, but the glasses are still
-    // reserved.  Let's release them, then confirm that exclusive ops such as reading poses fails.
     auto releaseResult = glasses->release();
     if (!releaseResult) {
         std::cerr << "Failed to release glasses : " << releaseResult << std::endl;
@@ -172,8 +152,6 @@ auto doThingsWithGlasses(Glasses& glasses) -> tiltfive::Result<void> {
 }
 
 
-/// [WaitForService]
-// Convenience function to repeatedly call another function if it returns 'service unavailable'
 template <typename T>
 auto waitForService(Client& client, const std::function<tiltfive::Result<T>(Client& client)>& func)
     -> tiltfive::Result<T> {
@@ -192,7 +170,6 @@ auto waitForService(Client& client, const std::function<tiltfive::Result<T>(Clie
         std::this_thread::sleep_for(100_ms);
     }
 }
-/// [WaitForService]
 
 class MyParamChangeListener : public tiltfive::ParamChangeListener {
     auto onSysParamChanged(const std::vector<T5_ParamSys>& changed) -> void override {
@@ -212,7 +189,6 @@ class MyParamChangeListener : public tiltfive::ParamChangeListener {
 
 BBLIB bb_int_t BBCALL bbT5_Initialize(){
 	{
-		// TODO: expose params...
 		auto res=tiltfive::obtainClient( "com.tiltfive.test","0.1.0",nullptr );
 		if( res.error() ) return 0;
 
@@ -333,20 +309,15 @@ BBLIB bb_int_t BBCALL bbT5_Poll(){
 
 
 void BBCALL bbT5_RunSample() {
-    /// [CreateClient]
-    // Create the client
     if( !bbT5_Initialize() ){
         std::cerr << "Failed to create client : " << client << std::endl;
         std::exit(EXIT_FAILURE);
     }
     std::cout << "Obtained client : " << client << std::endl;
-    /// [CreateClient]
 
-    // Create a parameter change helper
     std::shared_ptr<MyParamChangeListener> paramChangeListener(new MyParamChangeListener());
     auto paramChangeHelper = client->createParamChangedHelper(paramChangeListener);
 
-    // Wait for glasses
     {
         auto glasses = waitForService<Glasses>(client, waitForGlasses);
         if (!glasses) {
@@ -354,17 +325,14 @@ void BBCALL bbT5_RunSample() {
             std::exit(EXIT_FAILURE);
         }
 
-        // Add the glasses to the parameter change listener
         paramChangeHelper->registerGlasses(*glasses);
 
-        // Do things with the glasses
         auto result = doThingsWithGlasses(*glasses);
         if (!result) {
             std::cerr << "Failed to do things with glasses : " << result << std::endl;
         }
     }
 }
-/// [Main]
 
 BBMODULE_CREATE( tiltfive ){
 	client=0;

@@ -19,7 +19,6 @@ static const float JLT=-1.0f/3.0f;
 static const float JHT=1.0f/3.0f;
 
 void bbResetMouseSpeed(){
-    // Capture/focus transitions deliberately discard the previous mode's motion.
     mouse_x=(int)bbMouse.axis_states[0];
     mouse_y=(int)bbMouse.axis_states[1];
 }
@@ -47,8 +46,6 @@ void processEvent( void *data,void *context){
 	case BBEVENT_MOUSEMOVE:
 		if( ev->data>0 ){
             if(gx_input && gx_input->usesRelativeMouse()){
-                // A relative-mode MoveMouse changes coordinates, not physical
-                // motion. Keep counts polled after MouseX/YSpeed was last read.
                 mouse_x+=ev->x-(int)bbMouse.axis_states[0];
                 mouse_y+=ev->y-(int)bbMouse.axis_states[1];
             }else{

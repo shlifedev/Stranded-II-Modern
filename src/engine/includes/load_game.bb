@@ -1,5 +1,3 @@
-;############################################ Load Game
-
 Global game_healthsystem
 Dim game_exh_move#(2)
 Dim game_exh_swim#(2)
@@ -33,7 +31,6 @@ Global game_scriptk$
 
 Global game_scriptkeys=0
 Dim game_scriptkeyn$(20)
-;game_scriptkey(20) - in load_vars.bb
 
 Global game_combiscreen=2
 
@@ -61,8 +58,6 @@ Global game_firelightbrightness=150
 Dim game_tercol(8,3)
 
 Global game_showemptybuildinggroups=0
-
-;### Load Game
 
 Function load_game()
 	Local in$,var$,val$
@@ -145,13 +140,13 @@ Function load_game()
 						Case "jumpfactor"
 							game_jumpfac#=Float(val$)
 							game_jumpfac2#=Float(val$)
-						Case "falltime"							;Unused
+						Case "falltime"
 							game_falltime=Int(val$)
-						Case "falldamage"						;Unused
+						Case "falldamage"
 							game_falldamage#=Float(val$)
-						Case "falldamageminy"					;Unused
+						Case "falldamageminy"
 							game_fallminy#=Float(val$)
-						Case "falldamagemaxy"					;Unused
+						Case "falldamagemaxy"
 							game_fallmaxy#=Float(val$)
 
 						

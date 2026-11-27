@@ -1,7 +1,6 @@
 
 Context "Select"
 
-; ints
 abc = 123
 
 Select abc
@@ -15,7 +14,6 @@ End Select
 
 Expect works_with_ints, "Selects work with ints"
 
-; strings
 hello$ = "world"
 
 Select hello

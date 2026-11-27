@@ -23,8 +23,6 @@ ENTRY = 'StrandedIIStudio.bb'
 
 
 def configure():
-    # This command runs in its own CLI process, never the ordinary web builder.
-    # Keep its compiler and allowlisted packer; redirect only Studio artifacts.
     web_build.BUILD, web_build.RUNTIME, web_build.SITE = BUILD, RUNTIME, SITE
     os.environ['PATH'] = str(Path(sys.executable).parent) + os.pathsep + os.environ.get('PATH','')
 
@@ -88,7 +86,6 @@ def build(args):
     development_marker(RUNTIME,True)
     atomic(RUNTIME/'core/version.json',encode(info))
     atomic(RUNTIME/'core/version.txt',(info['display_version']+'\n').encode())
-    # License originals accompany the generated engine/resources.
     for source,name in ((engine_toolchain.ENGINE/'WEBGPU-LICENSE.txt','WebGPU-port-MIT.txt'),(ng/'LICENSE.TXT','Blitz3D-NG.txt'),
                         (engine_toolchain.library('imgui') / 'LICENSE.txt','Dear-ImGui.txt'),
                         (engine_toolchain.library('sdl') / 'LICENSE.txt','SDL2.txt'),
@@ -98,8 +95,6 @@ def build(args):
         shutil.copy2(source,RUNTIME/'licenses'/name)
     web_toolchain.run([upstream.BLITZCC,'-target','emscripten','-o',SITE/'game',ENTRY],
                       cwd=ROOT/'src/engine',env=web_build.compiler_environment(env))
-    # Include Extended resources in the existing allowlisted packer without
-    # changing normal web/CI edition routing.
     original=web_build.override_files
     web_build.override_files=lambda root,edition='classic': original(root,'extended')
     try:web_build.pack_assets(env)

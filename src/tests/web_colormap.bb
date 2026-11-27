@@ -1,5 +1,3 @@
-; Run the actual generator with a CPU buffer and fixed terrain height bands.
-; Count full-buffer transfers as the WebGPU canvas does, without opening a GUI.
 Const Cworld_size=64,Cworld_height=3200,Csection_editor=3
 Global m_section=3,ter=1,ter_size=32,ter_tex_color=1
 Global probeBuffer=2,probeLocks,probeTransfers,probeWrites,probeInvalid,probeColourErrors

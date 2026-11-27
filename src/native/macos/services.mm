@@ -41,8 +41,6 @@ uint64_t nanos(bool continuous){
   return (unsigned __int128)(continuous?mach_continuous_time():mach_absolute_time())*scale.numer/scale.denom;
 }
 int result(int rc){if(rc<0){fileError=errno;return 0;}fileError=0;return 1;}
-// resolution=desktop is resolved before Graphics3D starts SDL video. SDL's
-// display 0 is the CoreGraphics main display, measured in points.
 SDL_DisplayMode mainDisplayMode(){
   SDL_DisplayMode mode={};
   if(CGDisplayModeRef current=CGDisplayCopyDisplayMode(CGMainDisplayID())){
@@ -51,9 +49,6 @@ SDL_DisplayMode mainDisplayMode(){
   }
   return mode;
 }
-// SDL's default menu bar has no Edit menu, and AppKit text fields receive
-// Cmd-X/C/V/A only as Edit menu key equivalents. The items stay disabled while
-// the game view is first responder, so gameplay keys are unaffected.
 NSMenuItem *editMenu=nil;
 void installEditMenu(){
   NSMenu *bar=[NSApp mainMenu];
@@ -202,8 +197,6 @@ std::string strandedMacAppDirectory(const std::string &executable){
       if(exists && (settings || previous==fingerprint)) continue;
       fs::create_directories(target.parent_path());
       fs::path temporary=target;temporary+=".native-install";
-      // Quitting between copy and rename leaves a partial copy of a bundled file,
-      // never player data. Replace it so one interrupted launch cannot block all later ones.
       auto leftover=fs::symlink_status(temporary);
       if(fs::is_regular_file(leftover)) fs::remove(temporary);
       else if(fs::exists(leftover)) throw std::runtime_error("Unexpected .native-install entry; preserve and inspect it");

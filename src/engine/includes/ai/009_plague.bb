@@ -1,4 +1,3 @@
-;Stay?
 If TCunit\states=1
 	If TCunit\ai_mode<>ai_idle Then
 		If get_state(Cstate_ai_stick,Cclass_unit,TCunit\id)=1 Then
@@ -7,14 +6,12 @@ If TCunit\states=1
 	EndIf
 EndIf
 
-;Get Food
 If in_t3000go=1 Then
 	If TCunit\ai_mode<>ai_getfood Then
 		
 		hdist=500
 		dist=0
 		
-		;Items
 		For Titem.Titem=Each Titem
 			If Titem\parent_class=0 Then
 				dist=EntityDistance(Titem\h,TCunit\h)
@@ -31,7 +28,6 @@ If in_t3000go=1 Then
 		
 		
 		If TCunit\ai_mode<>ai_getfood Then
-			;Objects
 			For Tobject.Tobject=Each Tobject
 				dist=EntityDistance(Tobject\h,TCunit\h)
 				If dist<hdist Then
@@ -49,7 +45,6 @@ If in_t3000go=1 Then
 EndIf
 
 
-;Action
 Select TCunit\ai_mode
 	Case ai_idle
 		TCunit\ai_timer=0
@@ -89,7 +84,6 @@ Select TCunit\ai_mode
 		ai_dosani()
 End Select
 
-;Set Mode
 If (gt-TCunit\ai_timer)>TCunit\ai_duration Then
 	x=Rand(0,15)
 	Select x

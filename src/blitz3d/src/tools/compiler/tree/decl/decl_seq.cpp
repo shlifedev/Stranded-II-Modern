@@ -1,8 +1,5 @@
 #include "decl_seq.h"
 
-//////////////////////////////
-// Sequence of declarations //
-//////////////////////////////
 void DeclSeqNode::proto( DeclSeq *d,Environ *e ){
 	for( int k=0;k<decls.size();++k ){
 		try{ decls[k]->proto( d,e ); }

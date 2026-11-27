@@ -1,10 +1,4 @@
 
-/*
-
-  Note - does not appear to like DPSESSION_MULTICASTSERVER very much!
-
-  */
-
 #include "../stdutil/stdutil.h"
 #include "multiplay.h"
 #include "multiplay_setup.h"

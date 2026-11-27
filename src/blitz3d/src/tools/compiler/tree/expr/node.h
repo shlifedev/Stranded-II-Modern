@@ -3,7 +3,7 @@
 
 #include "../node.h"
 
-struct ConstNode;	//is constant int,float or string
+struct ConstNode;
 
 struct ExprNode : public Node{
 	Type *sem_type;

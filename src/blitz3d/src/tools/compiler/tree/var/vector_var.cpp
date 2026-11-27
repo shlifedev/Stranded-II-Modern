@@ -1,9 +1,6 @@
 #include "vector_var.h"
 #include "../expr/const.h"
 
-////////////////
-// Vector var //
-////////////////
 void VectorVarNode::semant( Environ *e ){
 	expr=expr->semant( e );
 	vec_type=expr->sem_type->vectorType();
@@ -49,9 +46,6 @@ llvm::Value *VectorVarNode::translate2( Codegen_LLVM *g ){
 	for( int k=0;k<exprs->size();++k ){
 		ExprNode *e=exprs->exprs[k];
 		auto p=e->translate2( g );
-		// if( g->debug ){
-		// 	p=jumpge( p,iconst( vec_type->sizes[k] ),"__bbVecBoundsEx" );
-		// }
 		p=g->builder->CreateMul( p,llvm::ConstantInt::get( g->intTy,sz ) );
 
 		sz=sz*vec_type->sizes[k]/4;

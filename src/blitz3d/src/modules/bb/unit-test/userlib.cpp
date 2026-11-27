@@ -18,7 +18,6 @@ BBEXPORT void BBCALL bbExpectFloatEq( float a,float b,const char *m ){
 	bbExpectIntEq( a,b,m );
 }
 
-// TODO: make this unneccesary.
 bool bbRuntimeIdle() {
 	return true;
 }

@@ -24,15 +24,11 @@ enum{
 	WM_STOP=WM_USER+1,WM_RUN,WM_END
 };
 
-////////////////////
-// STATIC STARTUP //
-////////////////////
 gxRuntime *gxRuntime::openRuntime( HINSTANCE hinst ){
 	if( runtime ) return 0;
 
 	debugger=bbGetDebugger();
 
-	//create WNDCLASS
 	WNDCLASS wndclass;
 	memset(&wndclass,0,sizeof(wndclass));
 	wndclass.style=CS_HREDRAW|CS_VREDRAW|CS_OWNDC;
@@ -58,9 +54,6 @@ gxRuntime *gxRuntime::openRuntime( HINSTANCE hinst ){
 	return runtime;
 }
 
-//////////////////////////
-// RUNTIME CONSTRUCTION //
-//////////////////////////
 gxRuntime::gxRuntime( HINSTANCE hi,HWND hw ):
 hinst(hi),
 D3D7ContextDriver(hw),Frame(hw){
@@ -101,9 +94,6 @@ void gxRuntime::restoreGraphics(){
 	}
 }
 
-/////////////
-// SUSPEND //
-/////////////
 void gxRuntime::suspend(){
 	busy=true;
 	bbRuntimeOnSuspend->run( this );
@@ -116,9 +106,6 @@ void gxRuntime::suspend(){
 	_bbDebugStop();
 }
 
-////////////
-// RESUME //
-////////////
 void gxRuntime::resume(){
 	if( gfx_mode==3 ) ShowCursor(0);
 	busy=true;
@@ -130,9 +117,6 @@ void gxRuntime::resume(){
 	_bbDebugRun();
 }
 
-///////////////////
-// FORCE SUSPEND //
-///////////////////
 void gxRuntime::forceSuspend(){
 	if( gfx_mode==3 ){
 		SetForegroundWindow( GetDesktopWindow() );
@@ -142,9 +126,6 @@ void gxRuntime::forceSuspend(){
 	}
 }
 
-//////////////////
-// FORCE RESUME //
-//////////////////
 void gxRuntime::forceResume(){
 	if( gfx_mode==3 ){
 		SetForegroundWindow( Frame::hwnd );
@@ -154,9 +135,6 @@ void gxRuntime::forceResume(){
 	}
 }
 
-////////////////
-// MOVE MOUSE //
-////////////////
 void gxRuntime::moveMouse( int x,int y ){
 	POINT p;
 	RECT rect;
@@ -176,9 +154,6 @@ void gxRuntime::moveMouse( int x,int y ){
 	SetCursorPos( x,y );
 }
 
-/////////////////
-// WINDOW PROC //
-/////////////////
 LRESULT gxRuntime::windowProc( HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam ){
 
 	if( busy ){
@@ -187,7 +162,6 @@ LRESULT gxRuntime::windowProc( HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam ){
 
 	PAINTSTRUCT ps;
 
-	//handle 'special' messages!
 	switch( msg ){
 	case WM_PAINT:
 		if( gfx_mode && !auto_suspend ){
@@ -236,13 +210,8 @@ LRESULT gxRuntime::windowProc( HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam ){
 
 	if( suspended ) return DefWindowProc( hwnd,msg,wparam,lparam );
 
-	// if( gfx_mode==3 ){
-	// 	return DefWindowProc( hwnd,msg,wparam,lparam );
-	// }
-
 	static const int MK_ALLBUTTONS=MK_LBUTTON|MK_RBUTTON|MK_MBUTTON;
 
-	//handle input messages
 	BBEvent ev;
 	memset( &ev,0,sizeof(BBEvent) );
 
@@ -273,23 +242,6 @@ LRESULT gxRuntime::windowProc( HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam ){
 		break;
 	case WM_MOUSEMOVE:
 		ev=BBEvent( BBEVENT_MOUSEMOVE,0,LOWORD( lparam ),HIWORD( lparam ) );
-		// if( !graphics ) break;
-		// if( gfx_mode==3 && !use_di ){
-		// 	POINT p;GetCursorPos( &p );
-		// 	dx_input->wm_mousemove( p.x,p.y );
-		// }else{
-		// 	int x=(short)(lparam&0xffff),y=lparam>>16;
-		// 	if( gfx_mode==1 ){
-		// 		RECT rect;GetClientRect( hwnd,&rect );
-		// 		x=x*graphics->getWidth()/(rect.right-rect.left);
-		// 		y=y*graphics->getHeight()/(rect.bottom-rect.top);
-		// 	}
-		// 	if( x<0 ) x=0;
-		// 	else if( x>=graphics->getWidth() ) x=graphics->getWidth()-1;
-		// 	if( y<0 ) y=0;
-		// 	else if( y>=graphics->getHeight() ) y=graphics->getHeight()-1;
-		// 	dx_input->wm_mousemove( x,y );
-		// }
 		break;
 	case WM_MOUSEWHEEL:
 		ev=BBEvent( BBEVENT_MOUSEWHEEL,(short)HIWORD( wparam ) );
@@ -320,23 +272,14 @@ static LRESULT CALLBACK windowProc( HWND hwnd,UINT msg,WPARAM wparam,LPARAM lpar
 	return DefWindowProc( hwnd,msg,wparam,lparam );
 }
 
-//////////////////////////////
-//STOP FROM EXTERNAL SOURCE //
-//////////////////////////////
 void gxRuntime::asyncStop(){
 	PostMessage( Frame::hwnd,WM_STOP,0,0 );
 }
 
-//////////////////////////////
-//RUN  FROM EXTERNAL SOURCE //
-//////////////////////////////
 void gxRuntime::asyncRun(){
 	PostMessage( Frame::hwnd,WM_RUN,0,0 );
 }
 
-//////////////////////////////
-// END FROM EXTERNAL SOURCE //
-//////////////////////////////
 void gxRuntime::asyncEnd(){
 	PostMessage( Frame::hwnd,WM_END,0,0 );
 }
@@ -370,9 +313,6 @@ bool gxRuntime::idle(){
 	}
 }
 
-///////////////
-// DEBUGSTOP //
-///////////////
 void gxRuntime::_onDebugStop( void *data,void *context ){
 	((gxRuntime*)context)->onDebugStop();
 }
@@ -382,9 +322,6 @@ void gxRuntime::onDebugStop(){
 }
 
 
-////////////////
-// DEBUGERROR //
-////////////////
 void gxRuntime::_onDebugError( void *data,void *context ){
 	((gxRuntime*)context)->onDebugError( (const char *)data );
 }
@@ -397,9 +334,6 @@ void gxRuntime::onDebugError( const char *t ){
 	}
 }
 
-///////////////
-// DEBUGINFO //
-///////////////
 void gxRuntime::_onDebugInfo( void *data,void *context ){
 	((gxRuntime*)context)->onDebugInfo( (const char *)data );
 }
@@ -414,9 +348,6 @@ void gxRuntime::onDebugInfo( const char *t ){
 	d->debugMsg( t,false );
 }
 
-/////////////////////
-// POINTER VISIBLE //
-/////////////////////
 void gxRuntime::setPointerVisible( bool vis ){
 	Frame::setPointerVisible( vis );
 }

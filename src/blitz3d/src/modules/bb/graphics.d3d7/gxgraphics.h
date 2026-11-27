@@ -38,20 +38,15 @@ private:
 	DDGAMMARAMP _gammaRamp;
 	IDirectDrawGammaControl *_gamma;
 
-	/***** GX INTERFACE *****/
 public:
-	//MANIPULATORS
 	void vwait();
 
-	//SPECIAL!
 	void copy( BBCanvas *dest,int dx,int dy,int dw,int dh,BBCanvas *src,int sx,int sy,int sw,int sh );
 
-	//NEW! Gamma control!
 	void setGamma( int r,int g,int b,float dr,float dg,float db );
 	void getGamma( int r,int g,int b,float *dr,float *dg,float *db );
 	void updateGamma( bool calibrate );
 
-	//ACCESSORS
 	int getWidth()const;
 	int getHeight()const;
 	int getLogicalWidth()const;
@@ -64,7 +59,6 @@ public:
 
 	BBFont *getDefaultFont()const;
 
-	//OBJECTS
 	BBCanvas *createCanvas( int width,int height,int flags );
 	BBCanvas *loadCanvas( const std::string &file,int flags );
 
@@ -72,7 +66,6 @@ public:
 
 	BBFont *loadFont( const std::string &font,int height,int flags );
 
-	// b3dgraphics
 	IDirectDraw7 *getDirDraw(){ return dirDraw; }
 	D3D7Canvas *backCanvas(){ return (D3D7Canvas*)back_canvas; }
 };

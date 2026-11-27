@@ -23,8 +23,6 @@ module Blitz3D
 
             FileUtils.mkdir_p File.dirname(new_help)
             File.open(new_help, 'w') { |f| f.write existing_help.to_html }
-            # FileUtils.mkdir_p mod.help_dir
-            # FileUtils.cp existing_help,
             puts "  Copied help for #{command.name.bold}"
           end
 

@@ -49,7 +49,6 @@ void Tabber::OnSize( UINT type,int w,int h ){
 }
 
 BOOL Tabber::OnEraseBkgnd( CDC *dc ){
-// GCL_HBRBACKGROUND is undefined in x64. TODO: figure out how to handle...
 #ifndef BB_WIN64
 	CRect c;GetClientRect( &c );
 

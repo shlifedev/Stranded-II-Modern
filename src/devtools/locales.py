@@ -19,7 +19,6 @@ def catalog(path,text=None):
         def unescape(m):
             if m[1] not in '\\nrt':raise ValueError(f'{path}:{number}: invalid escape {m[0]}')
             return {'n':'\n','r':'\r','t':'\t','\\':'\\'}[m[1]]
-        # A trailing backslash is invalid rather than silently discarded.
         if len(value)-len(value.rstrip('\\')) & 1:raise ValueError(f'{path}:{number}: trailing escape')
         result[key]=re.sub(r'\\(.)',unescape,value).translate(SEP)
     return result
@@ -31,7 +30,6 @@ def catalog_text(root,code,edition='classic'):
     text=base.read_text('utf8')
     overlay=root/'resources/locales/editions'/edition/f'{code}.tsv'
     if not overlay.exists():return text
-    # Validate each input before merging so duplicates are never hidden.
     catalog(base)
     replacements=catalog(overlay)
     lines=[line for line in text.splitlines() if line.split('\t',1)[0] not in replacements]
@@ -41,7 +39,6 @@ def languages(root):
     """Discover paired UTF-8 catalogs/metadata in a stable menu order."""
     folder=root/'resources/locales'
     codes={p.stem for p in folder.glob('*.tsv')}
-    # legacy-index.json is a key migration table, not a language manifest.
     codes.update(p.stem for p in folder.glob('*.json') if p.name!='legacy-index.json')
     if not {'en','ko'}<=codes:raise ValueError('English and Korean language packs are required')
     result={}
@@ -78,7 +75,6 @@ def validate(root,edition='classic'):
             if any(ord(c)>65535 for c in value):raise ValueError(f'{lang}: BMP font cannot represent {key}')
             for ref in REFERENCE.findall(value):
                 if ref not in en:raise ValueError(f'{lang}: missing reference {ref}')
-    # Cycles would otherwise reach the runtime resolver depth limit.
     def visit(key,values,stack):
         if key in stack:raise ValueError('Cyclic localization reference: '+key)
         if len(stack)>=8:raise ValueError('Localization nesting exceeds runtime limit: '+key)
@@ -86,7 +82,6 @@ def validate(root,edition='classic'):
     for values in catalogs.values():
         for key in values:visit(key,values,[])
     from editions import source_files, override_files
-    # Tiny font fixtures have no engine entrypoint.
     paths=list(source_files(root,edition).values()) if (root/'src/engine').exists() else []
     paths.extend(override_files(root,edition).values())
     for p in paths:
@@ -145,8 +140,6 @@ def prepare(root,game,runtime,edition='classic'):
         dest=out/relative;dest.parent.mkdir(parents=True,exist_ok=True)
         dest.write_bytes(model.write(fields))
         rebuilt=Map(dest.read_bytes())
-        # Replacing all converted fields with originals must restore every byte,
-        # including geometry, numeric IDs, extensions and embedded attachments.
         assert rebuilt.write({f.key:f.data for f in model.fields if f.kind!='attachment'})==model.data,relative
         map_count+=1
     pairs={a:ref(a) for a in aliases if a in keys}

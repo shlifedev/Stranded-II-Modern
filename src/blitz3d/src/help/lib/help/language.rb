@@ -25,7 +25,6 @@ module Blitz3D
           next if File.basename(file).start_with?('_')
 
           Page.new(file).generate("#{outdir}/#{File.basename(file)}")
-          #FileUtils.cp file, outdir
         end
       end
     end

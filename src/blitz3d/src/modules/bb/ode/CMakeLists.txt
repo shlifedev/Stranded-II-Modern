@@ -1,4 +1,3 @@
-# TODO: figure out why it won't compile on android/ios.
 if(TARGET ODE)
   bb_start_module(ode)
   set(DEPENDS_ON bb.blitz3d)

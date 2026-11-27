@@ -35,7 +35,6 @@ def main():
     body += function(settings_source, 'load_settings') + '\n'
     body += function(settings_source, 'save_settings') + '\n'
     body += function(settings_source, 'settings_apply_viewrange') + '\n'
-    # Only graphics refreshes are substituted; both real settings file paths run.
     body += '\nFunction mp_checkname$(value$,mode)\nReturn value$\nEnd Function\n'
     for name in ('mb_reset', 'e_environment_setup_water', 'grass_map', 'grass_heightmap', 'grass_spread'):
         body += f'Function {name}()\nEnd Function\n'
@@ -84,7 +83,6 @@ EndIf
     source.write_text(body, encoding='utf8')
     exe = output / 'settings-test.exe'
     engine.compile_test(source, exe, cwd=output)
-    # Old controls retain their binary prefix; only the tagged developer extension is new.
     controls = output / 'sys/controls.cfg'
     marker = output / 'core/development.flag'
     if controls.exists():controls.unlink()
@@ -102,8 +100,6 @@ EndIf
         raise AssertionError(f'Local developer shortcut default/explicit None/custom key: {values}')
     marker.unlink();controls.unlink()
     print('Developer shortcut release/local defaults and saved None/custom binding: passed')
-    # Release ZIPs ship .default copies. A fresh folder receives them; an update
-    # extracted over an existing game must leave the player's files alone.
     def controls_bytes(first_key, sensitivity):
         return (b'### controls\n' + struct.pack('<21h', *range(first_key, first_key + 21)) +
                 struct.pack('<f', sensitivity) + bytes((129, 0)))
@@ -128,7 +124,6 @@ EndIf
                 raise AssertionError(f'{label}: unexpected {path.name}')
             if path.with_name(path.name + '.tmp').exists():
                 raise AssertionError(f'{label}: staging file left for {path.name}')
-        # The player's own settings now differ from every default.
         seeded = {controls: controls_bytes(44, 0.5),
                   output / 'sys/scriptcontrols.cfg': b'### script controls\n' + bytes(range(42)),
                   output / 'core/modern.ini': b'language=en\nfps=60\n'}
@@ -137,8 +132,6 @@ EndIf
         print('Release default settings passed:', label)
     for path, default in defaults.items():
         path.unlink();default.unlink()
-    # This file follows the original settings format and represents a player who
-    # chose lower quality, different volumes, and disabled motion blur.
     custom = ('### personal settings\n1024\n768\n16\n1\n0\n2\n1\n0\n'
               '0.2\n0.75\n1\n0\n1\n0\nPlayer\n36963\n0\n0\n0\n0.12\n').encode('ascii')
     cases = [

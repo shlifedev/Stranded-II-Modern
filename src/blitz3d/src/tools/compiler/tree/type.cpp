@@ -229,10 +229,10 @@ llvm::GlobalVariable *VectorType::llvmDef( Codegen_LLVM *g ){
 		}
 
 		std::vector<llvm::Constant*> els;
-		llvm::Type *ity=Type::int_type->llvmType( g->context.get() );  // i32 on wasm32
-		els.push_back( llvm::ConstantInt::get( ity,6  ) ); // type
-		els.push_back( llvm::ConstantInt::get( ity,sz ) ); // size
-		els.push_back( gt );                               // elementType
+		llvm::Type *ity=Type::int_type->llvmType( g->context.get() );
+		els.push_back( llvm::ConstantInt::get( ity,6  ) );
+		els.push_back( llvm::ConstantInt::get( ity,sz ) );
+		els.push_back( gt );
 		auto init=llvm::ConstantStruct::get( g->bbVecType,els );
 
 		temp=new llvm::GlobalVariable( *g->module,g->bbVecType,false,llvm::GlobalValue::ExternalLinkage,nullptr,label );

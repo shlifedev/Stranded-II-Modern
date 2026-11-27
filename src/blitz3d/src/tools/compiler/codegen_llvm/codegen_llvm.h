@@ -75,7 +75,6 @@ public:
 	int dumpToObj( std::string &out );
 	void dumpToStderr();
 
-	// debug
 	llvm::DIBuilder *dbgBuilder;
 	llvm::DICompileUnit *dbgCU;
 	llvm::DIType *dbgFloatTy;

@@ -5,8 +5,6 @@
 #include "../expr/node.h"
 #include "../var/decl_var.h"
 
-//'kind' shouldn't really be in Parser...
-//should probably be LocalDeclNode,GlobalDeclNode,ParamDeclNode
 struct VarDeclNode : public DeclNode{
 	std::string ident,tag;
 	int kind;bool constant;

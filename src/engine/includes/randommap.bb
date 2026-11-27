@@ -1,13 +1,7 @@
-;Random Map Stuff
-
-;### Load Randommap Stuff
-
 Function load_randommap(loadid=0)
-	;Delete
 	For Tran.Tran=Each Tran
 		Delete Tran
 	Next
-	;Load
 	Local stream
 	Local in$,var$,val$
 	Local i,equal
@@ -190,20 +184,15 @@ End Function
 load_randommap()
 
 
-;Fill Map
 Function randommap(stuffcount,objects=1,units=1,items=0)
 	
-	;Count
 	Local t=0
 	For Tran.Tran=Each Tran
 		Select Tran\class
-			;Objects
 			Case Cclass_object
 				If objects=1 Then t=t+Tran\a
-			;Units
 			Case Cclass_unit
 				If units=1 Then t=t+Tran\a
-			;Items
 			Case Cclass_item
 				If items=1 Then t=t+Tran\a
 		End Select
@@ -214,13 +203,11 @@ Function randommap(stuffcount,objects=1,units=1,items=0)
 		Return 0
 	EndIf
 	
-	;Create and Fill Pool
 	Dim Drpool(t)
 		
 	Local i=0
 	For Tran.Tran=Each Tran
 		Select Tran\class
-			;Objects
 			Case Cclass_object
 				If objects=1 Then
 					For j=i To i+Tran\a-1
@@ -228,7 +215,6 @@ Function randommap(stuffcount,objects=1,units=1,items=0)
 					Next
 					i=i+Tran\a
 				EndIf
-			;Units
 			Case Cclass_unit
 				If units=1 Then
 					For j=i To i+Tran\a-1
@@ -236,7 +222,6 @@ Function randommap(stuffcount,objects=1,units=1,items=0)
 					Next
 					i=i+Tran\a
 				EndIf
-			;Items
 			Case Cclass_item
 				If items=1 Then
 					For j=i To i+Tran\a-1
@@ -247,52 +232,41 @@ Function randommap(stuffcount,objects=1,units=1,items=0)
 		End Select
 	Next
 		
-	;Create Stuff
 	Local x#,y#,z#,yaw#
 	Local size=(ter_size*Cworld_size)/2
 	For i=1 To stuffcount
 		
-		;Select Thingy
 		rid=Rand(0,t-1)
 		Tran.Tran=Object.Tran(Drpool(rid))
-		;If Tran<>Null Then
 		
-			;Set it
 			For retry=0 To 99
 				
-				;Position
 				x#=Rand(-size,size)
 				z#=Rand(-size,size)
 				yaw#=Rand(360)
 				
-				;Can be Set here?
 				y#=e_tery(x#,z#)
 				If y#>=Tran\r1# Then
 					If y#<=Tran\r2# Then
 				
-						;All Okay! Set!
 						Select Tran\class
 				
-							;Object
 							Case Cclass_object
 								set_object(-1,Tran\id,x#,z#,yaw#)
 								defvar_oncreate(Cclass_object,TCobject\id,Tran\id)
 								
 								
-							;Unit
 							Case Cclass_unit
 								set_unit(-1,Tran\id,x#,z#)
 								defvar_oncreate(Cclass_unit,TCunit\id,Tran\id)
 								RotateEntity TCunit\h,0,yaw#,0
 								If m_section<>Csection_editor Then ai_ini()
 							
-							;Item
 							Case Cclass_item
 								set_item(-1,Tran\id,x#,y#,z#)
 								defvar_oncreate(Cclass_item,TCitem\id,Tran\id)
 								RotateEntity TCitem\h,0,yaw#,0
 								
-							;Info	
 							Case Cclass_info
 								set_info(-1,typ,x#,y#,z#)
 								defvar_oncreate(Cclass_info,TCinfo\id,Tran\id)
@@ -306,23 +280,16 @@ Function randommap(stuffcount,objects=1,units=1,items=0)
 				
 			Next
 			
-		;EndIf
-	
 	Next
 End Function
 
 
-;Create Randommap
 Function randommapcreate()
 	bmpf_loadscreen("[[loc:engine.7013af4c42fe]]")
-	;Clear
 	e_clear()
 	
-	;Section
 	m_section=Csection_game_sp
 	
-	;Generate Island
-	;in_opt(3) for mapsize!
 	editor_defaultmapsettings()
 	editor_genmap()
 	editor_gencolormap()
@@ -330,45 +297,36 @@ Function randommapcreate()
 	grass_heightmap()
 	e_environment()
 	
-	;Map Script
 	map_briefing$=random_script$
 	preparse()
 	
-	;Scripts preload
 	parse_globalevent("preload")
 	parse_sel_event("preload")
 	
-	;Fill
 	bmpf_loadscreen("[[loc:engine.a3528dd378a6]]")
 	tmp_loading=1
 	count=(ter_size*ter_size)/4
 	randommap(count,1,1,1)
 	tmp_loading=0
 	
-	;Player
 	g_player=1
 	game_playerspawn(1)
 	game_setplayer(1)
 	
-	;Scripts start/load
 	parse_globalevent("start")
 	parse_globalevent("load")
 	parse_sel_event("start")
 	parse_sel_event("load")
 	
 	
-	;Flush
 	FlushKeys()
 	FlushMouse()
-	;Blackframe
 	blackframe=10
 	
-	;Unit Physics Stuff
 	modern_reset_clock()
 	ms=lastms
 	gt=0
 	
-	;Setcam
 	m=m_menu
 	m_menu=0
 	game_setcam()
@@ -376,27 +334,22 @@ Function randommapcreate()
 End Function
 
 
-;Create Random Objects (Scriptcommand)
 Function randomcreate(class,typ,miny#,maxy#,count=0)
 	Local size=(ter_size*Cworld_size)/2
 	Local x#,y#,z#,yaw#
 	Local id=0
 	For retry=0 To 9999
 				
-		;Position
 		x#=Rand(-size,size)
 		z#=Rand(-size,size)
 		yaw#=Rand(360)
 			
-		;Can be Set here?
 		y#=e_tery(x#,z#)
 		If y#>=miny# Then
 			If y#<=maxy# Then
 			
-				;Set
 				Select class
 		
-					;Object
 					Case Cclass_object
 						TCobject=Null
 						set_object(-1,typ,x#,z#,yaw#)
@@ -404,7 +357,6 @@ Function randomcreate(class,typ,miny#,maxy#,count=0)
 							id=TCobject\id
 						EndIf
 						
-					;Unit
 					Case Cclass_unit
 						TCunit=Null
 						set_unit(-1,typ,x#,z#)
@@ -414,7 +366,6 @@ Function randomcreate(class,typ,miny#,maxy#,count=0)
 							If m_section<>Csection_editor Then ai_ini()
 						EndIf
 					
-					;Item
 					Case Cclass_item
 						TCitem=Null
 						set_item(-1,typ,x#,y#,z#,count)
@@ -423,7 +374,6 @@ Function randomcreate(class,typ,miny#,maxy#,count=0)
 							RotateEntity TCitem\h,0,yaw#,0
 						EndIf
 					
-					;Info	
 					Case Cclass_info
 						TCinfo=Null
 						set_info(-1,typ,x#,y#,z#)

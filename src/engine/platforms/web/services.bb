@@ -1,5 +1,3 @@
-; Browser implementations of the OS services used by the shared game.
-; SystemProperty's StrandedWeb namespace is provided by the pinned web runtime.
 Global web_file_path$,web_file_error,web_clipboard$
 
 Function web_service$(operation$,value$="")
@@ -36,13 +34,10 @@ Function modern_dpi_aware()
 End Function
 
 Function modern_mouse_capture(enabled)
- ; The browser shell owns capture through an explicit user gesture.
  Return True
 End Function
 
 Function modern_win_foreground()
- ; Let the original loading screen and main menu render before a user gesture.
- ; Gameplay still pauses without capture; browser focus is required in both.
  If m_section=Csection_menu Or m_section=Csection_benchmark Then Return Int(web_service("focus","menu"))
  Return Int(web_service("focus","play"))
 End Function
@@ -52,12 +47,10 @@ Function modern_win_iconic(window)
 End Function
 
 Function modern_win_borderless()
- ; Fullscreen still requires a user gesture handled by the browser shell.
  Return True
 End Function
 
 Function modern_win_style(window,index,style)
- ; Browser window chrome belongs to the browser; the canvas owns presentation.
  Return True
 End Function
 
@@ -204,8 +197,6 @@ Function SetClipboardData(format,text$)
  Return True
 End Function
 
-; Legacy editor downloads require raw TCP, which browsers do not expose.
-; Return the documented connection-failure result so callers take their error path.
 Function OpenTCPStream(host$,port)
  Return 0
 End Function

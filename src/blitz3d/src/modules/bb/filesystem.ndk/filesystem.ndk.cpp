@@ -59,7 +59,6 @@ std::streambuf *NDKFileSystem::openFile( const std::string &file,std::ios_base::
 		return 0;
 	}
 
-	// TODO: stream it into the string...not efficient.
 	const void *data = AAsset_getBuffer(asset);
 	if( !data ){
 		LOGD("Could not get data for: %s", file.c_str());

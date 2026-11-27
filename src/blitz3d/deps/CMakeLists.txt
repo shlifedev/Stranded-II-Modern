@@ -1,4 +1,3 @@
-# External library sources are selected by config/blitz3d-toolchain.json.
 set(CMAKE_UNITY_BUILD OFF)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)

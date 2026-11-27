@@ -89,7 +89,6 @@ bool s2WindowsMouseCapture(bool enabled){
     SDL_bool mode=enabled?SDL_TRUE:SDL_FALSE;
     if(SDL_GetRelativeMouseMode()==mode) return true;
     if(SDL_SetRelativeMouseMode(mode)!=0) return false;
-    // A mode transition starts at a known position without a camera jump.
     bbMoveMouse(graphics->getLogicalWidth()/2,graphics->getLogicalHeight()/2);
     bbResetMouseSpeed();
     return true;
@@ -166,8 +165,6 @@ bool SDLRuntime::idle(){
 #else
 			if( SDL_GetRelativeMouseMode()==SDL_TRUE ){
 #endif
-                // SDL's Emscripten backend already scales CSS motion to window
-                // pixels and retains fractional deltas. Do not scale it twice.
                 em_virt_x+=event.motion.xrel;em_virt_y+=event.motion.yrel;
 #ifndef BB_WINDOWS
 				if( SDL_Window *w=SDL_GetWindowFromID( event.motion.windowID ) ){
@@ -218,7 +215,6 @@ bool SDLRuntime::idle(){
 			#ifdef BB_MACOS
 			if(event.type==SDL_KEYDOWN && s2MacSearchFocused()) continue;
 #elif defined(BB_WINDOWS)
-            // Releases still clear keys held before the EDIT gained focus.
             if(event.type==SDL_KEYDOWN && s2WindowsSearchFocused()) continue;
 #endif
 			int code=event.key.keysym.scancode;
@@ -278,8 +274,6 @@ bool SDLRuntime::idle(){
 			}
 		}else if( event.type==SDL_TEXTINPUT ){
 #ifdef BB_MACOS
-            // SDL's Cocoa handler translates every key before AppKit dispatches it,
-            // so text typed into the search field would also reach GetKey.
             if(s2MacSearchFocused()) continue;
 #elif defined(BB_WINDOWS)
             if(s2WindowsSearchFocused()) continue;
@@ -293,10 +287,6 @@ bool SDLRuntime::idle(){
 	}
 
 #ifdef BB_WINDOWS
-    // SDL's warp cutoff compares GetTickCount with Windows message timestamps.
-    // External speed hooks can leave it in the future even after returning to
-    // 1x, dropping new WM_MOUSEMOVE events. Absolute position needs no clock.
-    // Raw camera movement continues to consume only SDL's relative counts.
     if(gx_input && !s2DebugUiVisible() && !gx_input->usesRelativeMouse()){
         int x,y;
         if(gx_input->absoluteMousePosition(x,y) && (x!=em_virt_x || y!=em_virt_y)){
@@ -322,8 +312,6 @@ void SDLRuntime::moveMouse( int x,int y ){
 	if( !graphics ) return;
 	em_virt_x=x;em_virt_y=y;
 #ifdef BB_WINDOWS
-    // In raw relative mode MoveMouse resets Blitz's virtual origin only.
-    // An OS warp here can discard motion arriving between input reads.
     if(SDL_GetRelativeMouseMode()==SDL_TRUE) return;
 #endif
 #ifdef BB_WEBGPU
@@ -338,8 +326,6 @@ void SDLRuntime::setPointerVisible( bool vis ){
     if(s2DebugUiVisible()) vis=true;
 #endif
 #if defined(BB_WINDOWS)
-    // Cursor visibility is independent of gameplay capture. Showing the cursor
-    // on focus loss must always release capture; HidePointer must not enable it.
     if(vis && SDL_GetRelativeMouseMode()!=SDL_FALSE){
         SDL_SetRelativeMouseMode(SDL_FALSE);
         bbResetMouseSpeed();
@@ -348,9 +334,6 @@ void SDLRuntime::setPointerVisible( bool vis ){
 	SDL_bool rel=vis?SDL_FALSE:SDL_TRUE;
 	if( SDL_GetRelativeMouseMode()!=rel ) SDL_SetRelativeMouseMode( rel );
 #endif
-	// The web shell owns pointer lock through an explicit Start/Resume click.
-	// Show/HidePointer during focus recovery must not queue another lock request
-	// or release a lock that the shell just acquired.
 	SDL_ShowCursor( vis?SDL_ENABLE:SDL_DISABLE );
 }
 

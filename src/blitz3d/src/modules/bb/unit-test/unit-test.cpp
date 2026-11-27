@@ -34,7 +34,7 @@ void BBCALL __bbExpectInt( int a,int b,const char *mesg, const char *file,int li
 	}
 }
 
-const float EPSILON=.000001f;		//small value
+const float EPSILON=.000001f;
 
 void BBCALL __bbExpectFloat( float a,float b,const char *mesg, const char *file,int line ){
 	if( abs(a-b)>EPSILON ){
@@ -136,7 +136,6 @@ BBMODULE_CREATE( unit_test ){
 
 		// https://smacdo.com/programming/redirecting-standard-output-to-console-in-windows/
 
-		// Redirect CRT standard input, output and error handles to the console window.
 		FILE * pNewStdout = nullptr;
 		FILE * pNewStderr = nullptr;
 		FILE * pNewStdin = nullptr;
@@ -145,10 +144,6 @@ BBMODULE_CREATE( unit_test ){
 		::freopen_s(&pNewStderr, "CONOUT$", "w", stderr);
 		::freopen_s(&pNewStdin, "CONIN$", "r", stdin);
 
-		// Clear the error state for all of the C++ standard streams. Attempting to accessing the streams before they refer
-		// to a valid target causes the stream to enter an error state. Clearing the error state will fix this problem,
-		// which seems to occur in newer version of Visual Studio even when the console has not been read from or written
-		// to yet.
 		std::cout.clear();
 		std::cerr.clear();
 		std::cin.clear();

@@ -1,9 +1,6 @@
 #include "if.h"
 #include "../expr/const.h"
 
-//////////////////
-// If statement //
-//////////////////
 void IfNode::semant( Environ *e ){
 	expr=expr->semant( e );
 	expr=expr->castTo( Type::int_type,e );

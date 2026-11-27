@@ -55,12 +55,10 @@ End Function
 Function modern_log(message$)
 End Function
 
-; Precision at large uptime, signed boundary, DWORD rollover, backwards samples.
 check(Abs(modern_counter_elapsed($7FFFFFF0,1000000,$80000054,1000000,10000000.)-0.01)<0.00001,"signed low-word boundary")
 check(Abs(modern_counter_elapsed($FFFFFFF0,1000000,$54,1000001,10000000.)-0.01)<0.00001,"unsigned low-word rollover")
 check(modern_counter_elapsed(500,10,400,10,10000000.)=0.,"backward counter discarded")
 
-; Match CE's timeGetTime -> GetTickCount redirection, including at 1x.
 Global target=probe_proc(probe_module("winmm.dll"),"timeGetTime")
 Global replacement=probe_proc(probe_module("kernel32.dll"),"GetTickCount")
 Global original=CreateBank(5),jump=CreateBank(5),protection=CreateBank(4),oldprotection
@@ -74,14 +72,12 @@ If oldprotection=0 Then End
 probe_write(target,jump,5):probe_flush(probe_process(),target,5)
 probe_protect(target,5,oldprotection,protection)
 
-; Negative control: the previous Delay-based pacing under the same hook.
 modern_pace_ready=0:legacy_present()
 started=modern_walltime()
 For frame=1 To 144:legacy_present():Next
 duration=modern_walltime()-started
 WriteLine report,"LEGACY fps="+(144000./Float(duration))+" real_ms="+duration
 
-; New pacing AND game-clock smoothness with the coarse hook still installed.
 Dim rates(2):rates(0)=60:rates(1)=120:rates(2)=144
 For r=0 To 2
  modern_fps=rates(r):modern_pace_ready=0:modern_present()
@@ -100,11 +96,9 @@ For r=0 To 2
  WriteLine report,"HOOKED target="+modern_fps+" fps="+measured#+" zero_steps="+zero_steps+" max_step_ms="+maxstep
 Next
 
-; Focus return resamples QPC without advancing the paused game clock.
 previous=modern_clock():modern_sleep(50):modern_counter_ready=0
 check(modern_clock()=previous,"focus rebase excludes background interval")
 
-; Restore only this process's bytes. DLLs on disk were never modified.
 probe_protect(target,5,$40,protection)
 probe_write(target,original,5):probe_flush(probe_process(),target,5)
 probe_protect(target,5,oldprotection,protection)
@@ -114,7 +108,7 @@ End
 '''
     for name in ('modern_walltime', 'modern_clock', 'modern_counter_elapsed'):
         code += '\n' + function(runtime, name) + '\n'
-    pacing = function(runtime, 'modern_present').replace(' Flip False', ' ; No graphics context.')
+    pacing = function(runtime, 'modern_present').replace(' Flip False', '')
     code += pacing + '\n'
     code += pacing.replace('Function modern_present()', 'Function legacy_present()').replace(
         'modern_sleep(1)', 'Delay 1') + '\n'

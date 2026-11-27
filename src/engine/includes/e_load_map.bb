@@ -1,7 +1,3 @@
-;############################################ Engine Load Map
-
-
-;### LOAD MAP
 Function load_map(path$,pw$)
 	If Lower(Right(path$,4))=".sav" Then
 		If modern_save_valid(path$)=0 Then
@@ -16,19 +12,15 @@ Function load_map(path$,pw$)
 	e_clear()
 	tmp_loading=1
 	
-	;### Headers
-	
-	;Main Header
 	bmpf_loadscreen(s$(21),10)
 	in$=ReadLine(stream)
 	If Left(in$,15)<>"### Stranded II" Then RuntimeError("Invalid Map! (Invalid Header)")
-	ReadLine(stream)							;Version
-	map_id$=map_id$+ReadLine(stream)			;Date
-	map_id$=map_id$+ReadLine(stream)			;Time
-	Local f$=ReadLine(stream)					;Format
-	map_mode$=ReadLine(stream)					;Mode
+	ReadLine(stream)
+	map_id$=map_id$+ReadLine(stream)
+	map_id$=map_id$+ReadLine(stream)
+	Local f$=ReadLine(stream)
+	map_mode$=ReadLine(stream)
 	
-	;Type Format
 	Local tfobject=0
 	Local tfunit=0
 	Local tfitem=0
@@ -43,36 +35,31 @@ Function load_map(path$,pw$)
 	ReadLine(stream)
 	ReadLine(stream)
 	ReadLine(stream)
-	ReadLine(stream)							;###
+	ReadLine(stream)
 	
-	;Image
 	If map_image<>0 Then FreeImage(map_image)
 	map_image=CreateImage(96,72)
 	SetBuffer ImageBuffer(map_image)
 	LockBuffer ImageBuffer(map_image)
 	For x=0 To 96-1
 		For y=0 To 72-1
-			r=ReadByte(stream)							;R
-			g=ReadByte(stream)							;G
-			b=ReadByte(stream)							;B
+			r=ReadByte(stream)
+			g=ReadByte(stream)
+			b=ReadByte(stream)
 			rgb=255*$1000000 + r*$10000 + g*$100 + b
 			WritePixelFast(x,y,rgb)
 		Next
 	Next
 	UnlockBuffer ImageBuffer(map_image)
 	SetBuffer BackBuffer()
-	;Debug Show Map Image
 	If set_debug_load=1 Then
 		gui_win_image("",map_image)
 	EndIf
 
-	;Password Header
-	Local pwkey=ReadByte(stream)				;Code Key
-	Local readpw$=ReadLine(stream)				;Password
-	;Check Password (Editor only)
+	Local pwkey=ReadByte(stream)
+	Local readpw$=ReadLine(stream)
 	If m_section=Csection_editor Then			
 		If code(pw$,pwkey,0)<>readpw$ Then
-			;RuntimeError "|"+code(readpw$,pwkey,1)+"|"			
 			con_add("ERROR: Invalid Map Password!",Cbmpf_red)
 			tmp_loading=0
 			Return 0
@@ -80,46 +67,41 @@ Function load_map(path$,pw$)
 		map_password$=pw$
 	EndIf
 	
-	;Debug
 	If set_debug_load=1 Then
 		gui_msg("Map PW Key: "+pwkey+", PW: "+code(readpw$,pwkey,1)+" (len: "+Len(readpw$)+")")
 	EndIf
 	
-	;Map Vars
-	map_name$=getfilename$(path$)						;Map Name
-	map_path$=path$										;Map Path
-	map_day=ReadInt(stream)								;Map Time Day
-	map_hour=ReadByte(stream)							;Map Time Hour
-	map_minute=ReadByte(stream)							;Map Time Minute
-	map_freezetime=ReadByte(stream)						;Map Time frozen?
-	map_skybox$=ReadString(stream)						;Map Skybox
-	map_multiplayer=ReadByte(stream)					;Map Multiplayer
-	map_climate=ReadByte(stream)						;Map Climate
-	map_music$=ReadString(stream)						;Map Music
-	map_briefing$=ReadString(stream)					;Map Briefing (Global Map Script)
-	map_fog(0)=ReadByte(stream)							;Map Fog R
-	map_fog(1)=ReadByte(stream)							;Map Fog G
-	map_fog(2)=ReadByte(stream)							;Map Fog B
-	map_fog(3)=ReadByte(stream)							;Map Fog Mode
-	map_lday=map_day									;Map Time Update last Day
-	map_lhour=map_hour									;Map Time Update last Hour
-	map_lminute=map_minute								;Map Time Update last Minute
+	map_name$=getfilename$(path$)
+	map_path$=path$
+	map_day=ReadInt(stream)
+	map_hour=ReadByte(stream)
+	map_minute=ReadByte(stream)
+	map_freezetime=ReadByte(stream)
+	map_skybox$=ReadString(stream)
+	map_multiplayer=ReadByte(stream)
+	map_climate=ReadByte(stream)
+	map_music$=ReadString(stream)
+	map_briefing$=ReadString(stream)
+	map_fog(0)=ReadByte(stream)
+	map_fog(1)=ReadByte(stream)
+	map_fog(2)=ReadByte(stream)
+	map_fog(3)=ReadByte(stream)
+	map_lday=map_day
+	map_lhour=map_hour
+	map_lminute=map_minute
 	map_timeupdate=1
-	ReadByte(stream)									;Extended Stuff
+	ReadByte(stream)
 		
-	;Interface
 	For i=0 To 9
-		in_quickslot(i)=ReadString(stream)				;Quickslot
+		in_quickslot(i)=ReadString(stream)
 	Next
 	
-	;Debug
 	If set_debug_load=1 Then
 		gui_msg("Map Skybox: "+map_skybox$)
 		gui_msg("Map Briefing: "+map_briefing$)
 		gui_msg("Map Vars Loaded (day "+map_day+", time "+map_hour+":"+map_minute+")")
 	EndIf
 	
-	;Check
 	If map_hour<0 Or map_hour>24 Then
 		con_add("ERROR: Error in Map Vars (Hour)!",Cbmpf_red)
 		tmp_loading=0
@@ -131,19 +113,16 @@ Function load_map(path$,pw$)
 	EndIf
 	
 	
-	;### Maps
-	
-	;Colormap
 	bmpf_loadscreen(s$(22),20)					
-	h=ReadInt(stream)									;Colortexture Size
+	h=ReadInt(stream)
 	ter_tex_color=CreateTexture(h,h,256)
 	SetBuffer TextureBuffer(ter_tex_color)
 	LockBuffer TextureBuffer(ter_tex_color)
 	For x=0 To h-1
 		For y=0 To h-1
-			r=ReadByte(stream)							;R
-			g=ReadByte(stream)							;G
-			b=ReadByte(stream)							;B
+			r=ReadByte(stream)
+			g=ReadByte(stream)
+			b=ReadByte(stream)
 			rgb=255*$1000000 + r*$10000 + g*$100 + b
 			WritePixelFast(x,y,rgb)
 		Next
@@ -151,68 +130,58 @@ Function load_map(path$,pw$)
 	UnlockBuffer TextureBuffer(ter_tex_color)
 	SetBuffer BackBuffer()
 	
-	;Debug
 	If set_debug_load=1 Then gui_msg("Colormap loaded ("+h+"x"+h+")")
 	
-	;Heightmap
 	bmpf_loadscreen(s$(23),30)
-	ter_size=ReadInt(stream)							;Terrain Size
+	ter_size=ReadInt(stream)
 	If ter_size<0 Then ter_size=32
 	e_terrain(ter_size,"generated")
 	For x=0 To ter_size
 		For y=0 To ter_size
-			ModifyTerrain(ter,x,y,ReadFloat(stream))	;Height
+			ModifyTerrain(ter,x,y,ReadFloat(stream))
 		Next
 	Next
 	
-	;Debug
 	If set_debug_load=1 Then gui_msg("Heightmap loaded ("+ter_size+"x"+ter_size+")")
 
-	;Grassmap
 	bmpf_loadscreen(s$(24),35)
 	grass_map()
 	For x=0 To h
 		For y=0 To h
-			grass_rgb(x,y,3)=ReadByte(stream)			;Gras? 1/0
+			grass_rgb(x,y,3)=ReadByte(stream)
 		Next
 	Next
 	grass_x=-2147483648
 	grass_spread()
 	
-	;Debug
 	If set_debug_load=1 Then gui_msg("Grassmap loaded")
 	
-	;Ground Y
 	ter_groundy=TerrainY(ter,-((ter_size/2)*Cworld_size),0,-((ter_size/2)*Cworld_size))
 
 	
-	;on:preload
 	map_briefing_key$=preparse_string$(map_briefing$)
 	parse_globalevent("preload")
 	parse_sel_event("preload")
 	
 	
-	;### Stuff
-	
-	;Object
 	bmpf_loadscreen(s$(25),40)
-	c=ReadInt(stream)													;Count
+	c=ReadInt(stream)
 	For i=1 To c
-		id=ReadInt(stream)												;ID
-		If tfobject Then												;Typ
+		id=ReadInt(stream)
+		If tfobject Then
 			typ=ReadShort(stream)
 		Else
 			typ=ReadByte(stream)
 		EndIf
-		xp#=ReadFloat(stream)											;X
-		zp#=ReadFloat(stream)											;Z
-		yaw#=ReadFloat(stream)											;Yaw
-		If set_object(id,typ,xp#,zp#,yaw#)<>-1							;SET
-			TCobject\health#=ReadFloat(stream)							;Health
-			TCobject\health_max#=ReadFloat(stream)						;Health Max
-			TCobject\daytimer=ReadInt(stream)							;Daytimer
+		xp#=ReadFloat(stream)
+		zp#=ReadFloat(stream)
+		yaw#=ReadFloat(stream)
+		If set_object(id,typ,xp#,zp#,yaw#)<>-1
+			TCobject\health#=ReadFloat(stream)
+			TCobject\health_max#=ReadFloat(stream)
+			TCobject\daytimer=ReadInt(stream)
 			HideEntity TCobject\h
-			If TCobject\daytimer<0 Then									;Grow
+			If TCobject\daytimer<0 Then
 				grow_object(TCobject)
 			EndIf
 		Else
@@ -220,24 +189,22 @@ Function load_map(path$,pw$)
 		EndIf
 	Next
 	serialpeak_object()
-	;Debug
 	If set_debug_load=1 Then gui_msg("Objects loaded ("+c+")")
 	
-	;Unit
 	bmpf_loadscreen(s$(26),70)
-	c=ReadInt(stream)													;Count
+	c=ReadInt(stream)
 	For i=1 To c
-		id=ReadInt(stream)												;ID
-		If tfunit Then													;Typ
+		id=ReadInt(stream)
+		If tfunit Then
 			typ=ReadShort(stream)
 		Else
 			typ=ReadByte(stream)
 		EndIf
-		xp#=ReadFloat(stream)											;X
-		yp#=ReadFloat(stream)											;Y
-		zp#=ReadFloat(stream)											;Z
-		If set_unit(id,typ,xp#,zp#)<>-1 Then							;SET
-			HideEntity TCunit\h											;POSITION
+		xp#=ReadFloat(stream)
+		yp#=ReadFloat(stream)
+		zp#=ReadFloat(stream)
+		If set_unit(id,typ,xp#,zp#)<>-1 Then
+			HideEntity TCunit\h
 			PositionEntity TCunit\h,xp#,yp#,zp#								
 			ShowEntity TCunit\h
 			If TCunit\vh<>0 Then
@@ -245,45 +212,43 @@ Function load_map(path$,pw$)
 				PositionEntity TCunit\vh,xp#,yp#,zp#
 				ShowEntity TCunit\vh
 			EndIf
-			yaw#=ReadFloat(stream)										;Yaw
-			RotateEntity TCunit\h,0,yaw#,0								;ROTATE
-			TCunit\health#=ReadFloat(stream)							;Health
-			TCunit\health_max#=ReadFloat(stream)						;Health Max
-			TCunit\hunger#=ReadFloat(stream)							;Hunger
-			TCunit\thirst#=ReadFloat(stream)							;Thirst
-			TCunit\exhaustion#=ReadFloat(stream)						;Exhaustion
-			TCunit\ai_cx#=ReadFloat(stream)								;AI Center X
-			TCunit\ai_cz#=ReadFloat(stream)								;AI Center Z
-			If m_section<>Csection_editor Then ai_ini()					;Initialize AI
+			yaw#=ReadFloat(stream)
+			RotateEntity TCunit\h,0,yaw#,0
+			TCunit\health#=ReadFloat(stream)
+			TCunit\health_max#=ReadFloat(stream)
+			TCunit\hunger#=ReadFloat(stream)
+			TCunit\thirst#=ReadFloat(stream)
+			TCunit\exhaustion#=ReadFloat(stream)
+			TCunit\ai_cx#=ReadFloat(stream)
+			TCunit\ai_cz#=ReadFloat(stream)
+			If m_section<>Csection_editor Then ai_ini()
 		Else
 			RuntimeError("Unit of type "+typ+" is undefined! Are you sure that you are using the right mod/version for this map?")
 		EndIf
 	Next
 	serialpeak_unit()
-	;Debug
 	If set_debug_load=1 Then gui_msg("Units loaded ("+c+")")
 		
-	;Item
 	bmpf_loadscreen(s$(27),80)
-	c=ReadInt(stream)													;Count
+	c=ReadInt(stream)
 	For i=1 To c
-		id=ReadInt(stream)												;ID
-		If tfitem Then													;Typ
+		id=ReadInt(stream)
+		If tfitem Then
 			typ=ReadShort(stream)
 		Else
 			typ=ReadByte(stream)
 		EndIf
-		xp#=ReadFloat(stream)											;X
-		yp#=ReadFloat(stream)											;Y
-		zp#=ReadFloat(stream)											;Z
-		If set_item(id,typ,xp#,yp#,zp#)<>-1 Then						;SET
-			yaw#=ReadFloat(stream)										;Yaw
-			RotateEntity TCitem\h,0,yaw#,0								;ROTATE
-			TCitem\health#=ReadFloat(stream)							;Health
-			TCitem\count=ReadInt(stream)								;Count
-			TCitem\parent_class=ReadByte(stream)						;Parent Class
-			TCitem\parent_mode=ReadByte(stream)							;Parent Mode
-			TCitem\parent_id=ReadInt(stream)							;Parent ID
+		xp#=ReadFloat(stream)
+		yp#=ReadFloat(stream)
+		zp#=ReadFloat(stream)
+		If set_item(id,typ,xp#,yp#,zp#)<>-1 Then
+			yaw#=ReadFloat(stream)
+			RotateEntity TCitem\h,0,yaw#,0
+			TCitem\health#=ReadFloat(stream)
+			TCitem\count=ReadInt(stream)
+			TCitem\parent_class=ReadByte(stream)
+			TCitem\parent_mode=ReadByte(stream)
+			TCitem\parent_id=ReadInt(stream)
 			If TCitem\parent_mode=Cpm_out Then
 				If TCitem\parent_class<>0 Then 
 					RotateEntity TCitem\h,-90,yaw#,0
@@ -294,50 +259,46 @@ Function load_map(path$,pw$)
 		EndIf
 	Next
 	serialpeak_item()
-	;Debug
 	If set_debug_load=1 Then gui_msg("Items loaded ("+c+")")
 	
-	;Info
 	bmpf_loadscreen(s$(28),90)
 	c=ReadInt(stream)
 	For i=1 To c
-		id=ReadInt(stream)												;ID
-		typ=ReadByte(stream)											;Typ
-		xp#=ReadFloat(stream)											;X
-		yp#=ReadFloat(stream)											;Y
-		zp#=ReadFloat(stream)											;Z
-		set_info(id,typ,xp#,yp#,zp#)									;SET
-		pitch#=ReadFloat(stream)										;Pitch
-		yaw#=ReadFloat(stream)											;Yaw
-		RotateEntity TCinfo\h,pitch#,yaw#,0								;ROTATE
-		TCinfo\vars$=ReadString(stream)									;Vars
-		info_stv()														;String to Vars
+		id=ReadInt(stream)
+		typ=ReadByte(stream)
+		xp#=ReadFloat(stream)
+		yp#=ReadFloat(stream)
+		zp#=ReadFloat(stream)
+		set_info(id,typ,xp#,yp#,zp#)
+		pitch#=ReadFloat(stream)
+		yaw#=ReadFloat(stream)
+		RotateEntity TCinfo\h,pitch#,yaw#,0
+		TCinfo\vars$=ReadString(stream)
+		info_stv()
 		Select typ
 			Case 5 info_setupsprite(TCinfo)
 			Case 47 info_setuploudspeaker(TCinfo)
 		End Select
 	Next
 	serialpeak_info()
-	;Debug
 	If set_debug_load=1 Then gui_msg("Infos loaded ("+c+")")
 	
-	;State
 	bmpf_loadscreen(s$(29),92)
-	c=ReadInt(stream)													;Count
+	c=ReadInt(stream)
 	For i=1 To c
-		typ=ReadByte(stream)											;Typ
-		parent_class=ReadByte(stream)									;Parent Class
-		parent_id=ReadInt(stream)										;Parent ID
-		If set_state(typ,parent_class,parent_id) Then					;SET
-			TCstate\x#=ReadFloat(stream)								;X
-			TCstate\y#=ReadFloat(stream)								;Y
-			TCstate\z#=ReadFloat(stream)								;Z
-			TCstate\fx#=ReadFloat(stream)								;FX
-			TCstate\fy#=ReadFloat(stream)								;FY
-			TCstate\fz#=ReadFloat(stream)								;FZ
-			TCstate\value=ReadInt(stream)								;Value
-			TCstate\value_f#=ReadFloat(stream)							;Value Float
-			TCstate\value_s$=ReadString(stream)							;Value String
+		typ=ReadByte(stream)
+		parent_class=ReadByte(stream)
+		parent_id=ReadInt(stream)
+		If set_state(typ,parent_class,parent_id) Then
+			TCstate\x#=ReadFloat(stream)
+			TCstate\y#=ReadFloat(stream)
+			TCstate\z#=ReadFloat(stream)
+			TCstate\fx#=ReadFloat(stream)
+			TCstate\fy#=ReadFloat(stream)
+			TCstate\fz#=ReadFloat(stream)
+			TCstate\value=ReadInt(stream)
+			TCstate\value_f#=ReadFloat(stream)
+			TCstate\value_s$=ReadString(stream)
 			look_state()
 		Else
 			ReadFloat(stream):ReadFloat(stream):ReadFloat(stream)
@@ -346,55 +307,46 @@ Function load_map(path$,pw$)
 			con_add("Unable to create state "+typ+" ("+Dstate_name$(typ)+") @ "+parent_class+","+parent_id)
 		EndIf
 	Next
-	;Debug
 	If set_debug_load=1 Then gui_msg("States loaded ("+c+")")
 	
-	;Extensions and Vars etc.
 	bmpf_loadscreen(s$(30),95)
-	c=ReadInt(stream)													;Count
+	c=ReadInt(stream)
 	For i=1 To c
 		Tx.Tx=New Tx
-		Tx\typ=ReadByte(stream)											;Typ
-		Tx\parent_class=ReadByte(stream)								;Parent Class
-		Tx\parent_id=ReadInt(stream)									;Parent ID
-		Tx\mode=ReadInt(stream)											;Mode
-		Tx\key$=ReadString(stream)										;Key
-		Tx\value$=ReadString(stream)									;Value
-		Tx\stuff$=ReadString(stream)									;Stuff
+		Tx\typ=ReadByte(stream)
+		Tx\parent_class=ReadByte(stream)
+		Tx\parent_id=ReadInt(stream)
+		Tx\mode=ReadInt(stream)
+		Tx\key$=ReadString(stream)
+		Tx\value$=ReadString(stream)
+		Tx\stuff$=ReadString(stream)
 	Next
 	load_map_extensions()
-	;Debug
 	If set_debug_load=1 Then gui_msg("Extensions loaded ("+c+")")
 	
-	;Set Definition Vars with default Values on Start (not in editor!)
 	If m_section<>Csection_editor Then
 		If map_mode$="map" Then
 			defvar_ini()
 		EndIf
 	EndIf
 	
-	;Load Cached Extensions (loadmap command)
 	pv_loadmaploaded=0
 	For Txc.Txc=Each Txc
 		pv_loadmaploaded=1
 		If Txc\mode<7 Then
-			;Cleanup
 			Select Txc\mode
-				;1 - Global Var
 				Case 1
 					For cx.Tx=Each Tx
 						If cx\mode=Txc\mode Then
 							If cx\key$=Txc\key$ Then Delete cx
 						EndIf
 					Next
-				;3 - Buildlocks
 				Case 3
 					For cx.Tx=Each Tx
 						If cx\mode=Txc\mode Then
 							If cx\key$=Txc\key$ Then Delete cx
 						EndIf
 					Next					
-				;5 - Skills
 				Case 5
 					For cx.Tx=Each Tx
 						If cx\mode=Txc\mode Then
@@ -402,7 +354,6 @@ Function load_map(path$,pw$)
 						EndIf
 					Next
 			End Select
-			;Create
 			Tx.Tx=New Tx
 			Tx\typ=Txc\typ
 			Tx\parent_class=Txc\parent_class
@@ -415,31 +366,26 @@ Function load_map(path$,pw$)
 		EndIf
 	Next
 	
-	;Load Cam Angels (sav)
 	If map_mode$="sav" Then
 		Local campitch#=ReadFloat(stream)
 		Local camyaw#=ReadFloat(stream)
 		RotateEntity cam,campitch#,camyaw#,0
 	EndIf
 	
-	;Pre Parse Scripts
 	preparse()
 	
 
-	;### End
 	ReadLine(stream)
 	ReadLine(stream)
 	in$=ReadLine(stream)
 	If in$<>"www.unrealsoftware.de" Then
 		
-		;Error
 		con_add("ERROR: Unable to load map completely!",3)
 		con_add("ERROR: It may be damaged!",3)
 		con_add("ERROR: Possible attachments are lost!",3)
 		
 	Else
 	
-		;Attachments
 		If map_mode$="map" Then
 			For Tat.Tat=Each Tat
 				Delete Tat
@@ -470,17 +416,13 @@ Function load_map(path$,pw$)
 	
 	EndIf
 
-	;Music
 	If map_music$<>"" Then
 		amb_file=LoadSound("sfx\"+map_music$)
-		;If amb_file<>0 Then LoopSound amb_file
 	EndIf
 	
-	;Environment
 	bmpf_loadscreen(s$(31),97)
 	e_environment()
 	
-	;Spawn Player @ Singleplayer Map
 	bmpf_loadscreen(s$(32),100)
 	con_add("")
 	If m_section=Csection_game_sp Then
@@ -493,15 +435,12 @@ Function load_map(path$,pw$)
 		EndIf
 	EndIf
 	
-	;Load Cached Items and Stuff (loadmap command)
 	For Txc.Txc=Each Txc
-		;7 Player Item
 		If Txc\mode=7 Then
 			citem=set_item(-1,Txc\typ,0,0,0,Int(Txc\value$))
 			If citem>-1 Then
 				store_item(citem,Cclass_unit,g_player)
 			EndIf
-		;8 Player Quickslot/Weapon/Ammo
 		ElseIf Txc\mode=8 Then
 			If Txc\typ<10 Then
 				in_quickslot(Txc\typ)=Int(Txc\value$)
@@ -510,7 +449,6 @@ Function load_map(path$,pw$)
 			ElseIf Txc\typ=11 Then
 				g_cplayer\player_ammo=Int(Txc\value$)
 			EndIf
-		;9 Player State
 		ElseIf Txc\mode=9 Then
 			set_state(Txc\typ,Txc\parent_class,Txc\parent_id)
 			If get_state(Txc\typ,Txc\parent_class,Txc\parent_id)
@@ -533,31 +471,24 @@ Function load_map(path$,pw$)
 		Delete Txc
 	Next
 	
-	;Parse Scripts
 	tmp_loading=0
 	If map_mode$="map" Then
-		;on:start
 		parse_globalevent("start")
 		parse_sel_event("start")
 	EndIf
-	;on:load
 	parse_globalevent("load")
 	parse_sel_event("load")
 	
 	
-	;Flush
 	FlushKeys()
 	FlushMouse()
-	;Finish
 	CloseFile(stream)
 	blackframe=10
 	
-	;Unit Physics Stuff
 	modern_reset_clock()
 	ms=lastms
 	gt=0
 	
-	;Setcam
 	m=m_menu
 	m_menu=0
 	game_setcam()
@@ -567,17 +498,16 @@ Function load_map(path$,pw$)
 End Function
 
 
-;### LOAD MAP ID
 Function load_map_id$(path$)
 	id$="0"
 	If FileType(path$)=1 Then
 		id$=FileSize(path$)
 		Local stream=ReadFile(path$)
 		If stream<>0 Then
-			ReadLine(stream)						;Header
-			ReadLine(stream)						;Version
-			id$=id$+ReadLine(stream)				;Date
-			id$=id$+ReadLine(stream)				;Time
+			ReadLine(stream)
+			ReadLine(stream)
+			id$=id$+ReadLine(stream)
+			id$=id$+ReadLine(stream)
 			CloseFile(stream)
 		EndIf
 	EndIf	
@@ -585,29 +515,24 @@ Function load_map_id$(path$)
 End Function
 
 
-;### LOAD MAP HEADER
 Function load_map_header(path$,image=1)
 	Local stream=ReadFile(path$)
 	If stream=0 Then con_add("Unable to load Map Info from "+path$,Cbmpf_red):Return 0
 	
-	;### Headers
-	
-	;Main Header
 	in$=ReadLine(stream)
 	If Left(in$,15)<>"### Stranded II" Then RuntimeError("Invalid Map! (Invalid Header)")
-	ReadLine(stream)							;Version
-	sg_date$=ReadLine(stream)					;Date
-	sg_time$=ReadLine(stream)					;Time
-	Local f$=ReadLine(stream)					;Format
-	map_mode$=ReadLine(stream)					;Mode
-	ReadLine(stream)							;Type Format
+	ReadLine(stream)
+	sg_date$=ReadLine(stream)
+	sg_time$=ReadLine(stream)
+	Local f$=ReadLine(stream)
+	map_mode$=ReadLine(stream)
 	ReadLine(stream)
 	ReadLine(stream)
 	ReadLine(stream)
 	ReadLine(stream)
-	ReadLine(stream)							;###
+	ReadLine(stream)
+	ReadLine(stream)
 	
-	;Image
 	If image=1 Then
 		If map_image<>0 Then FreeImage(map_image)
 		map_image=CreateImage(96,72)
@@ -615,9 +540,9 @@ Function load_map_header(path$,image=1)
 		LockBuffer ImageBuffer(map_image)
 		For x=0 To 96-1
 			For y=0 To 72-1
-				r=ReadByte(stream)							;R
-				g=ReadByte(stream)							;G
-				b=ReadByte(stream)							;B
+				r=ReadByte(stream)
+				g=ReadByte(stream)
+				b=ReadByte(stream)
 				rgb=255*$1000000 + r*$10000 + g*$100 + b
 				WritePixelFast(x,y,rgb)
 			Next
@@ -635,34 +560,28 @@ Function load_map_header(path$,image=1)
 		Next
 	EndIf
 		
-	;Password Header
-	ReadByte(stream)									;Code Key
-	ReadLine(stream)									;Password
+	ReadByte(stream)
+	ReadLine(stream)
 
-	;Map Vars
-	ReadInt(stream)										;Map Time Day
-	ReadByte(stream)									;Map Time Hour
-	ReadByte(stream)									;Map Time Minute
-	ReadByte(stream)									;Map Time frozen?
-	ReadString(stream)									;Map Skybox
-	sg_multiplayer=ReadByte(stream)						;Map Multiplayer
-	ReadByte(stream)									;Map Climate
-	ReadString(stream)									;Map Music
-	ReadString(stream)									;Map Briefing
-	ReadByte(stream)									;Extended Stuff
-	
-	;Close
+	ReadInt(stream)
+	ReadByte(stream)
+	ReadByte(stream)
+	ReadByte(stream)
+	ReadString(stream)
+	sg_multiplayer=ReadByte(stream)
+	ReadByte(stream)
+	ReadString(stream)
+	ReadString(stream)
+	ReadByte(stream)
+
 	CloseFile(stream)
 End Function
 
 
-;### LOAD SAVEGAMES
 Function load_savegames(loadfirst=1)
-	;Delete old
 	For Tsg.Tsg=Each Tsg
 		Delete Tsg
 	Next
-	;Find
 	Local dir=ReadDir("saves")
 	Local file$
 	If dir<>0 Then
@@ -680,7 +599,6 @@ Function load_savegames(loadfirst=1)
 	Else
 		con_add("ERROR: Unable to read 'saves' dir!",Cbmpf_red)
 	EndIf
-	;Loadfirst
 	If loadfirst Then
 		If map_image<>0 Then FreeImage map_image
 		map_image=0
@@ -694,20 +612,16 @@ Function load_savegames(loadfirst=1)
 End Function
 
 
-;### LOAD MAPS
 Function load_maps(loadfirst=1,mponly=0)
-	;Delete old
 	For Tsg.Tsg=Each Tsg
 		Delete Tsg
 	Next
-	;Find
 	Local dir=ReadDir("maps")
 	Local file$
 	If dir<>0 Then
 		Repeat
 			file$=NextFile(dir)
 			If file$="" Then Exit
-			;DebugLog file$
 			If FileType("maps\"+file$)=1 Then
 				If Right(file$,3)=".s2" Then
 					Tsg.Tsg=New Tsg
@@ -719,7 +633,6 @@ Function load_maps(loadfirst=1,mponly=0)
 	Else
 		con_add("ERROR: Unable to read 'maps' dir!",Cbmpf_red)
 	EndIf
-	;Delete Maps which are no Multiplayer Maps
 	If mponly=1 Then
 		For Tsg.Tsg=Each Tsg
 			load_map_header("maps\"+Tsg\name$+".s2",0)
@@ -735,7 +648,6 @@ Function load_maps(loadfirst=1,mponly=0)
 			EndIf
 		Next		
 	EndIf
-	;Loadfirst
 	If loadfirst Then
 		If map_image<>0 Then FreeImage map_image
 		map_image=0
@@ -749,28 +661,21 @@ Function load_maps(loadfirst=1,mponly=0)
 End Function
 
 
-;### LOAD MAP EXTENSIONS (PREPARE EXTENSIONS!)
 Function load_map_extensions()
 	For Tx.Tx=Each Tx
 		If Tx\mode=6 Then
 			Select Tx\key$
-				;Drive/Ride
 				Case "g_drive"
 					g_drive=Int(Tx\value$)
 					If con_unit(g_drive) Then
-						;Get Vehicle Stuff
 						game_input_vehicledata(TCunit\typ)
-						;Set Mode
 						TCunit\ai_mode=0
 						TCunit\ai_duration=5000
 						TCunit\ai_timer=gt
-						;Set Ani
 						Animate TCunit\mh,0
 						TCunit\ani=0
 					EndIf
-				;Weather
 				Case "env_cweather" env_cweather=Int(Tx\value$)
-				;Current Weapon/Ammo
 				Case "w/a"
 					If con_unit(1) Then
 						TCunit\player_weapon=Tx\parent_class
@@ -779,7 +684,6 @@ Function load_map_extensions()
 							TCunit\player_weapon=Int(Tx\value$)
 						EndIf
 					EndIf
-				;Timer 
 				Case "t"
 					Ttimer.Ttimer=New Ttimer
 					Ttimer\parent_class=Tx\parent_class
@@ -790,7 +694,6 @@ Function load_map_extensions()
 					Ttimer\start=splits$(2)
 					Ttimer\mode=splits$(3)
 					Ttimer\scr$=Tx\stuff$
-				;FRAP (free rotation and position)
 				Case "f"
 					Tfrap.Tfrap=New Tfrap
 					Tfrap\parent_class=Tx\parent_class
@@ -800,7 +703,6 @@ Function load_map_extensions()
 					Tfrap\pitch#=Float(splits$(1))
 					Tfrap\roll#=Float(splits$(2))
 					Select Tfrap\parent_class
-						;Object
 						Case Cclass_object
 							If con_object(Tfrap\parent_id) Then
 								RotateEntity TCobject\h,Tfrap\pitch#,EntityYaw(TCobject\h),Tfrap\roll#
@@ -810,24 +712,20 @@ Function load_map_extensions()
 									PositionEntity TCobject\ch,EntityX(TCobject\h),Tfrap\y#,EntityZ(TCobject\h)
 								EndIf
 							EndIf
-						;Unit
 						Case Cclass_unit
 							If con_unit(Tfrap\parent_id) Then
 								PositionEntity TCunit\h,EntityX(TCunit\h),Tfrap\y#,EntityZ(TCunit\h)
 							EndIf
-						;Item
 						Case Cclass_item
 							If con_item(Tfrap\parent_id) Then
 								PositionEntity TCitem\h,EntityX(TCitem\h),Tfrap\y#,EntityZ(TCitem\h)
 							EndIf
 					End Select
-				;Unit Path
 				Case "u"
 					Tup.Tup=New Tup
 					Tup\mode=Tx\parent_class
 					Tup\info=Tx\parent_id
 					Tup\unit=Int(Tx\value$)
-				;Freeze (Ice)
 				Case "i"
 					If Tx\parent_class=Cclass_unit Then
 						For Tunit.Tunit=Each Tunit
@@ -837,7 +735,6 @@ Function load_map_extensions()
 							EndIf
 						Next
 					EndIf
-				;3D Texts
 				Case "t3d"	
 					t3d.t3d=New t3d
 					t3d\class=Tx\parent_class
@@ -847,7 +744,6 @@ Function load_map_extensions()
 					t3d\typ=Int(splits$(0))
 					t3d\offset=Int(splits$(1))
 					t3d\range=Int(splits$(2))
-				;Last Time
 				Case "lasttime"
 					split(Tx\stuff$,",",2)
 					map_lday=Int(splits$(0))
@@ -861,9 +757,7 @@ Function load_map_extensions()
 End Function
 
 
-;Recent Stuff
 Function load_recent(add$="")
-	;Delete old
 	For Trecent.Trecent=Each Trecent
 		Delete Trecent
 	Next
@@ -871,12 +765,10 @@ Function load_recent(add$="")
 	Local limit=0
 	Local file=ReadFile("sys/recent.cache")
 	If file<>0 Then
-		;Add
 		If add$<>"" Then
 			Trecent.Trecent=New Trecent
 			Trecent\file$=add$
 		EndIf
-		;Read
 		While Not Eof(file)
 			in$=ReadLine(file)
 			If in$<>"" Then
@@ -891,14 +783,12 @@ Function load_recent(add$="")
 		CloseFile file
 		update=1
 	Else
-		;Add
 		If add<>"" Then
 			Trecent.Trecent=New Trecent
 			Trecent\file$=add$
 			update=1
 		EndIf
 	EndIf
-	;Write
 	If update=1 Then
 		limit=0
 		file=WriteFile("sys/recent.cache")

@@ -1,5 +1,4 @@
 Include "includes\dev_benchmark.bb"
-; Shared Dear ImGui developer tools. Draws at presentation; actions run before world updates.
 Global dev_epoch,dev_generation=-1,dev_profile_labels_ready
 Global dev_frames,dev_frame_start,dev_fps#,dev_status$
 Global dev_item_search$,dev_item_count=1,dev_script$,dev_log_search$,dev_log_level=-1,dev_log_follow=1
@@ -34,7 +33,6 @@ Function dev_world_reset()
  For task.TdevAction=Each TdevAction:Delete task:Next
 End Function
 
-; Same helpers serve the original cheat menu and the overlay.
 Function cheat_invulnerable()
  If dev_player()=0 Then Return False
  If get_state(Cstate_invulnerability,Cclass_unit,g_player)=0 Then
@@ -105,7 +103,6 @@ End Function
 
 Function cheat_script(script$)
  If dev_player()=0 Or p_parseinprogress Then Return False
- ; Run only this requested script. Paused timers and unrelated tasks remain queued.
  parse_env(0,0,"cheat","Cheat Script Execution")
  loadstring_parsecache(Replace(Replace(script$,Chr(13),""),Chr(10),Chr(31)),Chr(31))
  parse()
@@ -132,7 +129,6 @@ Function dev_actions()
      ResetEntity g_cplayer\h:col_player_reset():game_setcam()
     Case 8
      map_day=a:map_hour=b:map_minute=c
-     ; Move time without generating a day of growth or replaying time events.
      map_lday=map_day:map_lhour=map_hour:map_lminute=map_minute
      e_environment_update_light()
     Case 9
@@ -232,7 +228,6 @@ Function dev_save_settings()
  dev_settings_paths(0)="sys\controls.cfg":dev_settings_paths(1)="sys\scriptcontrols.cfg"
  dev_settings_paths(2)="sys\settings.cfg":dev_settings_paths(3)=set_rootdir$+"core\modern.ini"
  Local index,path$,ok=True,wrote=0
- ; Snapshot all preference files before replacing any of them.
  For index=0 To 3
   path$=dev_settings_paths(index):dev_settings_exists(index)=(FileType(path$)=1)
   If dev_settings_exists(index) Then
@@ -471,7 +466,6 @@ Function dev_render_paused()
  endinput(0,0,0)
 End Function
 
-; The presentation boundary also covers menus, editors and modal loops.
 Function dev_profile_begin(scope)
  DebugUiProfileBegin scope
 End Function

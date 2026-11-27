@@ -26,17 +26,14 @@ struct Type{
 	virtual bool floatType(){ return 0; }
 	virtual bool stringType(){ return 0; }
 
-	//casts to inherited types
 	virtual FuncType *funcType(){ return 0; }
 	virtual ArrayType *arrayType(){ return 0; }
 	virtual StructType *structType(){ return 0; }
 	virtual ConstType *constType(){ return 0; }
 	virtual VectorType *vectorType(){ return 0; }
 
-	//operators
 	virtual bool canCastTo( Type *t ){ return this==t; }
 
-	//built in types
 	static Type *void_type,*int_type,*float_type,*string_type,*null_type;
 
 	virtual json toJSON(){ return json(); }

@@ -37,9 +37,6 @@ D3D7ContextDriver::~D3D7ContextDriver(){
 	denumGfx();
 }
 
-////////////////////
-// GRAPHICS SETUP //
-////////////////////
 bool D3D7ContextDriver::setDisplayMode( int w,int h,int d,bool d3d,IDirectDraw7 *dirDraw ){
 
 	if( d ) return dirDraw->SetDisplayMode( w,h,d,0,0 )>=0;
@@ -81,22 +78,16 @@ gxGraphics *D3D7ContextDriver::openWindowedGraphics( int w,int h,int d,bool d3d 
 	IDirectDraw7 *dd=createDD();
 	if( !dd ) return 0;
 
-	//set coop level
 	if( dd->SetCooperativeLevel( D3D7ContextDriver::hwnd,DDSCL_NORMAL )>=0 ){
-		//create primary surface
 		IDirectDrawSurface7 *ps;
 		DDSURFACEDESC2 desc={sizeof(desc)};
 		desc.dwFlags=DDSD_CAPS;
 		desc.ddsCaps.dwCaps=DDSCAPS_PRIMARYSURFACE;
 		if( dd->CreateSurface( &desc,&ps,0 )>=0 ){
-			//create clipper
 			IDirectDrawClipper *cp;
 			if( dd->CreateClipper( 0,&cp,0 )>=0 ){
-				//attach clipper
 				if( ps->SetClipper( cp )>=0 ){
-					//set clipper HWND
 					if( cp->SetHWnd( 0,D3D7ContextDriver::hwnd )>=0 ){
-						//create front buffer
 						IDirectDrawSurface7 *fs;
 						DDSURFACEDESC2 desc={sizeof(desc)};
 						desc.dwFlags=DDSD_WIDTH|DDSD_HEIGHT|DDSD_CAPS;
@@ -107,7 +98,6 @@ gxGraphics *D3D7ContextDriver::openWindowedGraphics( int w,int h,int d,bool d3d 
 
 						if( dd->CreateSurface( &desc,&fs,0 )>=0 ){
 							if( createInvalidationTimer() ){
-								//Success!
 								clipper=cp;
 								primSurf=ps;
 								mod_cnt=0;
@@ -137,11 +127,8 @@ gxGraphics *D3D7ContextDriver::openExclusiveGraphics( int w,int h,int d,bool d3d
 	IDirectDraw7 *dd=createDD();
 	if( !dd ) return 0;
 
-	//Set coop level
 	if( dd->SetCooperativeLevel( D3D7ContextDriver::hwnd,DDSCL_EXCLUSIVE|DDSCL_FULLSCREEN|DDSCL_ALLOWREBOOT )>=0 ){
-		//Set display mode
 		if( setDisplayMode( w,h,d,d3d,dd ) ){
-			//create primary surface
 			IDirectDrawSurface7 *ps;
 			DDSURFACEDESC2 desc={sizeof(desc)};
 			desc.dwFlags=DDSD_CAPS|DDSD_BACKBUFFERCOUNT;
@@ -151,7 +138,6 @@ gxGraphics *D3D7ContextDriver::openExclusiveGraphics( int w,int h,int d,bool d3d
 			if( d3d ) desc.ddsCaps.dwCaps|=DDSCAPS_3DDEVICE;
 
 			if( dd->CreateSurface( &desc,&ps,0 )>=0 ){
-				//find back surface
 				IDirectDrawSurface7 *bs;
 				DDSCAPS2 caps={sizeof caps};
 				caps.dwCaps=DDSCAPS_BACKBUFFER;
@@ -170,9 +156,6 @@ gxGraphics *D3D7ContextDriver::openExclusiveGraphics( int w,int h,int d,bool d3d
 	return 0;
 }
 
-////////////////////
-// GFX ENUM STUFF //
-////////////////////
 static HRESULT WINAPI enumMode( DDSURFACEDESC2 *desc,void *context ){
 	int dp=desc->ddpfPixelFormat.dwRGBBitCount;
 	if( dp==16 || dp==24 || dp==32 ){
@@ -213,7 +196,7 @@ static BOOL WINAPI enumDriver( GUID FAR *guid,LPSTR desc,LPSTR name,LPVOID conte
 	D3D7ContextDriver::GfxDriver *d=d_new D3D7ContextDriver::GfxDriver;
 
 	d->guid=guid ? d_new GUID( *guid ) : 0;
-	d->name=desc;//string( name )+" "+string( desc );
+	d->name=desc;
 
 #ifdef PRO
 	memset( &d->d3d_desc,0,sizeof(d->d3d_desc) );
@@ -231,9 +214,6 @@ static BOOL WINAPI enumDriver( GUID FAR *guid,LPSTR desc,LPSTR name,LPVOID conte
 	return 1;
 }
 
-/////////////////////////////////////////////////////
-// TIMER CALLBACK FOR AUTOREFRESH OF WINDOWED MODE //
-/////////////////////////////////////////////////////
 void CALLBACK D3D7ContextDriver::timerCallback( UINT id,UINT msg,DWORD_PTR driver,DWORD_PTR dw1,DWORD_PTR dw2 ){
 	((D3D7ContextDriver*)driver)->invalidateRect();
 }
@@ -336,16 +316,11 @@ void D3D7ContextDriver::windowedModeInfo( int *c ){
 	*c=caps;
 }
 
-///////////
-// PAINT //
-///////////
 void D3D7ContextDriver::paint(){
 	if( !exclusive ){
 		RECT src,dest;
 		src.left=src.top=0;
 		GetClientRect( D3D7ContextDriver::hwnd,&dest );
-		// src.right=gfx_mode==1 ? graphics->getWidth() : dest.right;
-		// src.bottom=gfx_mode==1 ? graphics->getHeight() : dest.bottom;
 		src.right=dest.right;
 		src.bottom=dest.bottom;
 		POINT p;p.x=p.y=0;ClientToScreen( D3D7ContextDriver::hwnd,&p );
@@ -356,9 +331,6 @@ void D3D7ContextDriver::paint(){
 	}
 }
 
-//////////
-// FLIP //
-//////////
 void D3D7ContextDriver::flip( bool vwait ){
 	gxCanvas *b=(gxCanvas*)graphics->getBackCanvas();
 	gxCanvas *f=(gxCanvas*)graphics->getFrontCanvas();

@@ -1,4 +1,3 @@
-; Actual Unicode file names and typed 64-bit Windows probe_handle marshalling.
 CreateDir "한글 경로"
 If FileType("한글 경로")<>2 Then RuntimeError "Unicode probe_directory creation"
 probe_output=WriteFile("한글 경로\원본.txt")
@@ -29,8 +28,6 @@ Repeat
 Until name$=""
 CloseDir probe_directory
 If Not found Then RuntimeError "Unicode probe_directory enumeration"
-; Legacy text input can leave a partial UTF-8 sequence in a typed save name.
-; Every Windows path call must map it to the same file instead of failing.
 probe_name$="한글 경로\저장"+Chr(195)
 If FileType(probe_name$+".tmp")<>0 Then RuntimeError "Partial UTF-8 missing FileType"
 probe_output=WriteFile(probe_name$+".tmp")
@@ -48,7 +45,6 @@ If ReadString(probe_input)<>"partial" Then RuntimeError "Partial UTF-8 readback"
 CloseFile probe_input
 DeleteFile probe_name$+".sav"
 If FileType(probe_name$+".sav")<>0 Then RuntimeError "Partial UTF-8 DeleteFile"
-; The raw command tail keeps separators, quotes and non-ANSI text.
 If CommandLine()<>"-win -fps 120 -mod "+Chr(34)+"My Mod"+Chr(34)+" 한글" Then RuntimeError "Command line: "+CommandLine()
 If modern_counter_frequency(probe_data)=0 Then RuntimeError "Counter frequency"
 If PeekInt(probe_data,0)=0 And PeekInt(probe_data,4)=0 Then RuntimeError "Counter frequency bank"

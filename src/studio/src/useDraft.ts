@@ -1,7 +1,5 @@
 import {useState} from 'react';
 
-// Drafts survive selecting another record, external CLI edits and app restarts.
-// Their original revision is kept, so applying one cannot overwrite newer work.
 export function useDraft<T extends Record<string,unknown>>(key:string,values:T,revision:number){
   type Draft={changes:Partial<T>;revision:number};
   const [draft,setDraft]=useState<Draft>(()=>{

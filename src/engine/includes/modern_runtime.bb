@@ -1,5 +1,3 @@
-; Shared presentation, focus recovery and elapsed-time pacing.
-; Windows services are compiled into the embedded Blitz runtime.
 Include "includes\modern_math.bb"
 Global dev_paused,dev_initialized,dev_strings_ready,bench_active
 Global modern_fps=144,modern_borderless=1,modern_width=1280,modern_height=720
@@ -65,7 +63,6 @@ Function modern_config()
   CloseFile stream
  EndIf
  modern_capture_settings()
- ; Explicit switches take precedence over the config file, in command order.
  rest$=Lower(Trim(set_cmd$))+" "
  While Len(rest$)>0
   pos=Instr(rest$," ")
@@ -97,7 +94,6 @@ End Function
 Function modern_window()
  modern_hwnd=Int(SystemProperty("AppHWND"))
  If modern_borderless And modern_hwnd<>0 Then
-  ; The platform owns both native and window-manager fullscreen state.
   If modern_win_borderless()=0 Then RuntimeError "Unable to enter borderless fullscreen"
  EndIf
  modern_reset_clock()
@@ -123,8 +119,6 @@ Function modern_clock()
 End Function
 
 Function modern_counter_elapsed#(previouslow,previoushigh,low,high,frequency#)
- ; Subtract the integer counter words before converting small deltas to float.
- ; Converting absolute QPC uptime to Blitz's 32-bit float would lose precision.
  Local delta=low-previouslow,upper=high-previoushigh,ticks#
  If (low Xor $80000000)<(previouslow Xor $80000000) Then upper=upper-1
  If upper<0 Then Return 0.
@@ -140,12 +134,9 @@ Function modern_reset_clock()
  modern_log_start=modern_walltime():modern_log_frames=0
 End Function
 
-; Rendering uses real interrupt time. QPC is the high-resolution simulation
-; clock, so external speed tools can accelerate play without coarse timer steps.
 Function modern_walltime()
  modern_interrupt_time(modern_time_bank)
  Local i,remainder,value,result
- ; Exact unsigned 64-bit / 10000 division, retaining low 32-bit milliseconds.
  For i=7 To 0 Step -1
   value=remainder*256+PeekByte(modern_time_bank,i)
   result=result*256+value/10000
@@ -165,9 +156,9 @@ Function modern_focus()
  mb_reset()
  Repeat
   modern_sleep(10)
-  Delay 0 ; Pump Blitz window messages without a timeGetTime-based wait.
+  Delay 0
  Until modern_win_foreground()=modern_hwnd And modern_win_iconic(modern_hwnd)=0
- modern_counter_ready=0 ; Exclude all elapsed simulation time while unfocused.
+ modern_counter_ready=0
  HidePointer()
  flushinput()
  in_dnd=0:in_sticktoslide=0:in_frapdown=0:in_jumprehit=0
@@ -202,13 +193,11 @@ Function modern_game_time()
 End Function
 
 Function modern_present()
- ; All main/menu/editor/modal loops use this path; never busy-spin.
  If modern_focus() Then Return
  dev_profile_begin(10)
  dev_draw()
  dev_profile_end(10)
  If modern_fps=0 Then
-  ; Keep Flip's event pump and the normal simulation clock when uncapped.
   modern_pace_ready=0:modern_fraction#=0.
   dev_profile_begin(12)
   Flip False
@@ -217,15 +206,12 @@ Function modern_present()
   Return
  EndIf
  Local now=modern_walltime(),advance
- ; Discard stale deadlines after pauses or a clock discontinuity.
  If modern_next-now>100 Or now-modern_next>100 Then modern_pace_ready=0
  If modern_pace_ready=0 Then
   modern_next=now:modern_fraction#=0.:modern_pace_ready=1
  EndIf
  dev_profile_begin(11)
  While modern_next-now>0
-  ; Blitz Delay polls timeGetTime, which CE redirects to coarse GetTickCount.
-  ; Native Sleep waits in real time; Flip below still pumps window messages.
   modern_sleep(1)
   now=modern_walltime()
  Wend

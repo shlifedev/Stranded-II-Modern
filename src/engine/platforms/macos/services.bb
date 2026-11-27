@@ -1,5 +1,3 @@
-; Native macOS adapters for the unchanged shared game.
-; Native pointers are never exposed as Blitz integers.
 Global mac_file_path$,mac_file_error,mac_clipboard$
 
 Function mac_service$(operation$,value$="")
@@ -36,7 +34,6 @@ Function modern_dpi_aware()
 End Function
 
 Function modern_mouse_capture(enabled)
- ; Capture remains managed by the native macOS runtime.
  Return True
 End Function
 
@@ -49,7 +46,6 @@ Function modern_win_iconic(window)
 End Function
 
 Function modern_win_borderless()
- ; Preserve the native Mac presentation path.
  modern_win_style(1,-16,$90000000)
  Return modern_win_position(1,-2,0,0,modern_win_metric(0),modern_win_metric(1),$30)
 End Function
@@ -198,8 +194,6 @@ Function SetClipboardData(format,text$)
  Return True
 End Function
 
-; Networking is outside the initial native runtime; retain connection-failure behavior.
-; Return the documented connection-failure result so callers take their error path.
 Function OpenTCPStream(host$,port)
  Return 0
 End Function

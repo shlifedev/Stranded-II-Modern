@@ -3,9 +3,6 @@
 #include "float_const.h"
 #include "string_const.h"
 
-/////////////////////////
-// relation expression //
-/////////////////////////
 ExprNode *RelExprNode::semant( Environ *e ){
 	lhs=lhs->semant(e);
 	rhs=rhs->semant(e);
@@ -71,7 +68,6 @@ llvm::Value *RelExprNode::translate2( Codegen_LLVM *g ){
 	auto *r=rhs->translate2( g );
 
 	auto *t=compare2( op,l,r,opType,g );
-	// Blitz comparison results are 0/1, not the sign-extended i1 value 0/-1.
 	return g->builder->CreateIntCast( t,Type::int_type->llvmType( g->context.get() ),false );
 }
 #endif

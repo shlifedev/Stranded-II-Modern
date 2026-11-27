@@ -1,7 +1,3 @@
-//////////////
-// 3D STUFF //
-//////////////
-
 #include "graphics.h"
 
 static int maxDevType;
@@ -84,7 +80,6 @@ static void debugPF( const DDPIXELFORMAT &pf ){
 }
 
 static void pickTexFmts( D3D7B3DGraphics *g,int hi ){
-	//texRGBFmt.
 	{
 		int pick=-1,max=0,bits=0;
 		for( int d=g->primFmt.dwRGBBitCount;d<=32;d+=8 ){
@@ -99,7 +94,6 @@ static void pickTexFmts( D3D7B3DGraphics *g,int hi ){
 		if( pick<0 ) g->texRGBFmt[hi]=g->primFmt;
 		else g->texRGBFmt[hi]=tex_fmts[pick].fmt;
 	}
-	//texAlphaFmt
 	{
 		int pick=-1,max=0,bits=0;
 		for( int d=g->primFmt.dwRGBBitCount;d<=32;d+=8 ){
@@ -114,7 +108,6 @@ static void pickTexFmts( D3D7B3DGraphics *g,int hi ){
 		if( pick<0 ) g->texAlphaFmt[hi]=g->primFmt;
 		else g->texAlphaFmt[hi]=tex_fmts[pick].fmt;
 	}
-	//texRGBAlphaFmt
 	{
 		int pick=-1,a8rgb8=-1,max=0,bits=0;
 		for( int d=g->primFmt.dwRGBBitCount;d<=32;d+=8 ){
@@ -131,7 +124,6 @@ static void pickTexFmts( D3D7B3DGraphics *g,int hi ){
 		if( pick<0 ) g->texRGBAlphaFmt[hi]=g->primFmt;
 		else g->texRGBAlphaFmt[hi]=tex_fmts[pick].fmt;
 	}
-	//texRGBMaskFmt...
 	{
 		int pick=-1,max=0,bits=0;
 		for( int d=g->primFmt.dwRGBBitCount;d<=32;d+=8 ){
@@ -151,37 +143,19 @@ static void pickTexFmts( D3D7B3DGraphics *g,int hi ){
 BBScene *D3D7B3DGraphics::createScene( int w,int h,float d,int flags ){
 	if( scene_set.size() ) return 0;
 
-	//get d3d
 	if( getDirDraw()->QueryInterface( IID_IDirect3D7,(void**)&dir3d )>=0 ){
-		//enum devices
 		maxDevType=0;
 		if( dir3d->EnumDevices( enumDevice,this )>=0 && maxDevType>1 ){
-			//enum zbuffer formats
 			zbuffFmt.dwZBufferBitDepth=0;
 			if( dir3d->EnumZBufferFormats( dir3dDevDesc.deviceGUID,enumZbuffFormat,this )>=0 ){
-				//create zbuff for back buffer
 				if( backCanvas()->attachZBuffer( zbuffFmt ) ){
-					//create 3d device
 					if( dir3d->CreateDevice( dir3dDevDesc.deviceGUID,backCanvas()->getSurface(),&dir3dDev )>=0 ){
-						//enum texture formats
 						tex_fmts.clear();
 						if( dir3dDev->EnumTextureFormats( enumTextureFormat,this )>=0 ){
 							pickTexFmts( this,0 );
 							pickTexFmts( this,1 );
 							tex_fmts.clear();
 #ifdef BETA
-							// _bbDebugLog( "Texture RGB format:" );
-							// debugPF( texRGBFmt );
-							// _bbDebugLog( "Texture Alpha format:" );
-							// debugPF( texAlphaFmt );
-							// _bbDebugLog( "Texture RGB Alpha format:" );
-							// debugPF( texRGBAlphaFmt );
-							// _bbDebugLog( "Texture RGB Mask format:" );
-							// debugPF( texRGBMaskFmt );
-							// _bbDebugLog( "Texture Primary format:" );
-							// debugPF( primFmt );
-							// string ts="ZBuffer Bit Depth:"+itoa( zbuffFmt.dwZBufferBitDepth );
-							// _bbDebugLog( ts.c_str() );
 #endif
 							gxScene *scene=d_new gxScene( dir3d,dir3dDev,(gxCanvas*)backCanvas() );
 							scene_set.insert( scene );

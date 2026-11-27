@@ -1,4 +1,3 @@
-/* Browser services for the shared Blitz3D game. No gameplay is implemented here. */
 'use strict';
 const canvas = document.getElementById('canvas');
 const cover = document.getElementById('cover');
@@ -43,7 +42,6 @@ function fail(error) {
 
 function sync(populate = false) {
   clearTimeout(syncTimer);
-  // Never overlap IDBFS transactions. Save success is returned only after this resolves.
   const operation = sequence.catch(() => {}).then(() => new Promise((resolve, reject) => {
     const version = revision;
     syncing = true;
@@ -92,13 +90,12 @@ function words(value) {
 
 async function prepareStorage() {
   const FS = Module.FS;
-  // A second tab must not restore an old snapshot and overwrite the first tab.
   if (navigator.locks) {
     await new Promise((resolve, reject) => {
       navigator.locks.request('stranded-ii-classic-storage', {ifAvailable: true}, lock => {
         if (!lock) { reject(new Error('Close the other Stranded II tab first.')); return; }
         resolve();
-        return new Promise(() => {}); // The browser releases this lock when the page closes.
+        return new Promise(() => {});
       }).catch(reject);
     });
   }
@@ -124,7 +121,6 @@ async function prepareStorage() {
       redirects.set(link.toLowerCase(), destination);
     }
   }
-  // Direct legacy settings writes also become durable after closing the file.
   const close = FS.close.bind(FS);
   FS.close = stream => {
     const path = stream.path;
@@ -150,7 +146,6 @@ function focused() {
 
 function refreshInput() {
   const locked = document.pointerLockElement === canvas;
-  // Focus loss pauses the shared engine, but never covers the running game.
   if (started) cover.hidden = true;
   fullscreen.hidden = !document.fullscreenEnabled || (started && locked);
   fullscreen.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen';
@@ -192,8 +187,6 @@ async function fullscreenChanged() {
     navigator.keyboard?.unlock?.();
     return;
   }
-  // Only capture Escape. Short presses reach the original game; holding it
-  // still invokes the browser's exit gesture. Unsupported/denied locks are OK.
   if (navigator.keyboard?.lock) {
     try {
       await navigator.keyboard.lock(['Escape']);
@@ -218,8 +211,6 @@ async function lockPointer() {
       return document.pointerLockElement === canvas;
     } catch (error) {
       if (document.pointerLockElement === canvas) return true;
-      // Escape/cooldown or a declined capture request is a recoverable input
-      // state. Keep the game paused without reporting a game/storage failure.
       refreshInput();
       inputNotice('Click the game again to capture the mouse.');
       log('Pointer lock request declined: ' + (error?.message || error));
@@ -230,8 +221,6 @@ async function lockPointer() {
 }
 
 function activateAudio() {
-  // The pinned SDL2 backend keeps its Web Audio context on Module. Our return
-  // click is consumed before SDL's auto-resume listener, so resume explicitly.
   const context = Module.SDL2?.audioContext;
   if (context?.state === 'suspended') {
     context.resume().catch(error => log('Audio activation declined: ' + (error?.message || error)));
@@ -254,8 +243,6 @@ function fitCanvas() {
   searchPosition(searchBounds);
 }
 
-// SDL can change the drawing-buffer resolution when applying game settings.
-// CSS scales the whole image uniformly; never change the buffer on a resize.
 if (typeof MutationObserver !== 'undefined') {
   new MutationObserver(fitCanvas).observe(canvas, {attributes: true, attributeFilter: ['width', 'height']});
 }
@@ -295,14 +282,12 @@ async function bridge(request) {
       try {
         staged = FS.readFile(source);
         if (exists(destination)) previous = FS.readFile(destination);
-        // Both resolved paths belong to the same IDBFS mount, including config staging links.
         FS.rename(source, destination);
         timestamp(destination);
         dirty = true;
         await sync();
         return 1;
       } catch (error) {
-        // A failed transaction must not leave the active in-memory save replaced.
         if (staged) {
           try {
             FS.writeFile(source, staged);
@@ -373,12 +358,10 @@ for (const type of ['keydown', 'keyup']) {
       event.preventDefault(); event.stopImmediatePropagation();
       if (type === 'keydown' && !event.repeat) return toggleFullscreen();
     } else if (escapeLocked && event.code === 'Escape' && document.pointerLockElement === canvas) {
-      event.preventDefault(); // Let SDL receive Escape for menus and skipping the intro.
+      event.preventDefault();
     }
   }, true);
 }
-// Consume the entire return click before SDL sees it: resuming must not also
-// attack, select a menu item, or leave a held mouse button in the game.
 canvas.addEventListener('mousedown', event => {
   if (started) activateAudio();
   if (!debugUiOpen && started && document.pointerLockElement !== canvas) {

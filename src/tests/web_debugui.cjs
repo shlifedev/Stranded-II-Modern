@@ -1,4 +1,3 @@
-/* DOM bridge regression test; no window or OS input. */
 const assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
 const handlers=new Map(),commits=[],opens=[];
 const input={style:{},value:'',setAttribute(){},addEventListener(t,f){handlers.set(t,[...(handlers.get(t)||[]),f]);},

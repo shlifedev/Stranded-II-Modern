@@ -1,19 +1,11 @@
-;############################################ MOD Functions
-
-
-;############################################ Setup
 Function mod_setup()
-	;Set Source (src) and Target (tgt) Path
 	src$=set_rootdir$+"mods\Stranded II\"
 	tgt$=set_rootdir$+"mods\"+set_moddir$+"\"
-	;Check Validity
 	If FileType(src$)<>2 Then Return
 	If FileType(tgt$)<>2 Then Return
 	
-	;Create?
 	If FileType(tgt$+"sys")=2 Then Return
 	
-	;Make Dirs
 	mod_dir(tgt$,"gfx")
 	mod_dir(tgt$,"maps")
 	mod_dir(tgt$,"maps\adventure")
@@ -27,19 +19,14 @@ Function mod_setup()
 	mod_dir(tgt$,"sys")
 	mod_dir(tgt$,"sys\gfx")
 	
-	;Copy Settings
 	mod_copy(src$,tgt$,"sys\controls.cfg")
-	; A fresh release folder has only the default bindings until the base game first runs.
 	If FileType(src$+"sys\controls.cfg")=0 Then mod_copy(src$,tgt$,"sys\controls.default.cfg")
 	mod_copy(src$,tgt$,"sys\settings.cfg")
 	
-	;Copy Model
 	mod_copy_template("model.template",set_rootdir$+"mods\"+set_moddir$+"\","gfx\model.b3d")
 	
-	;Copy Menu Map
 	mod_copy_template("menumap.template",tgt$,"maps\menu\menu.s2")
 	
-	;Copy Fonts
 	mod_copy(src$,tgt$,"sys\gfx\font_tiny.bmp")
 	mod_copy(src$,tgt$,"sys\gfx\font_tiny.bmpf")
 	mod_copy(src$,tgt$,"sys\gfx\font_norm.bmpf")
@@ -50,7 +37,6 @@ Function mod_setup()
 	mod_copy(src$,tgt$,"sys\gfx\font_norm_good.bmp")
 	mod_copy(src$,tgt$,"sys\gfx\font_handwriting.bmp")
 	
-	;Copy Infs
 	mod_copy(src$,tgt$,"sys\credits.inf")
 	mod_copy_template("game.template",tgt$,"sys\game.inf")
 	mod_copy(src$,tgt$,"sys\infos.inf")
@@ -59,7 +45,6 @@ Function mod_setup()
 	mod_copy(src$,tgt$,"sys\states.inf")
 	mod_copy(src$,tgt$,"sys\strings.inf")
 	
-	;Copy Sky
 	mod_copy(src$,tgt$,"skies\sky_bk.jpg")
 	mod_copy(src$,tgt$,"skies\sky_dn.jpg")
 	mod_copy(src$,tgt$,"skies\sky_fr.jpg")
@@ -67,7 +52,6 @@ Function mod_setup()
 	mod_copy(src$,tgt$,"skies\sky_rt.jpg")
 	mod_copy(src$,tgt$,"skies\sky_up.jpg")
 	
-	;Copy GFX Stuff
 	mod_copy(src$,tgt$,"sys\gfx\logo.bmp")
 	mod_copy(src$,tgt$,"sys\gfx\bigbutton.bmp")
 	mod_copy(src$,tgt$,"sys\gfx\bigbutton_over.bmp")
@@ -141,7 +125,6 @@ Function mod_setup()
 	mod_copy(src$,tgt$,"sys\gfx\rain_a.bmp")
 	mod_copy(src$,tgt$,"sys\gfx\snow_a.bmp")
 	
-	;Copy all Sprites
 	dir=ReadDir(src$+"sprites")
 	Repeat
 		file$=NextFile(dir)
@@ -154,7 +137,6 @@ Function mod_setup()
 	Forever
 	CloseDir dir
 	
-	;Copy SFX Stuff
 	mod_copy(src$,tgt$,"sfx\click.wav")
 	mod_copy(src$,tgt$,"sfx\switch.wav")
 	mod_copy(src$,tgt$,"sfx\menu.wav")
@@ -226,7 +208,6 @@ Function mod_setup()
 	mod_copy(src$,tgt$,"sfx\human_die2.wav")
 	mod_copy(src$,tgt$,"sfx\human_die3.wav")
 
-	;Copy all Material Sounds
 	dir=ReadDir(src$+"sfx")
 	Repeat
 		file$=NextFile(dir)
@@ -239,12 +220,9 @@ Function mod_setup()
 	Forever
 	CloseDir dir
 	
-	;mod_copy(src$,tgt$,)
-
 End Function
 
 
-;############################################ Copy Function
 Function mod_copy(src$,tgt$,file$)
 	If FileType(tgt$+file$)=0 Then
 		CopyFile src$+file$,tgt$+file$
@@ -252,7 +230,6 @@ Function mod_copy(src$,tgt$,file$)
 	EndIf
 End Function
 
-;############################################ Copy Template
 Function mod_copy_template(src$,tgt$,file$)
 	If FileType(tgt$+file$)=0 Then
 		CopyFile set_rootdir$+"core\"+src$,tgt$+file$
@@ -260,7 +237,6 @@ Function mod_copy_template(src$,tgt$,file$)
 	EndIf
 End Function
 
-;############################################ Dir Function
 Function mod_dir(tgt$,dir$)
 	If FileType(tgt$+dir$)<>2 Then
 		CreateDir(tgt$+dir$)
@@ -272,9 +248,7 @@ Function mod_dir(tgt$,dir$)
 End Function
 
 
-;############################################ Check Mod
 Function mod_check()
-	;Create new Mods file
 	If FileType(set_rootdir$+"core\mods.inf")=0 Then
 		stream=WriteFile(set_rootdir$+"core\mods.inf")
 		If stream<>0 Then
@@ -282,7 +256,6 @@ Function mod_check()
 			CloseFile stream
 		EndIf
 	EndIf
-	;Check Mods file
 	If set_moddir$="Stranded II" Then Return
 	stream=ReadFile(set_rootdir$+"core\mods.inf")
 	If stream<>0 Then
@@ -295,7 +268,6 @@ Function mod_check()
 			EndIf
 		Wend
 		CloseFile stream
-		;Setup Mod
 		If found=0 Then
 			stream=OpenFile(set_rootdir$+"core\mods.inf")
 			size=FileSize(set_rootdir$+"core\mods.inf")

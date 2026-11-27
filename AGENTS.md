@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"f4d7152b28bc125d80961e333e3f55157681f240936c0e32789c5a52f30e61c6"} -->
+<!-- dev-docs-ai-translation: {"document":"AGENTS.md","language":"en","syncedHash":"f5229575383ba6a303ed977896aa987d0fb28efd3b9fab5e48f64de24ec2181d"} -->
 
 # Stranded II development instructions
 
@@ -6,6 +6,7 @@
 
 The architecture has Stranded II and Extended editions using a shared engine, edition-specific resources, and language packs selected at launch (EN/KO/DE/ZH-CN/JA bundled). Communicate with the user in Korean.
 
+- Comments are prohibited by default in all project-maintained source, tests, scripts, workflows, and configuration. Keep only comments required for attribution, tooling, or a constraint the code cannot express. The entire project has one limit of 30 physical comment lines. Count inline comments and every line of a block comment. Preserve original third-party libraries, SDK files, tutorial material, and licenses. The checker excludes those originals, shebangs, and required document and resource-editor metadata. Run `python src/devtools/check_comments.py` before committing and add support there when introducing a new source format.
 - Both editions provide individual Settings > QOL controls for recipe browsing, storage transfers, closing emptied corpses, display sorting, and held construction input. Defaults are OFF in Stranded II and ON in Extended; preserve saved selections. Keep their implementation and supporting resources shared. Extended remains available for future separate gameplay and content; Extended-only changes must not alter Stranded II. Verify shared engine changes in both editions.
 - The entrypoints are `src/engine/StrandedII.bb` and `src/engine/StrandedIIExtended.bb`. Select implementations in `editions/<edition>/modules.bb`. When Extended behavior diverges, separate only the required modules rather than copying the whole engine.
 - Commands default to Stranded II when `--edition classic|extended` is omitted. Stranded II uses `build/runtime`; Extended uses `build/extended/runtime`. Do not share or automatically copy settings or saves.

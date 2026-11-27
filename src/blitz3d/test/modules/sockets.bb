@@ -10,7 +10,6 @@ Expect ifaces>0,"At least one network interface"
 Expect NetInterfaceName(1)<>"","Iface has a name"
 Expect NetInterfaceIP(1)<>"","Iface has an IP"
 
-; TCP
 TCPTimeouts 1000,1000
 
 tcp=OpenTCPStream( "github.com",80,8080 )
@@ -30,7 +29,7 @@ Expect Instr( res, "HTTP/1.1 301 Moved Permanently")>0,"Expect 301 response"
 CloseTCPStream tcp
 
 SeedRnd MilliSecs()
-server_port=9090+Rand(0, 100) ; a little dangerous, but avoid issues in dev
+server_port=9090+Rand(0, 100)
 
 tcp_server=CreateTCPServer( server_port )
 Expect tcp_server,"Creates a TCP server on port "+server_port
@@ -46,7 +45,6 @@ ExpectInt ReadAvail(tcp_in),0,"There are no bytes to read"
 
 CloseTCPServer tcp_server
 
-; UDP
 UDPTimeouts 1000
 
 udp_out=CreateUDPStream( 8080 )
@@ -59,7 +57,7 @@ Expect udp_in<>0,"Opened incoming UDP socket"
 ExpectInt UDPStreamIP(udp_in),0
 ExpectInt UDPStreamPort(udp_in),8081,"Incoming socket is on port 8081"
 
-For i=0 To 9 ; send a bunch just to be safe...
+For i=0 To 9
   WriteString udp_out,"hello world"
   SendUDPMsg udp_out,HostIP(1),8081
 Next

@@ -1,5 +1,3 @@
-; Same source is executed by Blitz3D 1.118 and the wasm compiler.
-; Binary output catches ABI, integer-width, string and save-format regressions.
 Global output=WriteFile("semantics.bin")
 Global big=$7FFFFFFF,negative=$80000000
 WriteInt output,big+1
@@ -20,7 +18,6 @@ WriteInt output,fractional#>other#
 Global left$="a",right$="b"
 WriteInt output,left$<right$
 WriteInt output,Not 0
-; Conditions must test nonzero, not only the least significant bit.
 Dim conditions(8)
 conditions(0)=0:conditions(1)=1:conditions(2)=2:conditions(3)=-1
 conditions(4)=-2:conditions(5)=$80000000:conditions(6)=4
@@ -78,7 +75,6 @@ Else
  WriteInt output,42
 EndIf
 Delete snapshot
-; The script/sequence queues append and delete entries during traversal.
 Type EventProbe
  Field id
 End Type

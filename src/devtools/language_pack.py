@@ -27,12 +27,10 @@ def refresh(root,runtime,default_font,edition='classic'):
             text=catalog_text(root,code,edition)
             (stage/f'{code}.tsv').write_bytes(text.encode('utf8'))
         fonts=make_fonts(catalogs,packs,default_font,runtime/'mods/Stranded II/sys/gfx',stage,root)
-        # ImGui uses full Unicode fonts for dynamic text and native IME input.
         for code,info in packs.items():
             selected=root/info['font'] if info.get('font') else Path(default_font)
             folder=stage/code
             shutil.copy2(ui_font,folder/'ui.ttf')
-            # Preserve a language's chosen font for glyphs absent from the UI font.
             shutil.copy2(selected,folder/'fallback.ttf')
             if selected.resolve()!=Path(default_font).resolve():
                 shutil.copy2(default_font,folder/'fallback-extra.ttf')
@@ -42,7 +40,6 @@ def refresh(root,runtime,default_font,edition='classic'):
             shutil.copy2(root/'licenses'/name,runtime/'licenses'/name)
         for license in font_licenses:
             shutil.copy2(license,runtime/'licenses'/license.name)
-        # Publish only after all generation succeeds; rollback on rename failure.
         if target.exists():os.replace(target,backup)
         try:os.replace(stage,target)
         except OSError:

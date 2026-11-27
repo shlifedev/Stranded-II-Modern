@@ -108,7 +108,6 @@ def main():
             for s, a, base in zip(sun, ambient, original):
                 assert abs(a + s * up - base) < 0.002, (sky, minute, sun, ambient)
                 assert s <= 0.30 * base + 0.002 and a + s <= 1.07 * base + 0.002
-    # Fixed skies isolate new light discontinuities from the map's own lightcycle.
     max_step = 0
     for sky in range(len(SKIES)):
         for minute in range(1440):

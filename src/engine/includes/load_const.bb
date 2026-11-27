@@ -1,58 +1,49 @@
-;############################################ World (Cworld)
+Const Cworld_size=64
+Const Cworld_height=3200
+Const Cworld_mscale#=2
 
-Const Cworld_size=64						;Terrain X/Z Size
-Const Cworld_height=3200					;Terrain Height
-Const Cworld_mscale#=2						;Mesh Scale
+Const Cworld_g#=9.81
+Const Cworld_facct=3000
 
-Const Cworld_g#=9.81						;World Gravity
-Const Cworld_facct=3000						;Fall Acceleration Time (ms)
+Const Cworld_col=100
+Const Cworld_unitcol=1
+Const Cworld_procol=50
+Const Cworld_playercol=51
+Const Cworld_itemcol=2
 
-Const Cworld_col=100						;World Collision Type (Polygonal)
-Const Cworld_unitcol=1						;Units Collision Type (Radius)
-Const Cworld_procol=50						;Projectile Collision Type (Radius)
-Const Cworld_playercol=51					;Controlled player (full sliding)
-Const Cworld_itemcol=2						;Items Collisions Type (Radius)
+Const Cworld_userange=48
+Const Cworld_useradius=5
 
-Const Cworld_userange=48					;Use Range
-Const Cworld_useradius=5					;Use Radius
+Const Cworld_minute_ms=500
 
-Const Cworld_minute_ms=500					;Game Time Minute / Real Time Millisecs - Ratio
-											;200
+Const Cchatshow=8000
 
-Const Cchatshow=8000						;Chatmessage Showtime
-
-Const Cpeakblur#=0.97						;Peak Motion Blur
+Const Cpeakblur#=0.97
 
 
-;############################################ Sections (Csection)
-
-Const Csection_menu=0						;Menu
-Const Csection_game_sp=1					;Game SP
-Const Csection_game_mp=2					;Game MP
+Const Csection_menu=0
+Const Csection_game_sp=1
+Const Csection_game_mp=2
 Const Csection_benchmark=4
-Const Csection_editor=3						;Editor
+Const Csection_editor=3
 
 
-;############################################ Menus (Cmenu)
-
-;Main
-Const Cmenu_main=0							;Main
-Const Cmenu_set_in=50						;Settings Input
-Const Cmenu_set_gfx=51						;Settings GFX
-Const Cmenu_set_sfx=52						;Settings SFX
-Const Cmenu_reboot=53						;Reboot
-Const Cmenu_set_inscript=54					;Settings Input for Scriptkeys
-Const Cmenu_sp=60							;Singleplayer
-Const Cmenu_sp_load=61						;Singleplayer Load
-Const Cmenu_random=70						;Random
-Const Cmenu_mp=80							;Multiplayer (Online Games)
-Const Cmenu_mp_lan=81						;Multiplayer (LAN Games)
-Const Cmenu_mp_create=82					;Multiplayer Create Game
-Const Cmenu_credits=90						;Credits
-Const Cmenu_quit=100						;Quit?
+Const Cmenu_main=0
+Const Cmenu_set_in=50
+Const Cmenu_set_gfx=51
+Const Cmenu_set_sfx=52
+Const Cmenu_reboot=53
+Const Cmenu_set_inscript=54
+Const Cmenu_sp=60
+Const Cmenu_sp_load=61
+Const Cmenu_random=70
+Const Cmenu_mp=80
+Const Cmenu_mp_lan=81
+Const Cmenu_mp_create=82
+Const Cmenu_credits=90
+Const Cmenu_quit=100
 
 
-;Editor
 Const Cmenu_ed_new=1
 Const Cmenu_ed_settings=2
 Const Cmenu_ed_infolist=3
@@ -77,8 +68,7 @@ Const Cmenu_ed_map=201
 
 
 
-;Interface
-Const Cmenu_if_char=1						;Menus with Inferface + Sidebar (Game paused)
+Const Cmenu_if_char=1
 Const Cmenu_if_items=2
 Const Cmenu_if_diary=3
 Const Cmenu_if_loadgame=10
@@ -96,40 +86,34 @@ Const Cmenu_if_debugmenu_items=41
 Const Cmenu_if_debugmenu_script=42
 Const Cmenu_if_quit=50
 
-Const Cmenu_if_clickscreen=60				;Menus with Nothing (Game paused)
+Const Cmenu_if_clickscreen=60
 
 
-Const Cmenu_if_movie=100					;Menus with Nothing (Game unpaused)
+Const Cmenu_if_movie=100
 Const Cmenu_if_cheat=102
 Const Cmenu_if_use=200
 
 
-Const Cmenu_if_buildsetup=300				;Menus with Interface only (Game unpaused)
+Const Cmenu_if_buildsetup=300
 Const Cmenu_if_selplace=301
 Const Cmenu_if_debug=302
 Const Cmenu_if_chat=305
 
 
 
-;############################################ Classes (Cclass)
+Const Cclass_global=0,Cclass_world=0
+Const Cclass_object=1
+Const Cclass_unit=2
+Const Cclass_item=3
+Const Cclass_info=4
+Const Cclass_state=5
 
-Const Cclass_global=0,Cclass_world=0		;Global/World
-Const Cclass_object=1						;Object Class ID
-Const Cclass_unit=2							;Unit Class ID
-Const Cclass_item=3							;Item Class ID
-Const Cclass_info=4							;Info Class ID
-Const Cclass_state=5						;State Class ID
-
-Const Cclass_building=150					;Building Class (for Groups)
+Const Cclass_building=150
 
 
-;############################################ Parent Modes (Cpm)
+Const Cpm_out=0
+Const Cpm_in=1
 
-Const Cpm_out=0								;Stored Outside (Visible Model)
-Const Cpm_in=1								;Stored Inside (Invisible Model)
-
-
-;############################################ Icons (Cicon)
 
 Const Cicon_save=0
 Const Cicon_load=1
@@ -214,8 +198,6 @@ Const Cicon_eat=80
 
 
 
-;############################################ Bitmap Fonts (Cbmpf)
-
 Const Cbmpf_norm=0
 Const Cbmpf_over=1,Cbmpf_yellow=1
 Const Cbmpf_dark=2
@@ -225,8 +207,6 @@ Const Cbmpf_tiny=5
 Const Cbmpf_handwriting=6,Cbmpf_hw=6
 
 
-;############################################ Ressources (Cres)
-
 Const Cres_image=0
 Const Cres_texture=1
 Const Cres_sound=2
@@ -234,8 +214,6 @@ Const Cres_mesh=3
 Const Cres_animmesh=4
 Const Cres_music=5
 
-
-;############################################ Keys (Ckey)
 
 Const Ckey_forward=0
 Const Ckey_backward=1
@@ -260,8 +238,6 @@ Const Ckey_quicksave=14
 Const Ckey_quickload=15
 Const Ckey_devmenu=21
 
-;############################################ Materials (Cmat)
-
 Const Cmat_c=11
 
 Const Cmat_none=0
@@ -277,8 +253,6 @@ Const Cmat_lava=9
 Const Cmat_fruit=10
 Const Cmat_glass=11
 
-
-;############################################ States (Cstate)
 
 Const Cstate_bleeding=1
 Const Cstate_intoxication=2
@@ -303,23 +277,20 @@ Const Cstate_smoke=23
 Const Cstate_light=24
 Const Cstate_particles=25
 
-Const Cstate_phy=51						;Physical Forces
-Const Cstate_buildplace=52				;Object is a Buildplace
-Const Cstate_link=53					;Object is linked to Another Object
-Const Cstate_speedmod=54				;Unit Speedmodification
-Const Cstate_ghost=55					;Object has no collision
+Const Cstate_phy=51
+Const Cstate_buildplace=52
+Const Cstate_link=53
+Const Cstate_speedmod=54
+Const Cstate_ghost=55
 
-Const Cstate_ai_stick=60				;AI does not move
+Const Cstate_ai_stick=60
 
-Const Cstate_pc_build=100				;Process: Build
-Const Cstate_pc_dig=151					;Process: Dig
-Const Cstate_pc_fish=152				;Process: Fish
-Const Cstate_pc_custom=153				;Process: Custom
+Const Cstate_pc_build=100
+Const Cstate_pc_dig=151
+Const Cstate_pc_fish=152
+Const Cstate_pc_custom=153
 
 
-;############################################ Particles (Cp)
-
-;3D / Sprites
 Const Cp_attack=4
 Const Cp_debug=5
 Const Cp_bubbles=10
@@ -351,16 +322,12 @@ Const Cp_fall=102
 Const Cp_resfade=103
 Const Cp_stuck=104
 
-;2D
 Const Cp2d_blackrect=-1
 Const Cp2d_item=-2
 Const Cp2d_dot=-3
 Const Cp2d_cdot=-4
 
 
-;############################################ Projectile "Tails"
-
-;Normal
 Const Cpro_smoke=1
 Const Cpro_fire=2
 Const Cpro_poison=3
@@ -369,7 +336,6 @@ Const Cpro_wet=5
 Const Cpro_healing=6
 Const Cpro_tame=7
 
-;Adjustable
 Const Cpro_asmoke=10
 Const Cpro_asparkle=11
 Const Cpro_asupersparkle=12
@@ -377,45 +343,37 @@ Const Cpro_aresfade=13
 
 
 
-;############################################ AI Modes
+Const ai_idle=50
+Const ai_move=51
+Const ai_movel=52
+Const ai_mover=53
+Const ai_turnl=54
+Const ai_turnr=55
 
-;Modes
-Const ai_idle=50						;Idle
-Const ai_move=51						;Move
-Const ai_movel=52						;Move Left
-Const ai_mover=53						;Move Right
-Const ai_turnl=54						;Turn Left
-Const ai_turnr=55						;Turn Right
+Const ai_rise=60
+Const ai_fall=61
 
-Const ai_rise=60						;Rise (Birds)
-Const ai_fall=61						;Fall (Birds)
+Const ai_return=101
+Const ai_sreturn=102
+Const ai_attack=103
+Const ai_hunt=104
 
-Const ai_return=101						;Return to AI Center
-Const ai_sreturn=102					;Return to AI Center (Strict!)
-Const ai_attack=103						;Attack
-Const ai_hunt=104						;Hunt Player
+Const ai_movetarget=150
+Const ai_getfood=151
+Const ai_flee=152
 
-Const ai_movetarget=150					;Move to Target
-Const ai_getfood=151					;Move to Target + Eat it!
-Const ai_flee=152						;Run Away from Target
+Const ai_sani=155
 
-Const ai_sani=155						;Script Animation
+Const ail_superior=149
 
-;Mode Levels
-Const ail_superior=149					;Superior Mode Level Starting at 149
-
-;Attitudes
 Const ai_passive=0
 Const ai_shy=1
 Const ai_agressive=2
 
-;Signals
 Const ai_food=2
 Const ai_attract=1
 Const ai_distract=-1
 
-
-;############################################ Animations
 
 Const ani_idle1=1
 Const ani_idle2=2
@@ -426,8 +384,6 @@ Const ani_use=12
 Const ani_die=13
 Const ani_special=14
 
-
-;############################################ Sounds
 
 Const snd_spot=1
 Const snd_attack=2

@@ -9,7 +9,6 @@
 #include <math.h>
 #include <vector>
 
-// ugly hack to avoid conflicts with GLFW
 #include <initguid.h>
 DEFINE_GUID(IID_IDirectInput8A, 0xBF798030,0x483A,0x4DA2,0xAA,0x99,0x5D,0x64,0xED,0x36,0x97,0x00);
 DEFINE_GUID(IID_IDirectInput8W, 0xBF798031,0x483A,0x4DA2,0xAA,0x99,0x5D,0x64,0xED,0x36,0x97,0x00);
@@ -52,7 +51,6 @@ public:
 		}
 
 		for( int k=0;k<12;++k ){
-			//initialize joystick axis ranges (d'oh!)
 			DIPROPRANGE range;
 			range.diph.dwSize=sizeof(DIPROPRANGE);
 			range.diph.dwHeaderSize=sizeof(DIPROPHEADER);
@@ -112,8 +110,6 @@ static Joystick *createJoystick( DirectInput8Driver *input,LPCDIDEVICEINSTANCE d
 }
 
 static BOOL CALLBACK enumJoystick( LPCDIDEVICEINSTANCE devinst,LPVOID pvRef ){
-	// int type=devinst->dwDevType&0xff;
-	// if( type!=DI8DEVTYPE_JOYSTICK&&type!=DI8DEVTYPE_GAMEPAD ) return DIENUM_CONTINUE;
 
 	if( Joystick *joy=createJoystick( (DirectInput8Driver*)pvRef,devinst ) ){
 		joysticks.push_back( joy );
@@ -167,7 +163,6 @@ int DirectInput8Driver::toAscii( int scan )const{
  	int virt=MapVirtualKey( scan,1 );
 	if( !virt ) return 0;
 
-	// TODO: figure out a better way than calling bbKeyDown
 	static unsigned char mat[256];
 	mat[VK_LSHIFT]=bbKeyDown( DIK_LSHIFT ) ? 0x80 : 0;
 	mat[VK_RSHIFT]=bbKeyDown( DIK_RSHIFT ) ? 0x80 : 0;

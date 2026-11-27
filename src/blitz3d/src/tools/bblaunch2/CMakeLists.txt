@@ -1,4 +1,3 @@
-# TODO: support windows + linux
 if(NOT BB_MACOS AND NOT BB_WIN64)
   return()
 endif()

@@ -1,27 +1,21 @@
-;############################################ GAME
-
 Function game()
  DebugUiProfileBegin 0
 	
-	;Unpaused?
 	g_unpaused=(m_menu=0) Or (m_menu>=Cmenu_if_movie)
 	
-	;Input
 	If dev_paused Then g_unpaused=0
 	getinput(g_unpaused)
 	If dev_paused Then dev_render_paused():DebugUiProfileEnd 0:Return
 	If m_menu=0 Then
-		MoveMouse set_scrx/2,set_scry/2				;Ingame Mouse Reset
+		MoveMouse set_scrx/2,set_scry/2
 	ElseIf m_menu=Cmenu_if_movie Then
 		If seq_cpoint=4 Then
-			MoveMouse set_scrx/2,set_scry/2			;Sequence Mouse Reset
+			MoveMouse set_scrx/2,set_scry/2
 		EndIf
 	EndIf
 	
-	;Update Items
 	cull_items()
 	
-	;Update World
 	ct=MilliSecs()
  DebugUiProfileBegin 1
 	col_player_prepare()
@@ -32,7 +26,6 @@ Function game()
 		set_debug_rt_updateworld$=(MilliSecs()-ct)+" ms Update"
 	EndIf
 	
-	;Teleport
 	If in_tpforce>0 Then
 		in_tpforce=in_tpforce-f#
 		If Handle(g_cplayer) Then
@@ -42,60 +35,49 @@ Function game()
 		EndIf
 	EndIf
 
-	;The camera follows the resolved position, before next-frame movement.
 	game_setcam()
 	DebugUiProfileBegin 3:grass_spread():DebugUiProfileEnd 3
 
-	;Update Objects / Units / Infos / Timer / Parse Scripts
 	DebugUiProfileBegin 2:cull():DebugUiProfileEnd 2
 	
-	;Environment Stuff (Pre Render)
-	DebugUiProfileBegin 5:e_environment_update_water():DebugUiProfileEnd 5							;Water
-	e_environment_update()									;Environemnt
+	DebugUiProfileBegin 5:e_environment_update_water():DebugUiProfileEnd 5
+	e_environment_update()
 	
-	;Player Weapon
 	remaster_frame()
 	game_renderweapon()
 	
-	;Render
 	set_debug_rt_render=MilliSecs()
-	DebugUiProfileBegin 7:RenderWorld():DebugUiProfileEnd 7											;Render
+	DebugUiProfileBegin 7:RenderWorld():DebugUiProfileEnd 7
 	set_debug_rt_render=MilliSecs()-set_debug_rt_render
-	If KeyHit(59) Then screenshot()							;F1 -> Screenshot
+	If KeyHit(59) Then screenshot()
 
 	
 	ct=MilliSecs()
 	
-	;Environment Stuff (Post Render)
  DebugUiProfileBegin 8
-	mb_update()												;Motion Blur
-	e_environment_water2dfx()								;Water 2D FX (Dive)
-	focus_update()											;Focus (Process etc)
-	update_state()											;States
-	sfx_update()											;SFX
-	up_update()												;Unitpaths
+	mb_update()
+	e_environment_water2dfx()
+	focus_update()
+	update_state()
+	sfx_update()
+	up_update()
 	
  DebugUiProfileEnd 8
-	;Interface
 	DebugUiProfileBegin 9:interface():DebugUiProfileEnd 9
 	
-	;Normal Game Input
 	If m_menu=0 Then
 		game_input_normal()
 	EndIf
 	
-	;Change Menu Input
 	game_input_menu()
 	
 	
-	;Debug Hotkeys
 	If set_debug=1 Then
-		If KeyHit(67) Then set_debug=0:if_msg("[[loc:engine.37002f4c3232]]",Cbmpf_yellow)	;F9  -> Debug Off
-		If KeyHit(68) Then con_debugmenu()									;F10 -> Debug Menu
-		If KeyHit(87) Then game_cd():if_msg("[[loc:engine.bf761a5d541d]]",Cbmpf_yellow)	;F11 -> Changeday
+		If KeyHit(67) Then set_debug=0:if_msg("[[loc:engine.37002f4c3232]]",Cbmpf_yellow)
+		If KeyHit(68) Then con_debugmenu()
+		If KeyHit(87) Then game_cd():if_msg("[[loc:engine.bf761a5d541d]]",Cbmpf_yellow)
 	EndIf
 			
-	;Particles & Projectiles
 	If g_unpaused Then
 		p_update()
 		pro_update()
@@ -103,21 +85,17 @@ Function game()
 		p_update_2d()
 	EndIf
 
-	;Crosshair
 	If m_menu=0 Then
 		If set_drawinterface=1 Then
 			DrawImage gfx_cursor(6),set_scrx/2,set_scry/2
 		EndIf
 	EndIf
 	
-	;Sequence Blend
 	seq_blend()
 	
-	;Endinput
 	x=((m_menu>0 And m_menu<Cmenu_if_quit)Or(m_menu>=Cmenu_if_buildsetup)Or(m_menu=Cmenu_if_clickscreen))
 	endinput(x,x,0)
 	
-	;Debug Times
 	If set_debug_rt Then
 		set_debug_rt_poststuff$=(MilliSecs()-ct)+" ms Poststuff"
 	EndIf

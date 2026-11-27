@@ -12,10 +12,10 @@ struct BundleFile {
 };
 
 struct BundleInfo {
-	bool enabled=false; // bundle this app?
-	std::string identifier; // platform specific ID
-	std::string appName; // label used wherever a human readable title is needed
-	std::vector<BundleFile> files; // files to copy into the bundle
+	bool enabled=false;
+	std::string identifier;
+	std::string appName;
+	std::vector<BundleFile> files;
 	std::string signerId,teamId;
 };
 

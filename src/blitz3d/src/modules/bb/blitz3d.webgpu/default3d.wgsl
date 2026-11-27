@@ -195,8 +195,6 @@ fn vs_main( @location(0) bbPosition : vec3<f32>,
 
       let n_dot_vp = max( 0.0, dot( n, light_pos ) );
       diffuse  += FS.lights[i].color * (n_dot_vp*atten);
-      // D3D7 disables specular for matte brushes, uses a local viewer,
-      // material power = shininess*128, and white light specular colour.
       if( RS.brush_shininess>0.0 && n_dot_vp>0.0 ){
         let view_dir = -eye_pos.xyz / max( length( eye_pos.xyz ), 0.0001 );
         let half_dir = light_pos + view_dir;
@@ -360,7 +358,6 @@ fn fs_main( v : BBVertexOut ) -> @location(0) vec4<f32> {
   var specular = v.specular;
   var uv0 = v.tc01.xy;
   if(RS.water==2) { uv0 += waterNormal(v.world_pos).xz*0.055; }
-  // Sample before discarding: preserve derivatives and avoid lighting invisible foliage.
   var texel0 = vec4<f32>(1.0);
   if(0<RS.texs_used) { texel0 = textureSampleBias(bbTexture0,bbSampler0,uv0,FS.lod_bias); }
   var texel1 = vec4<f32>(1.0);
@@ -402,15 +399,11 @@ fn fs_main( v : BBVertexOut ) -> @location(0) vec4<f32> {
   if( 6<RS.texs_used ){ color = combine( color, texel6, RS.texs[6].blend, RS.texs[6].alpha ); }
   if( 7<RS.texs_used ){ color = combine( color, texel7, RS.texs[7].blend, RS.texs[7].alpha ); }
 
-  // Fixed-function specular is added after texturing, before fog/blending.
   color = vec4<f32>( clamp( color.rgb + specular, vec3<f32>( 0.0 ), vec3<f32>( 1.0 ) ), color.a );
 
   if(RS.water==1) {
     let normal = waterNormal(v.world_pos);
     let view = safeNormal(FS.eye.xyz-v.world_pos);
-    // The capture represents the mean horizontal surface. Wave slopes distort
-    // its coordinates, not its coverage: at grazing angles their oscillating
-    // dot product made dark foliage reflections flash in bright/dark bands.
     let fresnel = 0.02 + 0.98*pow(1.0-clamp(view.y,0.0,1.0),5.0);
     let reflected = FS.reflection*vec4<f32>(v.world_pos,1.0);
     let uv = vec2<f32>(reflected.x,-reflected.y)/max(reflected.w,0.001)*0.5+0.5;

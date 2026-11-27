@@ -58,7 +58,7 @@ wxThread::ExitCode BlitzCC::Entry(){
 	wxString args;
 	if( !target.host ){
 		args += " -c -sign "+prefs->signId;
-		if( target.platform=="ios" ){ // only need entitlement when deploying to real device
+		if( target.platform=="ios" ){
 			args +=" -team "+prefs->teamId;
 		}
 		args += " -target "+target.platform+" -o "+out.GetFullPath();
@@ -80,7 +80,6 @@ wxThread::ExitCode BlitzCC::Entry(){
 			event.SetString( line );
 			wxPostEvent( dest,event );
 
-			// TODO: avoid this dirty hack...
 			if( line.StartsWith("Signing ") && line.EndsWith("...") ){
 				bundleId=line.Mid( wxString("Signing ").size() );
 				bundleId=bundleId.Mid( 0,bundleId.size()-3 );

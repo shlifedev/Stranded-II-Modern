@@ -1,12 +1,4 @@
 
-/*
-
-  BlitzPC assembler.
-
-  This REALLY needs some work - very slow.
-
-*/
-
 #include "../std.h"
 #include "../ex.h"
 #include "assem_x86.h"
@@ -19,11 +11,8 @@ typedef InstMap::const_iterator InstIter;
 
 static InstMap instMap;
 
-//#define LOG
-
 Assem_x86::Assem_x86( std::istream &in,Module *mod ):Assem(in,mod){
 
-	//build instruction map, if not built already.
 	if( !instMap.size() ){
 		for( int k=0;!insts[k].name || insts[k].name[0];++k ){
 			if( insts[k].name ) instMap.insert( InstPair( insts[k].name,&insts[k] ) );
@@ -104,15 +93,12 @@ void Assem_x86::a_reloc( const std::string &s ){
 
 void Assem_x86::assemInst( const std::string &name,const std::string &lhs,const std::string &rhs ){
 
-	//parse operands
 	Operand lop( lhs ),rop( rhs );
 	lop.parse();rop.parse();
 
-	//find instruction
 	int cc=-1;
 	Inst *inst=0;
 
-	//kludge for condition code instructions...
 	if( name[0]=='j' ){
 		if( (cc=findCC(name.substr(1)))>=0 ){
 			static Inst jCC={ "jCC",IMM,NONE,RW_RD|PLUSCC,"\x2\x0F\x80" };
@@ -137,7 +123,6 @@ void Assem_x86::assemInst( const std::string &name,const std::string &lhs,const 
 		}
 	}
 
-	//16/32 bit modifier - NOP for now
 	if( inst->flags & (O16|O32) ){}
 
 	int k,n=inst->bytes[0];
@@ -148,11 +133,9 @@ void Assem_x86::assemInst( const std::string &name,const std::string &lhs,const 
 
 	if( inst->flags&(_0|_1|_2|_3|_4|_5|_6|_7|_R ) ){
 
-		//find the memop;
 		const Operand &mop=
 		(inst->rmode&(MEM|MEM8|MEM16|MEM32|R_M|R_M8|R_M16|R_M32))?rop:lop;
 
-		//find the spare field value.
 		int rm=0;
 		switch( inst->flags&(_0|_1|_2|_3|_4|_5|_6|_7|_R ) ){
 		case _0:rm=0;break;case _1:rm=1;break;case _2:rm=2;break;case _3:rm=3;break;
@@ -160,16 +143,16 @@ void Assem_x86::assemInst( const std::string &name,const std::string &lhs,const 
 		case _R:rm=(inst->rmode&(REG8|REG16|REG32))?rop.reg:lop.reg;break;
 		}
 		rm<<=3;
-		if( mop.mode & REG ){			//reg
+		if( mop.mode & REG ){
 			emit( 0xc0|rm|mop.reg );
-		}else if( mop.baseReg>=0 ){		//base, index?
+		}else if( mop.baseReg>=0 ){
 			int mod=mop.offset ? 0x40 : 0x00;
 			if( mop.baseLabel.size() || mop.offset<-128 || mop.offset>127 ) mod=0x80;
 			if( mop.baseReg==5 && !mod ) mod=0x40;
-			if( mop.indexReg>=0 ){		//base, index!
+			if( mop.indexReg>=0 ){
 				emit( mod|rm|4 );
 				emit( (mop.shift<<6)|(mop.indexReg<<3)|mop.baseReg );
-			}else{						//base, no index!
+			}else{
 				if( mop.baseReg!=4 ) emit( mod|rm|mop.baseReg);
 				else{
 					emit( mod|rm|4 );emit( (4<<3)|mop.baseReg );
@@ -177,17 +160,14 @@ void Assem_x86::assemInst( const std::string &name,const std::string &lhs,const 
 			}
 			if( (mod&0xc0)==0x40 ) emit( mop.offset );
 			else if( (mod&0xc0)==0x80 ){
-				//reloc
 				a_reloc( mop.baseLabel );emitd( mop.offset );
 			}
-		}else if( mop.indexReg>=0 ){	//index, no base!
+		}else if( mop.indexReg>=0 ){
 			emit( rm|4 );
 			emit( (mop.shift<<6)|(mop.indexReg<<3)|5 );
-			//reloc
 			a_reloc( mop.baseLabel );emitd( mop.offset );
-		}else{							//[disp]
+		}else{
 			emit( rm|5 );
-			//reloc
 			a_reloc( mop.baseLabel );emitd( mop.offset );
 		}
 	}
@@ -234,24 +214,20 @@ void Assem_x86::assemLine( const std::string &line ){
 	std::string name;
 	std::vector<std::string> ops;
 
-	//label?
 	if( !isspace( line[i] ) ){
 		while( !isspace( line[i] ) ) ++i;
 		std::string lab=line.substr( 0,i );
 		if( !mod->addSymbol( lab.c_str(),mod->getPC() ) ) throw Ex( "duplicate label" );
 	}
 
-	//skip space
 	while( isspace( line[i] ) && line[i]!='\n' ) ++i;
 	if( line[i]=='\n' || line[i]==';' ) return;
 
-	//fetch instruction name
 	int from=i;for( ++i;!isspace( line[i] );++i ){}
 	name=line.substr( from,i-from );
 
 	for(;;){
 
-		//skip space
 		while( isspace( line[i] ) && line[i]!='\n' ) ++i;
 		if( line[i]=='\n' || line[i]==';' ) break;
 
@@ -263,24 +239,20 @@ void Assem_x86::assemLine( const std::string &line ){
 			for( ++i;line[i]!=',' && line[i]!=';' && line[i]!='\n';++i ){}
 		}
 
-		//back-up over space
 		while( i && isspace( line[i-1] ) ) --i;
 		ops.push_back( line.substr( from,i-from ) );
 
-		//skip space
 		while( isspace( line[i] ) && line[i]!='\n' ) ++i;
 		if( line[i]=='\n' || line[i]==';' ) break;
 
 		if( line[i++]!=',' ) throw Ex( "expecting ','" );
 	}
 
-	//pseudo op?
 	if( name[0]=='.' ){
 		for( int k=0;k<ops.size();++k ) assemDir( name,ops[k] );
 		return;
 	}
 
-	//normal instruction!
 	if( ops.size()>2 ) throw Ex( "Too many operands" );
 	ops.push_back( "" );ops.push_back( "" );
 	assemInst( name,ops[0],ops[1] );

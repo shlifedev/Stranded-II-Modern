@@ -1,8 +1,5 @@
 #include "string_const.h"
 
-/////////////////////
-// String constant //
-/////////////////////
 StringConstNode::StringConstNode( const std::string &s ):value(s){
 	sem_type=Type::string_type;
 }

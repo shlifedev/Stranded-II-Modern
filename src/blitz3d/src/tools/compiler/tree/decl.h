@@ -10,8 +10,8 @@ using namespace nlohmann;
 #endif
 
 enum{
-	DECL_FUNC=1,DECL_ARRAY=2,DECL_STRUCT=4,						//NOT vars
-	DECL_GLOBAL=8,DECL_LOCAL=16,DECL_PARAM=32,DECL_FIELD=64		//ARE vars
+	DECL_FUNC=1,DECL_ARRAY=2,DECL_STRUCT=4,
+	DECL_GLOBAL=8,DECL_LOCAL=16,DECL_PARAM=32,DECL_FIELD=64
 };
 
 struct Type;
@@ -19,9 +19,9 @@ struct ConstType;
 
 struct Decl{
 	std::string name;
-	Type *type;			//type
+	Type *type;
 	int kind,offset;
-	ConstType *defType;	//default value
+	ConstType *defType;
 	Decl( const std::string &s,Type *t,int k,ConstType *d=0 ):name(s),type(t),kind(k),defType(d)
 #ifdef USE_LLVM
 	,arg_index(0)

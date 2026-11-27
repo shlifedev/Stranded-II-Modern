@@ -1,11 +1,5 @@
 
-/*
-
-  This generates a source code file for x86 instruction formats.
-
-  Thanks NASM!
-
-*/
+// Thanks NASM!
 
 #include <conio.h>
 #include <string>
@@ -48,7 +42,6 @@ void main(){
 	ifstream in( "nasm_insts.txt" );
 	ofstream out( "..\\compiler\\assem_x86\\asm_insts.cpp" );
 
-	out<<"//\n//This is generated code - do not modify!!!!!\n//\n";
 	out<<"\n#include \"..\\std.h\"\n\n";
 	out<<"\n#include \"insts.h\"\n\n";
 	out<<"Inst insts[]={\n";

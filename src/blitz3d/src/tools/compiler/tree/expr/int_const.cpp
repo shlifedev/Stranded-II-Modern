@@ -1,8 +1,5 @@
 #include "int_const.h"
 
-//////////////////////
-// Integer constant //
-//////////////////////
 IntConstNode::IntConstNode( int n ):value(n){
 	sem_type=Type::int_type;
 }

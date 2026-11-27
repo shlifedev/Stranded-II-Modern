@@ -1,4 +1,3 @@
-; Optional shared renderer features. Settings are local to each edition.
 Const Cremaster_water=0,Cremaster_light=1,Cremaster_shadows=2,Cremaster_air=3,Cremaster_aa=4,Cremaster_count=5
 Dim remaster_enabled(Cremaster_count-1),remaster_pending(Cremaster_count-1),remaster_keys$(Cremaster_count-1),remaster_labels$(Cremaster_count-1)
 
@@ -102,10 +101,8 @@ Function remaster_frame()
    Local sunr#=45.+strength*75.,sung#=36.+strength*82.,sunb#=27.+strength*88.
    Local budget#=0.30*strength/Max(sunr,Max(sung,sunb))
    sunr=ambientr*sunr*budget:sung=ambientg*sung*budget:sunb=ambientb*sunb*budget
-   ; Share the original ambient budget: flat ground keeps its daytime brightness.
    Local up#=Sin(pitch),u#=Min(1.,strength/Sin(15.)),blend#=u*u*(3.-2.*u)
    LightColor env_light,16.+(sunr-16.)*blend,20.+(sung-20.)*blend,27.+(sunb-27.)*blend
-   ; Smoothly meet the unchanged night values at sunrise and sunset.
    AmbientLight ambientr*(0.9+0.1*blend)-sunr*up*blend,ambientg*(0.9+0.1*blend)-sung*up*blend,ambientb*(0.9+0.1*blend)-sunb*up*blend
   Else
    LightColor env_light,16,20,27
@@ -117,9 +114,6 @@ End Function
 Function remaster_shadow_frame()
  Local distance#=0.
  If remaster_enabled(Cremaster_shadows) And map_hour>=6 And map_hour<18 Then distance=1000.
- ; Main-camera culling must not remove off-screen trees from the light's view.
- ; Only undo view culling during capture; distance limits, script alpha and
- ; collision meshes retain their existing behavior outside this render pass.
  Local caster.Tobject,brush
  If distance>0. Then
   For caster.Tobject=Each Tobject

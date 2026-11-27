@@ -1,8 +1,5 @@
 #include "dim.h"
 
-//////////////////////////////
-// Dim AND declare an Array //
-//////////////////////////////
 void DimNode::semant( Environ *e ){
 	Type *t=tagType( tag,e );
 	if( Decl *d=e->findDecl( ident ) ){

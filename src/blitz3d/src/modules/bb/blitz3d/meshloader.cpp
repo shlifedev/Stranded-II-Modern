@@ -35,7 +35,6 @@ void MeshLoader::beginMesh(){
 }
 
 int MeshLoader::numVertices(){
-	// B3D bone nodes may sit outside any MESH node; there is nothing to weight then.
 	return ml_mesh ? (int)ml_mesh->verts.size() : 0;
 }
 

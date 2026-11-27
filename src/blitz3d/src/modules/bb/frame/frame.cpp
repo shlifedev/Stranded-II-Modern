@@ -60,7 +60,7 @@ void Frame::resize( int w,int h ){
 	POINT zz={0,0};
 	ClientToScreen( hwnd,&zz );
 	int bw=zz.x-w_r.left,bh=zz.y-w_r.top;
-	int wx=cx-bw,wy=cy-bh;if( wy<0 ) wy=0;		//not above top!
+	int wx=cx-bw,wy=cy-bh;if( wy<0 ) wy=0;
 	MoveWindow( hwnd,wx,wy,ww+tw,hh+th,true );
 }
 
@@ -75,7 +75,6 @@ void Frame::setPointerVisible( bool vis ){
 	pointer_visible=vis;
 	if( gfx_mode==3 ) return;
 
-	//force a WM_SETCURSOR
 	POINT pt;
 	GetCursorPos( &pt );
 	SetCursorPos( pt.x,pt.y );

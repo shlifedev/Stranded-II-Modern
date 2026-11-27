@@ -4,7 +4,6 @@
 
 class ConsoleRuntime : public BBRuntime{
 public:
-	// runtime
 
 	void asyncStop(){}
 	void asyncRun(){}

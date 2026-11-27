@@ -1,8 +1,4 @@
-// asmcoder.cpp
 // by simon@acid.co.nz
-
-// testroutine for asmcoder class
-// see asmcoder.h for readme
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -29,25 +25,19 @@ void main()
 	point=(int (__fastcall *)(void*))new char[96];
 	span=(void (__fastcall *)(void*,int*,int))new char[96];
 
-//	n=coder->CodePlot(plot,16,0,0xf800,0x07e0,0x001f);		//0:5:6:5
-//	printf("plotcode size=%d\n",n);
-//	n=coder->CodePoint(point,16,0,0xf800,0x07e0,0x001f);		//0:5:6:5
-//	printf("pointcode size=%d\n",n);
-
-	n=coder->CodePlot(plot,24,0,0xff0000,0xff00,0xff);		//0:5:6:5
+	n=coder->CodePlot(plot,24,0,0xff0000,0xff00,0xff);
 	printf("plotcode size=%d\n",n);
 
-	n=coder->CodePoint(point,24,0,0xff0000,0xff00,0x00ff);		//0:5:6:5
+	n=coder->CodePoint(point,24,0,0xff0000,0xff00,0x00ff);
 	printf("pointcode size=%d\n",n);
 	
-	n=coder->CodeSpan(span,24,0,0xff0000,0xff00,0x00ff);		//0:5:6:5
+	n=coder->CodeSpan(span,24,0,0xff0000,0xff00,0x00ff);
 	printf("scancode size=%d\n",n);
 
 	printf("&plot=0x%x\n",(int)plot);
 	printf("&pixmap=0x%x\n",(int)pixmap);
 
 	plot(pixmap,0x818283);
-//	short *b=(short *)pixmap;
 	int *b=(int *)pixmap;
 	printf("b[0]=0x%x\n",b[0]);
 	n=point(pixmap);
@@ -62,8 +52,6 @@ void main()
 	delete coder;
 	return;
 }
-
-//	void (__fastcall *plot)(int x,int y,int argb,Surface *s)=(void (__fastcall *)(int,int,int,Surface*))code;
 
 void ortest()
 {

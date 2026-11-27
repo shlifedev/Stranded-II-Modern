@@ -14,17 +14,6 @@ char _credits[]=
 "Image loader courtesy of FreeImage by Floris van den berg\r\n\r\n"
 "Please visit www.blitzbasic.com for all your Blitz related needs!";
 
-/*
-char _credits[]=
-"\r\n"
-"Programming and Design: Mark Sibly\r\n\r\n"
-"Documentation: Simon Harrison; Simon Armstrong; Mark Sibly\r\n\r\n"
-"Many thanks to: Claire Foley; Janet Sibly; Rick, Kay and Robbie Keam; "
-"James Boyd; the Blitz Dev Team\r\n\r\n"
-"Image loader courtesy of FreeImage by Floris van den Berg\r\n\r\n"
-"Please visit www.blitzbasic.com for all your Blitz related needs!";
-*/
-
 class Dialog : public CDialog{
 	bool _quit;
 public:
@@ -99,13 +88,6 @@ void aboutBlitz( bool delay ){
 #else
 #ifdef DEMO
 	t+=" - Demo Version\n\n";
-	/*
-	int n=shareProtCheck();
-	if( n>1 ) t+=itoa(n)+" runs left";
-	else if( n ) t+=itoa(n)+" run left";
-	else t+="expired";
-	t+=")\n\n";
-	*/
 #else
 	t+=" - Release Version\n\n";
 #endif

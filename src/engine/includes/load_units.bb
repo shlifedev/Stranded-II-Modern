@@ -1,81 +1,74 @@
-;############################################ Load Units
-
 Global unit_count=0
 Global unit_count_e=0
 
-Dim Dunit_name$(Cunit_count)		;Name
+Dim Dunit_name$(Cunit_count)
 
-Dim Dunit_icon$(Cunit_count)		;Icon Path
-Dim Dunit_iconh(Cunit_count)		;Icon Handle
+Dim Dunit_icon$(Cunit_count)
+Dim Dunit_iconh(Cunit_count)
 
-Dim Dunit_model$(Cunit_count)		;Model Path
-Dim Dunit_modelh(Cunit_count)		;Model Handle
-Dim Dunit_size#(Cunit_count,2)		;Model Size (x,y,z)
-Dim Dunit_color(Cunit_count,2)		;Model Color (r,g,b)
-Dim Dunit_fx(Cunit_count)			;Model FX
-Dim Dunit_autofade(Cunit_count)		;Model Autofade
-Dim Dunit_alpha#(Cunit_count)		;Model Alpha
-Dim Dunit_shininess#(Cunit_count)	;Model Shininess
+Dim Dunit_model$(Cunit_count)
+Dim Dunit_modelh(Cunit_count)
+Dim Dunit_size#(Cunit_count,2)
+Dim Dunit_color(Cunit_count,2)
+Dim Dunit_fx(Cunit_count)
+Dim Dunit_autofade(Cunit_count)
+Dim Dunit_alpha#(Cunit_count)
+Dim Dunit_shininess#(Cunit_count)
 
-Dim Dunit_col(Cunit_count)			;Collision
-Dim Dunit_colxr#(Cunit_count)		;Collision X Radius
-Dim Dunit_colyr#(Cunit_count)		;Collision Y Radius
-Dim Dunit_mat(Cunit_count)			;Material
-Dim Dunit_health#(Cunit_count)		;Health
-Dim Dunit_healthchange#(Cunit_count);Health Change
-Dim Dunit_store#(Cunit_count)		;Amount of max. "storable" Food/Water (Hunger/Thirst)
-Dim Dunit_maxweight(Cunit_count)	;Max Weight
-Dim Dunit_gt(Cunit_count)			;Game Timer
-Dim Dunit_state#(Cunit_count,3)		;State Mode (0) + Offsets
-Dim Dunit_ani_idle1#(Cunit_count,1)	;Ani Idle 1
-Dim Dunit_ani_idle2#(Cunit_count,1)	;Ani Idle 2
-Dim Dunit_ani_idle3#(Cunit_count,1)	;Ani Idle 3
-Dim Dunit_ani_move#(Cunit_count,1)	;Ani Move
-Dim Dunit_ani_attack#(Cunit_count,1);Ani Attack
-Dim Dunit_ani_use#(Cunit_count,1)	;Ani Use
-Dim Dunit_ani_die#(Cunit_count,1)	;Ani Die
-Dim Dunit_ani_spcl#(Cunit_count,1)	;Ani Special
-Dim Dunit_loopmoveani(Cunit_count)	;Loop Move Animation?
+Dim Dunit_col(Cunit_count)
+Dim Dunit_colxr#(Cunit_count)
+Dim Dunit_colyr#(Cunit_count)
+Dim Dunit_mat(Cunit_count)
+Dim Dunit_health#(Cunit_count)
+Dim Dunit_healthchange#(Cunit_count)
+Dim Dunit_store#(Cunit_count)
+Dim Dunit_maxweight(Cunit_count)
+Dim Dunit_gt(Cunit_count)
+Dim Dunit_state#(Cunit_count,3)
+Dim Dunit_ani_idle1#(Cunit_count,1)
+Dim Dunit_ani_idle2#(Cunit_count,1)
+Dim Dunit_ani_idle3#(Cunit_count,1)
+Dim Dunit_ani_move#(Cunit_count,1)
+Dim Dunit_ani_attack#(Cunit_count,1)
+Dim Dunit_ani_use#(Cunit_count,1)
+Dim Dunit_ani_die#(Cunit_count,1)
+Dim Dunit_ani_spcl#(Cunit_count,1)
+Dim Dunit_loopmoveani(Cunit_count)
 
-Dim Dunit_sfx$(Cunit_count)			;Sfx Source
-Dim Dunit_soundset(Cunit_count)		;Tsoundset handle of Dunit_sfx$
+Dim Dunit_sfx$(Cunit_count)
+Dim Dunit_soundset(Cunit_count)
 
-Dim Dunit_behaviour(Cunit_count)	;Behaviour
+Dim Dunit_behaviour(Cunit_count)
 
-Dim Dunit_searchratio#(Cunit_count)	;Search Ratio
+Dim Dunit_searchratio#(Cunit_count)
 
-Dim Dunit_speed#(Cunit_count)		;Movement Speed
-Dim Dunit_tspeed#(Cunit_count)		;Turn Speed
-Dim Dunit_eyes#(Cunit_count)		;Height of the Eyes
-Dim Dunit_damage#(Cunit_count)		;Attack Damage
+Dim Dunit_speed#(Cunit_count)
+Dim Dunit_tspeed#(Cunit_count)
+Dim Dunit_eyes#(Cunit_count)
+Dim Dunit_damage#(Cunit_count)
 
-Dim Dunit_range(Cunit_count)		;Range of Perception
-Dim Dunit_attackrange(Cunit_count)	;Attack Range
-Dim Dunit_territory(Cunit_count)	;Territory
+Dim Dunit_range(Cunit_count)
+Dim Dunit_attackrange(Cunit_count)
+Dim Dunit_territory(Cunit_count)
 
-Dim Dunit_driveoffset#(Cunit_count)	;Drive Offset (Player Position when driving)
+Dim Dunit_driveoffset#(Cunit_count)
 
-Dim Dunit_script$(Cunit_count)		;Script Stuff?
-Dim Dunit_scriptk$(Cunit_count)		;Script Key
-Dim Dunit_scripto$(Cunit_count)		;Script Override
+Dim Dunit_script$(Cunit_count)
+Dim Dunit_scriptk$(Cunit_count)
+Dim Dunit_scripto$(Cunit_count)
 
-Dim Dunit_align(Cunit_count)		;Unit Alignment (Set by behaviour)
-									;0 - Normal
-									;1 - Water Surface
-									;
+Dim Dunit_align(Cunit_count)
 									
-Dim Dunit_v$(Cunit_count)			;Vehicle Stuff
+Dim Dunit_v$(Cunit_count)
 
-Dim Dunit_afc(Cunit_count)			;Autofade Cache
+Dim Dunit_afc(Cunit_count)
 
-Dim Dunit_descr$(Cunit_count)		;Description
+Dim Dunit_descr$(Cunit_count)
 
-Dim Dunit_ined(Cunit_count)			;In Editor?
+Dim Dunit_ined(Cunit_count)
 
-Dim Dunit_group$(Cunit_count)		;Group
+Dim Dunit_group$(Cunit_count)
 
-
-;### Load units
 
 Function load_units()
 	unit_count=0
@@ -136,7 +129,6 @@ Function load_units()
 							
 							Dunit_ined(i)=1
 							
-							;Vehicle Stuff
 							acceleration#=0.03
 							friction#=0.04
 							steering=2
@@ -144,7 +136,6 @@ Function load_units()
 							flyspeed#=3.
 							Dunit_v$(i)=acceleration#+","+friction#+","+steering+","+maxd+","+flyspeed#
 							
-							;Progress 60 - 80
 							If load_units_c>0 Then
 								perc#=Float(Float(unit_count)/Float(load_units_c))
 								bmpf_loadscreen(s$(4),60+(20.*perc#))
@@ -264,13 +255,11 @@ Function load_units()
 								If set_debug Then con_add("ERROR: Invalid unit behaviour '"+val$+"'",Cbmpf_red)
 							EndIf
 							Select Dunit_behaviour(i)
-								;Watercraft
 								Case 501 Dunit_align(i)=1
 							End Select
 						
 						
 						Case "loot"
-							;Add
 							split$(val$,",",1)
 							Tfind.Tfind=New Tfind
 							Tfind\class=Cclass_unit
@@ -278,7 +267,6 @@ Function load_units()
 							Tfind\typ=Int(Trim(splits$(0)))
 							Tfind\max=Int(Trim(splits$(1)))
 		
-							;Ceck
 							If Tfind\max<=1 Then Tfind\max=1
 						
 						
@@ -306,7 +294,6 @@ Function load_units()
 						
 						Case "rideoffset" Dunit_driveoffset#(i)=Float(val$)
 						
-						;Vehicle Values
 						Case "acceleration"
 							acceleration#=Float(val$)
 							Dunit_v$(i)=acceleration#+","+friction#+","+steering+","+maxd+","+flyspeed#	
@@ -323,7 +310,6 @@ Function load_units()
 							flyspeed#=Float(val$)
 							Dunit_v$(i)=acceleration#+","+friction#+","+steering+","+maxd+","+flyspeed#
 													
-						;Description
 						Case "description"
 							If val$="start" Then
 								While Not Eof(stream)
@@ -336,25 +322,21 @@ Function load_units()
 								Wend
 							EndIf
 							
-						;In Editor
 						Case "editor"
 							Dunit_ined(i)=Int(val$)
 							
-						;Def Param
 						Case "param"
 							split(val$)
 							Tdefparam.Tdefparam=New Tdefparam
 							Tdefparam\class=Cclass_unit
 							Tdefparam\typ=i
 							Tdefparam\key$=splits$(0)
-							Tdefparam\value=splits$(1) ;Int(splits$(1))
+							Tdefparam\value=splits$(1)
 							
-						;Var
 						Case "var"
 							split(val$)
 							defvar_set(Cclass_unit,i)
 
-						;Group
 						Case "group"
 							Dunit_group$(i)=group_set$(Cclass_unit,val$)
 							
@@ -370,14 +352,12 @@ Function load_units()
 	Forever
 	CloseDir(dir)
 	
-	;Cache Player Stuff
 	Dunit_speed#(0)=Dunit_speed#(1)
 	Dunit_damage#(0)=Dunit_damage#(1)
 	Dunit_attackrange(0)=Dunit_attackrange(1)
 	Dunit_maxweight(0)=Dunit_maxweight(1)
 	Dunit_mat(0)=Dunit_mat(1)
 	
-	;Editor Count
 	For i=0 To Cunit_count
 		If Dunit_name(i)<>"" Then
 			If Dunit_ined(i)<>0 Then
@@ -386,8 +366,6 @@ Function load_units()
 		EndIf
 	Next
 
-	;Soundsets are only created above and never freed. Moving units ask for
-	;their move sound every frame, so do the name search once per type here.
 	For i=0 To Cunit_count
 		Dunit_soundset(i)=0
 		For Tsoundset.Tsoundset=Each Tsoundset
@@ -398,7 +376,6 @@ End Function
 
 load_units()
 
-;No Units created? (one needed as player unit!)
 If unit_count=0 Then
 	If FileType("sys\units.inf")=1 Then
 		RuntimeError("Unit with ID 1 must be defined (used as player unit)!")

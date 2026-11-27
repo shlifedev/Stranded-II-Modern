@@ -1,5 +1,3 @@
-/* Win32 runtime dynamic link lib */
-
 #pragma warning( disable:4786 )
 
 #include "bbruntime_dll.h"
@@ -17,7 +15,7 @@
 class DummyDebugger : public Debugger{
 public:
 	virtual void debugRun(){}
-	virtual void debugStop(){}// bbruntime_panic(0); }
+	virtual void debugStop(){}
 	virtual void debugStmt( int srcpos,const char *file ){}
 	virtual void debugEnter( void *frame,void *env,const char *func ){}
 	virtual void debugLeave(){}
@@ -65,7 +63,6 @@ int Runtime::execute( void (*pc)(),const char *args,Debugger *dbg ){
 
 	bbAttachDebugger( dbg );
 
-	//strip spaces from ends of args...
 	std::string params=args;
 	while( params.size() && params[0]==' ' ) params=params.substr( 1 );
 	while( params.size() && params[params.size()-1]==' ' ) params=params.substr( 0,params.size()-1 );
@@ -81,8 +78,6 @@ int Runtime::execute( void (*pc)(),const char *args,Debugger *dbg ){
 
 	return success?0:1;
 }
-
-/********************** BUTT UGLY DLL->EXE HOOK! *************************/
 
 static void *module_pc;
 static std::map<std::string,int> module_syms;
@@ -150,7 +145,6 @@ static void link(){
 
 	int sz=*(int*)p;p=(int*)p+1;
 
-	//replace malloc for service pack 2 Data Execution Prevention (DEP).
 	module_pc=VirtualAlloc( 0,sz,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE );
 
 	memcpy( module_pc,p,sz );
@@ -221,7 +215,6 @@ int __stdcall BBWINMAIN(){
 
 	link();
 
-	//get cmd_line and params
 	std::string cmd=GetCommandLine(),params;
 	while( cmd.size() && cmd[0]==' ' ) cmd=cmd.substr( 1 );
 	if( cmd.find( '\"' )==0 ){

@@ -45,7 +45,6 @@ class WebProfile(TestCase):
                          'RenderWorldPlanar cam,env_watertex,0'):
                 self.assertEqual(marked_water.count(
                     f'profile("start:reflection"):{call}:profile("stop:reflection")'), 1)
-            # Keep both branches, their arguments and reflection cadence intact.
             self.assertEqual(marked_water.replace('profile("start:reflection"):', '')
                 .replace(':profile("stop:reflection")', ''), original_water)
 

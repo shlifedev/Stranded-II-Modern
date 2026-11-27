@@ -1,64 +1,56 @@
-;############################################ Load Items
-
 Global item_count=0
 Global item_count_e=0
 
-Dim Ditem_name$(Citem_count)			;Name
+Dim Ditem_name$(Citem_count)
 
-Dim Ditem_icon$(Citem_count)			;Icon Path
-Dim Ditem_iconh(Citem_count)			;Icon Handle
-Dim Ditem_icondh(Citem_count)			;Icon Dark Handle
+Dim Ditem_icon$(Citem_count)
+Dim Ditem_iconh(Citem_count)
+Dim Ditem_icondh(Citem_count)
 
-Dim Ditem_model$(Citem_count)			;Model Path
-Dim Ditem_modelh(Citem_count)			;Model Handle
-Dim Ditem_size#(Citem_count,2)			;Model Size (x,y,z)
-Dim Ditem_color(Citem_count,2)			;Model Color (r,g,b)
-Dim Ditem_fx(Citem_count)				;Model FX
-Dim Ditem_autofade(Citem_count)			;Model Autofade
-Dim Ditem_alpha#(Citem_count)			;Model Alpha
-Dim Ditem_shininess#(Citem_count)		;Model Shininess
-Dim Ditem_blend(Citem_count)			;Model Blend
+Dim Ditem_model$(Citem_count)
+Dim Ditem_modelh(Citem_count)
+Dim Ditem_size#(Citem_count,2)
+Dim Ditem_color(Citem_count,2)
+Dim Ditem_fx(Citem_count)
+Dim Ditem_autofade(Citem_count)
+Dim Ditem_alpha#(Citem_count)
+Dim Ditem_shininess#(Citem_count)
+Dim Ditem_blend(Citem_count)
 
-Dim Ditem_col(Citem_count)				;Collision
-Dim Ditem_mat(Citem_count)				;Material
-Dim Ditem_weight(Citem_count)			;Weight (g)
-Dim Ditem_health#(Citem_count)			;Health
-Dim Ditem_healthchange#(Citem_count)	;Health Change
-Dim Ditem_gt(Citem_count)				;Game Timer
-Dim Ditem_state#(Citem_count,3)			;State Mode (0) + Offsets
-Dim Ditem_radius#(Citem_count)			;Radius
+Dim Ditem_col(Citem_count)
+Dim Ditem_mat(Citem_count)
+Dim Ditem_weight(Citem_count)
+Dim Ditem_health#(Citem_count)
+Dim Ditem_healthchange#(Citem_count)
+Dim Ditem_gt(Citem_count)
+Dim Ditem_state#(Citem_count,3)
+Dim Ditem_radius#(Citem_count)
 
-Dim Ditem_behaviour$(Citem_count)		;Behaviour
-Dim Ditem_damage$(Citem_count)			;Weapon/Ammo Damage
-Dim Ditem_speed#(Citem_count)			;Weapon Speed/Weapon Range
-Dim Ditem_drag#(Citem_count)			;Weapon Drag
-Dim Ditem_rate(Citem_count)				;Weapon Firerate
-Dim Ditem_wstate(Citem_count)			;Weapon State
+Dim Ditem_behaviour$(Citem_count)
+Dim Ditem_damage$(Citem_count)
+Dim Ditem_speed#(Citem_count)
+Dim Ditem_drag#(Citem_count)
+Dim Ditem_rate(Citem_count)
+Dim Ditem_wstate(Citem_count)
 
-Dim Ditem_script$(Citem_count)			;Script Stuff?
-Dim Ditem_scriptk$(Citem_count)			;Script Key
-Dim Ditem_scripto$(Citem_count)			;Script Override
+Dim Ditem_script$(Citem_count)
+Dim Ditem_scriptk$(Citem_count)
+Dim Ditem_scripto$(Citem_count)
 
-;Dim Ditem_ed$(Citem_count)
+Dim	Ditem_info$(Citem_count)
 
-Dim	Ditem_info$(Citem_count)			;Item Info
+Dim Ditem_afc(Citem_count)
 
-Dim Ditem_afc(Citem_count)				;Autofade Cache
+Dim Ditem_descr$(Citem_count)
 
-Dim Ditem_descr$(Citem_count)			;Description
+Dim Ditem_ined(Citem_count)
 
-Dim Ditem_ined(Citem_count)				;In Editor?
+Dim Ditem_group$(Citem_count)
 
-Dim Ditem_group$(Citem_count)			;Group
-
-
-;### 0 Values
 
 Ditem_speed#(0)=1
 Ditem_damage(0)=1
 
-
-;### Load items
 
 Function load_items()
 	item_count=0
@@ -109,7 +101,6 @@ Function load_items()
 							
 							Ditem_ined(i)=1
 							
-							;Progress 80 - 98
 							If load_items_c>0 Then
 								perc#=Float(Float(item_count)/Float(load_items_c))
 								bmpf_loadscreen(s$(5),80+(18.*perc#))
@@ -125,10 +116,6 @@ Function load_items()
 							Ditem_iconh(i)=load_res(Ditem_icon$(i),Cres_image,0)
 						Case "model"
 							Ditem_model$(i)=val$
-							;If Ditem_modelh(i)<>0 Then FreeEntity Ditem_modelh(i):Ditem_modelh(i)=0
-							;Ditem_modelh(i)=load_res(Ditem_model$(i),Cres_mesh)
-							;If Ditem_modelh(i)=0 Then RuntimeError("Unable to load "+Ditem_model$(i))
-							;HideEntity Ditem_modelh(i)		 
 						Case "x" Ditem_size#(i,0)=Float(val$)
 						Case "y" Ditem_size#(i,1)=Float(val$)
 						Case "z" Ditem_size#(i,2)=Float(val$)
@@ -153,7 +140,6 @@ Function load_items()
 						Case "health" 	Ditem_health#(i)=Float(val$)
 										Ditem_healthchange#(i)=-(Ditem_health#(i)/2.)
 						Case "healthchange" Ditem_healthchange#(i)=Float(val$)
-						;Case "gt" Ditem_gt(i)=Int(val$)
 						
 						Case "state"
 							If val$="random" Then
@@ -194,8 +180,6 @@ Function load_items()
 								Ditem_scriptk$(i)=preparse_string$(Ditem_script$(i))
 							EndIf
 							
-						;Case "rm" Ditem_ed$(i)=val$
-						
 						Case "info" Ditem_info$(i)=val$
 						
 						Case "description"
@@ -210,25 +194,21 @@ Function load_items()
 								Wend
 							EndIf
 							
-						;In Editor
 						Case "editor"
 							Ditem_ined(i)=Int(val$)
 							
-						;Def Param
 						Case "param"
 							split(val$)
 							Tdefparam.Tdefparam=New Tdefparam
 							Tdefparam\class=Cclass_item
 							Tdefparam\typ=i
 							Tdefparam\key$=splits$(0)
-							Tdefparam\value=splits$(1) ;Int(splits$(1))
+							Tdefparam\value=splits$(1)
 							
-						;Var
 						Case "var"
 							split(val$)
 							defvar_set(Cclass_item,i)
 							
-						;Group
 						Case "group"
 							Ditem_group$(i)=group_set$(Cclass_item,val$)
 						
@@ -244,7 +224,6 @@ Function load_items()
 	Forever
 	CloseDir(dir)
 	
-	;Editor Count
 	For i=0 To Citem_count
 		If Ditem_name(i)<>"" Then
 			If Ditem_ined(i)<>0 Then
@@ -256,7 +235,6 @@ End Function
 
 load_items()
 
-;Load Item Model
 Function load_item_model(i)
 	If Ditem_modelh(i)=0 Then
 		Ditem_modelh(i)=load_res(Ditem_model$(i),Cres_mesh)

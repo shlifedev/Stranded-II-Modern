@@ -52,7 +52,6 @@
     });
   }
 
-  // TODO: this could easily be sped up...
   search.addEventListener("keyup", function () {
     var query = search.value.toLowerCase();
 

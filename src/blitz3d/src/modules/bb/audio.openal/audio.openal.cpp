@@ -88,7 +88,6 @@ public:
 			else if( channels==2 )
 				format=AL_FORMAT_STEREO16;
 		}
-		// Callers release the channel and hand back a null channel, like a failed load.
 		if( format==0 ) return false;
 
 		alGetError();

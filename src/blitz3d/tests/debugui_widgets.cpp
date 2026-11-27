@@ -34,7 +34,7 @@ int main(int argc,char **argv){
   ImGui::NewFrame();
   expect(io.InputQueueCharacters.Size==3 && io.InputQueueCharacters[0]==0xd55c && io.InputQueueCharacters[2]==0x1f642,"UTF-8 input preserves supplementary Unicode codepoints");
   ImGui::EndFrame();
-  slider(0.5f); // Restore the widget window after the input-only frame.
+  slider(0.5f);
   io.AddMousePosEvent(origin.x+150,origin.y+8);slider(0.5f);
   io.AddMouseButtonEvent(0,true);float value=slider(0.5f);
   expect(value>0.6f && value<0.9f,"normalized slider selects value on track");

@@ -59,7 +59,7 @@ X86Module::X86Module():data(0),data_sz(0),pc(0),linked(false){
 }
 
 X86Module::~X86Module(){
-#ifdef BB_WINDOWS // TODO: probably memleak...
+#ifdef BB_WINDOWS
 	if( linked ) VirtualFree( data,0,MEM_RELEASE );
 	else delete[] data;
 #endif
@@ -165,7 +165,6 @@ bool X86Module::createExe( const char *exe_file,const char *dll_file ){
 	return false;
 #else
 
-	//find proc address of bbWinMain
 	HMODULE hmod=LoadLibrary( dll_file );if( !hmod ) return false;
 	bb_int_t proc=(bb_int_t)GetProcAddress( hmod,"_bbWinMain@0" );
 	bb_int_t entry=proc-(bb_int_t)hmod;FreeLibrary( hmod );if( !proc ) return false;
@@ -176,22 +175,14 @@ bool X86Module::createExe( const char *exe_file,const char *dll_file ){
 
 	makeExe( entry );
 
-	//create module
-	//code size: code...
-	//num_syms:  name,val...
-	//num_rels:  name,val...
-	//num_abss:  name,val...
-	//
 	qstreambuf buf;
 	std::iostream out( &buf );
 
 	std::map<std::string,int>::iterator it;
 	std::map<int,std::string>::iterator rit;
 
-	//write the code
 	int sz=pc;out.write( (char*)&sz,4 );out.write( data,pc );
 
-	//write symbols
 	sz=symbols.size();out.write( (char*)&sz,4 );
 	for( it=symbols.begin();it!=symbols.end();++it ){
 		std::string t=it->first+'\0';
@@ -199,7 +190,6 @@ bool X86Module::createExe( const char *exe_file,const char *dll_file ){
 		sz=it->second;out.write( (char*)&sz,4 );
 	}
 
-	//write relative relocs
 	sz=rel_relocs.size();out.write( (char*)&sz,4 );
 	for( rit=rel_relocs.begin();rit!=rel_relocs.end();++rit ){
 		std::string t=rit->second+'\0';
@@ -207,7 +197,6 @@ bool X86Module::createExe( const char *exe_file,const char *dll_file ){
 		sz=rit->first;out.write( (char*)&sz,4 );
 	}
 
-	//write absolute relocs
 	sz=abs_relocs.size();out.write( (char*)&sz,4 );
 	for( rit=abs_relocs.begin();rit!=abs_relocs.end();++rit ){
 		std::string t=rit->second+'\0';

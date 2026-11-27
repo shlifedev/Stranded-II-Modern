@@ -67,7 +67,6 @@ def saved_info(release):
 def allocation(root, repo, channel, commit, edition='classic'):
     profile = Edition(edition)
     pattern = re.compile(('extended-' if edition == 'extended' else '') + TAG.pattern)
-    # Freeze the exact main configuration read by dev, rather than requiring a merge.
     base_commit = commit if channel == 'main' else git(root, 'rev-parse', 'origin/main')
     try:
         base = read_base(git(root, 'show', f'{base_commit}:{profile.version_config}'))
@@ -76,7 +75,6 @@ def allocation(root, repo, channel, commit, edition='classic'):
     tags = {tag: git(root, 'rev-parse', tag + '^{}')
             for tag in git(root, 'tag', '--list').splitlines() if pattern.fullmatch(tag)}
     history = releases(repo)
-    # Our drafts always target an exact SHA; include a draft even if its tag has not appeared yet.
     for entry in history:
         if pattern.fullmatch(entry['tag_name']):
             previous = saved_info(entry)
@@ -210,7 +208,6 @@ def publish(repo, directory, info, include_macos=False):
         if not previous or validate_info(previous) != info:
             raise ValueError('Existing Release belongs to another build; refusing to overwrite it')
         if not existing['draft']:
-            # A published artifact is immutable, including on re-runs.
             check_published(existing, info)
             if include_macos:
                 mac_names = {macos_archive_name(info), str(Path(macos_archive_name(info)).with_suffix('.zip'))}
@@ -218,8 +215,6 @@ def publish(repo, directory, info, include_macos=False):
                     raise ValueError('Published release has no Mac artifact; publish a new version instead')
             print('Already published:', info['tag'])
             return
-    # Drafts freeze both the asset set and hashes. Do not replace a different
-    # build or remove historical artifacts when resuming a publication.
     frozen = recorded_assets(previous, info) if existing and (previous.get('artifacts') or previous.get('zip_sha256')) else None
     packages = [validate_package(directory, info)]
     if include_macos:
@@ -247,7 +242,6 @@ def publish(repo, directory, info, include_macos=False):
         gh('release', 'create', info['tag'], '--repo', repo, '--verify-tag', '--draft',
            '--title', info['display_version'], '--generate-notes', '--notes-file', str(notes),
            '--prerelease=' + str(info['channel'] == 'dev').lower(), '--latest=false')
-    # Only drafts may replace assets, so interruption halfway through upload is recoverable.
     uploads = [str(p) for path, _ in packages for p in (path, path.with_suffix(path.suffix + '.sha256'))]
     gh('release', 'upload', info['tag'], *uploads, '--repo', repo, '--clobber')
     latest = info['edition'] == 'classic' and info['channel'] == 'main' and not any(

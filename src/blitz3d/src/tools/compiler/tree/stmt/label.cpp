@@ -1,8 +1,5 @@
 #include "label.h"
 
-////////////////
-// user label //
-////////////////
 void LabelNode::semant( Environ *e ){
 	if( Label *l=e->findLabel( ident ) ){
 		if( l->def>=0 ) ex( "duplicate label" );

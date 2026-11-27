@@ -86,7 +86,7 @@ bot_x=LoadAnimMesh( "../_release/samples/mak/anim/makbot/mak_robotic.x")
 Expect bot_x<>0, "can load x"
 LoadAnimSeq bot_x,"../_release/samples/mak/anim/makbot/mak_running.x"
 
-dragon=LoadMD2( "../_release/samples/mak/dragon/model/dragon.md2" );
+dragon=LoadMD2( "../_release/samples/mak/dragon/model/dragon.md2" )
 Expect dragon<>0, "can load md2"
 AnimateMD2 dragon,1,.05,0,40
 
@@ -94,7 +94,7 @@ bot_x_flat=LoadMesh( "../_release/samples/mak/anim/makbot/mak_robotic.x")
 ExpectInt TotalVerts(bot_x_flat),1883
 ExpectInt TotalTris(bot_x_flat),1554
 
-ufo=LoadMesh( "../_release/Games/wing_ring/media/blue_ufo.X" );
+ufo=LoadMesh( "../_release/Games/wing_ring/media/blue_ufo.X" )
 Expect ufo<>0, "can load X"
 
 Function CanLoad( file$,surfs,verts,tris )
@@ -173,18 +173,15 @@ Expect boom<>0,"can load 3d sound"
 channel=EmitSound(boom, cube)
 Expect channel<>0, "can emit boom from cube"
 
-; trigger some collision code
 Collisions 1,2,2,3
 EntityType camera,1
 EntityType cube,2
 
 UpdateWorld
 
-; persp
 CameraProjMode camera,1
 RenderWorld
 
-; ortho
 CameraProjMode camera,2
 RenderWorld
 

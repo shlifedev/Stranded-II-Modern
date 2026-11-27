@@ -1,4 +1,3 @@
-# Stable key<TAB>text; escapes: \\, \n, \r, \t. UTF-8 without BOM.
 engine.02baca8b3656	チート - アイテム付与
 engine.0c4ca94aab31	最後に解析したスクリプトを表示
 engine.0ed0fcccb937	スクリプトのデバッグ
@@ -2596,7 +2595,6 @@ ui.compass_east	東
 ui.keybinding	キー
 ui.fishing	釣り
 
-# Shared quality-of-life UI and interaction guides.
 qol.tab	QOL
 qol.recipes	レシピ図鑑
 qol.storage	収納の高速移動

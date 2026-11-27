@@ -1,6 +1,4 @@
-;############################################ Setup Event Blur
 Function mb_setup()
-	;Original camera sprite and accumulated frame texture, used only by effects.
 	mb_sprite=CreateSprite(cam)
 	SpriteViewMode mb_sprite,2
 	PositionEntity mb_sprite,0,0,10
@@ -19,12 +17,10 @@ Function mb_setup()
 	EndIf
 End Function
 
-;Hide the old frame so the next effect starts from a fresh capture.
 Function mb_reset()
 	If mb_sprite<>0 Then HideEntity mb_sprite
 End Function
 
-;############################################ Update Event Blur
 Function mb_update()
 	If mb_sprite=0 Then Return
 	If in_scriptblur#>0. Then mb_override(in_scriptblur#)
@@ -34,13 +30,11 @@ Function mb_update()
 		Return
 	EndIf
 	If strength#>Cpeakblur# Then strength#=Cpeakblur#
-	;RenderWorld already drew the previous capture. Keep the original feedback.
 	CopyRect 0,0,set_scrx,set_scry,0,0,BackBuffer(),TextureBuffer(mb_tex)
 	EntityAlpha mb_sprite,strength#
 	ShowEntity mb_sprite
 End Function
 
-;############################################ Event Blur Alpha Override
 Function mb_override(a#)
 	If a#>set_mb_alpha_override# Then set_mb_alpha_override#=a#
 End Function

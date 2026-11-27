@@ -1,7 +1,3 @@
-;############################################ MULTIPLAYER GAME FUNCTIONS
-
-
-;### Check Name and Return Valid Name
 Function mp_checkname$(name$,checkexistence=1)
 	Local s,i
 	name$=Trim(name$)
@@ -28,7 +24,6 @@ Function mp_checkname$(name$,checkexistence=1)
 	Next
 	name$=Replace(name$,"__","_")
 	If name$="" Then name$="Mr. Stranded"
-	;Exists?
 	If checkexistence=1 Then
 		Local free=1
 		For Tunit.Tunit=Each Tunit
@@ -39,7 +34,6 @@ Function mp_checkname$(name$,checkexistence=1)
 				EndIf
 			EndIf
 		Next
-		;Change
 		If free=0 Then
 			i=2
 			Local set=0
@@ -62,12 +56,10 @@ Function mp_checkname$(name$,checkexistence=1)
 			Wend
 		EndIf
 	EndIf
-	;Return
 	Return name$
 End Function
 
 
-;### Get a unused Player ID (1-100)
 Function mp_getplayerid()
 	For i=1 To 100
 		free=1
@@ -80,7 +72,6 @@ Function mp_getplayerid()
 End Function
 
 
-;### Get Player
 Function mp_getplayer(ip,port)
 	For Tunit.Tunit=Each Tunit
 		If Tunit\id<100 Then
@@ -96,13 +87,9 @@ Function mp_getplayer(ip,port)
 End Function
 
 
-;### Handle Joinrequest
 Function mp_server_joinrequest(ip,port,name$,pw$)
-	;Name
 	name$=mp_checkname$(name$,1)
-	;Check Password
 	If pw$=set_sv_pw$ Or set_sv_pw$="" Then
-		;Check Playerlimit
 		players=0
 		For Tunit.Tunit=Each Tunit
 			If Tunit\id<100 Then
@@ -110,7 +97,6 @@ Function mp_server_joinrequest(ip,port,name$,pw$)
 			EndIf
 		Next
 		If players<set_sv_playerlimit Then
-			;Accept
 			found=0
 			freeid=2
 			While found=0
@@ -129,48 +115,40 @@ Function mp_server_joinrequest(ip,port,name$,pw$)
 			Wend
 			game_playerspawn(freeid,-1)
 			con_unit(freeid)
-			TCunit\player_name$=name$						;Set Player Name
-			TCunit\player_ip=ip								;Set Player IP
-			TCunit\player_port=port							;Set Player Port
-			;Send Join Accept
+			TCunit\player_name$=name$
+			TCunit\player_ip=ip
+			TCunit\player_port=port
 			udp_send(ip,port,2)
 			udp_w_byte(1)
-			udp_w_tiny(name$)								;Player Name
-			udp_w_byte(freeid)								;Player ID
-			udp_w_int(ip)									;Player IP
-			udp_w_tiny(set_sv_name$)						;Server Name
-			udp_w_tiny(set_sv_map$)							;Server Map
-			udp_w_tiny(map_id$)								;Server Map ID
+			udp_w_tiny(name$)
+			udp_w_byte(freeid)
+			udp_w_int(ip)
+			udp_w_tiny(set_sv_name$)
+			udp_w_tiny(set_sv_map$)
+			udp_w_tiny(map_id$)
 			udp_w_int(tmp_spawnid)
-			;Output
 			if_msg(name$+"[[loc:engine.ada84842489e]]",Cbmpf_yellow)
 		Else
-			;Full
 			udp_send(ip,port,2)
 			udp_w_byte(3)
 		EndIf
 	Else
-		;Wrong Password
 		udp_send(ip,port,2)
 		udp_w_byte(2)
 	EndIf
 End Function
 
 
-;### Client Check Map
 Function mp_client_checkmap(map$,mapid$)
 	ownid$=load_map_id("maps\"+map$+".s2")
 	If ownid$="0" Then
-		;Request!
 		udp_send(set_sv_ip,set_sv_port,3)
 		udp_w_byte(2)
 		mp_joinserver=2
 	Else
 		If ownid$=mapid$ Then
-			;Ok!
 			mp_joinserver=1
 		Else
-			;Wrong! Map Differs!
 			udp_send(set_sv_ip,set_sv_port,3)
 			udp_w_byte(7)
 			mp_joinserver=3
@@ -179,12 +157,9 @@ Function mp_client_checkmap(map$,mapid$)
 End Function
 
 
-;### Send Player Data
 Function mp_server_sendplayerdata(ip,port)
-	;Get Player
 	id=mp_getplayer(ip,port)
 	If id<>0 Then
-		;Send Data of other Players to new Player
 		For Tunit.Tunit=Each Tunit
 			If Tunit\id<100 Then
 				If Tunit\id<>id Then
@@ -204,7 +179,6 @@ Function mp_server_sendplayerdata(ip,port)
 				EndIf
 			EndIf
 		Next
-		;Send Data of New Player to other Players
 		For Tunit.Tunit=Each Tunit
 			If Tunit\id<100 Then
 				If Tunit\id<>1 And Tunit\id<>id Then
@@ -228,7 +202,6 @@ Function mp_server_sendplayerdata(ip,port)
 End Function
 
 
-;### Get Player Data
 Function mp_getplayerdata(mode)
 	Local name$=udp_r_tiny()
 	Local id=udp_r_byte()
@@ -241,7 +214,6 @@ Function mp_getplayerdata(mode)
 	Local dead=udp_r_byte()
 	Local ping=udp_r_short()
 	con_add("get player data "+name$+" #"+id)
-	;Create
 	If con_unit(id)=0 Then
 		set_unit(id,1,x#,z#)
 	EndIf
@@ -251,43 +223,34 @@ Function mp_getplayerdata(mode)
 	TCunit\player_score=score
 	TCunit\player_deads=deads
 	TCunit\player_ping=ping
-	;Output
 	If mode=101 Then
 		if_msg(name$+"[[loc:engine.daf7578d3ee6]]",Cbmpf_green)
 	EndIf
 End Function
 
 
-;### Scoreboard
 Function mp_scoreboard()
-	;Window
 	DrawImage gfx_win,215,0
 	DrawImage gfx_icons,236,5,Cicon_globe
 	DrawImage gfx_winbar,215,42
 	
-	;Name
 	bmpf_txt(236+37,10,set_sv_name$)
 	
-	;Adresse
 	bmpf_txt_c(236+37+400,7,DottedIP(set_sv_ip)+":"+set_sv_port,Cbmpf_tiny)
 	bmpf_txt_c(236+37+400,19,set_sv_map$,Cbmpf_tiny)
 	
-	;Infos
 	bmpf_txt(236,63,"Player",Cbmpf_dark)
 	bmpf_txt(236+300,63,"[[loc:engine.38e5a46cbc5a]]",Cbmpf_dark)
 	bmpf_txt(236+370,63,"[[loc:engine.d9684930a271]]",Cbmpf_dark)
 	bmpf_txt(236+470,63,"Net",Cbmpf_dark)
 	
-	;Players
 	y=63+20
 	For Tunit.Tunit=Each Tunit
 		If Tunit\id<100 Then
 			
-			;Name
 			bmpf_txt(236,y,Tunit\player_name)
 			If Tunit\id=1 Then bmpf_txt(236,y+15,"[[loc:engine.aef7de28d529]]",Cbmpf_tiny)
 			
-			;Ping
 			If Tunit\player_ping=0 Then
 				bmpf_txt(236+470,y,"...",Cbmpf_dark)
 			Else

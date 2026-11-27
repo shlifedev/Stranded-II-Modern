@@ -16,7 +16,6 @@ if(BB64 AND NOT BB_MINGW)
   find_package(LLVM ${REQUIRED_LLVM_VERSION} PATHS ${LLVM_KNOWN_PATHS} NO_DEFAULT_PATH)
   find_package(LLD PATHS ${LLVM_KNOWN_PATHS} NO_DEFAULT_PATH)
 
-  # The pinned LLVM archive contains the CI machine's absolute DIA SDK path.
   if(MSVC AND TARGET LLVMDebugInfoPDB)
     get_target_property(dia_libraries LLVMDebugInfoPDB INTERFACE_LINK_LIBRARIES)
     file(TO_CMAKE_PATH "$ENV{VSINSTALLDIR}" vs_install)
@@ -24,7 +23,6 @@ if(BB64 AND NOT BB_MINGW)
     set_target_properties(LLVMDebugInfoPDB PROPERTIES INTERFACE_LINK_LIBRARIES "${dia_libraries}")
   endif()
 
-  # TODO: this will go away once CI is sorted...
   if(NOT LLVM_FOUND OR NOT LLD_FOUND)
     return()
   endif()
@@ -144,7 +142,7 @@ else()
 endif()
 
 if(BB_LINUX AND BB_GNU)
-  set(LIBARCH_DIR /usr/lib/x86_64-linux-gnu) # TODO: should find a way to derive this... `gcc -v` + parsing is an option.
+  set(LIBARCH_DIR /usr/lib/x86_64-linux-gnu)
   execute_process(COMMAND gcc --print-file-name= OUTPUT_VARIABLE LIBGCC_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
 
   target_compile_definitions(blitzcc PRIVATE LIBARCH_DIR="${LIBARCH_DIR}" LIBGCC_DIR="${LIBGCC_DIR}")
@@ -156,8 +154,6 @@ target_output_to_bin(blitzcc)
 
 if(LLVM_FOUND)
   if(BB_LINUX)
-    # ELF doesn't export symbols by default. llvm::orc::LLJITBuilder needs them during initialization. it's possible
-    # there is a better solution than this.
     set(EXPORTS_PATH ${CMAKE_CURRENT_BINARY_DIR}/blitzcc.syms)
     file_write_changes(${EXPORTS_PATH} "{ llvm_orc_registerEHFrameSectionWrapper; llvm_orc_deregisterEHFrameSectionWrapper; };")
     target_link_options(blitzcc PUBLIC -Wl,--dynamic-list,${EXPORTS_PATH})

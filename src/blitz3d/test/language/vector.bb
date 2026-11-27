@@ -9,7 +9,6 @@ Function SetTemperatures( temps[5] )
 	temps[3] = 68
 	temps[4] = 50
 
-	; confirm globals work
 	global_temperatures[2] = 45
 End Function
 

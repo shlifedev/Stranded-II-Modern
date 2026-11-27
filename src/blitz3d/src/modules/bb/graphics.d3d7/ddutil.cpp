@@ -3,11 +3,10 @@
 #include "asmcoder.h"
 #include "gxgraphics.h"
 
-// For some reason, these aren't in the mingw headers...
 #if !defined(FOURCC_DXT1) && !defined(FOURCC_DXT1) && !defined(FOURCC_DXT1)
-#define FOURCC_DXT1 0x31545844 // Equivalent to "DXT1" in ASCII
-#define FOURCC_DXT3 0x33545844 // Equivalent to "DXT3" in ASCII
-#define FOURCC_DXT5 0x35545844 // Equivalent to "DXT5" in ASCII
+#define FOURCC_DXT1 0x31545844
+#define FOURCC_DXT3 0x33545844
+#define FOURCC_DXT5 0x35545844
 #endif
 
 static AsmCoder asm_coder;
@@ -65,18 +64,12 @@ static void adjustTexSize( int *width,int *height,IDirect3DDevice7 *dir3dDev ){
 		return;
 	}
 	int w=*width,h=*height,min,max;
-	//make power of 2
-	//Try *always* making POW2 size to fix GF6800 non-pow2 tex issue
-//    if( ddDesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_POW2 ){
 		for( w=1;w<*width;w<<=1 ){}
 		for( h=1;h<*height;h<<=1 ){}
-//	}
-	//make square
     if( ddDesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_SQUAREONLY ){
 		if( w>h ) h=w;
 		else w=h;
 	}
-	//check aspect ratio
 	if( max=ddDesc.dwMaxTextureAspectRatio ){
 		int asp=w>h ? w/h : h/w;
 		if( asp>max ){
@@ -84,7 +77,6 @@ static void adjustTexSize( int *width,int *height,IDirect3DDevice7 *dir3dDev ){
 			else w=h/max;
 		}
 	}
-	//clamp size
 	if( (min=ddDesc.dwMinTextureWidth) && w<min ) w=min;
 	if( (min=ddDesc.dwMinTextureHeight) && h<min ) h=min;
 	if( (max=ddDesc.dwMaxTextureWidth) && w>max ) w=max;
@@ -320,7 +312,6 @@ ddSurf *ddUtil::createSurface( int w,int h,int flags,gxGraphics *gfx ){
 	if( gfx->dirDraw->CreateSurface( &desc,&surf,0 )>=0 ) return surf;
 	if( desc.ddsCaps.dwCaps & DDSCAPS_OFFSCREENPLAIN ){
 		if( !(desc.ddsCaps.dwCaps & DDSCAPS_SYSTEMMEMORY) ){
-			//try again in system memory!
 			desc.ddsCaps.dwCaps|=DDSCAPS_SYSTEMMEMORY;
 			if( gfx->dirDraw->CreateSurface( &desc,&surf,0 )>=0 ) return surf;
 		}
@@ -328,8 +319,6 @@ ddSurf *ddUtil::createSurface( int w,int h,int flags,gxGraphics *gfx ){
 	return 0;
 }
 
-//Tom Speed's DXTC loader
-//
 IDirectDrawSurface7 *loadDXTC(const char* filename,gxGraphics *gfx)
 {
 	HRESULT hr;
@@ -338,11 +327,9 @@ IDirectDrawSurface7 *loadDXTC(const char* filename,gxGraphics *gfx)
 	char magicID[4];
 	FILE *fp;
 
-	/* try to open the file */
 	fp = fopen(filename, "rb");
 	if(!fp) return NULL;
 
-	/* valid DDS? */
 	fread(magicID, 1, 4, fp);
 	if (strncmp(magicID, "DDS ", 4) != 0)
 	{
@@ -350,7 +337,6 @@ IDirectDrawSurface7 *loadDXTC(const char* filename,gxGraphics *gfx)
 		return NULL;
 	}
 
-	/* get the DXTC file surface description */
 	fread(&fileddsd, sizeof(DDSURFACEDESC2), 1, fp);
 
 	if (fileddsd.dwSize != sizeof(DDSURFACEDESC2))
@@ -359,36 +345,26 @@ IDirectDrawSurface7 *loadDXTC(const char* filename,gxGraphics *gfx)
 		return NULL;
 	}
 
-	/* copy the fileddsd before we manipulate it so you
-	can get neccessary info you want about it later */
 	memcpy(&ddsd, &fileddsd,sizeof(DDSURFACEDESC2));
-
-	/* remove unwanted flags if they exist */
-	//not sure if this is needed, works without it though
-	//ddsd.dwFlags &= ~DDSD_LINEARSIZE;
 
 	int blockSize = 0;
 	int chunkSize = 0;
 
 	if(ddsd.ddpfPixelFormat.dwFourCC == FOURCC_DXT1)
-		blockSize = 8; // DXT1
+		blockSize = 8;
 	if(ddsd.ddpfPixelFormat.dwFourCC == FOURCC_DXT3)
-		blockSize = 16; // DXT3
+		blockSize = 16;
 	if(ddsd.ddpfPixelFormat.dwFourCC == FOURCC_DXT5)
-		blockSize = 16; // DXT5
+		blockSize = 16;
 
-	/* if it isn't a format we support, exit */
 	if (blockSize == 0)
 	{
 		fclose(fp);
 		return NULL;
 	}
 
-	/* add texture manage flag */
 	ddsd.ddsCaps.dwCaps2|=DDSCAPS2_TEXTUREMANAGE;
 
-	/* Create the new DXTC surface using the DDSURFACEDESC2
-	we read in from the file */
 	IDirectDrawSurface7 * newSurf = NULL;
 	hr = gfx->dirDraw->CreateSurface(&ddsd, &newSurf, NULL);
 	if(FAILED(hr))
@@ -397,13 +373,10 @@ IDirectDrawSurface7 *loadDXTC(const char* filename,gxGraphics *gfx)
 		return NULL;
 	}
 
-	/* Define what type of child surfaces we may wish
-	to access, in this case MipMaps */
 	DDSCAPS2 mipmapddsd;
 	ZeroMemory(&mipmapddsd,sizeof(DDSCAPS2));
 	mipmapddsd.dwCaps = DDSCAPS_TEXTURE|DDSCAPS_MIPMAP|DDSCAPS_COMPLEX;
 
-	/* pointers used when iterating through mipmaps */
 	IDirectDrawSurface7 *topDDS = NULL;
 	IDirectDrawSurface7 *nextDDS = NULL;
 
@@ -412,7 +385,6 @@ IDirectDrawSurface7 *loadDXTC(const char* filename,gxGraphics *gfx)
 
 	while(TRUE)
 	{
-		/* get a description of this surface */
 		hr = topDDS->Lock(NULL,&ddsd,DDLOCK_WAIT,NULL);
 		if(FAILED(hr))
 		{
@@ -423,10 +395,8 @@ IDirectDrawSurface7 *loadDXTC(const char* filename,gxGraphics *gfx)
 			return NULL;
 		}
 
-		/* how big the raw data is for this surface */
 		chunkSize = ((ddsd.dwWidth+3)/4) * ((ddsd.dwHeight+3)/4) * blockSize;
 
-		/* read in the raw DXTC surface data */
 		if(!fread(ddsd.lpSurface, chunkSize, 1, fp))
 		{
 			fclose(fp);
@@ -438,7 +408,6 @@ IDirectDrawSurface7 *loadDXTC(const char* filename,gxGraphics *gfx)
 		topDDS->Unlock(NULL);
 
 
-		/* Get next mipmap in chain, or exit the loop if there's no more */
 		hr = topDDS->GetAttachedSurface(&mipmapddsd,&nextDDS);
 		if(FAILED(hr))
 		{
@@ -459,7 +428,6 @@ ddSurf *ddUtil::loadSurface( const std::string &f,int flags,gxGraphics *gfx ){
 
 	int i=f.find( ".dds" );
 	if( i!=std::string::npos && i+4==f.size() ){
-		//dds file!
 		ddSurf *surf=loadDXTC( f.c_str(),gfx );
 		return surf;
 	}

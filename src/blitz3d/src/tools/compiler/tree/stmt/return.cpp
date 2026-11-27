@@ -4,9 +4,6 @@
 #include "../expr/string_const.h"
 #include "../expr/null.h"
 
-////////////////////////////
-// Return from a function //
-////////////////////////////
 void ReturnNode::semant( Environ *e ){
 	if( e->level<=0 && expr ){
 		ex( "Main program cannot return a value" );
@@ -63,7 +60,6 @@ void ReturnNode::translate2( Codegen_LLVM *g ){
 		g->builder->CreateRet( v );
 	}else{
 		auto br=g->builder->CreateIndirectBr( g->CallIntrinsic( "_bbPopGosub",llvm::PointerType::get( *g->context,0 ),0 ) );
-		// TODO: a bit imprecise...should try to determine the only possible labels
 		for( auto value:g->labels ){
 			auto label=value.second;
 			if( label->getParent()==func ){

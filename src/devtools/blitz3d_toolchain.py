@@ -88,7 +88,6 @@ def fetch(spec, archive_name):
             with tarfile.open(archive) as source:
                 source.extractall(folder, filter='data')
         if spec.get('flat'):
-            # Move contents, keeping TemporaryDirectory's own cleanup root.
             extracted = folder / '.payload'
             extracted.mkdir()
             for item in list(folder.iterdir()):
@@ -106,7 +105,6 @@ def llvm():
     destination = DEPS / ('llvm-' + host())
     if destination.is_dir():
         return destination
-    # Reuse the already prepared SDK during migration, never its engine sources.
     old = ROOT / ('deps/blitz3d-web' if host() == 'windows' else 'deps/blitz3d-macos') / 'blitz3d-ng/llvm'
     if (old / 'lib').is_dir() and (old / 'include').is_dir():
         return old

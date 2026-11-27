@@ -9,7 +9,6 @@ public:
 	WindowsFileSystem();
 	~WindowsFileSystem();
 
-	/***** GX INTERFACE *****/
 public:
 	bool createDir( const std::string &dir );
 	bool deleteDir( const std::string &dir );

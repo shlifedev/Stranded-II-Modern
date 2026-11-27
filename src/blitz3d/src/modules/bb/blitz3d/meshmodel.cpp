@@ -198,8 +198,6 @@ void MeshModel::createBones(){
 }
 
 bool MeshModel::beginRender( float tween ){
-	// Invalidate for every scene preparation, including camera children and
-	// tweened captures. No bounds survive script edits between RenderWorlds.
 	cull_tested=cull_bounds_valid=false;
 	return Model::beginRender( tween );
 }
@@ -211,7 +209,6 @@ bool MeshModel::render( const RenderContext &rc ){
 
 	const Transform &t=getRenderTform();
 	if( !cull_tested ){
-		// A single camera keeps the original path without building extra data.
 		cull_tested=true;
 		if( !rc.getWorldFrustum().cull( b,t ) ) return false;
 	}else{

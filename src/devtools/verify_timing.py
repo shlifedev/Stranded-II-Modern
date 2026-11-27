@@ -24,7 +24,7 @@ def main():
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=False)
     runtime = (full / 'modern_runtime.bb').read_text('utf8')
-    pacing = function(runtime, 'modern_present').replace(' Flip False', ' ; No graphics context in this timing-only harness.')
+    pacing = function(runtime, 'modern_present').replace(' Flip False', '')
     body = '''
 Global dev_frames,dev_frame_start,dev_fps#
 Global modern_fps,modern_next,modern_pace_ready,modern_fraction#
@@ -55,7 +55,6 @@ End Function
 Function dev_profile_frame()
 End Function
 Function dev_draw()
- ; No GUI is constructed in this clock-only harness.
 End Function
 Dim rates(3)
 rates(0)=50:rates(1)=60:rates(2)=120:rates(3)=144
@@ -67,7 +66,6 @@ For r=0 To 3
   test_clock=Floor(Float(frame)*1000./Float(modern_fps))
   modern_frame():modern_game_time()
   steps#=steps#+f#
-  ; Compare the first second against the original 50 Hz reference.
   If frame<=modern_fps Then
    heading#=heading#*(1.-modern_blend(1./30.,f#))
    damping#=damping#*(0.96^f#)
@@ -103,7 +101,6 @@ For r=1 To 3
  check(Abs(measured#/Float(modern_fps)-1.)<0.05,"real timer pacing at "+modern_fps)
  WriteLine report,"PACING "+modern_fps+" measured="+measured#+" duration="+duration
 Next
-; External speed tools alter the simulation clock, never the presentation clock.
 Dim speeds(4)
 speeds(0)=1:speeds(1)=3:speeds(2)=5:speeds(3)=10:speeds(4)=1
 modern_fps=144:modern_pace_ready=0
@@ -136,7 +133,6 @@ End
     code = (full / 'modern_math.bb').read_text('utf8') + '\n'
     for name in ('modern_frame', 'modern_game_time', 'modern_walltime', 'modern_record_frame'):
         code += function(runtime, name) + '\n'
-    # Globals must precede functions in Blitz; append definitions after the harness.
     code += function((full / 'devmenu.bb').read_text('utf8'), 'dev_record_frame') + '\n'
     code = body + '\n' + code + '\n' + pacing + '\n'
     source = out / 'timing.bb'

@@ -1,10 +1,4 @@
 
-/*
-
-  An environ represent a stack frame block.
-
-  */
-
 #ifndef ENVIRON_H
 #define ENVIRON_H
 
@@ -29,7 +23,7 @@ public:
 	Environ *globals;
 	Type *returnType;
 	std::string funcLabel,breakLabel;
-	std::list<Environ*> children;		//for delete!
+	std::list<Environ*> children;
 
 	Environ( const std::string &f,Type *r,int l,Environ *gs );
 	~Environ();

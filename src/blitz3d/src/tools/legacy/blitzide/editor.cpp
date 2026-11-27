@@ -147,10 +147,6 @@ void Editor::OnPaint(){
 	CRect tr( x,y,x+w,y+h );
 	dc.FillRect( &tr,&br );
 
-//	CRect ar( x,y,x+w,y+w );
-//	dc.DrawFrameControl( &ar,DFC_SCROLL,DFCS_SCROLLRIGHT );
-//	y+=w;h-=w;
-
 	CRect dr( x+2,y+2,x+w-2,y+h-2 );
 	dc.DrawEdge( &dr,EDGE_RAISED,BF_RECT );
 }
@@ -269,14 +265,11 @@ int Editor::OnCreate( LPCREATESTRUCT cs ){
 	return 0;
 }
 
-/************************************************* PUBLIC ***********************************************/
-
 void Editor::setName( const std::string &n ){
 	name=n;
 }
 
 bool Editor::setText( std::istream &in ){
-//	editCtrl.HideCaret();
 	fmtBusy=true;
 	EDITSTREAM es;
 	es.dwCookie=(DWORD_PTR)this;
@@ -294,7 +287,6 @@ bool Editor::setText( std::istream &in ){
 	labsList.clear();
 	editCtrl.StreamIn( SF_RTF,es );
 	fmtBusy=false;
-//	editCtrl.HideCaret();
 	caret();
 	return es.dwError==0;
 }
@@ -333,18 +325,6 @@ void Editor::copy(){
 
 void Editor::paste(){
 	editCtrl.PasteSpecial( CF_TEXT,0 );
-	// if ( !OpenClipboard() ) return;
-	//
-	// HANDLE data=GetClipboardData( CF_TEXT );
-	// if ( data==nullptr ) return;
-	// char *p=static_cast<char*>( GlobalLock(data) );
-	// if ( p==nullptr ) return;
-	// std::string text( p );
-	// GlobalUnlock( data );
-	// CloseClipboard();
-	//
-	// MessageBox(text.c_str(),"...",MB_OK);
-	// editCtrl.ReplaceSel( text.data(),true );
 }
 
 bool Editor::canCutCopy(){
@@ -357,7 +337,7 @@ bool Editor::canPaste(){
 
 void Editor::print(){
 
-	static const int MARG=720;	//1440=1 inch
+	static const int MARG=720;
 
 	CPrintDialog dlg(false);
 	int e=dlg.DoModal();if( e==IDCANCEL ) return;
@@ -379,7 +359,6 @@ void Editor::print(){
 	fr.rcPage.right=(hr/px)*1440;
 	fr.rcPage.bottom=(vr/py)*1440;
 
-	//margins
 	fr.rc.left=fr.rcPage.left+MARG;
 	fr.rc.top=fr.rcPage.top+MARG;
 	fr.rc.right=fr.rcPage.right-MARG;
@@ -500,7 +479,6 @@ std::string Editor::getKeyword(){
 	int pos=selStart-editCtrl.LineIndex( ln );
 	std::string line=getLine( ln );if( pos>line.size() ) return "";
 
-	//ok, scan back until we have an isapha char preceded by a nonalnum/non '_' char
 	for(;;){
 		while( pos>0 && ( !isalpha(line[pos]) || isid(line[pos-1]) ) ) --pos;
 		if( !isalpha(line[pos]) ) return "";
@@ -538,8 +516,6 @@ void Editor::addKeyword( const std::string &s ){
 	for( int k=0;k<t.size();++k ) t[k]=tolower(t[k]);
 	keyWordMap[t]=s;
 }
-
-/************************************************* PRIVATE ***********************************************/
 
 void Editor::endFind(){
 	if( !finder ) return;
@@ -781,21 +757,21 @@ void Editor::formatStreamLine(){
 		}else if( !isfmt( c,k+1<is_sz?is_line[k+1]:0 ) ){
 			for( ++k;k<is_sz && !isfmt( is_line[k],k+1<is_sz?is_line[k+1]:0 );++k ){}
 			cf='6';
-		}else if( c==';' ){					//comment?
+		}else if( c==';' ){
 			k=is_sz;
 			cf='4';
-		}else if( c=='\"' ){		//string const?
+		}else if( c=='\"' ){
 			for( ++k;k<is_sz && is_line[k]!='\"';++k ){}
 			if( k<is_sz ) ++k;
 			cf='1';
-		}else if( isalpha( c ) ){		//ident?
+		}else if( isalpha( c ) ){
 			for( ++k;k<is_sz && isid(is_line[k]);++k ){}
 			if( keyWordSet.find( is_line.substr( from,k-from ) )==keyWordSet.end() ) cf='2';
 			else cf='3';
 		}else if( c=='$' ){
 			for( ++k;k<is_sz && isxdigit(is_line[k]);++k ){}
 			cf='5';
-		}else if( isdigit( c ) ){	//numeric const?
+		}else if( isdigit( c ) ){
 			for( ++k;k<is_sz && isdigit(is_line[k]);++k ){}
 			cf='5';
 		}
@@ -864,14 +840,14 @@ void Editor::formatLine( int ln ){
 		}else if( !isfmt( c,k+1<sz?line[k+1]:0 ) ){
 			for( ++k;k<sz && !isfmt(line[k],k+1<sz?line[k+1]:0);++k ){}
 			cf=&prefs.rgb_default;
-		}else if( c==';' ){					//comment?
+		}else if( c==';' ){
 			k=sz;
 			cf=&prefs.rgb_comment;
-		}else if( c=='\"' ){		//string const?
+		}else if( c=='\"' ){
 			for( ++k;k<sz && line[k]!='\"';++k ){}
 			if( k<sz ) ++k;
 			cf=&prefs.rgb_string;
-		}else if( isalpha( c ) ){		//ident?
+		}else if( isalpha( c ) ){
 			for( ++k;k<sz && isid(line[k]);++k ){}
 			cf=&prefs.rgb_ident;pf=0;
 			if( selStart<=pos+from || selStart>pos+k ){
@@ -883,7 +859,7 @@ void Editor::formatLine( int ln ){
 		}else if( c=='$' && k+1<sz && isxdigit(line[k+1]) ){
 			for( ++k;k<sz && isxdigit(line[k]);++k ){}
 			cf=&prefs.rgb_digit;
-		}else if( isdigit( c ) ){	//numeric const?
+		}else if( isdigit( c ) ){
 			for( ++k;k<sz && isdigit(line[k]);++k ){}
 			cf=&prefs.rgb_digit;
 		}

@@ -84,21 +84,17 @@ private:
 	long selStart,selEnd;
 	int findFlags,d_c;
 
-	//formatting
 	bool fmtBusy;
 	int  lineToFmt,fmtLineCount;
 
-	//streaming
 	std::string is_line;
 	std::istream *is_stream;
 	int is_curs,is_linenum;
 
-	//sizing
 	bool sizing;
 	CPoint point;
 	int tabber_width;
 
-	//tabber
 	Tabber tabber;
 	FuncList funcList,typeList,labsList;
 	EditCtrl editCtrl;

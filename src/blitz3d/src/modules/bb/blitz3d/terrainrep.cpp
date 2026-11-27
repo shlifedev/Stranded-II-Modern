@@ -181,8 +181,6 @@ void TerrainRep::setHeight( int x,int z,float h,bool realtime ){
 	const int index=((z&cell_mask)<<cell_shift)|(x&cell_mask);
 	const unsigned char height=h*255.0f;
 	if( cells[index].height!=height && !normal_valid.empty() ){
-		// A height contributes to its own normal and the four adjacent ones.
-		// Heights wrap at the terrain edges, so invalidation must wrap too.
 		normal_valid[index]=0;
 		normal_valid[((z&cell_mask)<<cell_shift)|((x-1)&cell_mask)]=0;
 		normal_valid[((z&cell_mask)<<cell_shift)|((x+1)&cell_mask)]=0;
@@ -201,8 +199,6 @@ void TerrainRep::setHeight( int x,int z,float h,bool realtime ){
 }
 
 Vector TerrainRep::getNormal( int x,int z )const{
-	// Shading uses the original height field, independent of camera LOD and
-	// morphed vertex heights. Allocate only when shading is first rendered.
 	if( normal_valid.empty() ){
 		normals.resize( cell_size*cell_size );
 		normal_valid.resize( cell_size*cell_size,0 );

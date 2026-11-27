@@ -212,7 +212,7 @@ static INT_PTR CALLBACK dialogProc( HWND hwnd,UINT msg,WPARAM wparam,LPARAM lpar
 		timer=0;
 		reset=true;
 		break;
-	case WM_TIMER:	//refresh sessions list!
+	case WM_TIMER:
 		if( timer && wparam==timer && !enumSessions( hwnd ) ) reset=true;
 		break;
 	case WM_CLOSE:
@@ -302,7 +302,6 @@ int multiplay_setup_open(){
 	clearSessions();
 	clearConnections();
 
-	//NAUGHTY!
 	bbRuntime->asyncRun();
 	bbRuntimeIdle();
 	return n;
@@ -321,7 +320,6 @@ int multiplay_setup_host( const std::string &game_name ){
 	if( CoCreateInstance( CLSID_DirectPlay,0,CLSCTX_ALL,IID_IDirectPlay4A,(void**)&dirPlay )>=0 ){
 		if( lobbyCreate( 0,&lobby,0,0,0 )>=0 ){
 			if( lobby->QueryInterface( IID_IDirectPlayLobby3,(void**)&lobby3 )>=0 ){
-				//ok, create an address for initializeconnection
 				std::string ip( "\0" );
 				char address[256];DWORD sz=256;
 				if( lobby3->CreateAddress( DPSPGUID_TCPIP,DPAID_INet,ip.data(),ip.size(),address,&sz )>=0 ){
@@ -364,7 +362,6 @@ int multiplay_setup_join( const std::string &game_name,const std::string &ip_add
 	if( CoCreateInstance( CLSID_DirectPlay,0,CLSCTX_ALL,IID_IDirectPlay4A,(void**)&dirPlay )>=0 ){
 		if( lobbyCreate( 0,&lobby,0,0,0 )>=0 ){
 			if( lobby->QueryInterface( IID_IDirectPlayLobby3,(void**)&lobby3 )>=0 ){
-				//ok, create an address for initializeconnection
 				std::string ip=ip_add+'\0';
 				char address[256];DWORD sz=256;
 				if( lobby3->CreateAddress( DPSPGUID_TCPIP,DPAID_INet,ip.data(),ip.size(),address,&sz )>=0 ){

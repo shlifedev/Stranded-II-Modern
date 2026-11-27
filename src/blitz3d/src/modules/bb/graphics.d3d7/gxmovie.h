@@ -5,9 +5,9 @@
 #include "canvas.h"
 #include <bb/graphics/movie.h>
 
-#include <mmstream.h>    // multimedia stream interfaces
-#include <amstream.h>    // DirectShow multimedia stream interfaces
-#include <ddstream.h>    // DirectDraw multimedia stream interfaces
+#include <mmstream.h>
+#include <amstream.h>
+#include <ddstream.h>
 
 class gxGraphics;
 
@@ -28,7 +28,6 @@ private:
 	IDirectDrawStreamSample *dd_sample;
 	IMultiMediaStream *mm_stream;
 
-	/***** GX INTERFACE *****/
 public:
 
 	bool draw( BBCanvas *dest,int x,int y,int w,int h );

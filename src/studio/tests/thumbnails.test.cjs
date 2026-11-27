@@ -3,7 +3,6 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
-// Use the app's transformer on Node 22.12, before native TS loading is default.
 const cacheModule=(async()=>{
   const {transformWithOxc}=await import('vite');
   const filename=path.join(__dirname,'../src/thumbnailCache.ts');

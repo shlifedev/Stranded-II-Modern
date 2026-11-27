@@ -231,7 +231,6 @@ void WebGPUCanvas::uploadData(){
 	wgpuQueueWriteTexture( res->queue,&dst,src,(size_t)width*height*4,&layout,&extent );
 	if( mip_levels>1 && fmt==WGPUTextureFormat_RGBA8Unorm ) res->generateMips( tex,mip_levels );
 
-	// LockBuffer writes must also invalidate/update the retained CPU copy.
 	if( pixels && pixmap && pixmap->bits && pixmap->bpp==4 &&
 	    pixmap->width==width && pixmap->height==height ){
 		memcpy( pixmap->bits,pixels,(size_t)width*height*4 );
@@ -759,8 +758,6 @@ void WebGPUCanvas::releaseBlitSnapshot(){
 
 void WebGPUCanvas::applyAntialias(){
 	if( !res->device || width<=0 || height<=0 ) return;
-	// Read a snapshot, never the colour attachment being written. Reuse the
-	// CopyRect allocation but invalidate its source-region cache after this draw.
 	res->endPass();
 	WGPUTextureView dst=targetView();
 	if( !dst ) return;
@@ -791,7 +788,7 @@ void WebGPUCanvas::applyAntialias(){
 	state.xywh[3]=state.res[1]=(float)height;
 	state.texscale[0]=state.texscale[1]=state.scale[0]=state.scale[1]=1.f;
 	state.color[0]=state.color[1]=state.color[2]=1.f;
-	state.texenabled=5; // FXAA only; no UI dithering, colour key or blending.
+	state.texenabled=5;
 	uint32_t uoffset=res->pushUniforms(state);
 	static const BBWebGPUVertex verts[6]={
 		{0.f,0.f,0.f,0.f},{0.f,1.f,0.f,1.f},{1.f,0.f,1.f,0.f},
@@ -815,8 +812,6 @@ void WebGPUCanvas::applyAntialias(){
 }
 
 bool WebGPUCanvas::blitSelf( int x,int y,int src_x,int src_y,int src_w,int src_h,bool solid ){
-	// Keep scaled/clamped sampling on the original path. Integer CopyRect
-	// strips can share a snapshot whenever their sources are still unchanged.
 	if( scale_x!=1.f || scale_y!=1.f ) return false;
 	if( x>=width || y>=height || (float)x+src_w<=0 || (float)y+src_h<=0 ) return true;
 	if( src_x<0 || src_y<0 || src_x>width-src_w || src_y>height-src_h ) return false;
@@ -831,7 +826,6 @@ bool WebGPUCanvas::blitSelf( int x,int y,int src_x,int src_y,int src_w,int src_h
 	                 (src_x+src_w<=blit_left || src_x>=blit_right ||
 	                  src_y+src_h<=blit_top || src_y>=blit_bottom);
 	if( !independent ){
-		// Complete prior draws before overwriting the texture sampled by them.
 		res->endPass();
 		res->ensureEncoder();
 		if( !matching ){
@@ -857,7 +851,6 @@ bool WebGPUCanvas::blitSelf( int x,int y,int src_x,int src_y,int src_w,int src_h
 		WGPUExtent3D extent={ (uint32_t)width,(uint32_t)height,1 };
 		wgpuCommandEncoderCopyTextureToTexture( res->encoder,&from,&to,&extent );
 	}
-	// Uniforms stay equal across strips; draw2d merges their vertex ranges.
 	float l=(float)x,t=(float)y,r=l+src_w,b=t+src_h;
 	float u0=(float)src_x/width,v0=(float)src_y/height;
 	float u1=(float)(src_x+src_w)/width,v1=(float)(src_y+src_h)/height;
@@ -955,8 +948,6 @@ void WebGPUCanvas::blit( int x,int y,BBCanvas *s,int src_x,int src_y,int src_w,i
 	float white[3]={ 1.f,1.f,1.f };
 	float xywh[4]={ dx0,dy0,dw,dh };
 	float scale[2]={ 1.f,1.f };
-	// Blitz images use a per-draw RGB colour key. Keep the source pixels intact
-	// so DrawBlock, CopyImage, animated frames and changed masks all work too.
 	draw2d( WGPUPrimitiveTopology_TriangleList,!solid,view,res->sampler_nearest,
 	        xywh,white,scale,verts,6,solid?2:1,src->mask );
 

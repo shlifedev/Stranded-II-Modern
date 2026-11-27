@@ -14,7 +14,6 @@ private:
 	MMRESULT timerID;
 	int ticks_put,ticks_get;
 
-	/***** GX INTERFACE *****/
 public:
 	int wait();
 };

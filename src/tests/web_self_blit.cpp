@@ -1,5 +1,3 @@
-// CPU command-order fixture for the actual WebGPU self-blit methods.
-// GPU calls are modeled; this does not measure GPU time or displayed FPS.
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -82,8 +80,6 @@ public:
     void blit(int,int,BBCanvas*,int,int,int,int,bool);
     void draw2d(int,bool,View *view,int,const float xywh[4],const float[3],
                 const float[2],const BBWebGPUVertex *v,int count,unsigned mode,unsigned key){
-        // Like draw2d, ordinary writes invalidate the snapshot. Keep draws
-        // deferred until endPass so a copy must flush preceding writes.
         blit_snapshot_valid=false;
         assert(count==6);
         if(res->pass_target!=this) res->endPass();
@@ -138,7 +134,6 @@ int main(){
         int initial_allocations=allocations;
         for(int frame=0;frame<3;++frame){
             int initial_copies=copies;
-            // Match the real inclusive water loops, including offscreen strips.
             for(int x=0;x<=128;x+=step){
                 int dy=(x*5+frame)%7-3;
                 c.blit(x,dy,&c,x,0,step,128,true);
@@ -160,8 +155,6 @@ int main(){
         auto expected=c.texture->pixels;
         uint32_t random=42;
         auto next=[&](int n){random=random*1664525+1013904223;return int((random>>8)%n);};
-        // Dependent overlaps, negative/offscreen coordinates, viewport clipping,
-        // RGB keys and nonopaque sources must preserve sequential copy results.
         for(int i=0;i<1500;++i){
             if(i%31==0){
                 r.endPass();assert(c.texture->pixels==expected);

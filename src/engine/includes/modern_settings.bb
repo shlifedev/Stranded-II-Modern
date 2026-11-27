@@ -4,8 +4,6 @@ Global modern_mode_count
 Global modern_fitted_width,modern_fitted_height
 Dim modern_modes_w(255),modern_modes_h(255)
 
-; Legacy Direct3D devices can reject a render target above 2048 pixels.
-; Keep the aspect ratio where the original minimum 800x600 UI permits it.
 Function modern_fit_resolution(width,height)
  If width<800 Or height<600 Or width>8192 Or height>8192 Then width=1280:height=720
  Local scale#=1.
@@ -106,8 +104,6 @@ Function modern_options_save()
  Return True
 End Function
 
-; Compact selectors fit the original 800x600 options layout.
-; Left click advances, right click selects the previous value.
 Function modern_choice(x,y,width,txt$)
  Local over=(in_mx>=x And in_mx<x+width And in_my>=y And in_my<y+20)
  Color 20,20,20:Rect x,y,width,20,1

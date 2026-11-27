@@ -44,8 +44,6 @@ def instrument(source):
     text = environment.read_text('utf8')
     water = function(text, 'e_environment_update_water')
     marked = water
-    # Cube capture now renders all six views inside one runtime call. Measure
-    # the active capture as a whole, including the optional planar path.
     for call in ('RenderWorldCube env_watercam,env_watertex',
                  'RenderWorldPlanar cam,env_watertex,0'):
         marked = replace_once(marked, call,
@@ -58,14 +56,10 @@ def instrument(source):
         '\n profile("start:wait")\n While modern_next-now>0')
     marked = replace_once(marked, '\n Flip False\n',
         '\n profile("stop:wait")\n Flip False\n')
-    # Both capped and uncapped presentation complete a frame; only the capped
-    # branch enters the wait phase. Match whole lines to keep them distinct.
     for indent in (' ', '  '):
         marked = replace_once(marked, f'\n{indent}Flip False\n',
             f'\n{indent}profile("start:flip")\n{indent}Flip False\n{indent}profile("stop:flip")\n')
     timing.write_text(text.replace(present, marked), encoding='utf8')
-    # Retain the real input/timing/timer path, but suppress manual controls in
-    # the benchmark so clicking the page cannot change the scenario.
     inputs = source / 'includes/input.bb'
     text = inputs.read_text('utf8')
     original = function(text, 'getinput')
@@ -98,8 +92,6 @@ def prepare():
     site = output / 'site'
     site.mkdir()
     env = compiler_environment()
-    # Measurement marks must not go through the Promise/JSPI bridge. Ordinary
-    # services still use exactly the production bridge implementation.
     native = (ROOT / 'src/native/web/bridge.cpp').read_text('utf8')
     native = replace_once(native, 'std::string strandedWebProperty', '''EM_JS(int, stranded_profile, (const char* request), {
     return Module.s2Profile(UTF8ToString(request)) | 0;

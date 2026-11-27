@@ -1,5 +1,3 @@
-# LLVM config customize for our needs.
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded)

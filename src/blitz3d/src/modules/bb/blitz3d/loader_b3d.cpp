@@ -54,8 +54,6 @@ static void exitChunk(){
 }
 
 static int chunkSize(){
-	// exitChunk()'s fseek clears the EOF flag, so a short read has to be remembered
-	// separately; otherwise a chunk claiming more bytes than the file has spins forever.
 	if( truncated || feof( in ) ) return 0;
 	int n=chunk_stack.back()-ftell( in );
 	return n>0 ? n : 0;
@@ -69,8 +67,6 @@ static void read( void *buf,int n ){
 	}
 }
 
-// Skips 'count' 4-byte values. Counts come straight from the file, so the byte total must
-// not wrap into a backwards seek (which would re-read the same bytes forever).
 static void skipValues( long long count ){
 	if( count<=0 ) return;
 	fseek( in,count>INT_MAX/4 ? INT_MAX : (long)(count*4),SEEK_CUR );
@@ -197,8 +193,6 @@ static int readVertices(){
 			skipValues( tc_size-tc_read );
 			memcpy( t.tex_coords[k],tc,8 );
 		}
-		// Only two coordinate sets are kept; a corrupt set count must not mean a
-		// per-vertex loop of billions of iterations.
 		skipValues( (long long)(tc_sets-tc_kept)*tc_size );
 		MeshLoader::addVertex( t );
 	}

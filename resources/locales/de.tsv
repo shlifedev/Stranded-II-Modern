@@ -1,4 +1,3 @@
-# German: original Gold 1.0.0.1 wording with additions for this project.
 # Original game: Peter Schauss / Unreal Software; see licenses/.
 engine.02baca8b3656	Cheat - Gegenstand geben
 engine.0c4ca94aab31	Zuletzt verarbeitetes Script anzeigen
@@ -2597,7 +2596,6 @@ ui.compass_east	O
 ui.keybinding	Taste
 ui.fishing	Angeln
 
-# Shared quality-of-life UI and interaction guides.
 qol.tab	Komfort
 qol.recipes	Rezeptbuch
 qol.storage	Schnelles Umlagern

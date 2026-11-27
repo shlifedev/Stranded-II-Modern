@@ -1,4 +1,3 @@
-; Read-only diagnostics, emitted outside the parser. No game variables are set.
 Function studio_json$(value$)
  Local result$=Chr(34),i,c,ch$
  For i=1 To Len(value$)

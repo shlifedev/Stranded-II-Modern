@@ -1,7 +1,4 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
-// Used by blitzide.rc
-//
 #define IDR_MAINFRAME                   101
 #define IDD_COMPILING                   123
 #define IDR_DEBUGFRAME                  125
@@ -70,8 +67,6 @@
 #define ID_REEXECUTE                    40130
 #define ID_SUPPORT                      40131
 
-// Next default values for new objects
-// 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        134

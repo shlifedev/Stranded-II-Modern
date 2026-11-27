@@ -118,7 +118,7 @@ class Project:
         root.mkdir(parents=True, exist_ok=True)
         try:
             base_path = os.path.relpath(base, root).replace(os.sep, '/')
-        except ValueError:  # Different Windows drive letters.
+        except ValueError:
             base_path = base.as_posix()
         data = {'format': FORMAT, 'edition': 'extended', 'name': name, 'revision': 0,
                 'base': base_path,
@@ -237,7 +237,6 @@ class Project:
 
     def limits(self):
         limits = {'item': 255, 'object': 255, 'unit': 255, 'info': 100, 'building': 65535}
-        # These limits come from the actual game configuration, not the map's type width.
         setup = self.text_files().get(MOD+'sys/game.inf', '')
         for key, value, _, _ in content.fields(setup):
             for kind in ('item','object','unit'):
@@ -357,8 +356,6 @@ class Project:
         history['head'] = digest(encode(self.data))
         for relative, data in self._blobs.items():
             atomic(safe(self.root, relative), data)
-        # Script writes use a recovery journal; manifest-only commits retain the
-        # existing atomic-file/history-head contract. Blob sources are immutable.
         scripts.commit_files(self, before, history)
 
     def apply(self, operations, expected=None, dry_run=False):
@@ -423,8 +420,6 @@ class Project:
         for record in catalog:
             props, location = record.properties, f'{record.kind}/{record.identifier}'
             changed = record.path in self.data['files']
-            # Report the project's edits; legacy scripts and optional assets are
-            # retained verbatim rather than reinterpreted by a second game engine.
             if not changed:
                 continue
             if record.kind != 'recipe' and not 1 <= record.identifier <= self.limits()[record.kind]:
@@ -477,7 +472,6 @@ class Project:
         return issues
 
     def thumbnail_version(self):
-        # Map edits and their revision counter do not change content images.
         return digest(encode({'base': str(self.base), 'files': self.data['files'], 'assets': self.data['assets']}))
 
     def snapshot(self, map_name=None):

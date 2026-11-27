@@ -83,9 +83,6 @@ def _decode(raw, frame, mask):
         x, y = frame % columns * 32, frame // columns * 32
         image = image.crop((x, y, x + 32, y + 32))
     width, height = image.size
-    # DrawImage uses the canvas RGB key even when load_res(..., mode=0)
-    # skips MaskImage: its initial key is black. DrawImage copies RGB and
-    # replaces source alpha with opacity determined by that key alone.
     r, g, b = ImageChops.difference(image.convert('RGB'), Image.new('RGB', image.size, mask)).split()
     visible = ImageChops.lighter(ImageChops.lighter(r, g), b).point([0] + [255] * 255)
     image.putalpha(visible)
@@ -106,7 +103,6 @@ def thumbnail(project, kind, identifier):
               'additionalResults': max(0, len(record.properties.get('gen', [])) - 1) if kind == 'recipe' else 0}
     try:
         relative, frame, mask = _image_source(project, record)
-        # Like load_res, follow a single sibling .inf resource link when absent.
         try:
             raw = _read(project, relative)
         except FileNotFoundError:

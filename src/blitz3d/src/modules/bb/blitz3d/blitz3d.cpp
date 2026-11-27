@@ -1915,8 +1915,6 @@ void blitz3d_close(){
 	loader_mat_map.clear();
 	delete world;
 	world=0;
-	// The scene owns GPU resources and listeners on the graphics context.
-	// Release it while that context is alive, not in a static driver destructor.
 	if( bbSceneDriver ) bbSceneDriver->freeScene( bbScene );
 	bbScene=0;
 }

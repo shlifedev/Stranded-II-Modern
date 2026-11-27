@@ -1,4 +1,3 @@
-; A private model copy: no map record, ID, script, collision or save state.
 Global studio_place_h,studio_place_class,studio_place_type
 Global studio_place_x#,studio_place_y#,studio_place_z#
 
@@ -30,7 +29,6 @@ Function studio_placement_style(h)
  EntityPickMode h,0
  Local kind$=EntityClass$(h),j
  If kind="Mesh" Or kind="MD2" Or kind="Sprite" Then
-  ; Entity overrides leave the cached source mesh/material untouched.
   EntityColor h,40,255,100
   EntityAlpha h,0.4
   EntityBlend h,1
@@ -76,8 +74,6 @@ Function studio_placement_model(class,typ)
  EndIf
 End Function
 
-; Both hover and click sample the same ray, snapped X/Z and final ground Y.
-; Unit map Y describes its collision pivot, above the visual model origin.
 Function studio_placement_sample(class,typ,x#,y#,snap#)
  If studio_placement_valid(class,typ)=0 Then Return 0
  If studio_terrain_pick(x,y)=0 Then Return 0

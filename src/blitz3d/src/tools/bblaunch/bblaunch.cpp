@@ -59,7 +59,6 @@ int __stdcall wWinMain( HINSTANCE inst,HINSTANCE prev,wchar_t *cmd,int show ){
 
 	if( getIEVersion()<4 ) fail( ie_err );
 
-	//Ugly hack to get application dir...
 	std::wstring t=getAppDir();
 	_wputenv( (L"blitzpath="+t).c_str() );
 	SetCurrentDirectory( t.c_str() );
@@ -73,10 +72,8 @@ int __stdcall wWinMain( HINSTANCE inst,HINSTANCE prev,wchar_t *cmd,int show ){
 		ExitProcess(-1);
 	}
 
-	//wait for BB to start
 	WaitForInputIdle( pi.hProcess,INFINITE );
 
-	// Close process and thread handles.
 	CloseHandle( pi.hProcess );
 	CloseHandle( pi.hThread );
 

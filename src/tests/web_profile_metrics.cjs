@@ -23,12 +23,12 @@ const samples = [
 ];
 const result = profileSummary(samples, [], 1000 / 60);
 assert.equal(result.valid, true);
-assert.equal(result.submission_interval_ms.count, 2); // No warmup/first-frame interval.
+assert.equal(result.submission_interval_ms.count, 2);
 approx(result.fps, 40);
 assert.equal(result.intervals_over_33ms, 1);
 assert.equal(result.intervals_over_two_refreshes, 1);
 approx(result.cpu_phases_ms.water.mean, 5);
-approx(result.cpu_phases_ms.reflection.mean, 4); // Nested, never added to water.
+approx(result.cpu_phases_ms.reflection.mean, 4);
 assert.equal(result.gpu_api_calls_per_frame.temporary_textures.mean, 258);
 assert.equal(profileSummary(samples, ['background tab'], 16.67).valid, false);
 assert.equal(profileSummary([], [], 16.67).valid, false);

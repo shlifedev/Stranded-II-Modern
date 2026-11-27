@@ -1,4 +1,3 @@
-// Web-only compatibility symbols. Image decoding is shared in pixmap/stb.loader.cpp.
 bool runtime_html_create(){ return true; }
 bool runtime_html_destroy(){ return true; }
 

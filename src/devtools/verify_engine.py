@@ -29,7 +29,6 @@ def check_abi(output):
     expected = bytes.fromhex((root / 'src/tests/macos_abi.golden.hex').read_text('ascii'))
     if (output / 'semantics.bin').read_bytes() != expected:
         raise AssertionError('Native output differs from the original Blitz3D 1.118 reference.')
-    # windows_platform.bb expects these exact arguments back from CommandLine().
     arguments = {'windows_platform': ('-win', '-fps', '120', '-mod', 'My Mod', '한글')}
     for name in ('macos_lifetime', 'windows_platform'):
         exe = output / (name + '.exe')

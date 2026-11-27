@@ -3,7 +3,6 @@
 #include <bb/system.windows/system.windows.h>
 #include "gxmovie.h"
 
-// ugly hack to avoid conflicts with GLFW
 #include <initguid.h>
 DEFINE_GUID(IID_IDirect3D7,0xf5049e77,0x4861,0x11d2,0xa4,0x7,0x0,0xa0,0xc9,0x6,0x29,0xa8);
 DEFINE_GUID(IID_IDirect3DRGBDevice,0xa4665c60,0x2673,0x11cf,0xa3,0x1a,0x00,0xaa,0x00,0xb9,0x33,0x56);
@@ -12,7 +11,6 @@ DEFINE_GUID(IID_IDirectDraw7,0x15e65ec0,0x3b9c,0x11d2,0xb9,0x2f,0x00,0x60,0x97,0
 DEFINE_GUID(IID_IDirect3DTnLHalDevice,0xf5049e78,0x4861,0x11d2,0xa4,0x7,0x0,0xa0,0xc9,0x6,0x29,0xa8);
 DEFINE_GUID(IID_IDirectDrawGammaControl,0x69c11c3e,0xb46b,0x11d1,0xad,0x7a,0x00,0xc0,0x4f,0xc2,0x9b,0x4e);
 
-// for some reason the mingw headers are missing this...
 #ifndef DDSGR_CALIBRATE
 #define DDSGR_CALIBRATE 0x00000001L
 #endif
@@ -40,7 +38,6 @@ dirDraw(dd),def_font(0),gfx_lost(false){
 	primFmt.dwSize=sizeof(primFmt);
 	fs->GetPixelFormat( &primFmt );
 
-	//are we fullscreen?
 	_gamma=0;
 	if( fs!=bs ){
 		if( fs->QueryInterface( IID_IDirectDrawGammaControl,(void**)&_gamma )>=0 ){
@@ -120,7 +117,6 @@ bool gxGraphics::restore(){
 
 	dirDraw->RestoreAllSurfaces();
 
-	//restore all canvases
 	std::set<BBCanvas*>::iterator it;
 	for( it=canvas_set.begin();it!=canvas_set.end();++it ){
 		D3D7CANVAS(*it)->restore();
@@ -258,7 +254,6 @@ BBFont *gxGraphics::loadFont( const std::string &f,int height,int flags ){
 		t=f;
 	}
 
-	//save and turn off font smoothing....
 	BOOL smoothing=FALSE;
 	SystemParametersInfo( SPI_GETFONTSMOOTHING,0,&smoothing,0 );
 	SystemParametersInfo( SPI_SETFONTSMOOTHING,FALSE,0,0 );
@@ -270,7 +265,6 @@ BBFont *gxGraphics::loadFont( const std::string &f,int height,int flags ){
 		DEFAULT_PITCH|FF_DONTCARE,t.c_str() );
 
 	if( !hfont ){
-		//restore font smoothing
 		SystemParametersInfo( SPI_SETFONTSMOOTHING,smoothing,0,0 );
 		return 0;
 	}
@@ -293,7 +287,6 @@ BBFont *gxGraphics::loadFont( const std::string &f,int height,int flags ){
 	int *widths=d_new int[sz];
 	int *as=d_new int[sz];
 
-	//calc size of canvas to hold font.
 	int x=0,y=0,max_x=0;
 	for( int k=0;k<sz;++k ){
 
@@ -349,7 +342,6 @@ BBFont *gxGraphics::loadFont( const std::string &f,int height,int flags ){
 			D3D7Font *font=d_new D3D7Font( this,c,tm.tmMaxCharWidth,height,first,last+1,tm.tmDefaultChar,offs,widths );
 			font_set.insert( font );
 
-			//restore font smoothing
 			SystemParametersInfo( SPI_SETFONTSMOOTHING,smoothing,0,0 );
 			return font;
 		}else{
@@ -362,7 +354,6 @@ BBFont *gxGraphics::loadFont( const std::string &f,int height,int flags ){
 	delete[] widths;
 	delete[] offs;
 
-	//restore font smoothing
 	SystemParametersInfo( SPI_SETFONTSMOOTHING,smoothing,0,0 );
 	return 0;
 }

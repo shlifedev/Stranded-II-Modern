@@ -39,7 +39,6 @@ def tools():
         temporary.replace(archive)
     if digest(archive) != cfg['sha256']:
         raise ValueError(f'FFmpeg archive SHA-256 mismatch: {archive}')
-    # Only extract explicit, hash-verified entries. These tools are never shipped.
     with zipfile.ZipFile(archive) as source:
         for relative in ('bin/ffmpeg.exe', 'bin/ffprobe.exe', 'LICENSE', 'README.txt'):
             data = source.read(cfg['directory'] + '/' + relative)

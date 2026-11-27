@@ -1,9 +1,6 @@
 #include "bin_expr.h"
 #include "int_const.h"
 
-/////////////////////////////////////////////////////
-// boolean expression - accepts ints, returns ints //
-/////////////////////////////////////////////////////
 ExprNode *BinExprNode::semant( Environ *e ){
 	lhs=lhs->semant(e);lhs=lhs->castTo( Type::int_type,e );
 	rhs=rhs->semant(e);rhs=rhs->castTo( Type::int_type,e );

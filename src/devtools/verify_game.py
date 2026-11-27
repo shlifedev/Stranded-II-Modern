@@ -36,7 +36,7 @@ def main():
     text = text.replace(function(text, 'modern_focus'), 'Function modern_focus()\n Return 0\nEnd Function')
     timing.write_text(text, encoding='utf8')
     entry = source/'includes/engine_init.bb'
-    text = entry.read_text('utf8').replace('\nunrealsoftware()\n', '\n; Branding skipped for automated test.\n')
+    text = entry.read_text('utf8').replace('\nunrealsoftware()\n', '\n')
     entry.write_text(text, encoding='utf8')
     entry = source/'includes/engine_loop.bb'
     text = ''

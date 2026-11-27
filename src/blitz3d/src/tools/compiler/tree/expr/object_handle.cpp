@@ -1,8 +1,5 @@
 #include "object_handle.h"
 
-///////////////////
-// Object Handle //
-///////////////////
 ExprNode *ObjectHandleNode::semant( Environ *e ){
 	expr=expr->semant( e );
 	if( !expr->sem_type->structType() ) ex( "'ObjectHandle' must be used with an object" );

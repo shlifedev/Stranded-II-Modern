@@ -2,11 +2,9 @@
 Context "Data"
 
 Function Run()
-	; make sure data is availble before 'main'
 	Restore startData
 End Function
 
-; load all data...
 Restore startData
 
 Read NumberOfUsers
@@ -30,7 +28,6 @@ Expect age = 54, "age should be 54"
 Expect accuracy > 66 And accuracy < 67, "accuracy should be above 66 and below 67"
 Expect lastname = "Rabbit", "last name should be Rabbit"
 
-; now load from the middle...
 Restore shane
 
 Read firstname$, age, accuracy#, lastname$
@@ -39,7 +36,6 @@ Expect age = 28, "age should be 28"
 Expect accuracy > 12 And accuracy < 13, "accuracy should be above 12 and below 13"
 Expect lastname = "Smith", "last name should be Smith"
 
-; without an explicit label
 Restore
 Read NumberOfUsers
 Expect NumberOfUsers = 3, "there should be three users"

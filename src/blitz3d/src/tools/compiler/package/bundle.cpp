@@ -16,7 +16,6 @@ void bundleFiles( const BundleInfo &bundle,const std::string &path ){
 		std::string from=file.absolutePath;
 		std::string to=file.relativePath;
 
-		// TODO: not perfect...
 		size_t pos=0;
 		while( (pos=to.find("../"))!=std::string::npos ){
 			to.replace( pos,3,"" );

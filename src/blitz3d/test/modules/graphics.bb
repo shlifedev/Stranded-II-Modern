@@ -30,7 +30,6 @@ Expect StringWidth("hello, wörld")>0,"Strings have height"
 ClsColor 255,0,0
 Cls
 
-; now for some drawing...
 Rect 10,10,100,100,True
 Rect 10,10,100,100,False
 Line 10,10,200,200

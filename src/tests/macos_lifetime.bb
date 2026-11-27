@@ -1,4 +1,3 @@
-; Reused Type storage must clear every byte of native pointer slots.
 Type Churn
  Field value,text$,other$,child.Churn
 End Type

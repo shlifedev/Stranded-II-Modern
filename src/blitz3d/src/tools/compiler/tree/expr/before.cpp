@@ -1,8 +1,5 @@
 #include "before.h"
 
-////////////////////
-// Prev of object //
-////////////////////
 ExprNode *BeforeNode::semant( Environ *e ){
 	expr=expr->semant( e );
 	if( expr->sem_type==Type::null_type ) ex( "'Before' cannot be used with 'Null'" );

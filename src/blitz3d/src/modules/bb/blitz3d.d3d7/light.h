@@ -12,7 +12,6 @@ public:
 
 	D3DLIGHT7 d3d_light;
 
-	/***** GX INTERFACE *****/
 public:
 	void update( Light *light );
 };

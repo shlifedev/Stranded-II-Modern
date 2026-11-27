@@ -30,7 +30,6 @@ def main():
     kernel.CreateFileW.argtypes = [ctypes.c_wchar_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_void_p]
     kernel.CreateFileW.restype = ctypes.c_void_p
     kernel.CloseHandle.argtypes = [ctypes.c_void_p]
-    # Share reads, but deliberately prevent rename/deletion of the destination.
     lock = kernel.CreateFileW(str(locked), 0x80000000, 1, None, 3, 0, None)
     assert lock != ctypes.c_void_p(-1).value, ctypes.get_last_error()
     body = r'''

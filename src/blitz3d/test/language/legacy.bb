@@ -1,16 +1,6 @@
 
 Context "Legacy"
 
-; ;;
-; ; Goto
-; mesg$ = "the true message"
-; Goto jumpAhead
-; mesg = "never gonna happen"
-; .jumpAhead
-; Expect mesg = "the true message", "should have the right message"
-
-;;
-; Gosub
 value = 1
 
 Gosub label1
@@ -20,12 +10,12 @@ Goto finish
 value = 2
 Return
 
-If value=1 Then ; here to cover a particular codegen error
+If value=1 Then
 	Gosub label1
 	Goto finish
 End If
 
-value = 3 ; should never happen
+value = 3
 
 .finish
 

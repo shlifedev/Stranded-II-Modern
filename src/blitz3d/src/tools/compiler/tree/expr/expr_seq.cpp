@@ -2,9 +2,6 @@
 #include "const.h"
 #include "../../ex.h"
 
-/////////////////////////////
-// Sequence of Expressions //
-/////////////////////////////
 void ExprSeqNode::semant( Environ *e ){
 	for( int k=0;k<exprs.size();++k ){
 		if( exprs[k] ) exprs[k]=exprs[k]->semant( e );

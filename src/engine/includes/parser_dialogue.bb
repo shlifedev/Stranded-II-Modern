@@ -1,5 +1,4 @@
 Function parse_dialogue(page$)
-	;Special Button Action?
 	Local dd=Instr(page$,":")
 	If dd>0 Then
 		Local action$=Left(page$,dd-1)
@@ -17,61 +16,47 @@ Function parse_dialogue(page$)
 		End Select
 	EndIf
 	
-	;Reset Text/Script/Scroll 
 	in_msgtext$=""
 	script$=""
 	in_scr_scr=0
-	;Reset Buttons
 	For i=0 To 9
 		in_sb(i)=0
 	Next
-	;Reset Trades
 	For Trd.Ttrade=Each Ttrade
 		Delete Trd
 	Next
-	;Set Dialogue Page
 	in_dlg_page$=page$
-	;Count Lines
 	i=0
 	c=1
 	l=Len(in_dlg$)
 	For i=1 To l
 		If Mid(in_dlg$,i,1)="" Then c=c+1
 	Next
-	;Split Lines
 	split$(in_dlg$,"",c)
-	;Parse
-	bi=0				;Button Index
-	ti=0				;Trade Index
-	foundpage=0			;Found right page?
+	bi=0
+	ti=0
+	foundpage=0
 	
-	;Scan each Line
 	i=0
 	While i<c
 		txt$=splits$(i)
 		
-		;Only Parse Lines wih Assignment (=) and without Comment (#)
 		equal=Instr(txt$,"=")
 		If Left(txt$,1)="#" Then equal=0
 		If equal>0 Then
 			var$=Trim(Left(txt$,equal-1))
 			val$=Trim(Mid(txt$,equal+1,-1))
 			
-			;Find Page
 			If foundpage=0 Then	
 				If var$="page" Then
 					If val$=page$ Then foundpage=1
 				EndIf
-			;Parse Page	if right Page has been found
 			Else
 				Select var$
-					;-------------------- Page: End Parsing of this Page
 					Case "page"
 						Exit
-					;-------------------- Title: Set Title
 					Case "title"
 						in_msgtitle$=val$
-					;-------------------- Button: Setup Button
 					Case "button"
 						If bi<10 Then
 							co=Instr(val$,",")
@@ -88,7 +73,6 @@ Function parse_dialogue(page$)
 						Else
 							parse_error("there is a maximum of 10 buttons in a dialogue")
 						EndIf
-					;-------------------- iButton: Setup Button with certain Icon
 					Case "ibutton"
 						If bi<10 Then
 							co=Instr(val$,",")
@@ -116,7 +100,6 @@ Function parse_dialogue(page$)
 						Else
 							parse_error("there is a maximum of 10 buttons in a dialogue")
 						EndIf
-					;-------------------- Script: Add a Script
 					Case "script"
 						If val$="start" Then
 							i=i+1
@@ -130,7 +113,6 @@ Function parse_dialogue(page$)
 								i=i+1
 							Wend
 						EndIf
-					;-------------------- Text: Add a Text
 					Case "text"
 						If val$="start" Then
 							i=i+1
@@ -145,7 +127,6 @@ Function parse_dialogue(page$)
 							Wend
 						EndIf
 						
-					;-------------------- Trade: Add a Trade
 					Case "trade"
 						Local sellsc
 						Local buysc
@@ -200,7 +181,6 @@ Function parse_dialogue(page$)
 						EndIf					
 						
 					
-					;-------------------- Unknown
 					Default RuntimeError "Invalid DIALOGUE Property '"+var$+"'"
 				
 				End Select
@@ -211,7 +191,6 @@ Function parse_dialogue(page$)
 		i=i+1
 	Wend
 	
-	;Clearup (Remove )
 	While Left(in_msgtext$,1)=""
 		in_msgtext$=Right(in_msgtext$,Len(in_msgtext$)-1)
 	Wend
@@ -219,12 +198,10 @@ Function parse_dialogue(page$)
 		in_msgtext$=Left(in_msgtext$,Len(in_msgtext$)-1)
 	Wend
 	
-	;Execute Script
 	If script$<>"" Then
 		parse_task(0,0,"","dialogue script",script$)
 	EndIf
 	
-	;Page not Found
 	If foundpage=0 Then
 		parse_error("the dialogue page '"+page$+"' is not defined")
 	EndIf

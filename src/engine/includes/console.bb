@@ -1,10 +1,5 @@
-;############################################ CONSOLE
-
-;### Console
 Function console()
-	;Control Console
 	If KeyHit(41) Then con_toggle()
-	;Draw Console
 	If in_console=0 Then Return 0
 	TileBlock gfx_bg(1)
 	Tcon.Tcon=Last Tcon
@@ -24,13 +19,11 @@ Function console()
 		EndIf
 		Tcon.Tcon=Before Tcon
 	Next
-	;Scroll
 	in_conscroll=in_conscroll+(in_mzs*3)
 	If KeyHit(201) Then in_conscroll=in_conscroll+25
 	If KeyHit(209) Then in_conscroll=in_conscroll-25
 	If KeyHit(207) Then in_conscroll=0
 	If in_conscroll<0 Then in_conscroll=0
-	;Input
 	in_inputfocus=-1
 	Local key=in_key
 	If (key>31 And key<127) Then
@@ -43,9 +36,7 @@ Function console()
 		con_enter()
 	EndIf
 	in_key=0
-	;Remove ^
 	If Left(in_conin$,1)="^" Then in_conin$=Mid(in_conin$,2,-1)
-	;Draw Input
 	If in_cursor Then
 		bmpf_txt(2,set_scry-15,in_conin$+"|",Cbmpf_tiny)
 	Else
@@ -54,7 +45,6 @@ Function console()
 End Function
 
 
-;### Console Add Message
 Function con_add(txt$="",special=-1)
 	Local logged$=txt$
 	If dev_strings_ready Then logged$=ko_localize(txt$)
@@ -68,7 +58,6 @@ Function con_add(txt$="",special=-1)
 End Function
 
 
-;### Console Clear
 Function con_clear()
 	For Tcon.Tcon=Each Tcon
 		Delete Tcon
@@ -76,7 +65,6 @@ Function con_clear()
 End Function
 
 
-;### Console Welcome
 Function con_welcome()
 	con_add()
 	con_add("****************************************************************************************",0)
@@ -89,7 +77,6 @@ Function con_welcome()
 End Function
 
 
-;### Console Memory
 Function con_memory()
 	con_add()
 	Local total=TotalVidMem()
@@ -103,7 +90,6 @@ Function con_memory()
 End Function
 
 
-;### Console 3D
 Function con_3d()
 	con_add()
 	con_add("*** 3D Stats ***",0)
@@ -114,7 +100,6 @@ Function con_3d()
 End Function
 
 
-;### Console Debugmenu
 Function con_debugmenu()
 	If m_section=Csection_game_sp Then
 		m_menu=Cmenu_if_debugmenu
@@ -125,21 +110,18 @@ Function con_debugmenu()
 End Function
 
 
-;### Console Debug
 Function con_debug()
 	set_debug=1-set_debug
 	con_add()
 	con_add("*** Debug ***",0)
 	If set_debug=1 Then
 		con_add("Debug mode is ON",Cbmpf_green)
-		;Show Unit Collisionstuff
 		For Tunit.Tunit=Each Tunit
 			If Tunit\vh<>0 Then EntityAlpha Tunit\vh,0.5
 			If Tunit\h_pivot=0 Then EntityAlpha Tunit\h,0.1
 		Next
 	Else
 		con_add("Debug mode is OFF",Cbmpf_red)
-		;Hide Unit Collisionstuff
 		For Tunit.Tunit=Each Tunit
 			If Tunit\vh<>0 Then EntityAlpha Tunit\vh,0.
 			If Tunit\h_pivot=0 Then EntityAlpha Tunit\h,0
@@ -149,7 +131,6 @@ Function con_debug()
 End Function
 
 
-;### Console Debug
 Function con_debugtimes()
 	set_debug_rt=1-set_debug_rt
 	con_add()
@@ -163,7 +144,6 @@ Function con_debugtimes()
 End Function
 
 
-;### Sequences Debug
 Function con_debugsequences()
 	set_debug_seq=1-set_debug_seq
 	con_add()
@@ -177,7 +157,6 @@ Function con_debugsequences()
 End Function
 
 
-;### Console Debug
 Function con_debugmap()
 	If m_section=Csection_game_sp Or m_section=Csection_game_mp Then
 		set_debug_menu=1
@@ -189,7 +168,6 @@ Function con_debugmap()
 End Function
 
 
-;### Script Debug
 Function con_debugscript()
 	con_add()
 	con_add("*** Debug Script ***",0)
@@ -199,7 +177,6 @@ Function con_debugscript()
 End Function
 
 
-;### Console Debug Load
 Function con_debugload()
 	set_debug_load=1-set_debug_load
 	con_add()
@@ -212,7 +189,6 @@ Function con_debugload()
 	con_add()
 End Function
 
-;### Console Online
 Function con_online()
 	Local stream,online,ip$,ping
 	stream=OpenTCPStream("www.usgn.unrealsoftware.de",80)
@@ -237,7 +213,6 @@ Function con_online()
 End Function
 
 
-;### Console Save
 Function con_save()
 	Local name$,stream
 	name$="CON_D_"+CurrentDate()+"_T_"+CurrentTime()+".txt"
@@ -256,7 +231,6 @@ Function con_save()
 End Function
 
 
-;### Console Listplayers
 Function con_listplayers()
 	con_add()
 	con_add("*** Player List ***",0)
@@ -272,7 +246,6 @@ Function con_listplayers()
 End Function
 
 
-;### Console Listvars
 Function con_listvars()
 	con_add()
 	con_add("*** Variables List ***",0)
@@ -288,7 +261,6 @@ Function con_listvars()
 	Next
 End Function
 
-;### Console Listconst
 Function con_listconst()
 	con_add()
 	con_add("*** Constants List ***",0)
@@ -298,7 +270,6 @@ Function con_listconst()
 End Function
 
 
-;### Console Listitems
 Function con_listitems()
 	con_add()
 	con_add("*** Item List ***",0)
@@ -312,7 +283,6 @@ Function con_listitems()
 End Function
 
 
-;### Console Listscripts
 Function con_listscripts()
 	con_add()
 	con_add("*** Scripts List ***",0)
@@ -365,7 +335,6 @@ Function con_listscripts()
 End Function
 
 
-;### Console Listfraps
 Function con_listfraps()
 	con_add()
 	con_add("*** FRAP List ***",0)
@@ -376,7 +345,6 @@ Function con_listfraps()
 End Function
 
 
-;### Console Wireframe
 Function con_wireframe()
 	set_debug_wireframe=1-set_debug_wireframe
 	con_add()
@@ -390,7 +358,6 @@ Function con_wireframe()
 End Function
 
 
-;### Mod Info
 Function con_modinfo()
 	con_add()
 	con_add("*** Mod Info ***",0)
@@ -415,7 +382,6 @@ Function con_modinfo()
 End Function
 
 
-;### Console Enter
 Function con_enter()
 	Select Trim(in_conin$)
 		Case "clear","cls"
@@ -483,7 +449,6 @@ Function con_enter()
 End Function
 
 
-;### Console Toggle
 Function con_toggle(set=-1)
 	in_console=1-in_console
 	If set<>-1 Then in_console=set
@@ -493,13 +458,11 @@ Function con_toggle(set=-1)
 End Function
 
 
-;### Console Close
 Function con_close()
 	con_toggle(0)
 End Function
 
 
-;### Console Open
 Function con_open()
 	con_toggle(1)
 End Function

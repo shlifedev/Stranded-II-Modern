@@ -11,7 +11,6 @@ dir=ReadDir("./media")
 found_axe = False
 found_dwarf = False
 
-; Order is not guaranteed on all platforms
 Repeat
 	file$ = NextFile(dir)
 	If file = "" Exit

@@ -1,11 +1,9 @@
-;Stay?
 If TCunit\states=1
 	If get_state(Cstate_ai_stick,Cclass_unit,TCunit\id)=1 Then
 		ai_mode(ai_idle)
 	EndIf
 EndIf
 
-;Action
 Select TCunit\ai_mode
 	Case ai_move
 		ai_movesound()
@@ -34,7 +32,6 @@ Select TCunit\ai_mode
 		ai_dosani()
 End Select
 
-;Set Mode
 If (gt-TCunit\ai_timer)>TCunit\ai_duration Then
 	x=Rand(0,7)
 	Select x

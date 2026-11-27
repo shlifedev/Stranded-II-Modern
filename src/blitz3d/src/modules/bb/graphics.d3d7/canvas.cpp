@@ -187,7 +187,6 @@ void gxCanvas::setViewport( int x,int y,int w,int h ){
 	viewport=r;
 }
 
-//renderering primitives
 void gxCanvas::cls(){
 	bltfx.dwFillColor=clsColor_surf;
 	surf->Blt( &viewport,0,0,DDBLT_WAIT|DDBLT_COLORFILL,&bltfx );
@@ -225,8 +224,8 @@ void gxCanvas::line( int x0,int y0,int x1,int y1 ){
 		if(y1>cy1)clip1|=1;else if(y1<cy0)clip1|=2;
 		if(x1>cx1)clip1|=4;else if(x1<cx0)clip1|=8;
 
-		if((clip0|clip1)==0) break;		//draw line
-		if((clip0&clip1)!=0) return;	//outside
+		if((clip0|clip1)==0) break;
+		if((clip0&clip1)!=0) return;
 
 		if((clip0&1)==1) {x0=x0+((x1-x0)*(cy1-y0))/(y1-y0);y0=cy1;continue;}
 		if((clip0&2)==2) {x0=x0+((x1-x0)*(cy0-y0))/(y1-y0);y0=cy0;continue;}
@@ -453,7 +452,6 @@ bool gxCanvas::collide( int x1,int y1,const BBCanvas *_i2,int x2,int y2,bool sol
 
 	gxCanvas *i1=this;
 
-	//to keep me sane!
 	if( x1>x2 ){
 		std::swap( x1,x2 );
 		std::swap( y1,y2 );

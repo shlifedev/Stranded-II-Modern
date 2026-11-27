@@ -146,7 +146,7 @@ module Highlighter
     end
 
     state :expression do
-      rule %r/#{Lexer.function.join('|')}/io, Name::Function  # function or pseudo-variable
+      rule %r/#{Lexer.function.join('|')}/io, Name::Function
       rule %r/#{Lexer.operator.join('|')}/io, Operator
       rule %r/#{Lexer.constant.join('|')}/io, Name::Constant
       rule %r/"[^"]*"/o, Literal::String
@@ -158,13 +158,13 @@ module Highlighter
 
     state :root do
       rule %r/(:+)( *)(\*)(.*)/ do
-        groups Punctuation, Text, Keyword, Text # CLI command
+        groups Punctuation, Text, Keyword, Text
       end
       rule %r/(\n+ *)(\*)(.*)/ do
-        groups Text, Keyword, Text # CLI command
+        groups Text, Keyword, Text
       end
       rule %r/(ELSE|REPEAT|THEN)( *)(\*)(.*)/ do
-        groups Keyword, Text, Keyword, Text # CLI command
+        groups Keyword, Text, Keyword, Text
       end
       rule %r/[ \n]+/o, Text
       rule %r/:+/o, Punctuation
