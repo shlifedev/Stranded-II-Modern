@@ -1,5 +1,6 @@
 """GitHub release allocation and resumable draft publication through GitHub CLI."""
 from pathlib import Path
+from blitz3d_toolchain import digest as file_digest
 from editions import Edition
 import hashlib
 import json
@@ -11,7 +12,7 @@ import zipfile
 from versioning import TAG, git, make_info, parse_base, read_base, select_version, validate_info
 from macos_dmg import mounted_image, payload_records
 from macos_signing import verify_signature, verify_dmg_signature
-from macos_validation import tree_records, fingerprint
+from macos_validation import fingerprint
 
 MARKER = re.compile(r'<!-- stranded-ii-build: (.+?) -->')
 
@@ -115,20 +116,22 @@ def macos_archive_name(info):
 def validate_macos_package(directory, info):
     """Mount and validate the final Mac artifact on a macOS release coordinator."""
     path = directory / macos_archive_name(info)
-    checksum = hashlib.sha256(path.read_bytes()).hexdigest()
+    checksum = file_digest(path)
     if path.with_suffix('.dmg.sha256').read_text('utf8') != f'{checksum}  {path.name}\n':
         raise ValueError('Mac DMG checksum file disagrees with the image')
     with mounted_image(path) as mounted:
-        payload_records(mounted)
         app = mounted / 'Stranded II.app'
-        records = tree_records(app)
+        prefix = app.name + '/'
+        records = {name[len(prefix):]: record for name, record in payload_records(mounted).items()
+                   if name.startswith(prefix)}
         summary = json.loads((mounted / 'verification-summary.json').read_text('utf8'))
         app_hash = fingerprint(records)
         core = app / 'Contents/Resources/game/core'
         version = validate_info(json.loads((core / 'version.json').read_text('utf8')))
         label = (core / 'version.txt').read_bytes()
         plist = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
-        executable = (app / 'Contents/MacOS/StrandedII').read_bytes()
+        with (app / 'Contents/MacOS/StrandedII').open('rb') as executable:
+            header = executable.read(32)
         numeric_version = info['version'].split('-')[0]
         if (validate_info(summary.get('version_info', {})) != info or version != info or
                 summary.get('version') != info['version'] or summary.get('source_commit') != info['commit'] or
@@ -154,7 +157,7 @@ def validate_macos_package(directory, info):
                 checks.get('app_structure_and_signature') != 'pass' or
                 checks.get('abi') != {'bytes_equal_to_blitz_1_118': 613, 'type_reuse': 'pass'}):
             raise ValueError('Mac DMG is missing successful native checks')
-        if (len(executable) < 32 or struct.unpack_from('<II', executable) != (0xfeedfacf, 0x100000c) or
+        if (len(header) < 32 or struct.unpack_from('<II', header) != (0xfeedfacf, 0x100000c) or
                 records['Contents/MacOS/StrandedII']['mode'] & 0o111 != 0o111 or
                 'Contents/_CodeSignature/CodeResources' not in records):
             raise ValueError('Mac DMG must contain a signed executable ARM64 app')
@@ -165,7 +168,7 @@ def validate_macos_package(directory, info):
 
 def validate_package(directory, info):
     path = directory / archive_name(info)
-    checksum = hashlib.sha256(path.read_bytes()).hexdigest()
+    checksum = file_digest(path)
     if path.with_suffix('.zip.sha256').read_text('utf8') != f'{checksum}  {path.name}\n':
         raise ValueError('Release ZIP checksum file disagrees with the archive')
     profile = Edition(info['edition'])
@@ -176,10 +179,11 @@ def validate_package(directory, info):
         build = json.loads(archive.read(f'{prefix}/build-info.json'))
         metadata = validate_info(json.loads(archive.read(f'{prefix}/core/version.json')))
         label = archive.read(f'{prefix}/core/version.txt')
-        exe = archive.read(f'{prefix}/{profile.executable}')
+        with archive.open(f'{prefix}/{profile.executable}') as executable:
+            exe_hash = hashlib.file_digest(executable, 'sha256').hexdigest()
         if (metadata != info or any(build.get(k, 'classic' if k == 'edition' else None) != v for k, v in info.items()) or
                 label != (info['display_version'] + '\n').encode('ascii') or
-                build['exe_sha256'] != hashlib.sha256(exe).hexdigest()):
+                build['exe_sha256'] != exe_hash):
             raise ValueError('Release ZIP version/commit/executable does not match the selected build')
     return path, checksum
 

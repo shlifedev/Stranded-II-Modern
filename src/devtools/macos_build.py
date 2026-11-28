@@ -37,7 +37,7 @@ def write(path, value):
 
 
 def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return engine_toolchain.digest(path)
 
 
 def inputs():

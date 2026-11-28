@@ -80,7 +80,7 @@ def write_archive(path, members):
     finally:
         if temporary.exists():
             temporary.unlink()
-    checksum = digest(path.read_bytes())
+    checksum = engine.digest(path)
     path.with_suffix(path.suffix + '.sha256').write_text(
         f'{checksum}  {path.name}\n', encoding='utf8', newline='\n')
     return checksum
