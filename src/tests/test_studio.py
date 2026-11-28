@@ -195,6 +195,38 @@ class Projects(TestCase):
         self.assertEqual(self.project.path.read_bytes(),before)
         self.assertFalse((self.project.root/'sources').exists())
 
+    def test_case_only_map_name_rolls_back_whole_batch(self):
+        with self.assertRaisesRegex(ValueError, 'same output path'):
+            self.project.apply([{'op':'map.create','name':'Island','size':16},
+                                {'op':'map.create','name':'island','size':32}])
+        self.assertEqual(self.project.data['maps'], {})
+        self.assertFalse((self.project.root/'sources').exists())
+
+    def test_assets_reject_equivalent_names_but_allow_exact_replacements(self):
+        name = MOD+'gfx/Écorce.b3d'
+        source = self.root/'source.b3d'
+        source.write_bytes(b'one')
+        operation = {'op':'asset.import','destination':name,'path':str(source)}
+        self.project.apply([operation])
+        for alternate in (MOD+'gfx/écorce.B3D', MOD+'gfx/E\u0301corce.b3d'):
+            with self.subTest(name=alternate), self.assertRaisesRegex(ValueError, 'same output path'):
+                self.project.apply([dict(operation, destination=alternate)])
+        source.write_bytes(b'two')
+        self.project.apply([operation])
+        self.project.export(self.root/'out')
+        self.assertEqual((self.root/'out/overrides'/name).read_bytes(), b'two')
+
+    def test_older_ambiguous_project_reports_both_names_before_export(self):
+        self.project.apply([{'op':'map.create','name':'Island'}])
+        self.project.data['maps']['island'] = self.project.data['maps']['Island']
+        self.project.path.write_text(json.dumps(self.project.data), encoding='utf8')
+        project = Project(self.project.root)
+        error = next(i for i in project.validate() if i['code']=='resource-name-collision')
+        self.assertIn("'Island' and 'island'", error['message'])
+        with self.assertRaisesRegex(ValueError, 'same output path'):
+            project.export(self.root/'out')
+        self.assertFalse((self.root/'out').exists())
+
     def test_revision_rejects_concurrent_agent_and_gui(self):
         second=Project(self.project.root)
         self.project.apply([{'op':'map.create','name':'island'}],expected=0)

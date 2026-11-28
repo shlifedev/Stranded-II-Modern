@@ -12,6 +12,7 @@ import json
 import os
 import re
 import tempfile
+import unicodedata
 
 from . import content, scripts
 from .maps import EditableMap, new_map, number, CLASSES
@@ -72,6 +73,22 @@ def resource_path(relative):
             or parts[-1].lower() in ('settings.inf','modern.ini') or parts[-1].lower().startswith('screen_')):
         raise ValueError('Studio resources must be mod content; settings, saves and executables are excluded')
     return relative
+
+
+def resource_name_collisions(names):
+    seen = {}
+    for name in names:
+        key = unicodedata.normalize('NFC', name.casefold())
+        previous = seen.setdefault(key, name)
+        if previous != name:
+            yield name, f'Resource names share the same output path: {previous!r} and {name!r}'
+
+
+def check_new_resource_name(names, name):
+    if name not in names:
+        for conflicting, message in resource_name_collisions((*names, name)):
+            if conflicting == name:
+                raise ValueError(message)
 
 
 @contextmanager
@@ -309,6 +326,7 @@ class Project:
                 raise ValueError('Map name must use letters, numbers, _, - or . (1–80 characters)')
             if name in self.data['maps']:
                 raise ValueError(f'Map already exists: {name}')
+            check_new_resource_name(self.data['maps'], name)
             data = new_map(operation.get('size', 32)) if op == 'map.create' else Path(operation['path']).resolve().read_bytes()
             if EditableMap(data).protected:
                 raise ValueError('Password-protected maps must be unlocked in the original editor before importing')
@@ -335,6 +353,7 @@ class Project:
             relative = resource_path(operation['destination'])
             if not any(relative.startswith(MOD+p+'/') for p in ('gfx','sfx','music','models')):
                 raise ValueError('Import assets under mods/Stranded II/gfx, sfx, music or models')
+            check_new_resource_name(self.data['assets'], relative)
             source = Path(operation['path']).resolve()
             if not source.is_file():
                 raise ValueError(f'Asset not found: {source}')
@@ -478,6 +497,9 @@ class Project:
                     error('player-start', 'A playable map needs a player start (info type 1)', name)
             except (ValueError, KeyError) as exc:
                 error('invalid-map', str(exc), name)
+        for group in ('maps', 'assets'):
+            for name, message in resource_name_collisions(self.data[group]):
+                error('resource-name-collision', message, name)
         issues.extend(scripts.workspace(self)['diagnostics'])
         return issues
 

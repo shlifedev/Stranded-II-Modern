@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"96cd659a11dbc56859f55deb57411ed0858f6ac79070cf219d5ba8c69a1cae70"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"f01248a9ae709e46bdc0d40b4717d8118d461037b0c4893ad465d6450874f41b"} -->
 
 # Stranded II Studio
 
@@ -108,6 +108,8 @@ python src/devtools/studio.py export build/studio-example --out build/studio-exa
 `entities.move` accepts `selection: [{"kind":"unit","id":100}, ...]`, a world-space `delta: {"x":64,"y":0,"z":0}`, and optional `terrain: true`. Vertical movement is rejected when the group includes objects.
 
 `preview PROJECT --map NAME` returns full files and a `token`. Passing `--since TOKEN` then returns a binary `patch` between that token’s scene and the current saved state, the latest native map, and pending-resource status. Advance the baseline token only after the engine acknowledges application. Deltas exclude definitions, assets and language files; scenes requiring new definitions report `resourcesRequired`. Expired/damaged tokens and engine application failures never trigger an automatic reload; use **Apply resources** to reconnect explicitly.
+
+Give maps and imported assets distinct output names across case and Unicode normalization. For example, `Island` and `island` occupy the same map slot on a case-insensitive filesystem. To replace an imported asset, reuse its exact resource path.
 
 Definition IDs and map instance IDs are separate. Cloning a definition allocates a free ID and rejects exhausted limits. Recipe identifiers use `path#index`. Building names come from their resulting object/unit; recipe names use `genname` or their resulting items. Use `content.create` for new definitions/recipes, string arrays for repeated properties, and `null` to remove a property. Terrain coordinates are samples; world coordinates are `(sample-size/2)*64`.
 
