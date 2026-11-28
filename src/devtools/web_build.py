@@ -118,6 +118,10 @@ def asset_files():
         names.add(f'core/locales/{code}/glyphs.dat')
         names.update(p.relative_to(RUNTIME).as_posix() for p in directory.glob('*.ttf'))
     names.update(path.relative_to(RUNTIME).as_posix() for path in (RUNTIME / 'licenses').rglob('*') if path.is_file())
+    aliases = 'mods/Stranded II/sys/ko_aliases.dat'
+    if not (RUNTIME / aliases).is_file():
+        raise ValueError(f'Missing display aliases: {aliases}. Run setup to regenerate them.')
+    names.add(aliases)
     result = []
     for name in sorted(names):
         relative = Path(name)

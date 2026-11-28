@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"e43b8ffc3bd5d71c518c4ac3c0a3ffa3ae637d696550aa34f86b8c9f4f62899a"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"2d4ded3289ea78695b0effe23aaf8c18264c0b27e22587c5ff7c34339661c668"} -->
 
 # 웹 버전 구현 원리
 
@@ -29,7 +29,7 @@ flowchart LR
 | --- | --- |
 | `game.wasm` | 컴파일된 게임 코드와 엔진 런타임입니다. |
 | `game.js` | Emscripten이 만드는 WASM 로더와 브라우저 연결 코드입니다. |
-| `assets.data` | 맵·모델·이미지·소리·언어팩 등 준비한 게임 리소스입니다. |
+| `assets.data` | 준비한 맵·모델·이미지·소리·언어팩과 일지 및 지도 제목의 번역을 찾는 데 쓰는 별칭 목록입니다. |
 | `assets.js` | 리소스를 가상 파일시스템의 `/game/`에 준비하는 로더입니다. |
 | `index.html` | 게임 화면, 검색 입력창, 전체화면 버튼 등 페이지 구조입니다. |
 | `shell.js` | 초기화, 저장소, 포커스·입력, 게임과 브라우저 사이의 서비스 연결입니다. |
