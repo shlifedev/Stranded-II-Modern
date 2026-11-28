@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"c7c16a040ba0263eba4be493d1615a123dc9633794e9d25449b39bd0cfd24881"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"en","syncedHash":"5efb395bfbce31dfd96a32f6ac3b630ed2dc39565040a3d290bb4e87e88d590c"} -->
 
 # Stranded II's wgpu/WebGPU cross-platform renderer migration
 
@@ -501,7 +501,7 @@ Material texture mask/alpha handling and 2D image-key handling are separate path
 
 Ordinary `Text` iterates UTF-8 codepoints and uploads the glyph atlas as an `R8Unorm` texture. Fragments use atlas R for alpha and the current text colour for RGB. Glyphs generate quads that can be batched. Updating an atlas at unchanged dimensions still requires `flush()` before upload because earlier draws may read its old contents.
 
-The game's Korean bitmap font resources separately depend on image/key compatibility. Preserve the preparation process in the [localization guide](localization.md); the GPU API does not generate fonts or translate text automatically.
+WebPlay and Studio package Dear ImGui’s ProggyClean at the legacy mod path `gfx/cour.ttf` for Blitz text commands. A font provided at that path by the selected mod takes precedence. The game's Korean bitmap font resources separately depend on image/key compatibility. Preserve the preparation process in the [localization guide](localization.md); the GPU API does not generate fonts or translate text automatically.
 
 ## 15. Read/write hazards in `CopyRect`, water distortion and motion blur
 

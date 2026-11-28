@@ -34,6 +34,7 @@ class WebBoundaries(TestCase):
             private = ('mods/Stranded II/saves/personal.sav', 'preserved/old.cfg',
                        'mods/Stranded II/screen_001.bmp', 'core/modern.log',
                        'core/locales/fonts-report.json', 'personal.cfg', 'StrandedII.exe')
+            files += ('mods/Stranded II/gfx/cour.ttf',)
             for name in files + private:
                 path = runtime / name
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -96,3 +97,28 @@ class WebBoundaries(TestCase):
                 font.write_bytes(b'changed font')
                 with self.assertRaisesRegex(ValueError, 'Unexpected font SHA-256'):
                     web_build.prepare_assets(settings)
+
+    def test_selected_mod_font_takes_precedence_over_bundled_fallback(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            name = 'mods/Stranded II/gfx/Cour.ttf'
+            aliases = root/'mods/Stranded II/sys/ko_aliases.dat'
+            aliases.parent.mkdir(parents=True)
+            aliases.write_bytes(bytes(4))
+            for filename in ('core/modern.ini', 'core/version.json', 'core/version.txt', 'core/locales/languages.dat'):
+                path = root / filename
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.touch()
+            custom = root/name
+            custom.parent.mkdir(parents=True)
+            custom.write_bytes(b'custom font')
+            with mock.patch.multiple(web_build, ROOT=root, RUNTIME=root), \
+                 mock.patch.object(web_build, 'read', return_value={}), \
+                 mock.patch.object(web_build, 'languages', return_value={}), \
+                 mock.patch.object(web_build, 'override_files', return_value={}) as overrides:
+                def font_sources():
+                    return [source for source, target in web_build.asset_files()
+                            if target.casefold() == ('/game/' + name).casefold()]
+                self.assertEqual(font_sources(), [web_build.engine_toolchain.library('imgui') / 'misc/fonts/ProggyClean.ttf'])
+                overrides.return_value = {name: custom}
+                self.assertEqual(font_sources(), [custom])

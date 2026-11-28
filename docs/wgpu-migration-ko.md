@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"5900dcb7e316f36a6e001b1f6353efe34236da27223071a6cf4e2d444b824912"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/wgpu-migration.md","language":"ko","syncedHash":"4860c04bab452839773d825a3bf052042bbd4ac688e201df39548f759a4fe797"} -->
 
 # Stranded II의 wgpu/WebGPU 크로스플랫폼 렌더러 마이그레이션
 
@@ -503,7 +503,7 @@ texture material의 mask/alpha 처리와 2D image의 key 처리는 서로 다른
 
 일반 `Text` 경로는 UTF-8 codepoint를 순회하고 glyph atlas를 `R8Unorm` texture로 올립니다. fragment는 atlas의 R을 alpha로, 현재 텍스트 색을 RGB로 사용합니다. glyph마다 quad를 생성하고 가능한 draw를 묶습니다. atlas가 같은 크기로 갱신될 때에도 앞선 draw가 기존 glyph를 읽을 수 있으므로 업로드 전에 `flush()`합니다.
 
-게임의 한국어 bitmap 글꼴 리소스는 일반 glyph atlas와 별개로 image/key 호환성을 요구합니다. [현지화 가이드](localization-ko.md)의 준비 절차를 유지하며, 글꼴 생성이나 번역을 GPU API가 자동으로 해결하는 것은 아닙니다.
+WebPlay와 Studio는 Blitz 텍스트 명령을 위해 기존 모드 경로인 `gfx/cour.ttf`에 Dear ImGui의 ProggyClean을 포함합니다. 선택한 모드가 이 경로에 글꼴을 제공하면 해당 글꼴을 우선 사용합니다. 게임의 한국어 bitmap 글꼴 리소스는 일반 glyph atlas와 별개로 image/key 호환성을 요구합니다. [현지화 가이드](localization-ko.md)의 준비 절차를 유지하며, 글꼴 생성이나 번역을 GPU API가 자동으로 해결하는 것은 아닙니다.
 
 ## 15. `CopyRect`·물 왜곡·motion blur의 read/write hazard
 

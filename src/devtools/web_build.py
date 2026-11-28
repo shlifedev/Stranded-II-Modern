@@ -132,6 +132,11 @@ def asset_files():
         path = RUNTIME / relative
         if path.is_file():
             result.append((path, '/game/' + relative.as_posix()))
+    # The browser has no host fonts. Both the default WebGPU font and named
+    # Blitz fonts fall back to GFX/cour.ttf in the current mod directory.
+    fallback = '/game/mods/Stranded II/gfx/cour.ttf'
+    if not any(target.casefold() == fallback.casefold() for _, target in result):
+        result.append((engine_toolchain.library('imgui') / 'misc/fonts/ProggyClean.ttf', fallback))
     return result
 
 
