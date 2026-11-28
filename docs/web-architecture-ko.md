@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"06cbc9ccc9544c4a9acfaafeae8da637e657242bb4602500a11deb91f52b2bda"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"cbab51858f8dac95d969b88e9d743cf5ba2f44c7b54eae06093f2969a5031618"} -->
 
 # 웹 버전 구현 원리
 
@@ -124,6 +124,8 @@ GitHub Pages에는 앞에서 설명한 배포 파일 9개를 게시합니다. [`
 | `check --platform web` | 산출물·리소스·오디오, WASM과 네이티브 호스트(Windows 또는 Apple Silicon macOS)의 숫자·문자열·바이너리 일치, 스크립트 처리와 CPU 버퍼 동작을 검사합니다. 실제 Emscripten 가상 파일시스템에 모의 저장 거래를 연결하고, 입력·초기화는 모의 DOM으로 검사합니다. |
 | 브라우저의 `/checks/` | 실제 WebGPU에서 글꼴·이미지·화면 복사·오디오 디코딩과 메뉴·인트로·섬 시나리오를 비교합니다. 게임 시간은 가상으로 진행합니다. |
 | 수동 플레이 | 실제 FPS·소리·입력, 게임 진행, 저장·불러오기, 새로고침·브라우저 재시작 후 복구, 포커스·전체화면 복귀를 확인합니다. |
+
+WebPlay와 Studio는 패키지를 만들 때 준비된 리소스마다 SHA-256 해시를 기록합니다. 필수 파일이 누락되면 해당 빌드의 준비 단계를 다시 실행하세요. 패키지를 만든 뒤 준비된 파일이 바뀌었다면 해당 패키지를 다시 빌드한 후 검사하세요.
 
 표는 구현된 검사 범위입니다. 자동 검사의 성공은 실제 GPU·IndexedDB·전체 플레이 검증을 뜻하지 않습니다. `/checks/`는 별도로 준비하는 로컬 검사 페이지이며 공개 Pages 배포에 포함하지 않습니다.
 
