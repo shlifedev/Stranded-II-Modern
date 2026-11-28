@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"754fb088123a44bfa439f8bcd55a6a161a78ba3f47e54356bc9de489744fa99e"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"3324354fb03ccf304150ca3dc1651e13ac8c605cb138fc82fb47b9c276f06221"} -->
 
 # Stranded II Studio
 
@@ -115,7 +115,7 @@ Definition IDs and map instance IDs are separate. Cloning a definition allocates
 
 ## Projects and exports
 
-`project.json` stores definition changes, map-edit commands, file bindings and undo baseline snapshots. `sources/` stores original maps and assets named by their hashes. The `.s2s` files in `scripts/` are the authoritative script sources; preserve all three paths together. `.studio/` holds the last 100 undo entries, locks, font caches and recent preview-token caches. Interrupted file transactions recover on the next open without overwriting new external edits. Base resources are read-only. The `base` in `project.json` is usually relative; adjust it to the prepared resources when moving to another computer.
+`project.json` stores definition changes, map-edit commands, file bindings and undo baseline snapshots. `sources/` stores original maps and assets named by their hashes. Run `validate` to check imported assets after moving or restoring a project. If a file has changed, restore its original bytes or import the edited file as a new asset version. The `.s2s` files in `scripts/` are the authoritative script sources; preserve all three paths together. `.studio/` holds the last 100 undo entries, locks, font caches and recent preview-token caches. Interrupted file transactions recover on the next open without overwriting new external edits. Base resources are read-only. The `base` in `project.json` is usually relative; adjust it to the prepared resources when moving to another computer.
 
 Export requires an empty folder. `overrides/` contains native `.inf`, `.s2` and assets; `locales/` contains project translations; `manifest.json` records revision and file hashes. Merge reviewed content into `resources/editions/extended/overrides/` and translations into `resources/locales/editions/extended/<code>.tsv`, then prepare/build Extended. Merge changes into existing files rather than replacing them wholesale. Ordinary builds, CI and releases are not started automatically.
 

@@ -30,6 +30,12 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def verified_blob(source, data, label):
+    if digest(data) != Path(source).stem:
+        raise ValueError(f'Imported {label} was changed outside Studio: {source}')
+    return data
+
+
 def encode(value):
     return (json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + '\n').encode('utf8')
 
@@ -211,15 +217,17 @@ class Project:
             raise ValueError('Imported source hash mismatch')
         return relative
 
+    def source_bytes(self, source, label):
+        data = self._blobs.get(source)
+        if data is None:
+            data = safe(self.root, source).read_bytes()
+        return verified_blob(source, data, label)
+
     def map_bytes(self, name):
         if name not in self.data['maps']:
             raise ValueError(f'Unknown map: {name}')
         entry = self.data['maps'][name]
-        data = self._blobs.get(entry['source'])
-        if data is None:
-            data = safe(self.root, entry['source']).read_bytes()
-        if digest(data) != Path(entry['source']).stem:
-            raise ValueError(f'Imported map was changed outside Studio: {name}')
+        data = self.source_bytes(entry['source'], f'map {name}')
         for op in entry['edits']:
             data = EditableMap(data).apply(op)
         return scripts.overlay_map(self, name, data)
@@ -433,10 +441,16 @@ class Project:
             self.load()
             return {'revision': self.data['revision']}
 
-    def validate(self):
+    def validate(self, *, check_assets=False):
         issues = []
         def error(code, message, location):
             issues.append({'severity': 'error', 'code': code, 'message': message, 'location': location})
+        if check_assets:
+            for relative, source in self.data['assets'].items():
+                try:
+                    self.source_bytes(source, relative)
+                except (OSError, ValueError) as exc:
+                    error('invalid-asset', str(exc), relative)
         catalog = self.catalog()
         indices = {}
         for record in catalog:
@@ -541,12 +555,11 @@ class Project:
             raise ValueError('Use a new or empty export directory; existing resources are preserved')
         from .fonts import project_fonts
         fonts = project_fonts(self)
-        destination.mkdir(parents=True, exist_ok=True)
         files = {}
         for relative, text in scripts.resources(self).items():
             files[relative] = text.encode('utf8')
         for relative, source in self.data['assets'].items():
-            files[relative] = safe(self.root, source).read_bytes()
+            files[relative] = self.source_bytes(source, relative)
         for name in self.data['maps']:
             files[MOD+'maps/'+name+'.s2'] = self.map_bytes(name)
         for relative, data in files.items():
@@ -585,7 +598,7 @@ class Project:
 
     def preview_resources(self):
         files = {path: base64.b64encode(text.encode('utf8')).decode('ascii') for path,text in scripts.resources(self).items()}
-        files.update({path: base64.b64encode(safe(self.root, source).read_bytes()).decode('ascii')
+        files.update({path: base64.b64encode(self.source_bytes(source, path)).decode('ascii')
                       for path,source in self.data['assets'].items()})
         from locales import catalog
         for language, entries in self.data['locales'].items():
