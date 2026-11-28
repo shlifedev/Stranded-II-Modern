@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"d3d74462a5226ee3fa3c8a4d40a0a611afa3c2eea14363b5910c947a7fe4cb24"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"2b93e9e4cf3f1f84543e46dc95e152e0a5d90fb61a358630aec0bdb3807df33b"} -->
 
 # Stranded II Studio
 
@@ -119,7 +119,7 @@ python src/devtools/studio.py export build/studio-example --out build/studio-exa
 
 내보내기는 빈 폴더만 사용합니다. `overrides/`에는 네이티브 `.inf`·`.s2`·에셋, `locales/`에는 프로젝트 번역, `manifest.json`에는 버전·파일 해시를 만듭니다. 검토한 콘텐츠는 `resources/editions/extended/overrides/`, 번역은 `resources/locales/editions/extended/<code>.tsv`에 병합한 뒤 Extended를 준비·빌드합니다. 기존 파일이 있으면 통째로 덮어쓰지 말고 변경 내용을 병합하세요. 일반 빌드·CI·배포는 자동 실행하지 않습니다.
 
-`locale.set`과 `[[loc:key]]`로 새 문구를 등록하고 영어 대체 번역도 제공하세요. 프로젝트가 새 글자를 사용하면 기존 폰트 생성기를 재사용해 미리보기용 글꼴을 보충합니다. 이때 준비에 사용한 폰트 파일이 필요합니다. 보충 글꼴은 내보내기의 `fonts/<code>/`에도 포함되며, 내보낸 콘텐츠를 별도 런타임에서 시험할 때 `core/locales/<code>/`에 적용할 수 있습니다. 정식 리소스 통합은 [현지화 가이드](localization-ko.md)의 카탈로그·폰트 갱신 절차를 따릅니다.
+`schema` 명령의 `languages`에서 게임에 등록된 언어 코드를 확인할 수 있습니다. `locale.set`에 이 코드를 사용하고, 미리보기나 내보내기 전에 새 `[[loc:key]]`마다 영어 대체 번역을 등록하세요. 프로젝트가 새 글자를 사용하면 기존 폰트 생성기를 재사용해 미리보기용 글꼴을 보충합니다. 이때 준비에 사용한 폰트 파일이 필요합니다. 보충 글꼴은 내보내기의 `fonts/<code>/`에도 포함되며, 내보낸 콘텐츠를 별도 런타임에서 시험할 때 `core/locales/<code>/`에 적용할 수 있습니다. 정식 리소스 통합은 [현지화 가이드](localization-ko.md)의 카탈로그·폰트 갱신 절차를 따릅니다.
 
 기존 맵의 수정 대상 밖 데이터·첨부 파일은 보존합니다. 암호 맵은 기존 에디터에서 암호를 해제한 뒤 가져옵니다. 현재 범위는 기존 맵 형식의 콘텐츠 제작입니다. 프리팹·완전한 도킹·회전/크기 기즈모·청크 스트리밍은 구현하지 않았습니다.
 

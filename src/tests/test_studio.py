@@ -272,6 +272,34 @@ class Projects(TestCase):
         self.assertEqual(catalog(Path('unused'),base64.b64decode(files['core/locales/ko.tsv']).decode())['studio.name'],text)
         self.assertEqual(self.project.localizer()('[[loc:studio.name]]'),text)
 
+    def test_schema_and_locale_edits_use_the_game_registry(self):
+        from locales import languages
+        packs = list(languages(ROOT))
+        self.assertEqual(studio.dispatch({'command':'schema'})['languages'], packs)
+        for code in packs:
+            self.project.apply([{'op':'locale.set','language':code,'key':'item.name','text':'Log'}])
+        with self.assertRaisesRegex(ValueError, 'registered language'):
+            self.project.apply([{'op':'locale.set','language':'legacy-index','key':'item.name','text':'Log'}])
+
+    def test_existing_unregistered_project_translation_blocks_export(self):
+        self.project.data['locales']['legacy-index'] = {'item.name':'Log'}
+        self.project.path.write_text(json.dumps(self.project.data), encoding='utf8')
+        project = Project(self.project.root)
+        self.assertIn('unknown-language', [issue['code'] for issue in project.validate()])
+        with self.assertRaisesRegex(ValueError, 'legacy-index'):
+            project.export(self.root/'out')
+        self.assertFalse((self.root/'out').exists())
+
+    def test_project_translation_requires_a_base_or_project_english_key(self):
+        result = self.project.apply([{'op':'locale.set','language':'ja','key':'studio.log','text':'丸太'}])
+        self.assertIn('missing-translation', [issue['code'] for issue in result['diagnostics']])
+        with self.assertRaisesRegex(ValueError, 'studio.log'):
+            self.project.export(self.root/'out')
+        result = self.project.apply([{'op':'locale.set','language':'en','key':'studio.log','text':'Log'}])
+        self.assertEqual(result['diagnostics'], [])
+        self.project.export(self.root/'out')
+        self.assertEqual(catalog(self.root/'out/locales/ja.tsv'), {'studio.log':'丸太'})
+
     def test_protected_paths_and_existing_export_are_rejected(self):
         for name in ('../outside','/outside','C:/outside','mods/Stranded II/saves/a.sav','mods/Stranded II/sys/settings.inf'):
             with self.subTest(path=name),self.assertRaises(ValueError):resource_path(name)

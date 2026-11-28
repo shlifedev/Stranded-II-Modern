@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"f01248a9ae709e46bdc0d40b4717d8118d461037b0c4893ad465d6450874f41b"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"17c6ea25d99dba8f4005bbb84360d46c932f6805577778734d2a366b7dfbf4e5"} -->
 
 # Stranded II Studio
 
@@ -119,7 +119,7 @@ Definition IDs and map instance IDs are separate. Cloning a definition allocates
 
 Export requires an empty folder. `overrides/` contains native `.inf`, `.s2` and assets; `locales/` contains project translations; `manifest.json` records revision and file hashes. Merge reviewed content into `resources/editions/extended/overrides/` and translations into `resources/locales/editions/extended/<code>.tsv`, then prepare/build Extended. Merge changes into existing files rather than replacing them wholesale. Ordinary builds, CI and releases are not started automatically.
 
-Register new text with `locale.set` and `[[loc:key]]`, including English fallback translations. When a project introduces new characters, preview reuses the existing bitmap-font generator and requires the font used during preparation. Additional fonts are also exported under `fonts/<code>/`; for testing exported content in a separate runtime, apply them to `core/locales/<code>/`. For integration into the repository, follow the catalog/font refresh procedure in the [localization guide](localization.md).
+The `schema` command lists registered game language codes in `languages`. Use these codes with `locale.set` and supply an English fallback for each new `[[loc:key]]` before preview or export. When a project introduces new characters, preview reuses the existing bitmap-font generator and requires the font used during preparation. Additional fonts are also exported under `fonts/<code>/`; for testing exported content in a separate runtime, apply them to `core/locales/<code>/`. For integration into the repository, follow the catalog/font refresh procedure in the [localization guide](localization.md).
 
 Edits preserve unrelated map data and attachments. Unlock password-protected maps in the original editor before import. The current scope is content authoring within the existing map format. Prefabs, full docking, rotation/scale gizmos and chunk streaming are not implemented.
 
