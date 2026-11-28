@@ -61,16 +61,22 @@ def main():
     fixture_font(other,list(range(32,127))+[private],cff=True)
     assert not Font(latin).axes and not Font(other).axes
     packs={'ko':{'name':'한국어','font':'Latin.ttf'},'en':{'name':'English'},
-           'ja':{'name':'日本語','font':'Other.otf'}}
+           'ja':{'name':'日本語','font':'Other.otf'}, 'zz':{'name':'Example','font':'Latin.ttf'}}
     for code,info in packs.items():(locale/f'{code}.json').write_text(json.dumps(info,ensure_ascii=False),encoding='utf8')
     (locale/'en.tsv').write_text('ui.language\tLanguage\ntest.text\tSaved text\n',encoding='utf8')
     (locale/'ko.tsv').write_text('ui.language\t언어\ntest.text\t한글\n',encoding='utf8')
     (locale/'ja.tsv').write_text('ui.language\t言語'+chr(private)+'\n',encoding='utf8')
-    assert list(languages(fixture))==['ko','en','ja']
+    (locale/'zz.tsv').write_text('ui.language\tExample\n',encoding='utf8')
+    assert list(languages(fixture))==['ko','en','ja','zz']
     assert len(validate(fixture)['ja'])==1
     report=refresh(fixture,runtime,default)
     assert report['fallback_keys']['ja']==1
     generated=runtime/'core/locales';fonts=json.loads((generated/'fonts-report.json').read_text('utf8'))
+    assert list(fonts)==list(languages(fixture)) and fonts['zz']==fonts['ko']
+    for atlas in [generated/'ko/glyphs.dat', *(generated/'ko').glob('*.bmp')]:
+        other_atlas = generated/'zz'/atlas.name
+        assert other_atlas.read_bytes()==atlas.read_bytes() and not other_atlas.samefile(atlas)
+    assert (generated/'ko/preview.png').read_bytes()!=(generated/'zz/preview.png').read_bytes()
     assert (generated/'ko/ui.ttf').read_bytes()==ui_font.read_bytes()
     assert (generated/'ko/fallback.ttf').read_bytes()==latin.read_bytes()
     assert (generated/'ko/fallback-extra.ttf').read_bytes()==default.read_bytes()
