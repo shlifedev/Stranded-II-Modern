@@ -182,7 +182,9 @@ class Project:
     def text_files(self):
         if self._texts is None:
             result = {}
-            for path in sorted((self.base / MOD / 'sys').glob('*.inf')):
+            for path in sorted((self.base / MOD / 'sys').iterdir()):
+                if path.suffix.lower() != '.inf' or not path.is_file():
+                    continue
                 relative = path.relative_to(self.base).as_posix()
                 try:
                     result[relative] = safe(self.base, relative).read_text('utf8')
@@ -316,8 +318,13 @@ class Project:
                 identifier = number(identifier, 'id', 1, self.limits()[kind], True)
                 if any(r.kind == kind and r.identifier == identifier for r in self.catalog()):
                     raise ValueError(f'Duplicate {kind} definition: {identifier}')
-            path = MOD+'sys/'+content.PREFIXES[kind]+'_studio.inf'
-            previous = self.text_files().get(path, '')
+            stem = MOD+'sys/'+content.PREFIXES[kind]+'_studio'
+            files = self.text_files()
+            targets = [path for path in files if path[:-4] == stem and path[-4:].lower() == '.inf']
+            if len(targets) > 1:
+                raise ValueError('Multiple Studio definition files differ only by extension case: '+', '.join(targets))
+            path = targets[0] if targets else stem+'.inf'
+            previous = files.get(path, '')
             if op == 'content.clone':
                 record = self.find(kind, operation['source'])
                 changes = {'const': None, **updates}

@@ -114,6 +114,44 @@ class Definitions(TestCase):
         self.assertEqual(record.properties['gen'],['3,1'])
 
 
+class NativeDefinitionFiles(TestCase):
+    def test_mixed_case_extensions_survive_edits_and_export(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            base = root / 'base'
+            directory = base / MOD / 'sys'
+            directory.mkdir(parents=True)
+            inputs = {'infos_scene.InF':'id=2\nname=Marker\n',
+                      'items_studio.INF':'id=1\nname=Log\n',
+                      'units_addon.iNf':'id=1\nname=Bird\n',
+                      'objects_addon.Inf':'id=1\nname=Tree\n',
+                      'buildings_addon.inF':'id=1\nobjectid=1\n',
+                      'combinations_addon.INF':'combi=start\nreq=1,1\nreq=1,1\ngen=1,1\ncombi=end\n',
+                      'Items_ignored.INF':'id=9\nname=Ignored\n'}
+            for name, data in inputs.items():
+                (directory/name).write_text(data, encoding='utf8')
+            (directory/'items_archive.INF').mkdir()
+            project = Project.create(root/'project', base)
+            self.assertEqual({record.kind for record in project.catalog()}, set(content.PREFIXES))
+            self.assertEqual(len(project.catalog()), 6)
+            recipe = MOD+'sys/combinations_addon.INF#0'
+            self.assertEqual(project.find('recipe', recipe).properties['gen'], ['1,1'])
+            project.apply([{'op':'content.set','kind':'info','id':2,'properties':{'name':'Changed'}},
+                           {'op':'content.clone','kind':'item','source':1}])
+            project.export(root/'output')
+            exported = root/'output/overrides'/MOD/'sys'
+            self.assertEqual({p.name for p in exported.iterdir()}, {'infos_scene.InF','items_studio.INF'})
+            self.assertEqual((exported/'infos_scene.InF').read_text('utf8'), 'id=2\nname=Changed\n')
+            items = content.records('items_studio.INF', (exported/'items_studio.INF').read_text('utf8'))
+            self.assertEqual([record.identifier for record in items], [1, 2])
+            self.assertEqual((directory/'infos_scene.InF').read_text('utf8'), inputs['infos_scene.InF'])
+
+            # An older project may contain a second spelling in its overlay.
+            project.put_text(MOD+'sys/items_studio.inf', 'id=3\nname=Other\n')
+            with self.assertRaisesRegex(ValueError, 'Multiple Studio definition files'):
+                project.perform({'op':'content.clone','kind':'item','source':1})
+
+
 class Projects(TestCase):
     def setUp(self):
         directory=TemporaryDirectory();self.addCleanup(directory.cleanup)

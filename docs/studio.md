@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"db1b2365741857c95a0201105cbf7b0f79d2f8af2c0cdb171d44dd7cf7e4736a"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"bebc7c1bebd1723f3c0ac6cf3c66f3db9ad8d525451fc239a2fde93ff260f44c"} -->
 
 # Stranded II Studio
 
@@ -111,7 +111,7 @@ python src/devtools/studio.py export build/studio-example --out build/studio-exa
 
 Give maps and imported assets distinct output names across case and Unicode normalization. For example, `Island` and `island` occupy the same map slot on a case-insensitive filesystem. To replace an imported asset, reuse its exact resource path.
 
-Definition IDs and map instance IDs are separate. Cloning a definition allocates a free ID and rejects exhausted limits. Recipe identifiers use `path#index`. Building names come from their resulting object/unit; recipe names use `genname` or their resulting items. Use `content.create` for new definitions/recipes, string arrays for repeated properties, and `null` to remove a property. Terrain coordinates are samples; world coordinates are `(sample-size/2)*64`.
+Definition IDs and map instance IDs are separate. Cloning a definition allocates a free ID and rejects exhausted limits. Definition filenames use a lowercase category prefix such as `items` or `infos`. The `.inf` extension accepts any capitalization, and edits preserve the filename. Recipe identifiers use `path#index`. Building names come from their resulting object/unit; recipe names use `genname` or their resulting items. Use `content.create` for new definitions/recipes, string arrays for repeated properties, and `null` to remove a property. Terrain coordinates are samples; world coordinates are `(sample-size/2)*64`.
 
 ## Projects and exports
 
