@@ -381,6 +381,24 @@ class Projects(TestCase):
         restored = self.project.preview('island', since=full['token'])
         self.assertFalse(restored['resourcesPending'])
 
+    def test_preview_cache_retains_requested_parent_within_limit(self):
+        self.project.apply([{'op':'map.create', 'name':'island', 'size':16}])
+        with mock.patch('studio_core.preview.MAX_BASELINES', 2):
+            first = self.project.preview('island')['token']
+            def add_object():
+                self.project.apply([{'op':'entity.add', 'map':'island', 'kind':'object', 'type':1}])
+            add_object()
+            second = self.project.preview('island', since=first)['token']
+            add_object()
+            with mock.patch.object(self.project, 'preview_resources', side_effect=ValueError('resource error')):
+                with self.assertRaisesRegex(ValueError, 'resource error'):
+                    self.project.preview('island')
+            cache = self.project.root / '.studio/previews'
+            self.assertEqual({p.stem for p in cache.glob('*.json')}, {first, second})
+            third = self.project.preview('island', since=first)['token']
+            self.assertEqual({p.stem for p in cache.glob('*.json')}, {first, third})
+            self.assertEqual(self.project.preview('island', since=third)['changes']['upserted'], 0)
+
     def test_preview_rejects_wrong_or_missing_baseline_without_modifying_project(self):
         self.project.apply([{'op':'map.create','name':'one','size':16},{'op':'map.create','name':'two','size':16}])
         full = self.project.preview('one')

@@ -113,11 +113,16 @@ class ScriptWorkspace(TestCase):
         self.write('on:start {}');self.bind()
         preview=self.p.preview('island')
         self.assertEqual(base64.b64decode(preview['files'][MOD+scripts.native_path(self.path)]),b'on:start {}')
+        self.p.apply([{'op':'entity.add', 'map':'island', 'kind':'object', 'type':1}])
         from studio_core.preview import preview as real
         def racing(*args):
             value=real(*args);(self.p.root/self.path).write_text('on:start { msg "race"; }',encoding='utf8');return value
         with mock.patch('studio_core.preview.preview',side_effect=racing),self.assertRaisesRegex(ValueError,'changed'):
             self.p.preview('island')
+        cache = self.p.root / '.studio/previews'
+        self.assertEqual({p.stem for p in cache.glob('*.json')}, {preview['token']})
+        retry = self.p.preview('island', since=preview['token'])
+        self.assertEqual(retry['changes']['upserted'], 1)
 
     def test_preview_rechecks_expected_versions_after_loading_under_lock(self):
         self.write('on:start {}');self.bind()
