@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import sys
 
-from editions import source_hashes, override_files
+from editions import Edition, source_hashes, override_files
 from locales import prepare, validate, languages
 from language_pack import prepared_font_files, refresh
 from versioning import development_marker, local_info, validate_info
@@ -49,7 +49,8 @@ def inputs():
     return read(path)
 
 
-def prepare_assets(settings):
+def prepare_assets(settings, edition='classic'):
+    profile = Edition(edition)
     game, font = Path(settings['game']), Path(settings['font'])
     # CI unpacks its hash-verified dependency ZIP inside build/. Permit only
     # that input directory; generated runtimes and their player data stay out.
@@ -65,20 +66,20 @@ def prepare_assets(settings):
         path = game / relative
         if digest(path) != expected:
             raise ValueError(f'Unexpected official resource: {relative}')
-    validate(ROOT, 'classic')
+    validate(ROOT, edition)
     for relative in files:
         target = RUNTIME / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(game / relative, target)
     (RUNTIME / 'mods/Stranded II/saves').mkdir(exist_ok=True)
     (RUNTIME / 'core').mkdir(exist_ok=True)
-    shutil.copy2(ROOT / 'config/modern.ini', RUNTIME / 'core/modern.ini')
-    _, report = prepare(ROOT, game, RUNTIME, 'classic')
-    for relative, source in override_files(ROOT, 'classic').items():
+    shutil.copy2(ROOT / profile.defaults, RUNTIME / 'core/modern.ini')
+    _, report = prepare(ROOT, game, RUNTIME, edition)
+    for relative, source in override_files(ROOT, edition).items():
         target = RUNTIME / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
-    report.update(refresh(ROOT, RUNTIME, font, 'classic'))
+    report.update(refresh(ROOT, RUNTIME, font, edition))
     shutil.copytree(ROOT / 'licenses', RUNTIME / 'licenses', dirs_exist_ok=True)
     write(BUILD / 'setup-report.json', report)
     return report
@@ -105,10 +106,10 @@ def localize(args):
     print('Refreshed web language packs; run build --platform web to repack.')
 
 
-def asset_files():
+def asset_files(edition='classic'):
     """Allowlist official/prepared assets; never enumerate player-data folders."""
     names = set(read(ROOT / 'config/game-files.json'))
-    names.update(override_files(ROOT, 'classic'))
+    names.update(override_files(ROOT, edition))
     names.update(('core/modern.ini', 'core/version.json', 'core/version.txt', 'core/locales/languages.dat'))
     if (RUNTIME / 'core/development.flag').is_file():names.add('core/development.flag')
     for code in languages(ROOT):
@@ -150,10 +151,10 @@ def verify_asset_inputs(allowed, expected):
             raise ValueError(f'Prepared resource changed: {target}. Rebuild the package.')
 
 
-def pack_assets(env):
+def pack_assets(env, edition='classic'):
     sdk = web_toolchain.paths()[1]
     SITE.mkdir(parents=True, exist_ok=True)
-    allowed = asset_files()
+    allowed = asset_files(edition)
     inputs = {target: digest(path) for path, target in allowed}
     from web_audio import prepare as prepare_audio
     audio = prepare_audio(allowed, BUILD / 'audio')

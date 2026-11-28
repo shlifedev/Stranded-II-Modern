@@ -128,16 +128,28 @@ class WebBoundaries(TestCase):
             (root / 'config/game-files.json').write_text(json.dumps({resource: hashlib.sha256(contents).hexdigest()}))
             (root / 'config/modern.ini').write_text('language=en\n')
             (root / 'licenses').mkdir()
+            extended_base = root / 'config/editions/extended'
+            extended_base.mkdir(parents=True)
+            (extended_base / 'modern.ini').write_text('language=de\n')
             settings = {'game': str(game), 'font': str(font)}
             with mock.patch.multiple(web_build, ROOT=root, BUILD=root / 'build/web', RUNTIME=runtime), \
                  mock.patch.object(web_build, 'validate'), \
                  mock.patch.object(web_build, 'prepare', return_value=(None, {})), \
-                 mock.patch.object(web_build, 'refresh', return_value={}), \
-                 mock.patch.object(web_build, 'override_files', return_value={}):
+                 mock.patch.object(web_build, 'refresh', return_value={}) as refresh:
                 web_build.prepare_assets(settings)
                 self.assertEqual((runtime / resource).read_bytes(), contents)
                 self.assertFalse((runtime / private[0]).exists())
                 self.assertEqual((runtime / 'core/modern.ini').read_text(), 'language=en\n')
+                classic = root / 'resources/editions/classic/overrides' / resource
+                classic.parent.mkdir(parents=True)
+                classic.write_bytes(b'classic-only asset')
+                web_build.prepare_assets(settings)
+                self.assertEqual((runtime / resource).read_bytes(), classic.read_bytes())
+
+                web_build.prepare_assets(settings, 'extended')
+                self.assertEqual((runtime / resource).read_bytes(), contents)
+                self.assertEqual((runtime / 'core/modern.ini').read_text(), 'language=de\n')
+                refresh.assert_called_with(root, runtime, font, 'extended')
                 (game / resource).write_bytes(b'changed resource')
                 with self.assertRaisesRegex(ValueError, 'Unexpected official resource'):
                     web_build.prepare_assets(settings)
