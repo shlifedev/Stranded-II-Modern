@@ -105,9 +105,27 @@ def main():
         return real_replace(source,target)
     with patch('language_pack.os.replace',side_effect=rename):fails('publish fixture locked')
     assert not list((runtime/'core').glob('.locales-*'))
+    # Only the midpoint is translated. The first lookup comes from English.
+    with (locale/'en.tsv').open('a', encoding='utf8') as stream:
+        for index in range(6):
+            stream.write(f'step{index}\t[[loc:step{index + 1}]]\n')
+        stream.write('step6\tshort\nstep7\tend\nstep8\tend\n')
+    with (locale/'ja.tsv').open('a', encoding='utf8') as stream:
+        stream.write('step6\t[[loc:step7]]\n')
+    validate(fixture)  # Eight keys resolve.
+    overlay = locale/'editions/extended'
+    overlay.mkdir(parents=True)
+    (overlay/'en.tsv').write_text('step7\t[[loc:step8]]\n', encoding='utf8')
+    try:
+        validate(fixture, 'extended')
+    except ValueError as error:
+        chain = ' -> '.join(f'step{index}' for index in range(9))
+        assert str(error) == f'ja: Localization nesting exceeds runtime limit: {chain}', str(error)
+    else:
+        raise AssertionError('expected a nine-key chain in the inherited Japanese rows to fail')
     (out/'report.json').write_text(json.dumps({'static_ttf':'pass','static_otf':'pass','variable_ttf':'pass',
         'glyph_fallback_and_full_latin_font':'pass','bearing_and_advance':'pass',
-        'missing_glyph_diagnostic':'pass','failed_generation_and_publish_preserve_pack':'pass'},indent=2)+'\n',encoding='utf8')
+        'fallback_reference_depth':'pass','missing_glyph_diagnostic':'pass','failed_generation_and_publish_preserve_pack':'pass'},indent=2)+'\n',encoding='utf8')
     print('Language/font fixtures passed:',out)
 
 

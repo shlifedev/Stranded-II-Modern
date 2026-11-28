@@ -78,13 +78,16 @@ def validate(root,edition='classic'):
             if any(ord(c)>65535 for c in value):raise ValueError(f'{lang}: BMP font cannot represent {key}')
             for ref in REFERENCE.findall(value):
                 if ref not in en:raise ValueError(f'{lang}: missing reference {ref}')
-    # Cycles would otherwise reach the runtime resolver depth limit.
-    def visit(key,values,stack):
-        if key in stack:raise ValueError('Cyclic localization reference: '+key)
-        if len(stack)>=8:raise ValueError('Localization nesting exceeds runtime limit: '+key)
-        for child in REFERENCE.findall(values.get(key,en[key])):visit(child,values,stack+[key])
-    for values in catalogs.values():
-        for key in values:visit(key,values,[])
+        # The game loads English first, then overlays the selected language.
+        # An inherited key can lead into a longer chain in the translated rows.
+        def visit(key, stack):
+            if key in stack or len(stack) >= 8:
+                reason = 'Cyclic localization reference' if key in stack else 'Localization nesting exceeds runtime limit'
+                raise ValueError(f"{lang}: {reason}: {' -> '.join((*stack, key))}")
+            for child in REFERENCE.findall(values.get(key, en[key])):
+                visit(child, (*stack, key))
+        for key in en:
+            visit(key, ())
     from editions import source_files, override_files
     # Tiny font fixtures have no engine entrypoint.
     paths=list(source_files(root,edition).values()) if (root/'src/engine').exists() else []
