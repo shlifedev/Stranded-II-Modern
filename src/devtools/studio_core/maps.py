@@ -36,7 +36,6 @@ def string(value):
 
 
 def runtime_height(value):
-    # ModifyTerrain multiplies in float32 before truncating to a byte.
     scaled, = struct.unpack('<f', struct.pack('<f', value * 255))
     return int(scaled) / 255
 
@@ -133,7 +132,6 @@ class EditableMap:
         def sample(gx, gz):
             if not (0 <= gx <= self.size and 0 <= gz <= self.size):
                 return 0
-            # The last row and column loaded overwrite the wrapped zero edges.
             return runtime_height(self.height(gx or self.size, gz or self.size))
         h = ((sample(ix, iz) * (1-ax) + sample(ix+1, iz) * ax) * (1-az)
              + (sample(ix, iz+1) * (1-ax) + sample(ix+1, iz+1) * ax) * az)
@@ -191,7 +189,6 @@ class EditableMap:
             records = [self.entity(e['kind'], e['id']) for e in selected]
             if dy and any(entity['kind'] == 'object' for _, _, entity, _ in records):
                 raise ValueError('Objects do not store Y; group vertical movement is unavailable')
-            # Positions have fixed widths. Every recorded offset remains valid for the whole move.
             out = bytearray(self.data)
             for _, _, entity, offsets in records:
                 x, z = entity['x'] + dx, entity['z'] + dz
@@ -212,7 +209,6 @@ class EditableMap:
             if mode not in ('raise', 'lower', 'flatten', 'smooth'):
                 raise ValueError('Brush mode: raise, lower, flatten or smooth')
             def brush_height(gx, gz):
-                # The last row/column loaded from the file owns each shared edge.
                 gx = max(0, min(self.size, gx)) or self.size
                 gz = max(0, min(self.size, gz)) or self.size
                 return self.height(gx, gz)
@@ -220,7 +216,6 @@ class EditableMap:
             def brush_axis(center):
                 low = max(0, math.floor(center-radius))
                 high = min(self.size, math.ceil(center+radius))
-                # When both endpoints are in range, keep the nearer one's weight.
                 if low == 0 and high == self.size:
                     if center <= self.size / 2:
                         high -= 1

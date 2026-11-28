@@ -131,8 +131,6 @@ def asset_files(edition='classic'):
         if not path.is_file():
             raise ValueError(f'Missing prepared web resource: {name}. Run setup before building.')
         result.append((path, '/game/' + relative.as_posix()))
-    # The browser has no host fonts. Both the default WebGPU font and named
-    # Blitz fonts fall back to GFX/cour.ttf in the current mod directory.
     fallback = '/game/mods/Stranded II/gfx/cour.ttf'
     if not any(target.casefold() == fallback.casefold() for _, target in result):
         result.append((engine_toolchain.library('imgui') / 'misc/fonts/ProggyClean.ttf', fallback))
@@ -174,8 +172,6 @@ def pack_assets(env, edition='classic'):
         if target.startswith('/game/core/locales/') and (path.suffix.lower() in ('.bmp', '.ttf') or path.name == 'glyphs.dat'):
             original = font_sources.setdefault(digest(path), target)
             if original != target:
-                # Keep the package path, directory and permissions. The loader
-                # fills it from the first copy before the application starts.
                 destination.write_bytes(b'')
                 font_copies.append((original, target))
                 continue
@@ -185,8 +181,6 @@ def pack_assets(env, edition='classic'):
     command += [str(package).replace('@', '@@') + '@/game']
     web_toolchain.run(command, env=env)
     if font_copies:
-        # WebPlay, Studio and browser probes load assets.js before their WASM
-        # module. Restore independent files before handing control to each app.
         with (SITE / 'assets.js').open('a', encoding='utf8', newline='\n') as loader:
             loader.write("""\n((ready, copies) => {
   Module['onRuntimeInitialized'] = function (...args) {

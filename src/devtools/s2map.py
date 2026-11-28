@@ -110,7 +110,6 @@ class Map:
         assert set(changes) <= known, set(changes) - known
         out, pos = bytearray(), 0
         for field in self.fields:
-            # An empty change set still exercises the complete format round-trip.
             if changes and field.key not in changes:
                 continue
             out.extend(self.data[pos:field.start])

@@ -257,7 +257,7 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
   if (!savedLanguage) {
     assert.equal(mainCalls, 0);
     assert.throws(() => FS.stat('/persist'), 'storage must not be mounted while another tab owns it');
-    context.Module.setStatus(''); // Emscripten clears its download status after runtime initialization.
+    context.Module.setStatus('');
     assert.match(element('status').textContent, /another tab/);
     assert.equal(warning.hidden, true);
     grantStorage();
@@ -287,7 +287,6 @@ module.exports = async function testStorage(FS, shellPath, savedLanguage = '') {
   assert.equal(durable.get('/persist/classic/saves/test.sav').toString(), 'new save');
   assert.equal(FS.readFile('SAVES/TEST.SAV', {encoding: 'utf8'}), 'new save');
   assert.equal(durable.get('/persist/classic/saves/test.sav.bak').toString(), 'previous save');
-  // A failure while taking the backup must leave both original files alone.
   FS.writeFile('saves/test.sav.tmp', 'pending replacement');
   const realReadFile = FS.readFile;
   const beforeMove = FS.stat('saves/test.sav.tmp').mtime.getTime();

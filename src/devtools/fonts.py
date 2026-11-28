@@ -58,8 +58,6 @@ def make_fonts(catalogs,packs,default_font,gfx,out,root):
             ink=max((p for p in original.convert('RGB').get_flattened_data() if p!=(255,0,255)),key=sum)
         colors.append((224,209,164) if style==5 else ink)
     reports = dict.fromkeys(packs)
-    # All packs share the repertoire and ordered fallbacks. Only the primary
-    # font can change the glyph assignments, metrics and atlas pixels.
     groups = {}
     for code, primary in selected.items():
         groups.setdefault(primary, []).append(code)
@@ -110,8 +108,6 @@ def make_fonts(catalogs,packs,default_font,gfx,out,root):
                     _,_,ypos,mask=glyphs[c];x=(i%32)*cellw;y=(i//32)*cellh+ypos
                     image.paste((0,0,0),(x+1,y+1),mask);image.paste(colors[style],(x,y),mask)
                 image.save(folder/f'{style}_{page}.bmp')
-        # Copy the atlases before adding language-specific previews. Each pack
-        # keeps regular files that can be replaced or distributed independently.
         for other in codes[1:]:
             shutil.copytree(folder, out/other)
         for code in codes:

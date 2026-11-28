@@ -231,7 +231,6 @@ class ScriptWorkspace(TestCase):
         recipes = [record['name'] for record in self.p.public_catalog('en') if record['kind']=='recipe']
         self.assertEqual(recipes, ['First meal'])
 
-        # An existing translation can also belong to the base, even in only one language.
         base = self.base / 'core/locales/ko.tsv'
         base.parent.mkdir(parents=True, exist_ok=True)
         base.write_text('studio.story.greeting\t기존 인사\n', encoding='utf8')

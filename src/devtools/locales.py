@@ -78,8 +78,6 @@ def validate(root,edition='classic'):
             if any(ord(c)>65535 for c in value):raise ValueError(f'{lang}: BMP font cannot represent {key}')
             for ref in REFERENCE.findall(value):
                 if ref not in en:raise ValueError(f'{lang}: missing reference {ref}')
-        # The game loads English first, then overlays the selected language.
-        # An inherited key can lead into a longer chain in the translated rows.
         def visit(key, stack):
             if key in stack or len(stack) >= 8:
                 reason = 'Cyclic localization reference' if key in stack else 'Localization nesting exceeds runtime limit'

@@ -16,7 +16,6 @@ def create(project, op):
     def text(suffix,en,ko=None):
         nonlocal existing
         if existing is None:
-            # The Korean catalog includes the English fallback and project overrides.
             existing = project.translations('ko')
         name_key = key+'.'+suffix
         if name_key in existing:

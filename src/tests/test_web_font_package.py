@@ -31,8 +31,6 @@ class WebFontPackage(TestCase):
                  mock.patch('web_audio.prepare', return_value={}):
                 web_build.pack_assets(env)
                 self.assertEqual((site/'assets.data').stat().st_size, 6)
-                # A path that was empty during staging must regain its data if
-                # an edited language pack no longer shares the original font.
                 files[-1][0].write_bytes(b'DEF')
                 web_build.pack_assets(env)
                 self.assertEqual((site/'assets.data').stat().st_size, 9)

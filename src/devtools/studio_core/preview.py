@@ -25,7 +25,6 @@ def changed_heights(before, after):
     row_bytes = size * 4
     length = size * row_bytes
     new = memoryview(after.data)[after.heights_start:after.heights_start + length]
-    # startswith compares a buffer at an offset without copying the terrain.
     if before.data.startswith(new, before.heights_start):
         return []
 
@@ -63,7 +62,6 @@ def preview_assets(assets):
             wavs.append((source, target))
         if wavs:
             try:
-                # Studio's stdout carries the JSON protocol.
                 with redirect_stdout(sys.stderr):
                     prepared = web_audio.prepare(wavs, staging / 'pcm')
             except (subprocess.CalledProcessError, IndexError) as exc:
@@ -115,8 +113,6 @@ def preview(project, map_name, since=None, include_sources=True):
     raw = project.map_bytes(map_name)
     model = EditableMap(raw)
     inputs = {'files':script_resources(project), **{k:project.data[k] for k in ('assets','locales')}}
-    # Inline map and entity scripts can introduce glyphs absent from the loaded
-    # atlases. Ordinary scene edits can keep using the current renderer.
     extra = extra_map_glyphs(project, model)
     if extra:
         inputs['mapGlyphs'] = extra
@@ -150,7 +146,6 @@ def save_baseline(root, token, since, snapshot):
     from .project import atomic, safe
     cache = safe(root, '.studio/previews')
     atomic(cache / (token + '.json'), snapshot)
-    # Keep the requested parent available until the caller applies the delta.
     protected = {token, since} if since else {token}
     others = (path for path in cache.glob('*.json') if path.stem not in protected)
     newest = sorted(others, key=lambda path: path.stat().st_mtime_ns, reverse=True)

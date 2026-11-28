@@ -216,7 +216,6 @@ def package_app(executable, parent=None):
             write(stage / report.name, {'app': str(app), 'executable_sha256': executable_hash,
                   'signed_executable_sha256': digest(candidate / 'Contents/MacOS/StrandedII'),
                   'asset_sha256': hashes, 'personal_data_included': False, 'signing': 'local ad hoc'})
-            # Once the signed app is visible, a complete report is already in place.
             (stage / report.name).replace(report)
             candidate.rename(app)
     return app

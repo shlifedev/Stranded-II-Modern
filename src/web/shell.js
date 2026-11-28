@@ -183,7 +183,6 @@ function refreshSaveList(selected = saveSelect.value) {
   if (!names.length) saveSelect.add(new Option('No saved games', ''));
 }
 
-// Match the legacy save-menu preflight in modern_saves.bb before offering an import.
 function checkSaveFile(bytes) {
   const decoder = new TextDecoder('latin1');
   let offset = 0;
@@ -395,8 +394,6 @@ async function bridge(request) {
       const source = filePath(args[0]), destination = filePath(args[1]);
       let previous;
       try {
-        // A missing leaf is a first save. Any other lookup or read failure
-        // must stop the operation before the current save is replaced.
         if (FS.lookupPath(destination, {follow: true, noent_okay: true}).node) {
           previous = FS.readFile(destination);
         }

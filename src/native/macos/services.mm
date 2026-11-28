@@ -205,8 +205,6 @@ std::string strandedMacAppDirectory(const std::string &executable){
     if(!destination.is_absolute() || destination==destination.root_path())
       throw std::runtime_error("Native data directory must be an absolute application directory");
     fs::create_directories(destination);destination=fs::canonical(destination);
-    // Every launcher sharing the profile must see the preceding installer's
-    // finished files and fingerprint before deciding which assets to replace.
     AssetInstallLock installLock(destination);
     std::string fingerprint=utf8(manifest[@"fingerprint"]),previous;
     std::ifstream(destination/".native-assets")>>previous;

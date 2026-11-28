@@ -25,7 +25,6 @@ function openDraftStore(profile) {
         fs.rmSync(file, {force:true});
         return;
       }
-      // A tombstone prevents a discarded legacy draft from returning after restart.
       value = null;
     } else if (action !== 'set' || typeof value !== 'string') {
       throw new Error('Invalid storage action');

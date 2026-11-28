@@ -244,7 +244,6 @@ class Project:
         prefix, dot, _ = relative[len(MOD):].partition('.')
         if not dot:
             raise FileNotFoundError(relative)
-        # Blitz uses the first dot in the mod-relative path, including directory names.
         link = MOD + prefix + '.inf'
         resource_path(link)
         source = self.data['assets'].get(link)
@@ -263,7 +262,6 @@ class Project:
         target = line.strip().replace('\\', '/')
         if not target:
             raise FileNotFoundError(link)
-        # path$ returns the original filename when it contains no directory.
         folder, slash, _ = link[len(MOD):].rpartition('/')
         resolved = (MOD + folder + '/' if slash else link) + target
         if not exists(resolved):

@@ -188,7 +188,6 @@ def overlay_definitions(project, files):
         for record in content.records(name, text):
             key = record.kind, str(record.identifier)
             if key in bindings:
-                # An ambiguous target is diagnosed by the workspace.
                 matches[key] = record if key not in matches else None
 
     edits = {}
@@ -199,7 +198,6 @@ def overlay_definitions(project, files):
         text = files[name]
         parts = []
         end = 0
-        # Matches retain source order, so offsets refer to the original file.
         for record, script in replacements:
             parts.extend((text[end:record.start], content.edit(record.text, {'script': script})))
             end = record.end
@@ -320,7 +318,6 @@ def commit_files(project, before, history):
         atomic(safe(project.root,'.studio/script-transaction.json'),encode(journal))
         recover(project.root)
     else:
-        # Keep the current undo stack until the manifest has switched revisions.
         pending = safe(project.root, '.studio/history.pending.json')
         atomic(pending, encode(history))
         atomic(project.path, encode(project.data))

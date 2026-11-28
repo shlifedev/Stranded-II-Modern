@@ -78,7 +78,6 @@ def verify_dependency_files(destination, paths):
         source = input_file(base, relative)
         if engine.digest(source) != expected:
             raise ValueError(f'Unexpected SHA-256: {source}')
-        # License pins also cover the checkout copy used to create the archive.
         if source != destination / name and engine.digest(input_file(destination, name)) != expected:
             raise ValueError(f'Dependency bundle contains unexpected or changed files: {name}')
     if remaining:

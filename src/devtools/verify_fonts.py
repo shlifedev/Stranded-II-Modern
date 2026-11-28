@@ -111,14 +111,13 @@ def main():
         return real_replace(source,target)
     with patch('language_pack.os.replace',side_effect=rename):fails('publish fixture locked')
     assert not list((runtime/'core').glob('.locales-*'))
-    # Only the midpoint is translated. The first lookup comes from English.
     with (locale/'en.tsv').open('a', encoding='utf8') as stream:
         for index in range(6):
             stream.write(f'step{index}\t[[loc:step{index + 1}]]\n')
         stream.write('step6\tshort\nstep7\tend\nstep8\tend\n')
     with (locale/'ja.tsv').open('a', encoding='utf8') as stream:
         stream.write('step6\t[[loc:step7]]\n')
-    validate(fixture)  # Eight keys resolve.
+    validate(fixture)
     overlay = locale/'editions/extended'
     overlay.mkdir(parents=True)
     (overlay/'en.tsv').write_text('step7\t[[loc:step8]]\n', encoding='utf8')

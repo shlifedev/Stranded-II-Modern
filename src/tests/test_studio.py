@@ -42,7 +42,6 @@ class NativeMaps(TestCase):
                                (16, 7, .91), (7, 0, .02), (7, 16, .88)]:
             struct.pack_into('<f', data, model.heights_start + (gx * 17 + gz) * 4, height)
         model = EditableMap(data)
-        # Values read from TerrainY with the game's load order, scale and floor.
         for x, z, expected in [(-512, -512, -1223.529419), (-512, -64, 1311.372559),
                                (-64, -512, 1210.980469), (512, -64, 1311.372559),
                                (-768, -768, -1223.529419)]:
@@ -119,7 +118,6 @@ class NativeMaps(TestCase):
             packet, counts = encode_patch(previous, following)
             self.assertEqual(counts['heights'], 1)
             self.assertEqual(struct.unpack_from('<iif', packet, 12), (16, 16, height))
-        # The shared vertex receives the nearest weight once, even for a large brush.
         wide = EditableMap(after.apply({'op':'terrain.brush','x':4,'z':0,'radius':16,'strength':.25}))
         self.assertEqual(wide.height(0,0), .5 + .25*.75)
         self.assertEqual(wide.height(16,16), wide.height(0,0))
@@ -271,7 +269,6 @@ class NativeDefinitionFiles(TestCase):
             self.assertEqual([record.identifier for record in items], [1, 2])
             self.assertEqual((directory/'infos_scene.InF').read_text('utf8'), inputs['infos_scene.InF'])
 
-            # An older project may contain a second spelling in its overlay.
             project.put_text(MOD+'sys/items_studio.inf', 'id=3\nname=Other\n')
             with self.assertRaisesRegex(ValueError, 'Multiple Studio definition files'):
                 project.perform({'op':'content.clone','kind':'item','source':1})
@@ -523,7 +520,6 @@ class Projects(TestCase):
                       for yaw in range(12)]
         with mock.patch.object(EditableMap, 'apply', autospec=True, side_effect=EditableMap.apply) as replay:
             self.project.apply(operations)
-        # Each edit is checked when issued, then replayed into the unbound map.
         self.assertLessEqual(replay.call_count, 2 * len(operations))
         expected = before
         for operation in operations:
