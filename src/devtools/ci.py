@@ -10,6 +10,7 @@ import shutil
 import stat
 import struct
 import sys
+import tempfile
 import zipfile
 from versioning import local_info, runtime_info, validate_info
 from editions import Edition, NAMES, source_hashes, override_files
@@ -156,15 +157,21 @@ def dependencies(args):
     destination = args.destination.resolve()
     if destination.exists():
         raise ValueError(f'Use a new dependency directory: {destination}')
-    destination.mkdir(parents=True)
-    extract_archive(args.archive, destination)
-    paths = {'game': destination / 'game', 'blitz': destination / 'blitz',
-             'font': destination / 'fonts/NotoSansKR.ttf'}
-    members = dependency_members(paths['game'], paths['blitz'], paths['font'])
-    actual = {p.relative_to(destination).as_posix(): p.read_bytes()
-              for p in destination.rglob('*') if p.is_file()}
-    if actual != members:
-        raise ValueError('Dependency bundle contains unexpected or changed files')
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    inputs = {'game': 'game', 'blitz': 'blitz', 'font': 'fonts/NotoSansKR.ttf'}
+    with tempfile.TemporaryDirectory(dir=destination.parent) as temporary:
+        staged = Path(temporary) / 'dependencies'
+        staged.mkdir()
+        extract_archive(args.archive, staged)
+        members = dependency_members(**{key: staged / relative for key, relative in inputs.items()})
+        actual = {p.relative_to(staged).as_posix(): p.read_bytes()
+                  for p in staged.rglob('*') if p.is_file()}
+        if actual != members:
+            raise ValueError('Dependency bundle contains unexpected or changed files')
+        if destination.exists():
+            raise ValueError(f'Use a new dependency directory: {destination}')
+        staged.rename(destination)
+    paths = {key: destination / relative for key, relative in inputs.items()}
     github_outputs(args.github_output, paths)
     print(json.dumps({k: str(v) for k, v in paths.items()}, indent=2))
 

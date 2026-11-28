@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"326609ccd67e7b0af84e93c7caf879d4aaf6fa1ebdca9b752c378499984fa751"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"5b8f80b125819ec647859816d197a36f67c16cf0f02e03dd28c6aa356e00c2d3"} -->
 
 # 개발 가이드
 
@@ -434,7 +434,7 @@ gh release create ci-deps-v1 `
   --latest=false
 ```
 
-이후 Actions의 `Desktop build and release`를 수동 실행하면 ZIP을 받을 수 있습니다. 의존성을 갱신할 때는 ZIP을 다시 만들고 출력된 SHA-256과 새 Release 태그·파일명을 설정에 함께 반영합니다. 해시가 다른 ZIP은 캐시에 있어도 압축을 풀지 않습니다. 기존 동기화된 문서나 소스 변경만으로 의존성 ZIP을 다시 만들 필요는 없습니다. 단, 번들용 라이선스의 목록이나 내용을 변경하면 `config/dependency-license-files.json`을 갱신하고 의존성 ZIP을 다시 만든 뒤 전체 해시도 함께 갱신합니다.
+이후 Actions의 `Desktop build and release`를 수동 실행하면 ZIP을 받을 수 있습니다. 의존성을 갱신할 때는 ZIP을 다시 만들고 출력된 SHA-256과 새 Release 태그·파일명을 설정에 함께 반영합니다. 해시가 다른 ZIP은 캐시에 있어도 압축을 풀지 않습니다. 압축 해제나 파일 검증에 실패하면 원인을 해결한 뒤 같은 대상 경로로 명령을 다시 실행하세요. 기존 동기화된 문서나 소스 변경만으로 의존성 ZIP을 다시 만들 필요는 없습니다. 단, 번들용 라이선스의 목록이나 내용을 변경하면 `config/dependency-license-files.json`을 갱신하고 의존성 ZIP을 다시 만든 뒤 전체 해시도 함께 갱신합니다.
 
 ### 배포 ZIP 구성
 

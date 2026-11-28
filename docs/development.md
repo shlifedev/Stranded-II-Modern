@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"3e958d7be25a4e650b71817ded0ea420dd9b68e069b20b7a02f3e5bb1c1a6655"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"0bc19f10f9cec7a2a6ad15346822de02064e5ee6b5dc3dd9adcbd75c3903ec2d"} -->
 
 # Development guide
 
@@ -434,7 +434,7 @@ gh release create ci-deps-v1 `
   --latest=false
 ```
 
-Then manually run `Desktop build and release` in Actions to download the game ZIP. To update dependencies, rebuild the bundle and update the configuration with its printed SHA-256 and a new Release tag/filename. A mismatched ZIP is rejected before extraction, even on a cache hit. Ordinary changes to synchronized documents or game sources do not require rebuilding the dependency ZIP. If bundled license names or contents change, update `config/dependency-license-files.json`, rebuild the dependency ZIP and update its complete pinned hash.
+Then manually run `Desktop build and release` in Actions to download the game ZIP. To update dependencies, rebuild the bundle and update the configuration with its printed SHA-256 and a new Release tag/filename. A mismatched ZIP is rejected before extraction, even on a cache hit. If unpacking or file verification fails, rerun the command with the same destination once the cause is fixed. Ordinary changes to synchronized documents or game sources do not require rebuilding the dependency ZIP. If bundled license names or contents change, update `config/dependency-license-files.json`, rebuild the dependency ZIP and update its complete pinned hash.
 
 ### Release ZIP contents
 
