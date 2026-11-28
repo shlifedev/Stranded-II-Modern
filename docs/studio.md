@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"bebc7c1bebd1723f3c0ac6cf3c66f3db9ad8d525451fc239a2fde93ff260f44c"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"1b63f350d3d587c68f8d12be5f64ea1239ce9c16758414461e1f8b9140683523"} -->
 
 # Stranded II Studio
 
@@ -47,7 +47,7 @@ Create a project in an empty folder or open an existing project on the start scr
 
 Content icons fit a 64px tile and expand to at most 160px in the inspector, preserving their aspect ratio. Most originals are 40×40; enlargement does not add detail. Buildings show their completed result, and recipes show the first output item with `+N` for additional outputs. Map information uses the game's icon frames. Missing or unreadable images display a fallback symbol and a reason.
 
-Icons work without a map or the 3D engine. Imported project images take precedence, and icons refresh when saved definitions or assets change. Placement, movement, terrain edits and their undo/redo retain existing thumbnails. Unapplied drafts are excluded; icon updates are independent of the scene's **Apply resources** action.
+Icons work without a map or the 3D engine. A missing icon or model can use the game’s single-step resource link. For example, `gfx/alias.detail.bmp` reads the target filename from the first line of `gfx/alias.inf`. Imported project images take precedence, and icons refresh when saved definitions or assets change. Placement, movement, terrain edits and their undo/redo retain existing thumbnails. Unapplied drafts are excluded; icon updates are independent of the scene's **Apply resources** action.
 
 The placement preview displays the currently applied item, object or unit model in green at 40% opacity. Buildings use their completed result model; map information uses a position marker. Preview and click placement share the same snapping, terrain height and alignment rules. The temporary model is never saved in the map and hides outside terrain or while looking with the right mouse button.
 
