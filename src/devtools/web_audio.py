@@ -60,6 +60,10 @@ def supported_wav(path):
     """The runtime requires a PCM fmt chunk immediately after the RIFF header."""
     with path.open('rb') as stream:
         head = stream.read(36)
+    return supported_wav_header(head)
+
+
+def supported_wav_header(head):
     return (len(head) == 36 and head[:4] == b'RIFF' and head[8:16] == b'WAVEfmt '
             and struct.unpack_from('<H', head, 20)[0] == 1
             and struct.unpack_from('<H', head, 22)[0] in (1, 2)

@@ -5,6 +5,8 @@ from unittest import TestCase, mock
 import base64
 import hashlib
 import json
+import io
+import wave
 import struct
 import subprocess
 import sys
@@ -394,6 +396,40 @@ class Projects(TestCase):
         with self.assertRaisesRegex(ValueError,'Revision conflict'):
             second.apply([{'op':'map.create','name':'other'}],expected=0)
         self.assertEqual(list(Project(self.project.root).data['maps']),['island'])
+
+    def test_preview_converts_only_unsupported_imported_wavs_and_preserves_export(self):
+        def pcm(width):
+            data = io.BytesIO()
+            with wave.open(data, 'wb') as output:
+                output.setparams((1, width, 16000, 0, 'NONE', 'not compressed'))
+                output.writeframes(bytes(width * 64))
+            return data.getvalue()
+
+        original, supported = pcm(3), pcm(2)
+        for name, data in [('new', original), ('ready', supported)]:
+            asset = self.root/(name + '.bin')
+            asset.write_bytes(data)
+            self.project.apply([{'op': 'asset.import', 'path': str(asset),
+                                 'destination': MOD + 'sfx/' + name + '.WAV'}])
+        self.project.apply([{'op': 'map.create', 'name': 'island'}])
+
+        def convert(inputs, output):
+            (source, target), = inputs
+            self.assertEqual(source.name, 'new.WAV')
+            self.assertEqual(source.read_bytes(), original)
+            output.mkdir()
+            result = output/'converted.wav'
+            result.write_bytes(supported)
+            return {target: result}
+
+        with mock.patch.object(web_audio, 'prepare', side_effect=convert) as prepare:
+            full = self.project.preview('island')
+            for name in ('new', 'ready'):
+                self.assertEqual(base64.b64decode(full['files'][MOD + 'sfx/' + name + '.WAV']), supported)
+            self.project.preview('island', since=full['token'])
+            self.project.export(self.root/'out')
+            self.assertEqual(prepare.call_count, 1)
+        self.assertEqual((self.root/'out/overrides'/MOD/'sfx/new.WAV').read_bytes(), original)
 
     def test_undo_redo_restores_exact_map_and_increments_revision(self):
         self.project.apply([{'op':'map.create','name':'island'}])
