@@ -4,9 +4,9 @@ const handlers=new Map(),commits=[],opens=[];
 const input={style:{},value:'',setAttribute(){},addEventListener(t,f){handlers.set(t,[...(handlers.get(t)||[]),f]);},
  focus(){document.activeElement=this;}};
 const canvas={width:1280,height:720,getBoundingClientRect:()=>({left:10,top:20,width:640,height:360}),focus(){document.activeElement=this;}};
-const document={body:{append(){}},createElement:()=>input,activeElement:canvas,pointerLockElement:canvas,
- exitPointerLock(){this.pointerLockElement=null;}};
-const context=vm.createContext({document});
+const document=Object.assign(new EventTarget(),{body:{append(){}},createElement:()=>input,activeElement:canvas,pointerLockElement:canvas,
+ exitPointerLock(){this.pointerLockElement=null;}});
+const context=vm.createContext({document,window:new EventTarget()});
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../web/debugui.js'),'utf8'),context);
 const moduleBridge={ccall(name,result,types,values){assert.equal(name,'s2DebugUiCommit');commits.push(values[0]);}};
 context.s2InstallDebugUi(moduleBridge,canvas,open=>opens.push(open));
@@ -14,10 +14,10 @@ function emit(type,data={}){let stopped=false;const event={stopImmediatePropagat
 moduleBridge.s2DebugUiSetOpen(true);assert.equal(document.pointerLockElement,null);
 moduleBridge.s2DebugUiIme(true,100,80,20);assert.equal(document.activeElement,input);
 assert.equal(input.style.left,'60px');assert.equal(input.style.top,'60px');assert.equal(input.style.height,'10px');
-emit('compositionstart');input.value='?';emit('input',{isComposing:true,data:'?'});assert.deepEqual(commits,[]);
-emit('compositionend',{data:'??'});input.value='??';emit('input',{data:'??',inputType:'insertFromComposition'});
-assert.deepEqual(commits,['??']);
-input.value=' ????';emit('input',{inputType:'insertFromPaste'});assert.deepEqual(commits,['??',' ????']);
+emit('compositionstart');input.value='ㅎ';emit('input',{isComposing:true,data:'ㅎ'});assert.deepEqual(commits,[]);
+emit('compositionend',{data:'한글'});input.value='한글';emit('input',{data:'한글',inputType:'insertFromComposition'});
+assert.deepEqual(commits,['한글']);
+input.value=' 붙여넣기';emit('input',{inputType:'insertFromPaste'});assert.deepEqual(commits,['한글',' 붙여넣기']);
 assert.equal(emit('keydown',{ctrlKey:true,code:'KeyV'}),true,'paste has one owner');
 assert.equal(emit('keydown',{code:'ArrowLeft'}),false,'navigation reaches SDL');
 assert.equal(emit('keypress'),true,'keypress does not duplicate textarea text');

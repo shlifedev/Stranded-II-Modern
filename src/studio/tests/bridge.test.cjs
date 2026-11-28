@@ -9,19 +9,46 @@ function viewport(){
   const listeners={},canvasListeners={},overlayListeners={},messages=[],writes=[];
   const origin='http://127.0.0.1:12345';
   const overlay={innerHTML:'',addEventListener:(name,fn)=>overlayListeners[name]=fn,setPointerCapture(){},hasPointerCapture:()=>false};
-  const canvas={focus(){},setPointerCapture(){},width:1280,height:800,style:{},addEventListener:(name,fn)=>canvasListeners[name]=fn,
+  const canvas={focus(){document.activeElement=this;},setPointerCapture(){},width:1280,height:800,style:{},addEventListener:(name,fn)=>canvasListeners[name]=fn,
     getBoundingClientRect:()=>({left:20,top:30,width:640,height:400})};
-  const document={hidden:false,activeElement:null,pointerLockElement:null,
-    exitPointerLock(){this.pointerLockElement=null;},getElementById:id=>id==='canvas'?canvas:id==='gizmo'?overlay:{style:{}}};
+  const document=Object.assign(new EventTarget(),{
+    hidden:false,activeElement:null,pointerLockElement:null,body:{append(){}},
+    createElement:()=>Object.assign(new EventTarget(),{style:{},setAttribute(){},focus(){document.activeElement=this;}}),
+    exitPointerLock(){this.pointerLockElement=null;},getElementById:id=>id==='canvas'?canvas:id==='gizmo'?overlay:{style:{}}
+  });
+  const window={addEventListener(name,fn){
+    const previous=listeners[name];
+    listeners[name]=previous?event=>{previous(event);fn(event);}:fn;
+  }};
   const parent={postMessage:value=>messages.push(value)};
-  const context=vm.createContext({document,parent,location:{origin,reload(){throw new Error('Unexpected automatic reload');}},window:{addEventListener:(name,fn)=>listeners[name]=fn},
+  const context=vm.createContext({document,parent,location:{origin,reload(){throw new Error('Unexpected automatic reload');}},window,
     console,performance,Uint8Array,atob,innerWidth:640,innerHeight:400,navigator:{},WebAssembly});
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../engine/gizmo.js'),'utf8'),context);
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'../../web/debugui.js'),'utf8'),context);
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../engine/studio.js'),'utf8'),context);
   context.Module.FS={mkdirTree(){},writeFile:(name,data)=>writes.push({name,data}),cwd:()=>'/game'};
   const send=(value,sender=parent,from=origin)=>listeners.message({source:sender,origin:from,data:{source:'studio-ui',...value}});
   return {context,document,canvas,overlay,messages,writes,send,canvasListeners,overlayListeners,listeners,bridge:context.Module.s2Bridge};
 }
+
+test('debug overlay owns text focus and pauses editor shortcuts until closed',()=>{
+  const h=viewport(),module=h.context.Module;
+  let invalidated=0;
+  module._s2BenchmarkFocusLost=()=>{invalidated++;};
+  h.document.pointerLockElement=h.canvas;
+  module.s2DebugUiSetOpen(true);
+  module.s2DebugUiIme(true,10,20,16);
+  assert.equal(h.document.pointerLockElement,null);
+  assert.equal(h.document.activeElement.style.display,'block');
+  h.listeners.keydown({code:'Delete'});
+  assert.equal(h.messages.some(message=>message.type==='shortcut'),false);
+  h.listeners.blur();
+  assert.equal(invalidated,1);
+  module.s2DebugUiSetOpen(false);
+  assert.equal(h.document.activeElement,h.canvas);
+  h.listeners.keydown({code:'Delete',preventDefault(){}});
+  assert.equal(h.messages.at(-1).key,'delete');
+});
 
 test('runtime records preserve Unicode, source separators and read-only variables',async()=>{
   const h=viewport();
