@@ -56,6 +56,18 @@ class ScriptWorkspace(TestCase):
         self.p.apply([{'op':'map.script','map':'island','text':'on:start { msg "new"; }','expectedHash':digest(b'on:start {}')}])
         self.assertIn('new',(self.p.root/self.path).read_text('utf8'))
 
+    def test_file_edits_stay_live_across_batched_map_replays(self):
+        self.write('on:start {}')
+        self.bind()
+        move = {'op':'entity.set','map':'island','kind':'info','id':1,'values':{'yaw':90}}
+        updated = 'on:start { msg "new"; }'
+        self.p.apply([move, {'op':'script.write','path':self.path,'text':updated,
+                             'expectedHash':digest(b'on:start {}')},
+                      {'op':'script.unbind','target':self.target}, move])
+        self.assertEqual(EditableMap(self.p.map_bytes('island')).summary()['script'], updated)
+        self.p.undo()
+        self.assertEqual(EditableMap(self.p.map_bytes('island')).summary()['script'], 'on:start {}')
+
     def test_numeric_binding_ids_have_one_identity(self):
         self.write('on:use {}')
         self.bind({'scope':'definition','kind':'item','id':'1'})

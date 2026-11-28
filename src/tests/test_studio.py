@@ -394,6 +394,24 @@ class Projects(TestCase):
         self.assertEqual(lines[0]['id'],1);self.assertEqual(lines[-1]['id'],4)
         self.assertEqual(result.stderr,'')
 
+    def test_batch_replays_each_appended_map_edit_once(self):
+        self.project.apply([{'op':'map.create','name':'island','size':16}])
+        before = self.project.map_bytes('island')
+        operations = [{'op':'entity.set','map':'island','kind':'info','id':1,'values':{'yaw':yaw}}
+                      for yaw in range(12)]
+        with mock.patch.object(EditableMap, 'apply', autospec=True, side_effect=EditableMap.apply) as replay:
+            self.project.apply(operations)
+        # Each edit is checked when issued, then replayed into the unbound map.
+        self.assertLessEqual(replay.call_count, 2 * len(operations))
+        expected = before
+        for operation in operations:
+            expected = EditableMap(expected).apply(operation)
+        self.assertEqual(self.project.map_bytes('island'), expected)
+        self.project.undo()
+        self.assertEqual(self.project.map_bytes('island'), before)
+        self.project.undo(redo=True)
+        self.assertEqual(self.project.map_bytes('island'), expected)
+
     def test_snapshot_after_undo_of_active_map_is_empty(self):
         self.project.apply([{'op':'map.create','name':'island'}]);self.project.undo()
         value=self.project.snapshot('island')

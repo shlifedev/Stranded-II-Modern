@@ -161,6 +161,7 @@ class Project:
         self._texts = None
         self._catalog = None
         self._blobs = {}
+        self._last_replay = None
         self.script_files = scripts.scan(self)
         self._script_originals = deepcopy(self.script_files)
         self._script_writes = set()
@@ -216,8 +217,15 @@ class Project:
             raise ValueError(f'Unknown map: {name}')
         entry = self.data['maps'][name]
         data = self.source_bytes(entry['source'], f'map {name}')
-        for op in entry['edits']:
+        edits = entry['edits']
+        start = 0
+        if self._last_replay is not None:
+            previous_edits, count, previous_data = self._last_replay
+            if previous_edits is edits:
+                start, data = count, previous_data
+        for op in edits[start:]:
             data = EditableMap(data).apply(op)
+        self._last_replay = edits, len(edits), data
         return scripts.overlay_map(self, name, data)
 
     def resolve_asset(self, relative):
