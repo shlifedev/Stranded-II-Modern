@@ -143,6 +143,13 @@ class ScriptWorkspace(TestCase):
         issue=next(d for d in self.p.validate() if d['code']=='missing-script')
         self.assertEqual(issue['path'],self.path);self.assertEqual(issue['line'],1)
 
+    def test_event_lines_follow_each_match_across_comments_and_split_headers(self):
+        text = ('// on:ignored\non:first {} on:second {}\n'
+                'msg "on:quoted";\non\n :\n third {}\n# on:ignored\n\non:last {}')
+        events = scripts.analyze(text, self.path)['events']
+        self.assertEqual([(e['name'], e['line']) for e in events],
+                         [('first', 2), ('second', 2), ('third', 4), ('last', 9)])
+
     def test_missing_bound_file_does_not_destroy_inline_script(self):
         self.write('on:start {}');self.bind();(self.p.root/self.path).unlink()
         self.p.load();self.assertTrue(any(d['code']=='script-binding' for d in self.p.validate()))
