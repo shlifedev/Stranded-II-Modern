@@ -35,6 +35,12 @@ def string(value):
     return struct.pack('<i', len(raw)) + raw
 
 
+def runtime_height(value):
+    # ModifyTerrain multiplies in float32 before truncating to a byte.
+    scaled, = struct.unpack('<f', struct.pack('<f', value * 255))
+    return int(scaled) / 255
+
+
 class EditableMap:
     def __init__(self, data):
         try:
@@ -125,11 +131,14 @@ class EditableMap:
         ix, iz = math.floor(gx), math.floor(gz)
         ax, az = gx - ix, gz - iz
         def sample(gx, gz):
-            return self.height(gx,gz) if 0 <= gx <= self.size and 0 <= gz <= self.size else 0
+            if not (0 <= gx <= self.size and 0 <= gz <= self.size):
+                return 0
+            # The last row and column loaded overwrite the wrapped zero edges.
+            return runtime_height(self.height(gx or self.size, gz or self.size))
         h = ((sample(ix, iz) * (1-ax) + sample(ix+1, iz) * ax) * (1-az)
              + (sample(ix, iz+1) * (1-ax) + sample(ix+1, iz+1) * ax) * az)
         # Match Blitz TerrainY and e_tery's ground-plane floor, including edges.
-        return (max(h, self.height(0,0)) - .5) * WORLD_HEIGHT
+        return (max(h, sample(0, 0)) - .5) * WORLD_HEIGHT
 
     def summary(self):
         script = self.fields['global_script'].data.decode('utf8').replace('\x1f', '\n')
@@ -292,14 +301,16 @@ def new_map(size=32):
     color_size = 128
     data += struct.pack('<i', color_size) + bytes((100,135,72))*(color_size**2)
     data += struct.pack('<i', size)
+    shore, plateau = .45, .55
     for x in range(size+1):
         for z in range(size+1):
             distance = math.hypot(x-size/2, z-size/2)/(size*.43)
-            data += struct.pack('<f', .45 + .10*max(0, min(1, (1-distance)*4)))
+            data += struct.pack('<f', shore + (plateau-shore)*max(0, min(1, (1-distance)*4)))
     data += bytes((color_size+1)**2)
     data += struct.pack('<iii', 0,0,0)  # objects, units, items
     # Player start (info type 1), required for a playable new map.
-    data += struct.pack('<iiBfffff', 1, 1, 1, 0, 160, 0, 0, 0) + string('')
+    start_y = (runtime_height(plateau) - .5) * WORLD_HEIGHT
+    data += struct.pack('<iiBfffff', 1, 1, 1, 0, start_y, 0, 0, 0) + string('')
     data += struct.pack('<ii', 0,0)  # states, extensions
     data += b'\r\n###\r\nwww.unrealsoftware.de\r\n'
     EditableMap(bytes(data))
