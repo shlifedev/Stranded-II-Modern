@@ -6,6 +6,8 @@ are serialized, with their byte lengths recomputed.
 from dataclasses import dataclass
 import struct
 
+INVERT_BYTES = bytes(range(255, -1, -1))
+
 
 @dataclass
 class Field:
@@ -66,25 +68,24 @@ class Map:
         trailer = [self.line() for _ in range(3)]
         assert trailer[-1] == b'www.unrealsoftware.de', (self.pos, trailer)
         while self.pos < len(data):
-            start = self.pos
             name_raw = self.line()
             if not name_raw and self.pos == len(data):
                 break
-            name = bytes(255 - b for b in name_raw).decode('cp1252')
+            name = bytes(name_raw).translate(INVERT_BYTES).decode('cp1252')
             body_start = self.pos
             length = self.integer()
-            content = bytes(255 - b for b in self.take(length))
+            content = bytes(self.take(length)).translate(INVERT_BYTES)
             self.fields.append(Field('attachment/' + name, body_start, self.pos, content, 'attachment'))
         assert self.pos == len(data)
 
     def take(self, count):
-        assert count >= 0 and self.pos + count <= len(self.data), (self.pos, count, len(self.data))
-        result = self.data[self.pos:self.pos + count]
-        self.pos += count
-        return result
+        start = self.pos
+        self.skip(count)
+        return self.data[start:self.pos]
 
     def skip(self, count):
-        self.take(count)
+        assert count >= 0 and self.pos + count <= len(self.data), (self.pos, count, len(self.data))
+        self.pos += count
 
     def byte(self):
         return self.take(1)[0]
@@ -109,10 +110,13 @@ class Map:
         assert set(changes) <= known, set(changes) - known
         out, pos = bytearray(), 0
         for field in self.fields:
+            # An empty change set still exercises the complete format round-trip.
+            if changes and field.key not in changes:
+                continue
             out.extend(self.data[pos:field.start])
             payload = changes.get(field.key, field.data)
             if field.kind == 'attachment':
-                payload = bytes(255 - b for b in payload)
+                payload = bytes(payload).translate(INVERT_BYTES)
             out.extend(struct.pack('<i', len(payload)))
             out.extend(payload)
             pos = field.end
