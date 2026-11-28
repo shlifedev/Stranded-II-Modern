@@ -92,10 +92,16 @@ public:
 		if( format==0 ) return false;
 
 		alGetError();
+		ALuint new_source=0;
+		alGenSources( 1,&new_source );
+		if( alGetError()!=AL_NO_ERROR ) return false;
 		alGenBuffers( NUM_BUFFERS,buffers );
-		alGenSources( 1,&source );
-
-		return alGetError()==AL_NO_ERROR;
+		if( alGetError()!=AL_NO_ERROR ){
+			alDeleteSources( 1,&new_source );
+			return false;
+		}
+		source=new_source;
+		return true;
 	}
 
 	bool queue( ALuint buffer ){
@@ -137,27 +143,29 @@ public:
 		looping=false;
 	}
 
-	void play(){
-		if( !playbackRunning ){
-			playbackRunning=true;
-			streamStart();
-			em_register_stream( this );
+	OpenALChannel *play(){
+		if( !streamStart() ){
+			release();
+			idle_channels.push_back( this );
+			return nullptr;
 		}
+		playbackRunning=true;
+		em_register_stream( this );
+		return this;
 	}
 
 	bool streamStart(){
-		if( !source ){ playbackRunning=false; return false; }
+		if( !source ) return false;
 		alGetError();
 		int primed=0;
 		for( int i=0;i<NUM_BUFFERS;i++ ){
 			if( !queue( buffers[i] ) ) break;
 			primed++;
 		}
-		if( primed==0 || alGetError()!=AL_NO_ERROR ){ playbackRunning=false; return false; }
+		if( primed==0 || alGetError()!=AL_NO_ERROR ) return false;
 
 		alSourcePlay( source );
-		if( alGetError()!=AL_NO_ERROR ){ playbackRunning=false; return false; }
-		return true;
+		return alGetError()==AL_NO_ERROR;
 	}
 
 	bool streamPump( int *refilled=0 ){
@@ -379,8 +387,7 @@ public:
 		}
 		channel->set2d();
 		applyDefaults( channel );
-		channel->play();
-		return channel;
+		return channel->play();
 	}
 
 	BBChannel *play3d( const float pos[3],const float vel[3] ){
@@ -392,8 +399,7 @@ public:
 		}
 		applyDefaults( channel );
 		channel->set3d( pos,vel );
-		channel->play();
-		return channel;
+		return channel->play();
 	}
 
 	void setLoop( bool l ){
@@ -539,8 +545,7 @@ public:
 		channel->own_src=true;
 		channel->looping=loop;
 		channel->set2d();
-		channel->play();
-		return channel;
+		return channel->play();
 	}
 };
 
