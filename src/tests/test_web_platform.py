@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 from unittest import TestCase, mock
 import hashlib
 import json
+import struct
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -13,6 +14,22 @@ import web_build
 
 
 class WebBoundaries(TestCase):
+    def test_asset_input_validation_checks_content_and_membership(self):
+        with TemporaryDirectory() as directory:
+            asset = Path(directory) / 'island.s2'
+            asset.write_bytes(b'first')
+            target = '/game/maps/island.s2'
+            inputs = [(asset, target)]
+            report = {target: web_build.digest(asset)}
+            web_build.verify_asset_inputs(inputs, report)
+            asset.write_bytes(b'other')
+            with self.assertRaisesRegex(ValueError, 'changed: /game/maps/island.s2'):
+                web_build.verify_asset_inputs(inputs, report)
+            with self.assertRaisesRegex(ValueError, 'list changed: /game/maps/island.s2'):
+                web_build.verify_asset_inputs([], report)
+            with self.assertRaisesRegex(ValueError, 'Missing prepared resource hashes'):
+                web_build.verify_asset_inputs(inputs, None)
+
     def test_default_build_keeps_both_windows_include_graphs(self):
         for edition in ('classic', 'extended'):
             default = source_files(ROOT, edition)
@@ -29,22 +46,60 @@ class WebBoundaries(TestCase):
             runtime = root / 'runtime'
             files = ('mods/Stranded II/maps/adventure/map01.s2', 'core/modern.ini',
                      'mods/Stranded II/sys/controls.cfg', 'core/locales/ko/glyphs.dat',
-                     'core/locales/ko/0_0.bmp', 'core/locales/ko.tsv', 'licenses/license.txt')
+                     'core/locales/ko/0_0.bmp', 'core/locales/ko.tsv', 'licenses/license.txt',
+                     'mods/Stranded II/sys/ko_aliases.dat')
+            files += ('core/version.json', 'core/version.txt', 'core/locales/languages.dat')
             private = ('mods/Stranded II/saves/personal.sav', 'preserved/old.cfg',
                        'mods/Stranded II/screen_001.bmp', 'core/modern.log',
                        'core/locales/fonts-report.json', 'personal.cfg', 'StrandedII.exe')
+            files += ('mods/Stranded II/gfx/cour.ttf',)
             for name in files + private:
                 path = runtime / name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text('fixture', encoding='utf8')
             (root / 'config').mkdir()
             (root / 'config/game-files.json').write_text(json.dumps({files[0]: '', files[2]: ''}), encoding='utf8')
+            font = runtime / 'core/locales/ko'
+            (font / 'glyphs.dat').write_bytes(struct.pack('<4sIII', b'FNT2', 1, 16, 19) + bytes(28))
+            for name in ('ui.ttf', 'fallback.ttf', *(f'{style}_0.bmp' for style in range(1, 7))):
+                (font / name).write_bytes(b'font')
+                files += ('core/locales/ko/' + name,)
+            (font / 'old-atlas.bmp').write_bytes(b'local workspace file')
+            (font / 'unused.ttf').write_bytes(b'local workspace file')
             with mock.patch.multiple(web_build, ROOT=root, RUNTIME=runtime), \
                  mock.patch.object(web_build, 'languages', return_value={'ko': {}}), \
                  mock.patch.object(web_build, 'override_files', return_value={}):
                 packed = {target.removeprefix('/game/') for _, target in web_build.asset_files()}
-            self.assertEqual(packed, set(files))
-            self.assertFalse(packed.intersection(private))
+                self.assertEqual(packed, set(files))
+                self.assertFalse(packed.intersection(private))
+
+                (runtime / files[0]).unlink()
+                with self.assertRaisesRegex(ValueError, 'map01.s2'):
+                    web_build.asset_files()
+                (runtime / files[0]).touch()
+                (runtime / 'mods/Stranded II/sys/ko_aliases.dat').unlink()
+                with self.assertRaisesRegex(ValueError, 'ko_aliases.dat'):
+                    web_build.asset_files()
+
+    def test_packaged_atlases_require_every_page_of_each_style(self):
+        from language_pack import prepared_font_files
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            font = root / 'core/locales/en'
+            font.mkdir(parents=True)
+            (font / 'glyphs.dat').write_bytes(struct.pack('<4sIII', b'FNT2', 1025, 16, 19) + bytes(1025 * 28))
+            for name in ('ui.ttf', 'fallback.ttf', 'fallback-extra.ttf'):
+                (font / name).touch()
+            for style in range(7):
+                for page in range(2):
+                    (font / f'{style}_{page}.bmp').touch()
+            self.assertEqual(len(prepared_font_files(root, 'en')), 18)
+            (font / '6_1.bmp').unlink()
+            with self.assertRaisesRegex(ValueError, '6_1.bmp'):
+                prepared_font_files(root, 'en')
+            (font / 'glyphs.dat').write_bytes(b'FNT2')
+            with self.assertRaisesRegex(ValueError, 'Invalid font metadata'):
+                prepared_font_files(root, 'en')
 
     def test_web_setup_rejects_generated_resources_as_input(self):
         for relative in ('build/runtime', 'build/extended/runtime', 'build/web/runtime',
@@ -73,16 +128,28 @@ class WebBoundaries(TestCase):
             (root / 'config/game-files.json').write_text(json.dumps({resource: hashlib.sha256(contents).hexdigest()}))
             (root / 'config/modern.ini').write_text('language=en\n')
             (root / 'licenses').mkdir()
+            extended_base = root / 'config/editions/extended'
+            extended_base.mkdir(parents=True)
+            (extended_base / 'modern.ini').write_text('language=de\n')
             settings = {'game': str(game), 'font': str(font)}
             with mock.patch.multiple(web_build, ROOT=root, BUILD=root / 'build/web', RUNTIME=runtime), \
                  mock.patch.object(web_build, 'validate'), \
                  mock.patch.object(web_build, 'prepare', return_value=(None, {})), \
-                 mock.patch.object(web_build, 'refresh', return_value={}), \
-                 mock.patch.object(web_build, 'override_files', return_value={}):
+                 mock.patch.object(web_build, 'refresh', return_value={}) as refresh:
                 web_build.prepare_assets(settings)
                 self.assertEqual((runtime / resource).read_bytes(), contents)
                 self.assertFalse((runtime / private[0]).exists())
                 self.assertEqual((runtime / 'core/modern.ini').read_text(), 'language=en\n')
+                classic = root / 'resources/editions/classic/overrides' / resource
+                classic.parent.mkdir(parents=True)
+                classic.write_bytes(b'classic-only asset')
+                web_build.prepare_assets(settings)
+                self.assertEqual((runtime / resource).read_bytes(), classic.read_bytes())
+
+                web_build.prepare_assets(settings, 'extended')
+                self.assertEqual((runtime / resource).read_bytes(), contents)
+                self.assertEqual((runtime / 'core/modern.ini').read_text(), 'language=de\n')
+                refresh.assert_called_with(root, runtime, font, 'extended')
                 (game / resource).write_bytes(b'changed resource')
                 with self.assertRaisesRegex(ValueError, 'Unexpected official resource'):
                     web_build.prepare_assets(settings)
@@ -91,3 +158,28 @@ class WebBoundaries(TestCase):
                 font.write_bytes(b'changed font')
                 with self.assertRaisesRegex(ValueError, 'Unexpected font SHA-256'):
                     web_build.prepare_assets(settings)
+
+    def test_selected_mod_font_takes_precedence_over_bundled_fallback(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            name = 'mods/Stranded II/gfx/Cour.ttf'
+            aliases = root/'mods/Stranded II/sys/ko_aliases.dat'
+            aliases.parent.mkdir(parents=True)
+            aliases.write_bytes(bytes(4))
+            for filename in ('core/modern.ini', 'core/version.json', 'core/version.txt', 'core/locales/languages.dat'):
+                path = root / filename
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.touch()
+            custom = root/name
+            custom.parent.mkdir(parents=True)
+            custom.write_bytes(b'custom font')
+            with mock.patch.multiple(web_build, ROOT=root, RUNTIME=root), \
+                 mock.patch.object(web_build, 'read', return_value={}), \
+                 mock.patch.object(web_build, 'languages', return_value={}), \
+                 mock.patch.object(web_build, 'override_files', return_value={}) as overrides:
+                def font_sources():
+                    return [source for source, target in web_build.asset_files()
+                            if target.casefold() == ('/game/' + name).casefold()]
+                self.assertEqual(font_sources(), [web_build.engine_toolchain.library('imgui') / 'misc/fonts/ProggyClean.ttf'])
+                overrides.return_value = {name: custom}
+                self.assertEqual(font_sources(), [custom])

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"23660aa09389bedc8196c3a4ffb2c76164ad6dd917c3aa70bbd872c066882d5a"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"699a6c04a8bb389b8e3d452f7b1cd12f2d51267c31b9f9d6d88e1e81c08168b5"} -->
 
 # macOS 구현 원리
 
@@ -85,11 +85,11 @@ macOS 런타임은 **정수·실수를 32비트로 유지하고, 내부 포인�
 | 파일 저장·교체 | POSIX 파일 함수와 macOS의 동기화 기능을 사용합니다. 저장 교체에는 `rename`, 쓰기 동기화에는 `fsync`·`F_FULLFSYNC`를 사용합니다. |
 | 소리 | 네이티브 OpenAL 모듈을 사용하며, SDL 런타임의 이벤트 처리 중 스트리밍 오디오를 갱신합니다. |
 
-공통 게임 코드와 운영체제 사이의 연결은 [`services.bb`](../src/engine/platforms/macos/services.bb)와 [`services.mm`](../src/native/macos/services.mm)가 담당합니다. 지원하지 않는 원본 WAV 인코딩은 준비 단계에서 FFmpeg로 PCM WAV로 변환합니다. 원본 파일은 보존하며 FFmpeg는 플레이에 필요하지 않습니다.
+공통 게임 코드와 운영체제 사이의 연결은 [`services.bb`](../src/engine/platforms/macos/services.bb)와 [`services.mm`](../src/native/macos/services.mm)가 담당합니다. 준비 단계에서 공통·기본판 오버라이드를 적용한 뒤 선택된 WAV 파일 중 지원하지 않는 인코딩을 FFmpeg로 원래 샘플링 주파수의 16비트 PCM으로 변환합니다. 모노와 스테레오는 채널 수를 유지하고 다채널 음원은 스테레오로 믹싱합니다. 이미 지원하는 형식의 교체 파일은 그대로 복사합니다. 원본 파일은 보존하며 FFmpeg는 플레이에 필요하지 않습니다.
 
 ### 앱과 사용자 데이터는 따로 보관합니다
 
-앱은 실행할 때 번들의 리소스 목록과 리소스 식별값을 읽고, 쓰기 가능한 데이터 폴더에 필요한 리소스를 준비한 뒤 게임을 시작합니다. 식별값은 포함된 파일들의 해시로 계산합니다.
+앱은 실행할 때 번들의 리소스 목록과 리소스 식별값을 읽고, 쓰기 가능한 데이터 폴더에 필요한 리소스를 준비한 뒤 게임을 시작합니다. 식별값은 포함된 파일들의 해시로 계산합니다. 같은 데이터 폴더를 쓰는 앱 두 개를 동시에 실행하면 두 번째 앱은 첫 번째 앱의 리소스 설치가 끝난 뒤 식별값을 확인합니다.
 
 | 용도 | 위치 |
 | --- | --- |

@@ -149,6 +149,28 @@ class CIPackagingTests(unittest.TestCase):
             ci.dependencies(SimpleNamespace(archive=archive, destination=destination,
                                             github_output=None))
 
+    def test_interrupted_unpack_can_retry_with_the_same_destination(self):
+        archive = self.bundle()
+        destination = self.root / 'prepared'
+        outputs = self.root / 'github-output'
+        args = SimpleNamespace(archive=archive, destination=destination, github_output=outputs)
+
+        def interrupted_unpack(archive, directory):
+            self.put(directory / 'game/partial', b'incomplete')
+            raise OSError('disk full')
+
+        with patch.object(ci, 'extract_archive', side_effect=interrupted_unpack):
+            with self.assertRaisesRegex(OSError, 'disk full'):
+                ci.dependencies(args)
+        self.assertFalse(destination.exists())
+        self.assertFalse(outputs.exists())
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            ci.dependencies(args)
+        self.assertFalse((destination / 'game/partial').exists())
+        self.assertTrue(Path(dict(line.split('=', 1) for line in
+                                  outputs.read_text().splitlines())['game']).samefile(destination / 'game'))
+
     def test_corrupted_archive_is_rejected_before_extraction(self):
         archive = self.bundle()
         archive.write_bytes(archive.read_bytes() + b'tampered')
@@ -157,6 +179,23 @@ class CIPackagingTests(unittest.TestCase):
             ci.dependencies(SimpleNamespace(archive=archive, destination=destination,
                                             github_output=None))
         self.assertFalse(destination.exists())
+
+    def test_extracted_and_checkout_copies_of_pinned_license_are_both_verified(self):
+        members = ci.dependency_members(self.game, self.blitz, self.font)
+        for change in ('archive', 'checkout'):
+            with self.subTest(change=change):
+                altered = dict(members)
+                name = 'licenses/LICENSE.txt'
+                if change == 'archive':
+                    altered[name] = b'other license'
+                else:
+                    self.put(self.root / name, b'changed checkout license')
+                archive = self.root / (change + '.zip')
+                checksum = ci.write_archive(archive, altered)
+                self.put(self.root / 'config/ci-dependencies.json', json.dumps({
+                    'release':'ci-deps-v1', 'asset':archive.name, 'sha256':checksum}).encode())
+                with self.assertRaisesRegex(ValueError, 'license|LICENSE'):
+                    ci.dependencies(SimpleNamespace(archive=archive, destination=self.root/change, github_output=None))
 
     def test_new_release_licenses_preserve_pinned_bundle_and_ship_in_release(self):
         archive = self.bundle()
@@ -194,6 +233,7 @@ class CIPackagingTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'unexpected or changed files'):
                     ci.dependencies(SimpleNamespace(archive=archive, destination=self.root / f'prepared-{i}',
                                                     github_output=None))
+                self.assertFalse((self.root / f'prepared-{i}').exists())
 
     def test_archive_traversal_windows_aliases_and_links_are_rejected(self):
         for name in ('../escaped', 'game/../../escaped', r'game\..\escaped',

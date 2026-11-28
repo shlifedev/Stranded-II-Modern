@@ -12,6 +12,11 @@ import json
 import os
 import re
 import tempfile
+import unicodedata
+
+from locales import languages
+
+from file_lock import exclusive_lock
 
 from . import content, scripts
 from .maps import EditableMap, new_map, number, CLASSES
@@ -25,6 +30,12 @@ LOC = re.compile(r'\[\[loc:([A-Za-z0-9_.-]+)\]\]')
 
 def digest(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def verified_blob(source, data, label):
+    if digest(data) != Path(source).stem:
+        raise ValueError(f'Imported {label} was changed outside Studio: {source}')
+    return data
 
 
 def encode(value):
@@ -74,36 +85,43 @@ def resource_path(relative):
     return relative
 
 
+def resource_name_collisions(names):
+    seen = {}
+    for name in names:
+        key = unicodedata.normalize('NFC', name.casefold())
+        previous = seen.setdefault(key, name)
+        if previous != name:
+            yield name, f'Resource names share the same output path: {previous!r} and {name!r}'
+
+
+def check_new_resource_name(names, name):
+    if name not in names:
+        for conflicting, message in resource_name_collisions((*names, name)):
+            if conflicting == name:
+                raise ValueError(message)
+
+
 @contextmanager
 def locked(root):
     directory = safe(root, '.studio')
     directory.mkdir(exist_ok=True)
-    with (directory / 'lock').open('a+b') as stream:
-        if os.name == 'nt':
-            import msvcrt
-            stream.seek(0)
-            if not stream.read(1):
-                stream.write(b'0'); stream.flush()
-            stream.seek(0)
-            msvcrt.locking(stream.fileno(), msvcrt.LK_LOCK, 1)
-        else:
-            import fcntl
-            fcntl.flock(stream, fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            if os.name == 'nt':
-                stream.seek(0); msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
-            else:
-                fcntl.flock(stream, fcntl.LOCK_UN)
+    with exclusive_lock(directory / 'lock'):
+        yield
 
 
 class Project:
     def __init__(self, directory):
         self.root = Path(directory).resolve()
         self.path = self.root / 'project.json'
-        if (self.root/'.studio/script-transaction.json').exists():
-            with locked(self.root): scripts.recover(self.root)
+        pending = self.root/'.studio'
+        if (pending/'script-transaction.json').exists() or (pending/'history.pending.json').exists():
+            with locked(self.root):
+                self.reload_locked()
+        else:
+            self.load()
+
+    def reload_locked(self):
+        scripts.recover(self.root)
         self.load()
 
     @classmethod
@@ -143,6 +161,7 @@ class Project:
         self._texts = None
         self._catalog = None
         self._blobs = {}
+        self._last_replay = None
         self.script_files = scripts.scan(self)
         self._script_originals = deepcopy(self.script_files)
         self._script_writes = set()
@@ -150,7 +169,9 @@ class Project:
     def text_files(self):
         if self._texts is None:
             result = {}
-            for path in sorted((self.base / MOD / 'sys').glob('*.inf')):
+            for path in sorted((self.base / MOD / 'sys').iterdir()):
+                if path.suffix.lower() != '.inf' or not path.is_file():
+                    continue
                 relative = path.relative_to(self.base).as_posix()
                 try:
                     result[relative] = safe(self.base, relative).read_text('utf8')
@@ -185,18 +206,67 @@ class Project:
             raise ValueError('Imported source hash mismatch')
         return relative
 
+    def source_bytes(self, source, label):
+        data = self._blobs.get(source)
+        if data is None:
+            data = safe(self.root, source).read_bytes()
+        return verified_blob(source, data, label)
+
     def map_bytes(self, name):
         if name not in self.data['maps']:
             raise ValueError(f'Unknown map: {name}')
         entry = self.data['maps'][name]
-        data = self._blobs.get(entry['source'])
-        if data is None:
-            data = safe(self.root, entry['source']).read_bytes()
-        if digest(data) != Path(entry['source']).stem:
-            raise ValueError(f'Imported map was changed outside Studio: {name}')
-        for op in entry['edits']:
+        data = self.source_bytes(entry['source'], f'map {name}')
+        edits = entry['edits']
+        start = 0
+        if self._last_replay is not None:
+            previous_edits, count, previous_data = self._last_replay
+            if previous_edits is edits:
+                start, data = count, previous_data
+        for op in edits[start:]:
             data = EditableMap(data).apply(op)
+        self._last_replay = edits, len(edits), data
         return scripts.overlay_map(self, name, data)
+
+    def resolve_asset(self, relative):
+        """Resolve one native load_res link after checking the direct resource."""
+        def exists(name):
+            resource_path(name)
+            if name in self.data['assets']:
+                return True
+            path = safe(self.base, name)
+            if path.is_dir():
+                raise IsADirectoryError(name)
+            return path.is_file()
+
+        if exists(relative):
+            return relative
+        prefix, dot, _ = relative[len(MOD):].partition('.')
+        if not dot:
+            raise FileNotFoundError(relative)
+        link = MOD + prefix + '.inf'
+        resource_path(link)
+        source = self.data['assets'].get(link)
+        if source is not None:
+            raw = self._blobs.get(source)
+            if raw is None:
+                raw = safe(self.root, source).read_bytes()
+            if digest(raw) != Path(source).stem:
+                raise ValueError(f'Imported resource link changed outside Studio: {link}')
+            line = raw.partition(b'\n')[0].decode('utf8')
+        elif link in self.data['files']:
+            line = self.data['files'][link].partition('\n')[0]
+        else:
+            with safe(self.base, link).open('rb') as stream:
+                line = stream.readline().decode('utf8')
+        target = line.strip().replace('\\', '/')
+        if not target:
+            raise FileNotFoundError(link)
+        folder, slash, _ = link[len(MOD):].rpartition('/')
+        resolved = (MOD + folder + '/' if slash else link) + target
+        if not exists(resolved):
+            raise FileNotFoundError(resolved)
+        return resolved
 
     def translations(self, language='ko'):
         from locales import catalog
@@ -282,8 +352,13 @@ class Project:
                 identifier = number(identifier, 'id', 1, self.limits()[kind], True)
                 if any(r.kind == kind and r.identifier == identifier for r in self.catalog()):
                     raise ValueError(f'Duplicate {kind} definition: {identifier}')
-            path = MOD+'sys/'+content.PREFIXES[kind]+'_studio.inf'
-            previous = self.text_files().get(path, '')
+            stem = MOD+'sys/'+content.PREFIXES[kind]+'_studio'
+            files = self.text_files()
+            targets = [path for path in files if path[:-4] == stem and path[-4:].lower() == '.inf']
+            if len(targets) > 1:
+                raise ValueError('Multiple Studio definition files differ only by extension case: '+', '.join(targets))
+            path = targets[0] if targets else stem+'.inf'
+            previous = files.get(path, '')
             if op == 'content.clone':
                 record = self.find(kind, operation['source'])
                 changes = {'const': None, **updates}
@@ -302,6 +377,7 @@ class Project:
                 raise ValueError('Map name must use letters, numbers, _, - or . (1–80 characters)')
             if name in self.data['maps']:
                 raise ValueError(f'Map already exists: {name}')
+            check_new_resource_name(self.data['maps'], name)
             data = new_map(operation.get('size', 32)) if op == 'map.create' else Path(operation['path']).resolve().read_bytes()
             if EditableMap(data).protected:
                 raise ValueError('Password-protected maps must be unlocked in the original editor before importing')
@@ -328,6 +404,7 @@ class Project:
             relative = resource_path(operation['destination'])
             if not any(relative.startswith(MOD+p+'/') for p in ('gfx','sfx','music','models')):
                 raise ValueError('Import assets under mods/Stranded II/gfx, sfx, music or models')
+            check_new_resource_name(self.data['assets'], relative)
             source = Path(operation['path']).resolve()
             if not source.is_file():
                 raise ValueError(f'Asset not found: {source}')
@@ -335,8 +412,7 @@ class Project:
             return {'asset': relative}
         if op == 'locale.set':
             code, key, value = operation['language'], operation['key'], operation['text']
-            registered = [p.stem for p in (ROOT/'resources/locales').glob('*.json')]
-            if code not in registered or not re.fullmatch(r'[A-Za-z0-9_.-]+', key) or not isinstance(value, str):
+            if code not in languages(ROOT) or not re.fullmatch(r'[A-Za-z0-9_.-]+', key) or not isinstance(value, str):
                 raise ValueError('Use a registered language, a fixed localization key and text')
             self.data['locales'].setdefault(code, {})[key] = value
             return {'key': key, 'language': code}
@@ -357,15 +433,13 @@ class Project:
         history['head'] = digest(encode(self.data))
         for relative, data in self._blobs.items():
             atomic(safe(self.root, relative), data)
-        # Script writes use a recovery journal; manifest-only commits retain the
-        # existing atomic-file/history-head contract. Blob sources are immutable.
         scripts.commit_files(self, before, history)
 
     def apply(self, operations, expected=None, dry_run=False):
         if not isinstance(operations, list) or not operations or len(operations) > 1000:
             raise ValueError('Provide 1–1000 operations in an array')
         with locked(self.root):
-            self.load()
+            self.reload_locked()
             if expected is not None and expected != self.data['revision']:
                 raise ValueError(f'Revision conflict: expected {expected}, current {self.data["revision"]}; reload before editing')
             before, history = deepcopy(self.data), self.history()
@@ -386,7 +460,7 @@ class Project:
 
     def undo(self, redo=False, expected=None):
         with locked(self.root):
-            self.load()
+            self.reload_locked()
             if expected is not None and expected != self.data['revision']:
                 raise ValueError('Revision conflict; reload before undo/redo')
             before, history = deepcopy(self.data), self.history()
@@ -408,10 +482,16 @@ class Project:
             self.load()
             return {'revision': self.data['revision']}
 
-    def validate(self):
+    def validate(self, *, check_assets=False):
         issues = []
         def error(code, message, location):
             issues.append({'severity': 'error', 'code': code, 'message': message, 'location': location})
+        if check_assets:
+            for relative, source in self.data['assets'].items():
+                try:
+                    self.source_bytes(source, relative)
+                except (OSError, ValueError) as exc:
+                    error('invalid-asset', str(exc), relative)
         catalog = self.catalog()
         indices = {}
         for record in catalog:
@@ -420,6 +500,13 @@ class Project:
                 error('duplicate-id', f'Duplicate {record.kind} ID {record.identifier}', record.path)
             indices[key] = record
         translations = self.translations('en')
+        if self.data['locales']:
+            registered = languages(ROOT)
+            for code, entries in self.data['locales'].items():
+                if code not in registered:
+                    error('unknown-language', f'Unregistered translation language: {code}', f'locales/{code}')
+                for key in sorted(entries.keys() - translations.keys()):
+                    error('missing-translation', f'English fallback is missing: {key}', f'locales/{code}/{key}')
         for record in catalog:
             props, location = record.properties, f'{record.kind}/{record.identifier}'
             changed = record.path in self.data['files']
@@ -433,10 +520,8 @@ class Project:
                 for value in props.get(field, []):
                     relative = MOD+value.replace('\\','/')
                     try:
-                        exists = relative in self.data['assets'] or safe(self.base, relative).is_file()
-                    except ValueError:
-                        exists = False
-                    if not exists:
+                        self.resolve_asset(relative)
+                    except (OSError, ValueError):
                         error('missing-asset', f'{field}: {value}', location)
             for field, target in (('req','item'),('gen','item'),('objectid','object'),('unitid','unit'),('buildingsite','object'),('atobject','object')):
                 if record.kind not in ('recipe','building'):
@@ -473,6 +558,9 @@ class Project:
                     error('player-start', 'A playable map needs a player start (info type 1)', name)
             except (ValueError, KeyError) as exc:
                 error('invalid-map', str(exc), name)
+        for group in ('maps', 'assets'):
+            for name, message in resource_name_collisions(self.data[group]):
+                error('resource-name-collision', message, name)
         issues.extend(scripts.workspace(self)['diagnostics'])
         return issues
 
@@ -506,12 +594,11 @@ class Project:
             raise ValueError('Use a new or empty export directory; existing resources are preserved')
         from .fonts import project_fonts
         fonts = project_fonts(self)
-        destination.mkdir(parents=True, exist_ok=True)
         files = {}
         for relative, text in scripts.resources(self).items():
             files[relative] = text.encode('utf8')
         for relative, source in self.data['assets'].items():
-            files[relative] = safe(self.root, source).read_bytes()
+            files[relative] = self.source_bytes(source, relative)
         for name in self.data['maps']:
             files[MOD+'maps/'+name+'.s2'] = self.map_bytes(name)
         for relative, data in files.items():
@@ -529,11 +616,11 @@ class Project:
             raise ValueError('Scripts changed during export; retry to a new empty directory')
         return {'directory': str(destination), **report}
 
-    def preview(self, map_name, engine_base=None, since=None, expected_revision=None, expected_scripts=None):
+    def preview(self, map_name, engine_base=None, since=None, expected_revision=None, expected_scripts=None, include_sources=True):
         """Only explicit project resources cross into the isolated WASM filesystem."""
-        from .preview import preview
+        from .preview import preview, save_baseline
         with locked(self.root):
-            self.load()
+            self.reload_locked()
             if expected_revision is not None and expected_revision != self.data['revision']:
                 raise ValueError('Project changed before test start; retry')
             if expected_scripts is not None and expected_scripts != scripts.version(self.script_files):
@@ -543,15 +630,18 @@ class Project:
             issues = self.validate()
             if any(i['severity'] == 'error' for i in issues):
                 raise ValueError('Preview blocked by validation errors: '+json.dumps(issues, ensure_ascii=False))
-            result = preview(self, map_name, since)
+            result, snapshot = preview(self, map_name, since, include_sources)
             if scripts.scan(self) != self._script_originals:
                 raise ValueError('Scripts changed while preparing the test; retry')
+            save_baseline(self.root, result['token'], since, snapshot)
             return result
 
     def preview_resources(self):
         files = {path: base64.b64encode(text.encode('utf8')).decode('ascii') for path,text in scripts.resources(self).items()}
-        files.update({path: base64.b64encode(safe(self.root, source).read_bytes()).decode('ascii')
-                      for path,source in self.data['assets'].items()})
+        from .preview import preview_assets
+        assets = ((path, self.source_bytes(source, path)) for path, source in self.data['assets'].items())
+        for path, data in preview_assets(assets):
+            files[path] = base64.b64encode(data).decode('ascii')
         from locales import catalog
         for language, entries in self.data['locales'].items():
             path = self.base/'core/locales'/f'{language}.tsv'

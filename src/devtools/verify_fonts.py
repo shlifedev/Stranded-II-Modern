@@ -61,16 +61,22 @@ def main():
     fixture_font(other,list(range(32,127))+[private],cff=True)
     assert not Font(latin).axes and not Font(other).axes
     packs={'ko':{'name':'한국어','font':'Latin.ttf'},'en':{'name':'English'},
-           'ja':{'name':'日本語','font':'Other.otf'}}
+           'ja':{'name':'日本語','font':'Other.otf'}, 'zz':{'name':'Example','font':'Latin.ttf'}}
     for code,info in packs.items():(locale/f'{code}.json').write_text(json.dumps(info,ensure_ascii=False),encoding='utf8')
     (locale/'en.tsv').write_text('ui.language\tLanguage\ntest.text\tSaved text\n',encoding='utf8')
     (locale/'ko.tsv').write_text('ui.language\t언어\ntest.text\t한글\n',encoding='utf8')
     (locale/'ja.tsv').write_text('ui.language\t言語'+chr(private)+'\n',encoding='utf8')
-    assert list(languages(fixture))==['ko','en','ja']
+    (locale/'zz.tsv').write_text('ui.language\tExample\n',encoding='utf8')
+    assert list(languages(fixture))==['ko','en','ja','zz']
     assert len(validate(fixture)['ja'])==1
     report=refresh(fixture,runtime,default)
     assert report['fallback_keys']['ja']==1
     generated=runtime/'core/locales';fonts=json.loads((generated/'fonts-report.json').read_text('utf8'))
+    assert list(fonts)==list(languages(fixture)) and fonts['zz']==fonts['ko']
+    for atlas in [generated/'ko/glyphs.dat', *(generated/'ko').glob('*.bmp')]:
+        other_atlas = generated/'zz'/atlas.name
+        assert other_atlas.read_bytes()==atlas.read_bytes() and not other_atlas.samefile(atlas)
+    assert (generated/'ko/preview.png').read_bytes()!=(generated/'zz/preview.png').read_bytes()
     assert (generated/'ko/ui.ttf').read_bytes()==ui_font.read_bytes()
     assert (generated/'ko/fallback.ttf').read_bytes()==latin.read_bytes()
     assert (generated/'ko/fallback-extra.ttf').read_bytes()==default.read_bytes()
@@ -105,9 +111,26 @@ def main():
         return real_replace(source,target)
     with patch('language_pack.os.replace',side_effect=rename):fails('publish fixture locked')
     assert not list((runtime/'core').glob('.locales-*'))
+    with (locale/'en.tsv').open('a', encoding='utf8') as stream:
+        for index in range(6):
+            stream.write(f'step{index}\t[[loc:step{index + 1}]]\n')
+        stream.write('step6\tshort\nstep7\tend\nstep8\tend\n')
+    with (locale/'ja.tsv').open('a', encoding='utf8') as stream:
+        stream.write('step6\t[[loc:step7]]\n')
+    validate(fixture)
+    overlay = locale/'editions/extended'
+    overlay.mkdir(parents=True)
+    (overlay/'en.tsv').write_text('step7\t[[loc:step8]]\n', encoding='utf8')
+    try:
+        validate(fixture, 'extended')
+    except ValueError as error:
+        chain = ' -> '.join(f'step{index}' for index in range(9))
+        assert str(error) == f'ja: Localization nesting exceeds runtime limit: {chain}', str(error)
+    else:
+        raise AssertionError('expected a nine-key chain in the inherited Japanese rows to fail')
     (out/'report.json').write_text(json.dumps({'static_ttf':'pass','static_otf':'pass','variable_ttf':'pass',
         'glyph_fallback_and_full_latin_font':'pass','bearing_and_advance':'pass',
-        'missing_glyph_diagnostic':'pass','failed_generation_and_publish_preserve_pack':'pass'},indent=2)+'\n',encoding='utf8')
+        'fallback_reference_depth':'pass','missing_glyph_diagnostic':'pass','failed_generation_and_publish_preserve_pack':'pass'},indent=2)+'\n',encoding='utf8')
     print('Language/font fixtures passed:',out)
 
 

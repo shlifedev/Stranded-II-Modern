@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"1c5109327645aed4d9d6f916d5395f12a05e9c9dbc95287abd2b277200945b65"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"31baec60a35f7b43c1cfef42d4d77434d6d6b2893a8d63384a791b05e1cc041e"} -->
 
 # Development guide
 
@@ -125,7 +125,7 @@ All Python development commands accept `--platform windows|web|macos`, defaultin
 
 `src/engine/StrandedIIWeb.bb` includes the shared game and browser services. Windows, web, macOS and Studio build the same editable engine in `src/blitz3d/`; the web target uses [Emscripten](../config/web-toolchain.json). Edit engine sources directly and rebuild. [How the web version works](web-architecture.md) explains WASM, WebGPU, JSPI and browser storage.
 
-Web development also needs Git. Preparation downloads pinned dependencies into `deps/blitz3d/`, `deps/emsdk/` and `deps/ffmpeg-web/`; the first build takes time and disk space. Complete Windows setup first, then run:
+Web development also needs Git. Preparation downloads pinned dependencies into `deps/blitz3d/`, `deps/emsdk/` and `deps/ffmpeg-web/`; the first build takes time and disk space. On Windows, complete the Windows setup first, then run the following commands. On Apple Silicon, use the macOS build prerequisites, including FFmpeg and ffprobe on your PATH. Run the same commands with `.venv/bin/python`, passing `--game PATH --font PATH` to the first web setup.
 
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py setup --platform web
@@ -144,7 +144,7 @@ WAV encodings unsupported by the web runtime are converted to PCM in `build/web/
 
 Saves and settings use a separate base-game store in the browser's IndexedDB. Save replacement and backups wait for persistence to finish; settings defaults are seeded only on first use. Keep the same browser, profile, address, and port to access the same store. Clearing site data deletes these saves. A lock prevents two tabs at the same address from using the store simultaneously.
 
-`check --platform web` checks artifact/source hashes, packaged-resource boundaries, converted audio, Windows/wasm numeric/string/binary parity, line splitting of the actual menu and intro scripts, and save replacement/failure recovery in the web filesystem. A CPU buffer fixture runs the actual terrain colour generator with fixed height bands, checking colours and limiting full-buffer transfers to prevent per-pixel GPU synchronization. A simulated DOM checks autostart, new English settings and preservation of existing Korean settings, and input/fullscreen transitions. Results are written to `build/web/verification.json`. CPU fixtures, simulated DOM and storage transactions do not verify a real GPU, browser or IndexedDB.
+`check --platform web` checks artifact/source hashes, packaged-resource boundaries, converted audio, numeric, string and binary parity between WASM and the native host (Windows in CI, macOS on Apple Silicon), line splitting of the actual menu and intro scripts, and save replacement/failure recovery in the web filesystem. A CPU buffer fixture runs the actual terrain colour generator with fixed height bands, checking colours and limiting full-buffer transfers to prevent per-pixel GPU synchronization. A simulated DOM checks autostart, new English settings and preservation of existing Korean settings, and input/fullscreen transitions. Results are written to `build/web/verification.json`. CPU fixtures, simulated DOM and storage transactions do not verify a real GPU, browser or IndexedDB.
 
 After building the web version, prepare an actual-engine comparison with the command below. It runs the Windows reference in a separate copy without using the current game or saves. Audio comparison uses the web-prepared files in both engines. Open `/checks/` on the web server and click the check button to compare the same scenario in WebGPU. This checks Korean bitmap glyphs and image colour keys, vertical orientation through frame copies and motion blur, audio decoding, editor and random-island initialization (including terrain colours, grass colours, player creation, and a 30-second limit per generated world), the menu camera loop, the original intro's ship/camera/events, transition to the first island, and skipping the intro. Synthetic sequence time does not verify real-time playback speed or FPS.
 
@@ -152,7 +152,7 @@ After building the web version, prepare an actual-engine comparison with the com
 .\.venv\Scripts\python.exe -X utf8 src/devtools/verify_web_game.py
 ```
 
-WebGPU reuses a temporary texture for same-buffer `CopyRect` operations and batches source regions unaffected by earlier writes, reducing copies and draws for water and underwater effects. Overlapping copies see earlier results; scaled copies keep the original path. The C++ CPU fixture in `check --platform web` runs the actual copy methods to check pixels, colour keys, clipping, ordering, two snapshots per water update, and texture reuse. Actual GPU performance requires gameplay verification.
+WebGPU reuses a temporary texture for same-buffer `CopyRect` operations and batches source regions unaffected by earlier writes, reducing copies and draws for water and underwater effects. Overlapping copies see earlier results; scaled copies keep the original path. The C++ CPU fixture in `check --platform web` runs the actual copy methods to check pixels, colour keys, clipping, ordering, two snapshots per water update, and texture reuse. For the standalone CPU check, run `python -m unittest discover -s src/tests -p "test_web_self_blit.py"`. It uses the prepared web SDK when available or a native C++17 compiler. Actual GPU performance requires gameplay verification.
 
 For frame-drop comparisons, prepare `src/devtools/profile_web.py --serve`, then open `http://127.0.0.1:8766/` in Chrome/Edge and start the comparison. It uses a separate engine copy with real WebGPU and real clocks, without mounting IndexedDB or player saves. Select the island or menu scene and resolution. Water qualities 6, 3 and 0 at a 144 FPS cap, and quality 0 at a 60 FPS cap, each run three times for 30 seconds after a 5-second warmup. Every trial uses a fresh WASM instance; losing window focus invalidates the trial. Keep the window foreground for about seven minutes per scene.
 
@@ -191,6 +191,8 @@ python3 -m venv .venv
 .venv/bin/python src/devtools/macos_package.py
 .venv/bin/python src/devtools/dev.py run --platform macos
 ```
+
+If local app packaging is interrupted, rerun the build. The final app appears after signing and report creation, and concurrent builds of the same app share the completed output.
 
 `build` prints the locally signed `build/macos/apps/<build-id>/Stranded II.app` path and records it in `build/macos/build-report.json`. Double-clicking the app prepares its resources and stores settings/saves in `~/Library/Application Support/Stranded II Native Preview/`. Existing settings and saves survive resource refreshes. `run --platform macos` uses the app with the isolated `build/macos/runtime/` profile instead. Neither path imports Windows or browser data. Fresh profiles start windowed at 1280×720. `localize --platform macos` refreshes development language packs; rebuild to update the app. Unsupported source WAV encodings are converted to PCM in the native runtime; original files are preserved.
 
@@ -432,7 +434,7 @@ gh release create ci-deps-v1 `
   --latest=false
 ```
 
-Then manually run `Desktop build and release` in Actions to download the game ZIP. To update dependencies, rebuild the bundle and update the configuration with its printed SHA-256 and a new Release tag/filename. A mismatched ZIP is rejected before extraction, even on a cache hit. Ordinary changes to synchronized documents or game sources do not require rebuilding the dependency ZIP. If bundled license names or contents change, update `config/dependency-license-files.json`, rebuild the dependency ZIP and update its complete pinned hash.
+Then manually run `Desktop build and release` in Actions to download the game ZIP. To update dependencies, rebuild the bundle and update the configuration with its printed SHA-256 and a new Release tag/filename. A mismatched ZIP is rejected before extraction, even on a cache hit. If unpacking or file verification fails, rerun the command with the same destination once the cause is fixed. Ordinary changes to synchronized documents or game sources do not require rebuilding the dependency ZIP. If bundled license names or contents change, update `config/dependency-license-files.json`, rebuild the dependency ZIP and update its complete pinned hash.
 
 ### Release ZIP contents
 

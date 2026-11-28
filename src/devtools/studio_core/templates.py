@@ -12,13 +12,24 @@ def create(project, op):
     if not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]{0,47}',slug): raise ValueError('Template slug: 1–48 ASCII letters, numbers or _; start with a letter')
     if not isinstance(name,str) or not name.strip(): raise ValueError('Template needs a name')
     key='studio.'+slug
+    existing = None
     def text(suffix,en,ko=None):
+        nonlocal existing
+        if existing is None:
+            existing = project.translations('ko')
+        name_key = key+'.'+suffix
+        if name_key in existing:
+            raise ValueError(f'Template translation already exists: {name_key}. Choose another slug.')
         for lang,value in [('en',en),('ko',ko or en)]:
-            project.perform({'op':'locale.set','language':lang,'key':key+'.'+suffix,'text':value})
-        return '[[loc:'+key+'.'+suffix+']]'
-    def first(kind):
-        if kind=='unit' and any(r.kind=='unit' and r.identifier==40 for r in project.catalog()): return 40
-        return next(r.identifier for r in project.catalog() if r.kind==kind)
+            project.perform({'op':'locale.set','language':lang,'key':name_key,'text':value})
+        return '[[loc:'+name_key+']]'
+    def source_id(kind, requested):
+        if requested is not None:
+            return requested
+        identifiers = [r.identifier for r in project.catalog() if r.kind==kind]
+        if not identifiers:
+            raise ValueError(f'Template requires an existing {kind} definition to clone')
+        return 40 if kind=='unit' and 40 in identifiers else identifiers[0]
     def file(suffix,body,target=None):
         path='scripts/'+slug+'/'+suffix+'.s2s'
         scripts.write(project,path,body,None)
@@ -43,7 +54,7 @@ def create(project, op):
         return values
     result={'template':kind,'files':[]}
     if kind in ('item','scenario'):
-        item=clone('item',op.get('source',first('item')),text('item',name if kind=='item' else name+' Tonic',name if kind=='item' else name+' 치료제'))
+        item=clone('item',source_id('item',op.get('source')),text('item',name if kind=='item' else name+' Tonic',name if kind=='item' else name+' 치료제'))
         used=text('used','You feel better.','기운을 되찾았습니다.')
         file('item',f'on:use {{\n heal "unit",1,20;\n freestored "unit",1,{item},1;\n msg "{used}";\n}}\n',{'scope':'definition','kind':'item','id':item})
         result['item']=item
@@ -57,7 +68,8 @@ def create(project, op):
         result['building']=project.perform({'op':'content.create','kind':'building','properties':{'objectid':output,'req':requirements(1)}})['id']
         return result
     if kind in ('npc','scenario'):
-        npc=clone('unit',op.get('npcSource',op.get('source',first('unit'))) if kind=='npc' else op.get('npcSource',first('unit')),text('npc',name if kind=='npc' else 'Island visitor','섬의 방문자' if kind=='scenario' else name))
+        requested = op.get('npcSource', op.get('source') if kind=='npc' else None)
+        npc=clone('unit',source_id('unit',requested),text('npc',name if kind=='npc' else 'Island visitor','섬의 방문자' if kind=='scenario' else name))
         result['npc']=npc
         greeting=text('greeting','Hello, traveler.','반갑습니다, 여행자님.')
         if kind=='npc':

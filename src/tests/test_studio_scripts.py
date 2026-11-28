@@ -30,6 +30,21 @@ class ScriptWorkspace(TestCase):
     def bind(self,target=None):
         self.p.apply([{'op':'script.bind','path':self.path,'target':target or self.target}])
 
+    def test_workspace_reads_each_bound_map_once_and_reloads_after_external_edits(self):
+        other = {'scope': 'entity', 'map': 'island', 'kind': 'info', 'id': 1}
+        self.write('on:start {}')
+        self.bind()
+        self.bind(other)
+        with mock.patch.object(self.p, 'map_bytes', wraps=self.p.map_bytes) as read_map:
+            result = scripts.workspace(self.p)
+            read_map.assert_called_once_with('island')
+        self.assertEqual(result['diagnostics'], [])
+        (self.p.root/self.path).unlink()
+        self.p.load()
+        missing = scripts.workspace(self.p)['diagnostics']
+        self.assertEqual([issue['code'] for issue in missing], ['script-binding'] * 2)
+        self.assertEqual([issue['path'] for issue in missing], [self.path] * 2)
+
     def test_extract_preserves_native_map_and_external_edits_are_authoritative(self):
         body='on:start {\n msg "섬";\n}'
         self.p.apply([{'op':'map.script','map':'island','text':body}]);before=self.p.map_bytes('island')
@@ -56,10 +71,39 @@ class ScriptWorkspace(TestCase):
         self.p.apply([{'op':'map.script','map':'island','text':'on:start { msg "new"; }','expectedHash':digest(b'on:start {}')}])
         self.assertIn('new',(self.p.root/self.path).read_text('utf8'))
 
+    def test_file_edits_stay_live_across_batched_map_replays(self):
+        self.write('on:start {}')
+        self.bind()
+        move = {'op':'entity.set','map':'island','kind':'info','id':1,'values':{'yaw':90}}
+        updated = 'on:start { msg "new"; }'
+        self.p.apply([move, {'op':'script.write','path':self.path,'text':updated,
+                             'expectedHash':digest(b'on:start {}')},
+                      {'op':'script.unbind','target':self.target}, move])
+        self.assertEqual(EditableMap(self.p.map_bytes('island')).summary()['script'], updated)
+        self.p.undo()
+        self.assertEqual(EditableMap(self.p.map_bytes('island')).summary()['script'], 'on:start {}')
+
     def test_numeric_binding_ids_have_one_identity(self):
         self.write('on:use {}')
         self.bind({'scope':'definition','kind':'item','id':'1'})
         self.assertEqual(scripts.binding(self.p,{'scope':'definition','kind':'item','id':1}),self.path)
+
+    def test_definition_overlay_keeps_source_spans_and_skips_ambiguous_ids(self):
+        first = "id=1\r\nname=Wood\r\nscript=start\r\nold\r\nscript=end\r\n"
+        middle = "id=2\r\n# duplicate in another file\r\n"
+        last = "id=3\r\nname=Leaf"
+        files = {'items.inf': first + middle + last, 'items_extra.inf': 'id=2\nname=Stone\n'}
+        originals = dict(files)
+        for identifier, body in ((3, ''), (2, 'unused'), (1, 'on:use {\n id=42\n}')):
+            path = f'scripts/{identifier}.s2s'
+            self.p.script_files[path] = body
+            key = scripts.target_key({'scope': 'definition', 'kind': 'item', 'id': identifier})
+            self.p.data.setdefault('scriptBindings', {})[key] = path
+        result = scripts.overlay_definitions(self.p, files)
+        self.assertEqual(result['items_extra.inf'], originals['items_extra.inf'])
+        self.assertEqual(result['items.inf'],
+                         'id=1\r\nname=Wood\r\nscript=start\non:use {\n id=42\n}\nscript=end\n'
+                         + middle + last + '\nscript=start\n\nscript=end\n')
 
     def test_binding_and_write_batch_undo_redo_and_external_conflict(self):
         self.p.apply([{'op':'script.write','path':self.path,'text':'on:start {}','expectedHash':None},
@@ -99,6 +143,13 @@ class ScriptWorkspace(TestCase):
         issue=next(d for d in self.p.validate() if d['code']=='missing-script')
         self.assertEqual(issue['path'],self.path);self.assertEqual(issue['line'],1)
 
+    def test_event_lines_follow_each_match_across_comments_and_split_headers(self):
+        text = ('// on:ignored\non:first {} on:second {}\n'
+                'msg "on:quoted";\non\n :\n third {}\n# on:ignored\n\non:last {}')
+        events = scripts.analyze(text, self.path)['events']
+        self.assertEqual([(e['name'], e['line']) for e in events],
+                         [('first', 2), ('second', 2), ('third', 4), ('last', 9)])
+
     def test_missing_bound_file_does_not_destroy_inline_script(self):
         self.write('on:start {}');self.bind();(self.p.root/self.path).unlink()
         self.p.load();self.assertTrue(any(d['code']=='script-binding' for d in self.p.validate()))
@@ -113,11 +164,28 @@ class ScriptWorkspace(TestCase):
         self.write('on:start {}');self.bind()
         preview=self.p.preview('island')
         self.assertEqual(base64.b64decode(preview['files'][MOD+scripts.native_path(self.path)]),b'on:start {}')
+        self.p.apply([{'op':'entity.add', 'map':'island', 'kind':'object', 'type':1}])
         from studio_core.preview import preview as real
         def racing(*args):
             value=real(*args);(self.p.root/self.path).write_text('on:start { msg "race"; }',encoding='utf8');return value
         with mock.patch('studio_core.preview.preview',side_effect=racing),self.assertRaisesRegex(ValueError,'changed'):
             self.p.preview('island')
+        cache = self.p.root / '.studio/previews'
+        self.assertEqual({p.stem for p in cache.glob('*.json')}, {preview['token']})
+        retry = self.p.preview('island', since=preview['token'])
+        self.assertEqual(retry['changes']['upserted'], 1)
+
+    def test_viewport_can_skip_debug_sources_without_changing_the_scene(self):
+        self.write('on:start {}')
+        self.bind()
+        initial = self.p.preview('island')
+        delta = self.p.preview('island', since=initial['token'])
+        sources = delta.pop('sources')
+        self.assertEqual(sources, initial['sources'])
+        self.assertEqual(sources['files'][0]['lines'], ['on:start {}'])
+        with mock.patch.object(scripts, 'source_map', side_effect=AssertionError('unused debugger data')):
+            compact = self.p.preview('island', since=initial['token'], include_sources=False)
+        self.assertEqual(compact, delta)
 
     def test_preview_rechecks_expected_versions_after_loading_under_lock(self):
         self.write('on:start {}');self.bind()
@@ -151,6 +219,37 @@ class ScriptWorkspace(TestCase):
         self.assertTrue(any(f['references'] for f in scripts.workspace(self.p)['files']))
         self.p.export(self.root/'out')
         self.p.undo();self.assertEqual(self.p.script_files,{})
+
+    def test_duplicate_template_keys_preserve_existing_recipes_and_translations(self):
+        op = {'op':'template.create','template':'recipe','slug':'meal','name':'First meal','result':1}
+        self.p.apply([op])
+        before = self.p.path.read_bytes()
+        for dry in (True, False):
+            with self.assertRaisesRegex(ValueError, 'studio.meal.recipe'):
+                self.p.apply([dict(op, name='New meal')], dry_run=dry)
+            self.assertEqual(self.p.path.read_bytes(), before)
+        recipes = [record['name'] for record in self.p.public_catalog('en') if record['kind']=='recipe']
+        self.assertEqual(recipes, ['First meal'])
+
+        base = self.base / 'core/locales/ko.tsv'
+        base.parent.mkdir(parents=True, exist_ok=True)
+        base.write_text('studio.story.greeting\t기존 인사\n', encoding='utf8')
+        with self.assertRaisesRegex(ValueError, 'studio.story.greeting'):
+            self.p.apply([{'op':'template.create','template':'scenario','slug':'story','result':1}])
+        self.assertEqual(self.p.path.read_bytes(), before)
+        self.assertEqual(self.p.script_files, {})
+        self.assertFalse((self.p.root / 'scripts/story').exists())
+
+    def test_template_with_no_source_returns_a_command_error(self):
+        (self.base / MOD / 'sys/units.inf').unlink()
+        before = self.p.path.read_bytes()
+        request = {'command':'apply','project':str(self.p.root),'operations':[
+            {'op':'template.create','template':'npc','slug':'visitor'}]}
+        answer = studio.response(request)
+        self.assertFalse(answer['ok'])
+        self.assertIn('existing unit definition', answer['error']['message'])
+        self.assertEqual(self.p.path.read_bytes(), before)
+        self.assertTrue(studio.response({'command':'revision','project':str(self.p.root)})['ok'])
 
     def test_cli_scripts_contract(self):
         self.write('on:start {}')

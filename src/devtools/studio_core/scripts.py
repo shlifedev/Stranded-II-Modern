@@ -1,5 +1,6 @@
 """File-backed native scripts. No alternate script interpreter or code generation."""
 from copy import deepcopy
+from functools import cache
 from pathlib import Path
 import json
 import re
@@ -73,16 +74,27 @@ def target_key(target):
     return json.dumps(value, sort_keys=True, separators=(',', ':'))
 
 
-def target_text(project, target):
+def read_map_scripts(project, name):
     from .maps import EditableMap
+    summary = EditableMap(project.map_bytes(name)).summary()
+    entities = {}
+    for entity in summary['entities']:
+        entities.setdefault((entity['kind'], entity['id']), entity['script'])
+    return summary['script'], entities
+
+
+def target_text(project, target, read_map=read_map_scripts):
     scope = target['scope']
     if scope == 'definition':
         return project.find(target['kind'], target['id']).properties.get('script', [''])[0]
-    model = EditableMap(project.map_bytes(target['map']))
-    if scope == 'map': return model.summary()['script']
+    script, entities = read_map(project, target['map'])
+    if scope == 'map':
+        return script
     if scope == 'entity':
-        model.entity(target['kind'], target['id'])
-        return next(e['script'] for e in model.summary()['entities'] if e['kind'] == target['kind'] and e['id'] == target['id'])
+        key = target['kind'], target['id']
+        if key not in entities:
+            raise ValueError(f'Unknown entity: {key[0]}/{key[1]}')
+        return entities[key]
     raise ValueError('Unknown script target')
 
 
@@ -163,14 +175,34 @@ def route_write(project, operation):
 
 def overlay_definitions(project, files):
     from . import content
+    bindings = {}
     for key, path in project.data.get('scriptBindings', {}).items():
         target = json.loads(key)
-        if target['scope'] != 'definition' or path not in project.script_files: continue
-        matches = [r for name,text in files.items() for r in content.records(name,text)
-                   if r.kind == target['kind'] and str(r.identifier) == str(target['id'])]
-        if len(matches) != 1: continue  # A diagnostic reports a removed target.
-        r = matches[0]; text = files[r.path]
-        files[r.path] = text[:r.start]+content.edit(r.text, {'script':project.script_files[path]})+text[r.end:]
+        if target['scope'] == 'definition' and path in project.script_files:
+            bindings[target['kind'], str(target['id'])] = project.script_files[path]
+    if not bindings:
+        return files
+
+    matches = {}
+    for name, text in files.items():
+        for record in content.records(name, text):
+            key = record.kind, str(record.identifier)
+            if key in bindings:
+                matches[key] = record if key not in matches else None
+
+    edits = {}
+    for key, record in matches.items():
+        if record is not None:
+            edits.setdefault(record.path, []).append((record, bindings[key]))
+    for name, replacements in edits.items():
+        text = files[name]
+        parts = []
+        end = 0
+        for record, script in replacements:
+            parts.extend((text[end:record.start], content.edit(record.text, {'script': script})))
+            end = record.end
+        parts.append(text[end:])
+        files[name] = ''.join(parts)
     return files
 
 
@@ -225,7 +257,12 @@ def analyze(text, path):
         code.append(c);i+=1;col+=1
     for c,row,col in stack: issue('Unclosed '+c,row,col)
     code=''.join(code)
-    events=[{'name':m[1],'line':code.count('\n',0,m.start())+1} for m in re.finditer(r'\bon\s*:\s*([A-Za-z_][\w]*)',code)]
+    events = []
+    line, previous = 1, 0
+    for event in re.finditer(r'\bon\s*:\s*([A-Za-z_][\w]*)', code):
+        line += code.count('\n', previous, event.start())
+        events.append({'name':event[1], 'line':line})
+        previous = event.start()
     refs=[{**q,'path':'scripts/'+q['value'].replace('\\','/')[len(PREFIX):]} for q in quoted
           if q['value'].replace('\\','/').startswith(PREFIX) and q['value'].endswith('.s2s')]
     return {'events':events,'references':refs,'diagnostics':issues}
@@ -244,21 +281,22 @@ def workspace(project, query=''):
             for row,line in enumerate(text.splitlines(),1):
                 if query.casefold() in line.casefold() and len(matches)<500:
                     matches.append({'path':path,'line':row,'text':line[:300]})
+    read_map = cache(read_map_scripts)
     bindings=[]
     for key,path in project.data.get('scriptBindings',{}).items():
         target=json.loads(key);bindings.append({'target':target,'path':path})
         try:
             if path not in project.script_files: raise ValueError('Missing script: '+path)
-            target_text(project,target)
+            target_text(project, target, read_map)
         except (ValueError,KeyError) as exc:
             diagnostics.append({'severity':'error','code':'script-binding','message':str(exc),'location':path,'path':path,'line':1,'column':1})
     return {'version':version(project.script_files),'files':files,'bindings':bindings,'diagnostics':diagnostics,'matches':matches}
 
 
-def source_map(project, map_name):
-    from .maps import EditableMap, CLASSES
+def source_map(project, map_name, model):
+    from .maps import CLASSES
     from .project import digest
-    records=[]; model=EditableMap(project.map_bytes(map_name))
+    records=[]
     for path,text in project.script_files.items():
         records.append({'path':path,'lines':text.splitlines(),'hash':digest(text.encode('utf8'))})
     return {'files':records,'bindings':[{'target':json.loads(k),'path':p} for k,p in project.data.get('scriptBindings',{}).items()],
@@ -280,11 +318,21 @@ def commit_files(project, before, history):
         atomic(safe(project.root,'.studio/script-transaction.json'),encode(journal))
         recover(project.root)
     else:
-        atomic(project.root/'.studio/history.json',encode(history));atomic(project.path,encode(project.data))
+        pending = safe(project.root, '.studio/history.pending.json')
+        atomic(pending, encode(history))
+        atomic(project.path, encode(project.data))
+        pending.replace(pending.with_name('history.json'))
 
 
 def recover(root):
     from .project import safe, atomic, encode, digest
+    pending = safe(root, '.studio/history.pending.json')
+    if pending.is_file():
+        manifest = json.loads((root/'project.json').read_bytes())
+        if json.loads(pending.read_bytes())['head'] == digest(encode(manifest)):
+            pending.replace(pending.with_name('history.json'))
+        else:
+            pending.unlink()
     journal=safe(root,'.studio/script-transaction.json')
     if not journal.exists(): return
     data=json.loads(journal.read_text('utf8'))

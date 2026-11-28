@@ -1,7 +1,7 @@
 """Strict catalog format, reference validation and language-neutral resources."""
 from pathlib import Path
 import json, re, struct
-from resource_spans import resources, spans, source_text
+from resource_spans import TEXT_SUFFIXES, official_files, resources, spans, source_text
 from s2map import Map
 
 SEP=str.maketrans({'¦':'\x1f','¶':'\x1e','¿':'\x1d'})
@@ -78,13 +78,14 @@ def validate(root,edition='classic'):
             if any(ord(c)>65535 for c in value):raise ValueError(f'{lang}: BMP font cannot represent {key}')
             for ref in REFERENCE.findall(value):
                 if ref not in en:raise ValueError(f'{lang}: missing reference {ref}')
-    # Cycles would otherwise reach the runtime resolver depth limit.
-    def visit(key,values,stack):
-        if key in stack:raise ValueError('Cyclic localization reference: '+key)
-        if len(stack)>=8:raise ValueError('Localization nesting exceeds runtime limit: '+key)
-        for child in REFERENCE.findall(values.get(key,en[key])):visit(child,values,stack+[key])
-    for values in catalogs.values():
-        for key in values:visit(key,values,[])
+        def visit(key, stack):
+            if key in stack or len(stack) >= 8:
+                reason = 'Cyclic localization reference' if key in stack else 'Localization nesting exceeds runtime limit'
+                raise ValueError(f"{lang}: {reason}: {' -> '.join((*stack, key))}")
+            for child in REFERENCE.findall(values.get(key, en[key])):
+                visit(child, (*stack, key))
+        for key in en:
+            visit(key, ())
     from editions import source_files, override_files
     # Tiny font fixtures have no engine entrypoint.
     paths=list(source_files(root,edition).values()) if (root/'src/engine').exists() else []
@@ -108,18 +109,20 @@ def prepare(root,game,runtime,edition='classic'):
     for key in keys.values():
         if key not in catalogs['en']:raise ValueError('Missing source mapping: '+key)
     base=game/'mods/Stranded II';out=runtime/'mods/Stranded II'
-    entries=list(resources(base));aliases=set();changed={};references=set()
+    files = [game/name for name in official_files(root) if name.startswith('mods/Stranded II/')]
+    text_files = [p for p in files if p.suffix.lower() in TEXT_SUFFIXES]
+    map_files = [p for p in files if p.suffix.lower() == '.s2' and p.is_relative_to(base/'maps')]
+    aliases=set();changed={};references=set()
     def ref(text):
         if text not in keys:return text
         references.add(keys[text]);return '[[loc:'+keys[text]+']]'
-    for location,text,mode in entries:
+    for location,text,mode in resources(base, text_files, map_files):
         for a,b,kind in reversed(spans(text,location,mode)):
             if kind=='alias':aliases.add(text[a:b])
             else:text=text[:a]+ref(text[a:b])+text[b:]
         changed[location]=text
     aliases.update(['Color Game','Shooting Range','Tower Defense','Survival Guide','NoName'])
-    for p in base.rglob('*'):
-        if p.suffix.lower() not in ('.inf','.s2s','.txt'):continue
+    for p in text_files:
         relative=p.relative_to(base).as_posix()
         if relative.startswith('saves/'):continue
         text=changed.get(relative,source_text(p))
@@ -132,7 +135,7 @@ def prepare(root,game,runtime,edition='classic'):
         if dest.name=='settings.inf' and dest.exists():continue
         dest.write_bytes(encoded(text).replace(b'\n',b'\r\n'))
     map_count=0
-    for p in (base/'maps').rglob('*.s2'):
+    for p in map_files:
         relative=p.relative_to(base).as_posix();model=Map(p.read_bytes());fields={}
         assert model.write({})==p.read_bytes(),relative
         for field in model.fields:

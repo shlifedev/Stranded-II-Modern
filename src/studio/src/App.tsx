@@ -38,6 +38,7 @@ export function App(){
   }
   const [snap,setSnap]=useState(0),[bottomHeight,setBottomHeight]=useState(285),[preview,setPreview]=useState<Preview|null>(null);
   const [frameVersion,setFrameVersion]=useState(0),[resourcesPending,setResourcesPending]=useState(false),[available,setAvailable]=useState<string[]>([]),[dragActive,setDragActive]=useState(false);
+  const refreshId=useRef(0);
   const sceneIdentity=useRef(''),cameraPose=useRef<number[]|undefined>(undefined),session=useRef(0),dragLock=useRef(false),pendingExternal=useRef(false);
   const [commands,setCommands]=useState<{name:string;parameters:string}[]>([]),[script,setScript]=useState(''),[scriptDirty,setScriptDirty]=useState(false);
   const frame=useRef<HTMLIFrameElement>(null),current=useRef({snapshot,project,activeMap,tool,selection,contentSelection,radius,strength,brush,snap,busy,preview,playing});
@@ -75,35 +76,36 @@ export function App(){
     const placement=target&&state.preview?.available.includes(target.kind+'/'+target.id)?target:null;
     post('tool',{tool:state.tool,selection:primary?{...primary,class:classes[primary.kind]}:null,entities,revision:state.snapshot?.revision,snap:state.snap,placement});
   }
-  async function fullPreview(dir:string,map:string){
+  function changeScene(identity:string){
+    if(sceneIdentity.current===identity)return;
+    sceneIdentity.current=identity;session.current++;cameraPose.current=undefined;
+    current.current.preview=null;setPreview(null);setAvailable([]);setResourcesPending(false);
+    setSelection([]);setEngineStatus('대기');
+  }
+  async function refresh(dir=project,map=activeMap,applyResources=false){
+    const id=++refreshId.current;
+    const next=await request<Snapshot>({command:'inspect',project:dir,map:map||undefined});
+    if(id!==refreshId.current)return;
+    pendingExternal.current=false;
+    map=next.activeMap||'';
+    changeScene(map?dir+'\n'+map:'');
+    setSnapshot(next);setProject(dir);setActiveMap(map);
+    current.current.snapshot=next;current.current.project=dir;current.current.activeMap=map;
+    setSelection(previous=>previous.filter(s=>next.map?.entities.some(e=>e.kind===s.kind&&e.id===s.id)));window.studio.storage.setItem('studio.project',dir);
+    if(!map||!engineReady)return;
+    if(next.diagnostics.some(d=>d.severity==='error')){
+      setEngineStatus(current.current.preview?'검증 오류 · 마지막 정상 화면':'검증 오류');return;
+    }
+    if(current.current.preview&&!applyResources){post('refresh');return;}
     const value=await request<Preview>({command:'preview',project:dir,map});
-    const identity=dir+'\n'+map;
-    if(sceneIdentity.current===identity)value.restorePose=cameraPose.current;
-    else cameraPose.current=undefined;
-    sceneIdentity.current=identity;session.current++;
+    if(id!==refreshId.current)return;
+    value.restorePose=cameraPose.current;session.current++;
     setResourcesPending(false);setAvailable(value.available);setPreview(value);current.current.preview=value;
     setEngineStatus('Blitz 연결 중');setFrameVersion(v=>v+1);
   }
-  async function refresh(dir=project,map=activeMap){
-    const next=await request<Snapshot>({command:'inspect',project:dir,map:map||undefined});
-    pendingExternal.current=false;
-    map=next.activeMap||'';setSnapshot(next);setProject(dir);setActiveMap(map);
-    current.current.snapshot=next;current.current.project=dir;current.current.activeMap=map;
-    setSelection(previous=>previous.filter(s=>next.map?.entities.some(e=>e.kind===s.kind&&e.id===s.id)));window.studio.storage.setItem('studio.project',dir);
-    if(map&&engineReady&&!next.diagnostics.some(d=>d.severity==='error')){
-      if(sceneIdentity.current===dir+'\n'+map&&current.current.preview)post('refresh');
-      else await fullPreview(dir,map);
-    }else if(!map){setPreview(null);current.current.preview=null;sceneIdentity.current='';}
-    else {setResourcesPending(true);setEngineStatus('검증 오류 · 마지막 정상 화면');}
-  }
   async function applyResources(){
     if(dragLock.current)return;
-    await run(async()=>{
-      const state=current.current;
-      // Refresh the authoritative saved state even if the CLI edited it just now.
-      await refresh(state.project,state.activeMap);
-      await fullPreview(state.project,current.current.activeMap);
-    });
+    await run(()=>refresh(current.current.project,current.current.activeMap,true));
   }
   async function mutate(operations:Operation[],expected?:number){
     const state=current.current;
@@ -118,7 +120,8 @@ export function App(){
     window.studio.environment().then(env=>{setBase(env.base);setEngineReady(env.engineReady);setProjectPath(window.studio.storage.getItem('studio.project')||env.root+'/build/my-extended-project');});
     request<{commands:{name:string;parameters:string}[]}>({command:'commands'}).then(value=>setCommands(value.commands)).catch(()=>{});
   },[]);
-  const validPlay=!!snapshot&&!!activeMap&&engineReady;
+  const invalidProject=snapshot?.diagnostics.some(d=>d.severity==='error');
+  const validPlay=!!snapshot&&!!activeMap&&engineReady&&!invalidProject;
   async function togglePlay(){
     if(current.current.playing){
       const pending=preparingPlay.current||autoPlay.current!==null;autoPlay.current=null;preparingPlay.current=false;
@@ -153,7 +156,7 @@ export function App(){
     const timer=setInterval(async()=>{
       if(current.current.busy||playing)return;
       try{const next=await request<{revision:number;scriptsVersion:string}>({command:'revision',project});
-        if(current.current.busy||current.current.playing)return;
+        if(current.current.busy||current.current.playing||project!==current.current.project)return;
         if(next.revision!==current.current.snapshot?.revision||next.scriptsVersion!==current.current.snapshot?.scripts.version){
           if(dragLock.current){pendingExternal.current=true;return;}
           log('외부 변경을 불러왔습니다.');await refresh(project,current.current.activeMap);
@@ -163,7 +166,7 @@ export function App(){
   },[project,engineReady,playing]);
   useEffect(()=>{
     const listener=(event:MessageEvent)=>{
-      if(event.origin!==location.origin||event.source!==frame.current?.contentWindow||event.data?.source!=='blitz-studio')return;
+      if(!current.current.preview||event.origin!==location.origin||event.source!==frame.current?.contentWindow||event.data?.source!=='blitz-studio')return;
       const data=event.data,state=current.current;
       if(data.type==='runtime'){
         const record=data.record as RuntimeRecord;
@@ -186,7 +189,7 @@ export function App(){
       if(data.type==='applied'){setEngineStatus('Blitz 연결됨');return;}
       if(data.type==='request-preview'){
         const identity=session.current;
-        void request<Preview>({command:'preview',project:state.project,map:state.activeMap,since:data.since,...(data.playId!==undefined?{expectRevision:playVersion.current?.revision,expectScriptsVersion:playVersion.current?.scriptsVersion}:{})}).then(value=>{
+        void request<Preview>({command:'preview',project:state.project,map:state.activeMap,since:data.since,includeSources:false,...(data.playId!==undefined?{expectRevision:playVersion.current?.revision,expectScriptsVersion:playVersion.current?.scriptsVersion}:{})}).then(value=>{
           if(identity===session.current)post('project',{preview:value,playId:data.playId});
         }).catch(reason=>{if(identity===session.current)post(data.playId===undefined?'sync-error':'play-error',{id:data.playId,message:String(reason)});});return;
       }
@@ -285,16 +288,18 @@ export function App(){
   return <div className="app" style={{'--bottom-height':bottomHeight+'px'} as React.CSSProperties}>
     {modal}
     {templatesOpen&&<TemplatePanel project={project} snapshot={snapshot} onClose={()=>setTemplatesOpen(false)} onCreated={async map=>{setSelection([]);setContentSelection(null);await refresh(project,map||activeMap);setTab('script');}}/>}
-    <header className="topbar"><div className="brand">S<span>II</span><strong>STUDIO</strong><small>EXTENDED</small></div><div className="project-name">{snapshot.name}<span> / {activeMap||'맵을 선택하세요'}</span></div><span className="revision">r{snapshot.revision} · 자동 저장</span><button disabled={playing||dragActive||busy} onClick={()=>{setSnapshot(null);setPreview(null);current.current.preview=null;sceneIdentity.current='';session.current++;}}>프로젝트</button><button disabled={busy} onClick={()=>void run(async()=>{const out=await window.studio.choose({directory:true,title:'비어 있는 내보내기 폴더'});if(out){await request({command:'export',project,out});log('내보내기 완료: '+out);}})}>내보내기 ↗</button></header>
+    <header className="topbar"><div className="brand">S<span>II</span><strong>STUDIO</strong><small>EXTENDED</small></div><div className="project-name">{snapshot.name}<span> / {activeMap||'맵을 선택하세요'}</span></div><span className="revision">r{snapshot.revision} · 자동 저장</span><button disabled={playing||dragActive||busy} onClick={()=>{refreshId.current++;changeScene('');current.current.project='';setProject('');setActiveMap('');setSnapshot(null);}}>프로젝트</button><button disabled={busy} onClick={()=>void run(async()=>{const out=await window.studio.choose({directory:true,title:'비어 있는 내보내기 폴더'});if(out){await request({command:'export',project,out});log('내보내기 완료: '+out);}})}>내보내기 ↗</button></header>
     <div className="toolbar"><div className="tool-group">{([['select','↖','선택'],['move','✥','이동'],['place','＋','배치'],['terrain','▱','지형']] as const).map(([key,icon,label])=><button key={key} className={tool===key?'active':''} disabled={playing||dragActive} onClick={()=>setTool(key)} title={label}><span>{icon}</span>{label}</button>)}</div><div className="toolbar-options">{tool==='terrain'?<><select value={brush} onChange={e=>setBrush(e.target.value)}><option value="raise">높이기</option><option value="lower">낮추기</option><option value="flatten">평탄화</option><option value="smooth">부드럽게</option></select><label>반경 <input type="number" min="1" max="32" value={radius} onChange={e=>setRadius(Number(e.target.value))}/></label><label>강도 <input type="number" step="0.001" min="0.001" max="0.1" value={strength} onChange={e=>setStrength(Number(e.target.value))}/></label></>:<label>스냅 <select value={snap} onChange={e=>setSnap(Number(e.target.value))}><option value="0">자유</option><option value="16">16</option><option value="32">32</option><option value="64">64</option></select></label>}</div>
-      <div className="play-controls"><button className={resourcesPending?'resource-pending':''} disabled={busy||playing||dragActive||!activeMap} onClick={()=>void applyResources()} title="정의·모델·언어·폰트 변경을 모아서 적용합니다">{resourcesPending?'● 리소스 적용 필요':'리소스 적용'}</button><button className={playing?'playing':'primary'} disabled={playState==='stopping'||(!playing&&(!validPlay||busy||dragActive))} onClick={togglePlay}>{playState==='stopping'?'■ 복원 중':playing?(playState==='playing'?'■ 정지':'■ 시작 취소'):'▶ 테스트'}</button></div>
+      <div className="play-controls"><button className={resourcesPending?'resource-pending':''} disabled={busy||playing||dragActive||!validPlay} onClick={()=>void applyResources()} title="정의·모델·언어·폰트 변경을 모아서 적용합니다">{resourcesPending?'● 리소스 적용 필요':'리소스 적용'}</button><button className={playing?'playing':'primary'} disabled={playState==='stopping'||(!playing&&(!validPlay||busy||dragActive))} onClick={togglePlay}>{playState==='stopping'?'■ 복원 중':playing?(playState==='playing'?'■ 정지':'■ 시작 취소'):'▶ 테스트'}</button></div>
       <button disabled={!snapshot.canUndo||busy||playing||dragActive} onClick={()=>void history()} title="Ctrl/Cmd+Z">↶</button><button disabled={!snapshot.canRedo||busy||playing||dragActive} onClick={()=>void history(true)} title="Ctrl/Cmd+Shift+Z">↷</button><button disabled={busy||playing||dragActive} onClick={()=>void run(()=>refresh())}>새로고침</button></div>
     <aside className="hierarchy panel"><div className="panel-title">월드<span>HIERARCHY</span></div><div className="map-controls"><select disabled={busy||playing||dragActive} value={activeMap} onChange={e=>{setSelection([]);void run(()=>refresh(project,e.target.value));}}><option value="">맵 선택</option>{snapshot.maps.map(name=><option key={name}>{name}</option>)}</select><button onClick={()=>void newMap()} disabled={busy||playing||dragActive} title="새 맵">＋</button><button onClick={()=>void importMap()} disabled={busy||playing||dragActive} title="맵 가져오기">↥</button></div>
       <button className="map-script" disabled={!activeMap||dragActive||playing} onClick={()=>{setSelection([]);setContentSelection(null);setTab('script');}}>맵 전체 스크립트</button><div className="hierarchy-list">{snapshot.map?.entities.map(entity=><button key={entity.kind+entity.id} className={selection.some(s=>s.kind===entity.kind&&s.id===entity.id)?'entity selected':'entity'} disabled={dragActive||playing} onClick={e=>{setSelection(previous=>e.shiftKey?[...previous.filter(s=>s.kind!==entity.kind||s.id!==entity.id),{kind:entity.kind,id:entity.id}]:[{kind:entity.kind,id:entity.id}]);setContentSelection(null);}} onDoubleClick={()=>post('focus',{selection:{...entity,class:classes[entity.kind]}})}><span className={'kind-icon '+entity.kind}>{entity.kind==='object'?'◇':entity.kind==='unit'?'♟':entity.kind==='item'?'◈':'⚑'}</span><span>{entityLabel(entity)}</span><small>{entity.id}</small></button>)}</div>
       <div className="panel-footer"><span>{snapshot.map?.entities.length||0} 개체</span><button disabled={!selection.length||busy||playing||dragActive} onClick={()=>void duplicateSelected()}>복제</button><button disabled={!selection.length||busy||playing||dragActive} onClick={()=>void removeSelected()}>삭제</button></div></aside>
     <main className="scene panel"><div className="panel-title">장면<span>BLITZ · {engineStatus}</span><span className="play-status" role="status">{playState==='playing'?'플레이 중':playState==='starting'?'플레이로 전환 중…':playState==='stopping'?'편집 화면 복원 중…':''}</span><span className="scene-size">{snapshot.map?`${snapshot.map.size} × ${snapshot.map.size}`:''}</span></div>
       <div className="scene-viewport">
-      {activeMap&&engineReady&&preview?<iframe key={frameVersion} ref={frame} src="/engine/index.html" title="Blitz 3D 월드" allow="autoplay; fullscreen"/>:<div className="scene-empty"><div className="island-symbol">⌁</div><h2>{activeMap?'Blitz 엔진을 빌드해주세요':'첫 번째 섬을 만들어보세요'}</h2><p>{activeMap?'python src/devtools/studio.py engine build':'왼쪽 + 버튼으로 새 맵을 만들거나 기존 .s2 맵을 가져올 수 있습니다.'}</p></div>}
+      {activeMap&&engineReady&&preview?<iframe key={frameVersion} ref={frame} src="/engine/index.html" title="Blitz 3D 월드" allow="autoplay; fullscreen"/>:<div className="scene-empty"><div className="island-symbol">⌁</div>{!activeMap?<><h2>첫 번째 섬을 만들어보세요</h2><p>왼쪽 + 버튼으로 새 맵을 만들거나 기존 .s2 맵을 가져올 수 있습니다.</p></>:
+        !engineReady?<><h2>Blitz 엔진을 빌드해주세요</h2><p>python src/devtools/studio.py engine build</p></>:
+        invalidProject?<><h2>미리보기를 열 수 없습니다</h2><button onClick={()=>setTab('console')}>진단 확인</button></>:<h2>미리보기 대기 중</h2>}</div>}
       </div>
       <div className="scene-hint">{playing?'화면을 클릭하면 플레이 · Esc로 마우스 해제':tool==='place'?`${selectedContent?.name||'아래에서 콘텐츠를 선택하세요'} · 초록색 모델 미리보기 · 클릭: 배치 · Esc: 취소`:tool==='terrain'?'지형을 클릭하면 브러시 적용':tool==='move'?'축: 방향 이동 · 가운데: 지형 위 이동 · Esc: 취소 · Shift 클릭: 다중 선택':'우클릭 드래그: 시점 · WASD/QE: 이동 · F: 선택 개체 보기 · 휠: 줌'}</div>
     </main>

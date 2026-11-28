@@ -1,6 +1,6 @@
 """Prepare language-specific bitmap fonts; no installed fonts are needed at runtime."""
 from pathlib import Path
-import json, math, struct
+import json, math, shutil, struct
 from fontTools.ttLib import TTFont, TTLibError
 from PIL import Image, ImageFont, ImageDraw
 
@@ -57,9 +57,13 @@ def make_fonts(catalogs,packs,default_font,gfx,out,root):
         with Image.open(gfx/(name+'.bmp')) as original:
             ink=max((p for p in original.convert('RGB').get_flattened_data() if p!=(255,0,255)),key=sum)
         colors.append((224,209,164) if style==5 else ink)
-    reports={}
-    for code in packs:
-        chain=list(dict.fromkeys([selected[code],default]+[selected[c] for c in sorted(selected)]))
+    reports = dict.fromkeys(packs)
+    groups = {}
+    for code, primary in selected.items():
+        groups.setdefault(primary, []).append(code)
+    for primary, codes in groups.items():
+        code = codes[0]
+        chain=list(dict.fromkeys([primary,default]+[selected[c] for c in sorted(selected)]))
         assigned={};fallback={};missing=[]
         for c in chars:
             font=next((f for f in chain if c in f.coverage),None)
@@ -104,19 +108,22 @@ def make_fonts(catalogs,packs,default_font,gfx,out,root):
                     _,_,ypos,mask=glyphs[c];x=(i%32)*cellw;y=(i//32)*cellh+ypos
                     image.paste((0,0,0),(x+1,y+1),mask);image.paste(colors[style],(x,y),mask)
                 image.save(folder/f'{style}_{page}.bmp')
-        preview=Image.new('RGB',(760,7*38+32),(30,35,32));draw=ImageDraw.Draw(preview)
-        sample=packs[code]['name']+'  ABC abc 0123456789  '+''.join(chr(c) for c in chars if c>=256)[:28]
-        for style in range(7):
-            x=10;y=style*38+10
-            draw.text((10,y+20),STYLES[style],fill=(180,180,180))
-            for c in map(ord,sample):
-                advance,left,ypos,mask=metrics[style==5][c]
-                if x+left+mask.width>=750:break
-                preview.paste((0,0,0),(x+left+1,y+ypos+1),mask)
-                preview.paste(colors[style],(x+left,y+ypos),mask);x+=advance
-        preview.save(folder/'preview.png')
-        reports[code]={'font':str(selected[code].path),'glyphs':len(chars),'cell':[cellw,cellh],
-                       'scale':scales,'fallback_count':len(fallback),'fallback_glyphs':fallback}
-        print(f'{code}: {len(chars)} glyphs; {len(fallback)} supplied by fallback fonts')
+        for other in codes[1:]:
+            shutil.copytree(folder, out/other)
+        for code in codes:
+            preview=Image.new('RGB',(760,7*38+32),(30,35,32));draw=ImageDraw.Draw(preview)
+            sample=packs[code]['name']+'  ABC abc 0123456789  '+''.join(chr(c) for c in chars if c>=256)[:28]
+            for style in range(7):
+                x=10;y=style*38+10
+                draw.text((10,y+20),STYLES[style],fill=(180,180,180))
+                for c in map(ord,sample):
+                    advance,left,ypos,mask=metrics[style==5][c]
+                    if x+left+mask.width>=750:break
+                    preview.paste((0,0,0),(x+left+1,y+ypos+1),mask)
+                    preview.paste(colors[style],(x+left,y+ypos),mask);x+=advance
+            preview.save(out/code/'preview.png')
+            reports[code]={'font':str(selected[code].path),'glyphs':len(chars),'cell':[cellw,cellh],
+                           'scale':scales,'fallback_count':len(fallback),'fallback_glyphs':fallback}
+            print(f'{code}: {len(chars)} glyphs; {len(fallback)} supplied by fallback fonts')
     (out/'fonts-report.json').write_text(json.dumps(reports,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
     return reports

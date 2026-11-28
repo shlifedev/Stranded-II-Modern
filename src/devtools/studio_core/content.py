@@ -54,30 +54,33 @@ def fields(text):
 
 def records(path, text):
     filename = path.rsplit('/',1)[-1]
-    kind = next((k for k, prefix in PREFIXES.items() if filename.startswith(prefix) and filename.endswith('.inf')), None)
+    kind = next((k for k, prefix in PREFIXES.items() if filename.startswith(prefix) and filename[-4:].lower() == '.inf'), None)
     if not kind:
         return []
     parsed = list(fields(text))
     marker = 'combi' if kind == 'recipe' else 'id'
-    starts = [entry for entry in parsed if entry[0] == marker and (kind != 'recipe' or entry[1] == 'start')]
+    starts = [i for i, entry in enumerate(parsed) if entry[0] == marker and
+              (kind != 'recipe' or entry[1] == 'start')]
     result = []
-    for index, (_, value, start, _) in enumerate(starts):
-        end = starts[index+1][2] if index+1 < len(starts) else len(text)
-        if kind == 'recipe':
-            finish = next((f for f in parsed if f[0] == 'combi' and f[1] == 'end' and start < f[2] < end), None)
-            if finish is None:
+    for index, first in enumerate(starts):
+        _, value, start, _ = parsed[first]
+        stop = starts[index+1] if index+1 < len(starts) else len(parsed)
+        end = parsed[stop][2] if stop < len(parsed) else len(text)
+        props = {}
+        for key, val, _, field_end in parsed[first+1:stop]:
+            if kind == 'recipe' and key == 'combi' and val == 'end':
+                end = field_end
+                break
+            if key not in ('id', 'combi'):
+                props.setdefault(key, []).append(val)
+        else:
+            if kind == 'recipe':
                 raise ValueError(f'{path}: unterminated combination')
-            end = finish[3]
         try:
             identifier = f'{path}#{index}' if kind == 'recipe' else int(value)
         except ValueError as exc:
             raise ValueError(f'{path}: invalid {kind} ID {value!r}') from exc
-        block = text[start:end]
-        props = {}
-        for key, val, _, _ in fields(block):
-            if key not in ('id', 'combi'):
-                props.setdefault(key, []).append(val)
-        result.append(Record(kind, identifier, path, start, end, block, props))
+        result.append(Record(kind, identifier, path, start, end, text[start:end], props))
     return result
 
 

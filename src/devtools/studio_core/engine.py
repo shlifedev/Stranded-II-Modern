@@ -9,9 +9,8 @@ import sys
 
 import web_build
 import web_toolchain
-from editions import override_files, INCLUDE
-from locales import prepare, validate
-from language_pack import refresh
+from editions import INCLUDE
+from locales import validate
 from versioning import development_marker, local_info
 
 from .project import ROOT, atomic, encode
@@ -36,13 +35,7 @@ def setup(args):
     settings = {key: str(getattr(args,key).resolve()) if getattr(args,key,None) else previous.get(key) for key in ('game','font')}
     if not all(settings.values()):
         raise ValueError('Studio setup needs --game OFFICIAL_GAME --font PINNED_FONT on first use')
-    web_build.prepare_assets(settings)
-    validate(ROOT,'extended')
-    prepare(ROOT,Path(settings['game']),RUNTIME,'extended')
-    for relative,source in override_files(ROOT,'extended').items():
-        target=RUNTIME/relative;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source,target)
-    refresh(ROOT,RUNTIME,Path(settings['font']),'extended')
-    shutil.copy2(ROOT/'config/editions/extended/modern.ini',RUNTIME/'core/modern.ini')
+    web_build.prepare_assets(settings, 'extended')
     atomic(BUILD/'dependencies.local.json',encode(settings))
     if not (web_toolchain.paths()[1]/'.emscripten').is_file():
         web_toolchain.prepare()
@@ -67,7 +60,7 @@ def source_hashes():
 def implementation_hashes():
     paths = [ROOT/'src/studio/engine/index.html',ROOT/'src/studio/engine/studio.js',ROOT/'src/studio/engine/gizmo.js',ROOT/'src/web/debugui.js',Path(__file__),
              ROOT/'src/devtools/web_build.py',ROOT/'src/devtools/web_toolchain.py',ROOT/'src/devtools/web_audio.py',
-             ROOT/'config/web-toolchain.json',ROOT/'src/native/web/bridge.cpp']
+             ROOT/'src/devtools/language_pack.py',ROOT/'config/web-toolchain.json',ROOT/'src/native/web/bridge.cpp']
     return {**{p.relative_to(ROOT).as_posix():web_build.digest(p) for p in paths}, **engine_toolchain.sources()}
 
 
@@ -98,18 +91,13 @@ def build(args):
         shutil.copy2(source,RUNTIME/'licenses'/name)
     web_toolchain.run([upstream.BLITZCC,'-target','emscripten','-o',SITE/'game',ENTRY],
                       cwd=ROOT/'src/engine',env=web_build.compiler_environment(env))
-    # Include Extended resources in the existing allowlisted packer without
-    # changing normal web/CI edition routing.
-    original=web_build.override_files
-    web_build.override_files=lambda root,edition='classic': original(root,'extended')
-    try:web_build.pack_assets(env)
-    finally:web_build.override_files=original
+    asset_inputs = web_build.pack_assets(env, 'extended')
     for name in ('index.html','studio.js','gizmo.js'):
         shutil.copy2(ROOT/'src/studio/engine'/name,SITE/name)
     shutil.copy2(ROOT/'src/web/debugui.js',SITE/'debugui.js')
     (SITE/'game.html').unlink(missing_ok=True)
     report={'edition':'extended','entrypoint':ENTRY,'source_sha256':source_hashes(),
-            'implementation_sha256':implementation_hashes(),
+            'implementation_sha256':implementation_hashes(), 'asset_input_sha256':asset_inputs,
             'files':{n:web_build.digest(SITE/n) for n in ('game.js','game.wasm','assets.js','assets.data','index.html','studio.js','gizmo.js','debugui.js')}}
     atomic(BUILD/'build-report.json',encode(report))
     print('Built Blitz Studio engine:',SITE)
@@ -125,11 +113,8 @@ def check(args):
     validate(ROOT,'extended')
     loader=(SITE/'assets.js').read_text('utf8')
     metadata=json.loads(re.search(r'loadPackage\((\{"files":.*)\);',loader).group(1))
-    original=web_build.override_files
-    web_build.override_files=lambda root,edition='classic': original(root,'extended')
-    try:
-        allowed=web_build.asset_files()
-    finally:web_build.override_files=original
+    allowed = web_build.asset_files('extended')
+    web_build.verify_asset_inputs(allowed, report.get('asset_input_sha256'))
     if {f['filename'] for f in metadata['files']}!={target for _,target in allowed}:
         raise ValueError('Studio archive differs from its allowlisted resources')
     from web_audio import verify

@@ -33,7 +33,7 @@ SCHEMA = {
         'terrain.brush': {'map': 'map-name', 'x': 'terrain sample X', 'z': 'terrain sample Z', 'radius': 2, 'strength': .005, 'mode': 'raise|lower|flatten|smooth'},
         'map.script': {'map': 'map-name', 'text': 'on:start {\n msg "Hello";\n}'},
         'asset.import': {'path': 'local file', 'destination': 'mods/Stranded II/gfx/custom.b3d'},
-        'locale.set': {'language': 'en|ko|de', 'key': 'studio.house.name', 'text': 'House'},
+        'locale.set': {'language': 'code from languages', 'key': 'studio.house.name', 'text': 'House'},
     },
     'notes': ['apply accepts one operation or an array; a batch is atomic',
               'Use expectRevision to reject concurrent GUI/agent changes',
@@ -43,6 +43,7 @@ SCHEMA = {
               'Properties accept a string/number, a list for repeated properties, or null to remove',
               'Validation diagnostics can be fixed in subsequent edits; export requires no errors',
               'preview --since TOKEN returns a delta from the last acknowledged token; omit since for explicit full/resource load',
+              'preview includes debugger sources by default; pass includeSources=false (CLI: --no-sources) for scene-only clients',
               'Preview runs real Blitz code; use no GUI for CLI validation'],
 }
 
@@ -52,7 +53,8 @@ def dispatch(request):
         raise ValueError('Request must be a JSON object')
     command = request['command']
     if command == 'schema':
-        return SCHEMA
+        from locales import languages
+        return {**SCHEMA, 'languages': list(languages(ROOT))}
     if command == 'commands':
         from locales import catalog
         base = ROOT/'build/studio/runtime'
@@ -93,7 +95,7 @@ def dispatch(request):
         return project.apply(operations if isinstance(operations,list) else [operations],
                              request.get('expectRevision'), request.get('dryRun',False))
     if command == 'validate':
-        issues = project.validate()
+        issues = project.validate(check_assets=True)
         return {'valid': not any(i['severity']=='error' for i in issues), 'diagnostics': issues, 'revision': project.data['revision']}
     if command == 'export':
         return project.export(request['out'])
@@ -101,7 +103,7 @@ def dispatch(request):
         return project.undo(command=='redo', request.get('expectRevision'))
     if command == 'preview':
         return project.preview(request['map'], ROOT/'build/studio/runtime', request.get('since'),
-                               request.get('expectRevision'), request.get('expectScriptsVersion'))
+                               request.get('expectRevision'), request.get('expectScriptsVersion'), request.get('includeSources', True))
     raise ValueError(f'Unknown command: {command}')
 
 
@@ -142,6 +144,7 @@ def main():
             p.add_argument('--path')
             p.add_argument('--query', default='')
         if name == 'preview':
+            p.add_argument('--no-sources', dest='includeSources', action='store_false', help='Omit script debugger source locations')
             p.add_argument('--since', help='Last token acknowledged by the viewport; omit for explicit full load')
         if name in ('inspect','preview'):
             p.add_argument('--map',required=name=='preview')

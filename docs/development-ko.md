@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"3db2d705896e9d1ab5a74fa9defa8c97efa551456eef979778fb585d3ae5ded3"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"32cc7016f42619941c57d8606c2cbb0565ab43776a92e946668eed6af80c971b"} -->
 
 # 개발 가이드
 
@@ -125,7 +125,7 @@ Windows에서 선택한 에디션의 실행 환경을 준비한 뒤 격리된 �
 
 `src/engine/StrandedIIWeb.bb`는 공통 게임과 브라우저 서비스를 포함합니다. Windows·웹·macOS·Studio가 모두 `src/blitz3d/`의 수정 가능한 엔진을 빌드하며 웹 타깃은 [Emscripten](../config/web-toolchain.json)을 사용합니다. 엔진 소스를 직접 수정한 뒤 다시 빌드합니다. WASM·WebGPU·JSPI·브라우저 저장은 [웹 버전 구현 원리](web-architecture-ko.md)를 참고하세요.
 
-웹 개발에는 Git도 필요합니다. 준비 과정은 `deps/blitz3d/`, `deps/emsdk/`, `deps/ffmpeg-web/`에 고정 의존성을 받으므로 첫 빌드에는 시간과 디스크 공간이 필요합니다. 먼저 Windows 준비를 마친 뒤 실행합니다.
+웹 개발에는 Git도 필요합니다. 준비 과정은 `deps/blitz3d/`, `deps/emsdk/`, `deps/ffmpeg-web/`에 고정 의존성을 받으므로 첫 빌드에는 시간과 디스크 공간이 필요합니다. Windows에서는 Windows 준비를 마친 뒤 아래 명령을 실행합니다. Apple Silicon에서는 macOS 빌드 도구를 준비하고 FFmpeg와 ffprobe를 PATH에 둡니다. 같은 명령을 `.venv/bin/python`으로 실행하며, 웹 환경을 처음 준비할 때 `--game 경로 --font 경로`를 지정합니다.
 
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py setup --platform web
@@ -144,7 +144,7 @@ Windows에서 선택한 에디션의 실행 환경을 준비한 뒤 격리된 �
 
 저장·설정은 브라우저의 IndexedDB에 기본판 전용으로 보관합니다. 저장 교체와 백업은 기록 완료를 기다리며, 설정은 첫 실행 때만 기본값을 적용합니다. 같은 브라우저·프로필·주소·포트로 접속해야 같은 저장소를 사용합니다. 사이트 데이터를 지우면 저장도 삭제됩니다. 같은 주소에서 두 탭이 동시에 저장소를 사용하지 못하도록 잠급니다.
 
-`check --platform web`는 산출물·소스 해시, 배포 리소스 경계, 변환 오디오, Windows/wasm 숫자·문자열·바이너리 일치, 실제 메뉴·인트로 스크립트의 줄 분리와 웹 파일시스템의 저장 교체·실패 복구를 검사합니다. CPU 버퍼 검사에서는 실제 지형 색상 생성 함수에 고정된 높이 구간을 입력해 색상을 확인하고, 전체 버퍼 전송 횟수를 제한해 픽셀마다 GPU를 동기화하는 문제를 방지합니다. 자동 시작, 신규 영어 설정·기존 한국어 설정 보존, 입력·전체화면 상태 전환은 모의 DOM으로 검사합니다. 결과는 `build/web/verification.json`에 기록합니다. CPU 검사·모의 DOM·저장 거래 검사는 실제 GPU·브라우저·IndexedDB 검증을 대신하지 않습니다.
+`check --platform web`는 산출물·소스 해시, 배포 리소스 경계, 변환 오디오, WASM과 네이티브 호스트(CI에서는 Windows, Apple Silicon에서는 macOS)의 숫자·문자열·바이너리 일치, 실제 메뉴·인트로 스크립트의 줄 분리와 웹 파일시스템의 저장 교체·실패 복구를 검사합니다. CPU 버퍼 검사에서는 실제 지형 색상 생성 함수에 고정된 높이 구간을 입력해 색상을 확인하고, 전체 버퍼 전송 횟수를 제한해 픽셀마다 GPU를 동기화하는 문제를 방지합니다. 자동 시작, 신규 영어 설정·기존 한국어 설정 보존, 입력·전체화면 상태 전환은 모의 DOM으로 검사합니다. 결과는 `build/web/verification.json`에 기록합니다. CPU 검사·모의 DOM·저장 거래 검사는 실제 GPU·브라우저·IndexedDB 검증을 대신하지 않습니다.
 
 실제 엔진 비교는 웹 빌드 후 아래 명령으로 준비합니다. 별도 복사본에서 Windows 기준 검사를 실행하며 현재 게임과 저장을 사용하지 않습니다. 오디오 비교에는 양쪽 모두 웹용으로 준비한 파일을 사용합니다. 웹 서버의 `/checks/`를 열고 검사 버튼을 누르면 같은 시나리오의 WebGPU 결과를 비교합니다. 한글 비트맵·이미지 투명색, 화면 복사와 모션 블러의 상하 방향, 오디오 디코딩, 에디터·랜덤 섬 초기화(지형·풀 색상, 플레이어 생성, 월드별 실제 소요 시간 30초 제한), 메뉴 카메라 반복, 원본 인트로의 배·카메라·이벤트, 첫 섬 전환과 건너뛰기를 검사합니다. 인위적으로 진행시킨 시퀀스 시간은 실제 재생 속도나 FPS 검증을 대신하지 않습니다.
 
@@ -152,7 +152,7 @@ Windows에서 선택한 에디션의 실행 환경을 준비한 뒤 격리된 �
 .\.venv\Scripts\python.exe -X utf8 src/devtools/verify_web_game.py
 ```
 
-WebGPU의 동일 버퍼 `CopyRect`는 임시 텍스처를 재사용하고, 앞선 쓰기와 겹치지 않는 원본 영역들을 묶어 물결·수중 효과의 복사와 그리기를 줄입니다. 겹치는 복사는 앞선 결과를 반영하며 확대·축소는 기존 경로를 사용합니다. `check --platform web`의 C++ CPU 검사에서는 실제 복사 함수를 실행해 픽셀·투명색·잘림·순서와 물결 갱신당 스냅샷 2회, 텍스처 재사용을 확인합니다. 실제 GPU 성능은 플레이로 확인해야 합니다.
+WebGPU의 동일 버퍼 `CopyRect`는 임시 텍스처를 재사용하고, 앞선 쓰기와 겹치지 않는 원본 영역들을 묶어 물결·수중 효과의 복사와 그리기를 줄입니다. 겹치는 복사는 앞선 결과를 반영하며 확대·축소는 기존 경로를 사용합니다. `check --platform web`의 C++ CPU 검사에서는 실제 복사 함수를 실행해 픽셀·투명색·잘림·순서와 물결 갱신당 스냅샷 2회, 텍스처 재사용을 확인합니다. CPU 검사만 실행하려면 `python -m unittest discover -s src/tests -p "test_web_self_blit.py"`를 사용하세요. 준비된 웹 SDK가 있으면 이를 사용하고, 없으면 네이티브 C++17 컴파일러를 사용합니다. 실제 GPU 성능은 플레이로 확인해야 합니다.
 
 프레임 드랍 비교는 `src/devtools/profile_web.py --serve`로 준비하고 Chrome/Edge에서 `http://127.0.0.1:8766/`를 열어 시작합니다. 실제 WebGPU와 실제 시계를 사용하는 별도 엔진 복사본이며 IndexedDB나 사용자 저장을 연결하지 않습니다. 섬 또는 메뉴 장면과 해상도를 선택하면 물 품질 6·3·0(144 FPS 제한), 물 품질 0(60 FPS 제한)을 준비 5초 후 각각 30초씩 3회 측정합니다. 조건마다 새 WASM 인스턴스를 사용하며 창이 포커스를 잃으면 해당 측정은 무효입니다. 장면당 약 7분 동안 창을 앞에 두세요.
 
@@ -191,6 +191,8 @@ python3 -m venv .venv
 .venv/bin/python src/devtools/macos_package.py
 .venv/bin/python src/devtools/dev.py run --platform macos
 ```
+
+로컬 앱 패키징이 중단되면 빌드를 다시 실행하세요. 서명과 보고서 작성이 끝난 뒤 최종 앱이 나타납니다. 같은 앱을 동시에 빌드하면 완성된 결과를 함께 사용합니다.
 
 `build`는 로컬 서명한 `build/macos/apps/<build-id>/Stranded II.app` 경로를 출력하고 `build/macos/build-report.json`에 기록합니다. 앱을 더블클릭하면 `~/Library/Application Support/Stranded II Native Preview/`에 리소스를 준비하고 설정·세이브를 저장합니다. 리소스를 갱신해도 기존 설정·세이브를 유지합니다. `run --platform macos`는 같은 앱을 격리된 `build/macos/runtime/` 프로필로 실행합니다. 두 경로 모두 Windows·브라우저 데이터를 가져오지 않습니다. 새 프로필은 1280×720 창 모드로 시작합니다. `localize --platform macos`는 개발용 언어팩을 갱신하며, 앱에 반영하려면 다시 빌드합니다. 지원하지 않는 원본 WAV 인코딩은 네이티브 실행 폴더에서 PCM으로 변환하고 원본 파일은 보존합니다.
 
@@ -432,7 +434,7 @@ gh release create ci-deps-v1 `
   --latest=false
 ```
 
-이후 Actions의 `Desktop build and release`를 수동 실행하면 ZIP을 받을 수 있습니다. 의존성을 갱신할 때는 ZIP을 다시 만들고 출력된 SHA-256과 새 Release 태그·파일명을 설정에 함께 반영합니다. 해시가 다른 ZIP은 캐시에 있어도 압축을 풀지 않습니다. 기존 동기화된 문서나 소스 변경만으로 의존성 ZIP을 다시 만들 필요는 없습니다. 단, 번들용 라이선스의 목록이나 내용을 변경하면 `config/dependency-license-files.json`을 갱신하고 의존성 ZIP을 다시 만든 뒤 전체 해시도 함께 갱신합니다.
+이후 Actions의 `Desktop build and release`를 수동 실행하면 ZIP을 받을 수 있습니다. 의존성을 갱신할 때는 ZIP을 다시 만들고 출력된 SHA-256과 새 Release 태그·파일명을 설정에 함께 반영합니다. 해시가 다른 ZIP은 캐시에 있어도 압축을 풀지 않습니다. 압축 해제나 파일 검증에 실패하면 원인을 해결한 뒤 같은 대상 경로로 명령을 다시 실행하세요. 기존 동기화된 문서나 소스 변경만으로 의존성 ZIP을 다시 만들 필요는 없습니다. 단, 번들용 라이선스의 목록이나 내용을 변경하면 `config/dependency-license-files.json`을 갱신하고 의존성 ZIP을 다시 만든 뒤 전체 해시도 함께 갱신합니다.
 
 ### 배포 ZIP 구성
 

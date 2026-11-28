@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"80623e01f6d0698b2eea15ed1cc19ec82ca18b8ac1cddc613b0514ea4756e2a4"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"5b5cb15b55db88db5e87d6db5725437eb9607ba34bd5ced18493471f23419339"} -->
 
 # How the macOS version works
 
@@ -85,11 +85,11 @@ Functions outside graphics use these layers:
 | File saving and replacement | POSIX file functions and macOS synchronization facilities: `rename` for save replacement, and `fsync` and `F_FULLFSYNC` for write synchronization. |
 | Audio | The native OpenAL module, with streaming audio updated during SDL runtime event processing. |
 
-[`services.bb`](../src/engine/platforms/macos/services.bb) and [`services.mm`](../src/native/macos/services.mm) connect shared game code to the operating system. Unsupported original WAV encodings are converted to PCM WAV with FFmpeg during preparation. Original files are preserved, and FFmpeg is not needed to play.
+[`services.bb`](../src/engine/platforms/macos/services.bb) and [`services.mm`](../src/native/macos/services.mm) connect shared game code to the operating system. After applying shared and base-game overrides, preparation uses FFmpeg to convert unsupported WAV encodings in the selected files to 16-bit PCM at their original sample rate. Mono and stereo retain their channel count. Surround audio is mixed to stereo. Supported replacements keep their original bytes. Original files are preserved, and FFmpeg is not needed to play.
 
 ### The app and player data are stored separately
 
-At launch, the app reads its bundled resource list and resource fingerprint, prepares the required resources in a writable data directory, and starts the game. The fingerprint is calculated from the hashes of the included files.
+At launch, the app reads its bundled resource list and resource fingerprint, prepares the required resources in a writable data directory, and starts the game. The fingerprint is calculated from the hashes of the included files. When two app launches share a data directory, the second waits for resource installation to finish before checking its fingerprint.
 
 | Purpose | Location |
 | --- | --- |

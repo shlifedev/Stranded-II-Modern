@@ -3,15 +3,37 @@ from pathlib import Path
 import blitz3d_toolchain as engine
 from collections import Counter
 import argparse, json, os, re, shutil, struct, subprocess, sys, tempfile
-from editions import Edition, NAMES
+from editions import Edition, NAMES, override_files
 from versioning import runtime_info
 from locales import catalog, catalog_text, validate, languages, REFERENCE
 from language_pack import registry
+from resource_spans import TEXT_SUFFIXES, official_files
 from s2map import Map
 from verify_timing import function
 
 ROOT=Path(__file__).resolve().parents[2]
 BUILD=ROOT/'build'
+
+
+def verify_resource_references(root, runtime, edition, english):
+    files = set(official_files(root)) | set(override_files(root, edition))
+    count = 0
+    for name in sorted(files):
+        path = runtime/name
+        if path.suffix.lower() in TEXT_SUFFIXES:
+            texts = [path.read_text('utf8')]
+        elif path.suffix.lower() == '.s2':
+            texts = (field.data.decode('utf8') for field in Map(path.read_bytes()).fields if field.kind != 'attachment')
+        else:
+            continue
+        for text in texts:
+            for key in REFERENCE.findall(text):
+                if key not in english:
+                    raise ValueError(f'{path}: missing localization reference {key}')
+                count += 1
+    return count
+
+
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--edition',choices=NAMES,default='classic')
     args=parser.parse_args();profile=Edition(args.edition)
@@ -174,20 +196,7 @@ End
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'src/devtools/verify_visibility.py'),'--output',str(output/'visibility')],check=True)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'src/devtools/verify_lighting.py'),'--output',str(output/'lighting')],check=True)
     subprocess.run([sys.executable,'-X','utf8',str(ROOT/'src/devtools/verify_text_runs.py'),'--output',str(output/'text-runs')],check=True)
-    # Check every emitted reference, including binary map string fields.
-    refcount=0
-    for p in runtime.rglob('*'):
-        texts=[]
-        if p.relative_to(runtime).parts[0]=='preserved':continue
-        if '/saves/' in p.as_posix():continue
-        if p.suffix in ('.inf','.s2s','.txt') and p.is_file():
-            try:texts=[p.read_text('utf8')]
-            except UnicodeError:continue  # third-party license originals
-        elif p.suffix=='.s2':texts=[f.data.decode('utf8') for f in Map(p.read_bytes()).fields if f.kind!='attachment']
-        for text in texts:
-            for key in REFERENCE.findall(text):
-                assert key in catalogs['en'],(p,key)
-                refcount+=1
+    refcount = verify_resource_references(ROOT, runtime, args.edition, catalogs['en'])
     from fonts import repertoire
     expected=set(repertoire(catalogs,languages(ROOT)))
     for code in catalogs:

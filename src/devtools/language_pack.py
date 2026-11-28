@@ -12,6 +12,30 @@ def registry(packs):
     return data
 
 
+def bitmap_pages(code, glyphs):
+    if len(glyphs) < 16:
+        raise ValueError(f'Invalid font metadata: {code}')
+    magic, count, width, height = struct.unpack_from('<4sIII', glyphs)
+    if (magic != b'FNT2' or count == 0 or len(glyphs) != 16 + count * 28 or
+            not 0 < width <= 64 or height != 19):
+        raise ValueError(f'Invalid font metadata: {code}')
+    return [f'core/locales/{code}/{style}_{page}.bmp'
+            for style in range(7) for page in range((count + 1023) // 1024)]
+
+
+def prepared_font_files(runtime, code):
+    folder = f'core/locales/{code}'
+    glyphs = f'{folder}/glyphs.dat'
+    names = [glyphs, f'{folder}/ui.ttf', f'{folder}/fallback.ttf']
+    if (runtime / folder / 'fallback-extra.ttf').is_file():
+        names.append(f'{folder}/fallback-extra.ttf')
+    names.extend(bitmap_pages(code, (runtime / glyphs).read_bytes()))
+    for name in names:
+        if not (runtime / name).is_file():
+            raise ValueError(f'Missing prepared font file: {name}. Refresh the language packs before building.')
+    return names
+
+
 def refresh(root,runtime,default_font,edition='classic'):
     from fonts import make_fonts
     from ui_fonts import prepare

@@ -77,6 +77,7 @@ jobs:
           python -m unittest discover -s src/tests -p 'test_macos*.py'
           python -m unittest discover -s src/tests -p 'test_ci*.py'
           python -m unittest discover -s src/tests -p 'test_web_platform.py'
+          python -m unittest discover -s src/tests -p 'test_web_self_blit.py'
 
       - name: Read game dependency pin
         id: pin

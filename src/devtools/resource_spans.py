@@ -7,6 +7,8 @@ SPEECH={'msg':{0},'add':{0},'seqmsg':{1},'msgbox':{0},'process':{0},'setindicato
 ALIASES={'diary':{0},'modifyentry':{0},'freeentry':{0},'extendentry':{0},'modifyentryline':{0},'showentry':{0}}
 LEX=re.compile(r'//[^\n¦]*|/\*[\s\S]*?\*/|"[^"\r\n¦]*"|[A-Za-z_][A-Za-z_0-9]*|[{};,()\n]')
 
+TEXT_SUFFIXES = {'.inf', '.s2s', '.txt'}
+
 def source_text(path):
     return path.read_bytes().decode('cp1252').replace('\r\n','\n')
 
@@ -76,10 +78,13 @@ def spans(text, location, mode='mixed'):
             elif arg in ALIASES.get(command,set()):add(m.start()+1,m.end()-1,'alias')
     return sorted(seen)
 
-def resources(BASE):
-    for p in sorted(BASE.rglob('*')):
-        if p.suffix.lower() not in ('.inf','.s2s','.txt'):continue
-        rel=p.relative_to(BASE).as_posix()
+def official_files(root):
+    return json.loads((root/'config/game-files.json').read_text('utf8'))
+
+
+def resources(base, text_files, map_files):
+    for p in text_files:
+        rel=p.relative_to(base).as_posix()
         if rel.startswith(('sfx/','saves/')) or p.name=='info.txt':continue
         mode='mixed'
         if rel=='sys/strings.inf':mode='strings'
@@ -87,8 +92,8 @@ def resources(BASE):
         if rel.startswith(('tutorial/','sys/skillinfos/')):mode='plain'
         if rel=='sys/credits.inf':continue # dedicated credit heading aliases
         yield rel,source_text(p),mode
-    for p in sorted((BASE/'maps').rglob('*.s2')):
-        rel=p.relative_to(BASE).as_posix()
+    for p in map_files:
+        rel=p.relative_to(base).as_posix()
         model=Map(p.read_bytes())
         for f in model.fields:
             if not f.data:continue

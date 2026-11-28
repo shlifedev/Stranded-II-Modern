@@ -8,8 +8,8 @@ import os
 import re
 import shutil
 import stat
-import struct
 import sys
+import tempfile
 import zipfile
 from versioning import local_info, runtime_info, validate_info
 from editions import Edition, NAMES, source_hashes, override_files
@@ -25,12 +25,16 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def file_bytes(base, relative):
+def input_file(base, relative):
     base = base.resolve()
     path = base / relative
     if not path.resolve().is_relative_to(base) or not path.is_file():
         raise ValueError(f'Missing file or path outside input directory: {path}')
-    return path.read_bytes()
+    return path
+
+
+def file_bytes(base, relative):
+    return input_file(base, relative).read_bytes()
 
 
 def checked_bytes(base, relative, expected):
@@ -48,19 +52,36 @@ def license_members():
     return members
 
 
-def dependency_members(game, blitz, font):
-    members = {}
+def dependency_inputs(game, blitz, font):
     for prefix, base, manifest in (
             ('game', game, 'game-files.json'),
             ('blitz', blitz, 'toolchain-files.json')):
         for relative, expected in read_json(ROOT / 'config' / manifest).items():
-            members[f'{prefix}/{relative}'] = checked_bytes(base, relative, expected)
-    expected = read_json(ROOT / 'config/dependencies.json')['font_sha256']
-    members['fonts/NotoSansKR.ttf'] = checked_bytes(font.parent, font.name, expected)
+            yield f'{prefix}/{relative}', base, relative, expected
+    yield 'fonts/NotoSansKR.ttf', font.parent, font.name, read_json(ROOT / 'config/dependencies.json')['font_sha256']
     # Archive inputs stay fixed when the release gains new third-party notices.
     for relative, expected in read_json(ROOT / 'config/dependency-license-files.json').items():
-        members[relative] = checked_bytes(ROOT, relative, expected)
-    return members
+        yield relative, ROOT, relative, expected
+
+
+def dependency_members(game, blitz, font):
+    return {name: checked_bytes(base, relative, expected)
+            for name, base, relative, expected in dependency_inputs(game, blitz, font)}
+
+
+def verify_dependency_files(destination, paths):
+    remaining = {p.relative_to(destination).as_posix() for p in destination.rglob('*') if p.is_file()}
+    for name, base, relative, expected in dependency_inputs(**paths):
+        if name not in remaining:
+            raise ValueError(f'Dependency bundle contains unexpected or changed files: {name}')
+        remaining.remove(name)
+        source = input_file(base, relative)
+        if engine.digest(source) != expected:
+            raise ValueError(f'Unexpected SHA-256: {source}')
+        if source != destination / name and engine.digest(input_file(destination, name)) != expected:
+            raise ValueError(f'Dependency bundle contains unexpected or changed files: {name}')
+    if remaining:
+        raise ValueError(f'Dependency bundle contains unexpected or changed files: {min(remaining)}')
 
 
 def write_archive(path, members):
@@ -79,7 +100,7 @@ def write_archive(path, members):
     finally:
         if temporary.exists():
             temporary.unlink()
-    checksum = digest(path.read_bytes())
+    checksum = engine.digest(path)
     path.with_suffix(path.suffix + '.sha256').write_text(
         f'{checksum}  {path.name}\n', encoding='utf8', newline='\n')
     return checksum
@@ -152,19 +173,22 @@ def config(args):
 
 def dependencies(args):
     expected = ci_config()['sha256']
-    checked_bytes(args.archive.parent, args.archive.name, expected)
+    if engine.digest(input_file(args.archive.parent, args.archive.name)) != expected:
+        raise ValueError(f'Unexpected SHA-256: {args.archive}')
     destination = args.destination.resolve()
     if destination.exists():
         raise ValueError(f'Use a new dependency directory: {destination}')
-    destination.mkdir(parents=True)
-    extract_archive(args.archive, destination)
-    paths = {'game': destination / 'game', 'blitz': destination / 'blitz',
-             'font': destination / 'fonts/NotoSansKR.ttf'}
-    members = dependency_members(paths['game'], paths['blitz'], paths['font'])
-    actual = {p.relative_to(destination).as_posix(): p.read_bytes()
-              for p in destination.rglob('*') if p.is_file()}
-    if actual != members:
-        raise ValueError('Dependency bundle contains unexpected or changed files')
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    inputs = {'game': 'game', 'blitz': 'blitz', 'font': 'fonts/NotoSansKR.ttf'}
+    with tempfile.TemporaryDirectory(dir=destination.parent) as temporary:
+        staged = Path(temporary) / 'dependencies'
+        staged.mkdir()
+        extract_archive(args.archive, staged)
+        verify_dependency_files(staged, {key: staged / relative for key, relative in inputs.items()})
+        if destination.exists():
+            raise ValueError(f'Use a new dependency directory: {destination}')
+        staged.rename(destination)
+    paths = {key: destination / relative for key, relative in inputs.items()}
     github_outputs(args.github_output, paths)
     print(json.dumps({k: str(v) for k, v in paths.items()}, indent=2))
 
@@ -187,7 +211,7 @@ def release_members(runtime, game, edition='classic'):
     profile = Edition(edition)
     info = runtime_info(runtime)
     if info['edition'] != edition:raise ValueError('Runtime belongs to another edition')
-    from language_pack import registry
+    from language_pack import bitmap_pages, registry
     from locales import languages, catalog_text
     members = {}
     manifest = read_json(ROOT / 'config/game-files.json')
@@ -243,22 +267,14 @@ def release_members(runtime, game, edition='classic'):
         members[relative] = catalog
         relative = f'core/locales/{code}/glyphs.dat'
         glyphs = file_bytes(runtime, relative)
-        if len(glyphs) < 16:
-            raise ValueError(f'Invalid font metadata: {code}')
-        magic, count, width, height = struct.unpack_from('<4sIII', glyphs)
-        if (magic != b'FNT2' or count == 0 or len(glyphs) != 16 + count * 28 or
-                not 0 < width <= 64 or height != 19):
-            raise ValueError(f'Invalid font metadata: {code}')
         members[relative] = glyphs
         relative = f'core/locales/{code}/ui.ttf'
         members[relative] = file_bytes(runtime, relative)
         for name in ('fallback.ttf','fallback-extra.ttf'):
             fallback = f'core/locales/{code}/{name}'
             if (runtime / fallback).is_file():members[fallback] = file_bytes(runtime, fallback)
-        for style in range(7):
-            for page in range((count + 1023) // 1024):
-                relative = f'core/locales/{code}/{style}_{page}.bmp'
-                members[relative] = file_bytes(runtime, relative)
+        for relative in bitmap_pages(code, glyphs):
+            members[relative] = file_bytes(runtime, relative)
     members[default_name('core/modern.ini')] = file_bytes(ROOT, profile.defaults)
     members.update(license_members())
     for name, path in engine.license_sources().items():

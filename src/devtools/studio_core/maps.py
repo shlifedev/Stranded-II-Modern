@@ -35,6 +35,11 @@ def string(value):
     return struct.pack('<i', len(raw)) + raw
 
 
+def runtime_height(value):
+    scaled, = struct.unpack('<f', struct.pack('<f', value * 255))
+    return int(scaled) / 255
+
+
 class EditableMap:
     def __init__(self, data):
         try:
@@ -125,17 +130,27 @@ class EditableMap:
         ix, iz = math.floor(gx), math.floor(gz)
         ax, az = gx - ix, gz - iz
         def sample(gx, gz):
-            return self.height(gx,gz) if 0 <= gx <= self.size and 0 <= gz <= self.size else 0
+            if not (0 <= gx <= self.size and 0 <= gz <= self.size):
+                return 0
+            return runtime_height(self.height(gx or self.size, gz or self.size))
         h = ((sample(ix, iz) * (1-ax) + sample(ix+1, iz) * ax) * (1-az)
              + (sample(ix, iz+1) * (1-ax) + sample(ix+1, iz+1) * ax) * az)
         # Match Blitz TerrainY and e_tery's ground-plane floor, including edges.
-        return (max(h, self.height(0,0)) - .5) * WORLD_HEIGHT
+        return (max(h, sample(0, 0)) - .5) * WORLD_HEIGHT
 
     def summary(self):
         script = self.fields['global_script'].data.decode('utf8').replace('\x1f', '\n')
+        scripts = {}
+        for _, _, parent, mode, values in self.extensions:
+            if mode == 0:
+                scripts.setdefault(parent, values[1])
+        entities = []
+        for entity in self.entities:
+            parent = (CLASSES[entity['kind']], entity['id'])
+            source = scripts.get(parent, b'').decode('utf8').replace('\x1f', '\n')
+            entities.append(dict(entity, script=source))
         return {'size': self.size, 'worldSize': self.size * WORLD_SIZE,
-                'entities': [dict(entity, script=next((e[4][1].decode('utf8').replace('\x1f','\n') for e in self.extensions
-                     if e[2] == (CLASSES[entity['kind']],entity['id']) and e[3] == 0), '')) for entity in self.entities], 'script': script,
+                'entities': entities, 'script': script,
                 'attachments': [f.key for f in self.source.fields if f.kind == 'attachment']}
 
     def apply(self, operation):
@@ -171,19 +186,20 @@ class EditableMap:
             selected = operation['selection']
             if not selected or len({(e['kind'], e['id']) for e in selected}) != len(selected):
                 raise ValueError('Move requires distinct selected entities')
-            entities = [self.entity(e['kind'], e['id'])[2] for e in selected]
-            if dy and any(e['kind'] == 'object' for e in entities):
+            records = [self.entity(e['kind'], e['id']) for e in selected]
+            if dy and any(entity['kind'] == 'object' for _, _, entity, _ in records):
                 raise ValueError('Objects do not store Y; group vertical movement is unavailable')
-            out = self.data
-            for e in entities:
-                x, z = e['x']+dx, e['z']+dz
-                values = {'x':x, 'z':z}
-                if e['kind'] != 'object':
-                    values['y'] = e['y']+dy
+            out = bytearray(self.data)
+            for _, _, entity, offsets in records:
+                x, z = entity['x'] + dx, entity['z'] + dz
+                values = {'x': x, 'z': z}
+                if entity['kind'] != 'object':
+                    values['y'] = entity['y'] + dy
                     if operation.get('terrain'):
-                        values['y'] += self.world_height(x,z)-self.world_height(e['x'],e['z'])
-                out = EditableMap(out).apply({'op':'entity.set','kind':e['kind'],'id':e['id'],'values':values})
-            return out
+                        values['y'] += self.world_height(x, z) - self.world_height(entity['x'], entity['z'])
+                self.validate_values(entity['kind'], values)
+                self.write_fields(out, offsets, values)
+            return bytes(out)
         if op == 'terrain.brush':
             x = number(operation['x'], 'x', 0, self.size)
             z = number(operation['z'], 'z', 0, self.size)
@@ -192,22 +208,44 @@ class EditableMap:
             mode = operation.get('mode', 'raise')
             if mode not in ('raise', 'lower', 'flatten', 'smooth'):
                 raise ValueError('Brush mode: raise, lower, flatten or smooth')
-            level = number(operation.get('height', self.height(round(x), round(z))), 'height', 0, 1)
+            def brush_height(gx, gz):
+                gx = max(0, min(self.size, gx)) or self.size
+                gz = max(0, min(self.size, gz)) or self.size
+                return self.height(gx, gz)
+
+            def brush_axis(center):
+                low = max(0, math.floor(center-radius))
+                high = min(self.size, math.ceil(center+radius))
+                if low == 0 and high == self.size:
+                    if center <= self.size / 2:
+                        high -= 1
+                    else:
+                        low += 1
+                return range(low, high+1)
+
+            level = number(operation.get('height', brush_height(round(x), round(z))), 'height', 0, 1)
             out = bytearray(self.data)
-            for gx in range(max(0, math.floor(x-radius)), min(self.size, math.ceil(x+radius))+1):
-                for gz in range(max(0, math.floor(z-radius)), min(self.size, math.ceil(z+radius))+1):
+            xs, zs = brush_axis(x), brush_axis(z)
+            for gx in xs:
+                for gz in zs:
                     weight = max(0, 1 - math.hypot(gx-x, gz-z) / radius)
                     if weight == 0:
                         continue
-                    h = self.height(gx, gz)
+                    current = h = brush_height(gx, gz)
                     if mode == 'flatten':
                         h += (level - h) * weight
                     elif mode == 'smooth':
-                        average = sum(self.height(gx+dx, gz+dz) for dx in (-1,0,1) for dz in (-1,0,1))/9
+                        average = sum(brush_height(gx+dx, gz+dz) for dx in (-1,0,1) for dz in (-1,0,1))/9
                         h += (average-h) * weight
                     else:
                         h += abs(strength) * weight * (1 if mode == 'raise' else -1)
-                    struct.pack_into('<f', out, self.heights_start+(gx*(self.size+1)+gz)*4, min(1, max(0, h)))
+                    height = min(1, max(0, h))
+                    if height == current:
+                        continue
+                    for sx in ((0, self.size) if gx in (0, self.size) else (gx,)):
+                        for sz in ((0, self.size) if gz in (0, self.size) else (gz,)):
+                            offset = self.heights_start + (sx*(self.size+1) + sz)*4
+                            struct.pack_into('<f', out, offset, height)
             return bytes(out)
         if not op.startswith('entity.'):
             raise ValueError(f'Unsupported map operation: {op}')
@@ -248,15 +286,19 @@ class EditableMap:
         values = operation['values']
         self.validate_values(kind, values)
         out = bytearray(self.data)
+        self.write_fields(out, offsets, values)
+        if 'vars' in values:
+            pos = begin + 25
+            return bytes(out[:pos]) + string(values['vars']) + bytes(out[finish:])
+        return bytes(out)
+
+    @staticmethod
+    def write_fields(out, offsets, values):
         for name, value in values.items():
             if name == 'vars':
                 continue
             pos, code = offsets[name]
             struct.pack_into('<' + code, out, pos, value)
-        if 'vars' in values:
-            pos = begin + 25
-            return bytes(out[:pos]) + string(values['vars']) + bytes(out[finish:])
-        return bytes(out)
 
     @staticmethod
     def validate_values(kind, values):
@@ -292,14 +334,16 @@ def new_map(size=32):
     color_size = 128
     data += struct.pack('<i', color_size) + bytes((100,135,72))*(color_size**2)
     data += struct.pack('<i', size)
+    shore, plateau = .45, .55
     for x in range(size+1):
         for z in range(size+1):
             distance = math.hypot(x-size/2, z-size/2)/(size*.43)
-            data += struct.pack('<f', .45 + .10*max(0, min(1, (1-distance)*4)))
+            data += struct.pack('<f', shore + (plateau-shore)*max(0, min(1, (1-distance)*4)))
     data += bytes((color_size+1)**2)
     data += struct.pack('<iii', 0,0,0)  # objects, units, items
     # Player start (info type 1), required for a playable new map.
-    data += struct.pack('<iiBfffff', 1, 1, 1, 0, 160, 0, 0, 0) + string('')
+    start_y = (runtime_height(plateau) - .5) * WORLD_HEIGHT
+    data += struct.pack('<iiBfffff', 1, 1, 1, 0, start_y, 0, 0, 0) + string('')
     data += struct.pack('<ii', 0,0)  # states, extensions
     data += b'\r\n###\r\nwww.unrealsoftware.de\r\n'
     EditableMap(bytes(data))

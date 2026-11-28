@@ -6,6 +6,12 @@ const statusText = document.getElementById('status');
 const search = document.getElementById('search');
 const fullscreen = document.getElementById('fullscreen');
 const inputHint = document.getElementById('input-hint');
+const savePanel = document.getElementById('save-files');
+const saveSelect = document.getElementById('save-slot');
+const saveDownload = document.getElementById('save-download');
+const saveImport = document.getElementById('save-import');
+const transferStatus = document.getElementById('save-transfer-status');
+let storageReady = false;
 const shellURL = new URL(document.currentScript.src, document.baseURI);
 const deployment = shellURL.searchParams.get('v');
 let debugUiOpen = false;
@@ -94,13 +100,14 @@ async function prepareStorage() {
   const FS = Module.FS;
   // A second tab must not restore an old snapshot and overwrite the first tab.
   if (navigator.locks) {
+    statusText.textContent = 'Opening saved games… If Stranded II is open in another tab, close it to continue here.';
     await new Promise((resolve, reject) => {
-      navigator.locks.request('stranded-ii-classic-storage', {ifAvailable: true}, lock => {
-        if (!lock) { reject(new Error('Close the other Stranded II tab first.')); return; }
+      navigator.locks.request('stranded-ii-classic-storage', () => {
         resolve();
         return new Promise(() => {}); // The browser releases this lock when the page closes.
       }).catch(reject);
     });
+    statusText.textContent = 'Loading saved games…';
   }
   mkdir('/persist');
   FS.mount(FS.filesystems.IDBFS, {}, '/persist');
@@ -144,7 +151,7 @@ async function prepareStorage() {
 }
 
 function focused() {
-  return started && !document.hidden && document.hasFocus() &&
+  return started && !savePanel.open && !document.hidden && document.hasFocus() &&
     (debugUiOpen || menuActive || document.pointerLockElement === canvas || document.activeElement === search);
 }
 
@@ -152,15 +159,109 @@ function refreshInput() {
   const locked = document.pointerLockElement === canvas;
   // Focus loss pauses the shared engine, but never covers the running game.
   if (started) cover.hidden = true;
+  savePanel.hidden = !storageReady || locked || debugUiOpen;
+  if (savePanel.hidden) savePanel.open = false;
   fullscreen.hidden = !document.fullscreenEnabled || (started && locked);
   fullscreen.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen';
   fullscreen.setAttribute('aria-pressed', String(Boolean(document.fullscreenElement)));
   fullscreen.title = 'Toggle full screen (Alt+Enter)';
-  inputHint.hidden = debugUiOpen || !started || locked || document.activeElement === search || document.hidden || !document.hasFocus();
+  inputHint.hidden = savePanel.open || debugUiOpen || !started || locked || document.activeElement === search || document.hidden || !document.hasFocus();
   inputHint.textContent = escapeLocked
     ? 'Click to enable controls · Esc: game menu · Hold Esc: release · Alt+Enter: full screen'
     : 'Click to enable controls · Alt+Enter: full screen';
 }
+
+const savesDirectory = persistent + '/saves/';
+function refreshSaveList(selected = saveSelect.value) {
+  const FS = Module.FS;
+  const names = FS.readdir(savesDirectory)
+    .filter(name => /\.sav$/i.test(name) && FS.isFile(FS.lstat(savesDirectory + name).mode))
+    .sort((a, b) => a.localeCompare(b));
+  saveSelect.replaceChildren(...names.map(name => new Option(name, name)));
+  if (names.includes(selected)) saveSelect.value = selected;
+  saveSelect.disabled = saveDownload.disabled = names.length === 0;
+  if (!names.length) saveSelect.add(new Option('No saved games', ''));
+}
+
+function checkSaveFile(bytes) {
+  const decoder = new TextDecoder('latin1');
+  let offset = 0;
+  for (let line = 0; line < 4 && offset >= 0; ++line) {
+    const newline = bytes.indexOf(10, offset);
+    offset = newline < 0 ? -1 : newline + 1;
+  }
+  const mode = offset < 0 ? '' : decoder.decode(bytes.subarray(offset, offset + 14)).replaceAll('\r', '');
+  const tail = decoder.decode(bytes.subarray(-80));
+  if (bytes.length < 21000 || decoder.decode(bytes.subarray(0, 15)) !== '### Stranded II' ||
+      !mode.startsWith('default\nsav\n') ||
+      !tail.includes('### EOF Map File') || !tail.includes('www.unrealsoftware.de')) {
+    throw new Error('This file does not have a complete Stranded II save header and trailer.');
+  }
+}
+
+async function importSave(file) {
+  if (!/^[^/\\:\x00-\x1f]+\.sav$/i.test(file.name)) throw new Error('Choose a .sav file with a plain filename.');
+  if (file.size > 128 * 1024 * 1024) throw new Error('This save exceeds the 128 MiB import limit.');
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  checkSaveFile(bytes);
+  const FS = Module.FS;
+  const existing = new Set(FS.readdir(savesDirectory).map(name => name.toLowerCase()));
+  let name = file.name;
+  for (let copy = 2; existing.has(name.toLowerCase()); ++copy) {
+    name = file.name.slice(0, -4) + ' (' + copy + ').sav';
+  }
+  const path = savesDirectory + name;
+  const node = FS.create(path);
+  try {
+    const stream = FS.open(node, 'w');
+    try {
+      if (FS.write(stream, bytes, 0, bytes.length) !== bytes.length) throw new Error('Incomplete save import.');
+    } finally {
+      FS.close(stream);
+    }
+    await sync();
+  } catch (error) {
+    if (FS.lookupPath(path, {noent_okay: true}).node === node) {
+      FS.unlink(path);
+      await sync();
+    }
+    throw error;
+  }
+  return name;
+}
+
+savePanel.addEventListener('toggle', () => {
+  if (savePanel.open && storageReady) {
+    try { refreshSaveList(); } catch (error) { transferStatus.textContent = error.message; }
+  }
+  refreshInput();
+});
+for (const type of ['keydown', 'keypress', 'keyup']) savePanel.addEventListener(type, event => event.stopPropagation());
+saveDownload.addEventListener('click', () => {
+  try {
+    const name = saveSelect.value;
+    if (!name) return;
+    const bytes = Module.FS.readFile(savesDirectory + name);
+    const url = URL.createObjectURL(new Blob([bytes], {type: 'application/octet-stream'}));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = name;
+    try { link.click(); } finally { setTimeout(() => URL.revokeObjectURL(url), 1000); }
+    transferStatus.textContent = 'Download requested for ' + name;
+  } catch (error) { transferStatus.textContent = 'Download failed: ' + (error.message || error); }
+});
+saveImport.addEventListener('change', async () => {
+  const file = saveImport.files[0];
+  if (!file || saveImport.disabled) return;
+  saveImport.disabled = true;
+  transferStatus.textContent = 'Importing save…';
+  try {
+    const name = await importSave(file);
+    refreshSaveList(name);
+    transferStatus.textContent = 'Imported ' + name + '. Open the game’s Load menu to use it.';
+  } catch (error) { transferStatus.textContent = 'Import failed: ' + (error.message || error); }
+  finally { saveImport.value = ''; saveImport.disabled = false; }
+});
 
 function inputNotice(message) {
   if (started) { inputHint.textContent = message; inputHint.hidden = false; }
@@ -291,25 +392,24 @@ async function bridge(request) {
       } catch (error) { fail(error); return 0; }
     case 'move': {
       const source = filePath(args[0]), destination = filePath(args[1]);
-      let previous, staged;
+      let previous;
       try {
-        staged = FS.readFile(source);
-        if (exists(destination)) previous = FS.readFile(destination);
-        // Both resolved paths belong to the same IDBFS mount, including config staging links.
+        if (FS.lookupPath(destination, {follow: true, noent_okay: true}).node) {
+          previous = FS.readFile(destination);
+        }
         FS.rename(source, destination);
+      } catch (error) { fail(error); return 0; }
+
+      try {
         timestamp(destination);
         dirty = true;
         await sync();
         return 1;
       } catch (error) {
-        // A failed transaction must not leave the active in-memory save replaced.
-        if (staged) {
-          try {
-            FS.writeFile(source, staged);
-            if (previous) FS.writeFile(destination, previous);
-            else if (exists(destination)) FS.unlink(destination);
-          } catch (restoreError) { fail(restoreError); }
-        }
+        try {
+          FS.rename(destination, source);
+          if (previous !== undefined) FS.writeFile(destination, previous);
+        } catch (restoreError) { fail(restoreError); }
         clearTimeout(syncTimer);
         fail(error);
         return 0;
@@ -340,7 +440,7 @@ var Module = {
     }
   },
   print: log, printErr: log, onAbort: fail,
-  setStatus: text => { if (!started) statusText.textContent = text; },
+  setStatus: text => { if (!bootPromise) statusText.textContent = text; },
   onRuntimeInitialized: bootGame
 };
 
@@ -349,6 +449,7 @@ s2InstallDebugUi(Module, canvas, open => { debugUiOpen = open; returningToGame =
 function bootGame() {
   if (!bootPromise) bootPromise = (async () => {
     await prepareStorage();
+    storageReady = true;
     started = true;
     refreshInput();
     log('Starting shared Stranded II source.');

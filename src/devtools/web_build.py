@@ -9,9 +9,9 @@ import shutil
 import subprocess
 import sys
 
-from editions import source_hashes, override_files
+from editions import Edition, source_hashes, override_files
 from locales import prepare, validate, languages
-from language_pack import refresh
+from language_pack import prepared_font_files, refresh
 from versioning import development_marker, local_info, validate_info
 import web_toolchain
 
@@ -49,7 +49,8 @@ def inputs():
     return read(path)
 
 
-def prepare_assets(settings):
+def prepare_assets(settings, edition='classic'):
+    profile = Edition(edition)
     game, font = Path(settings['game']), Path(settings['font'])
     # CI unpacks its hash-verified dependency ZIP inside build/. Permit only
     # that input directory; generated runtimes and their player data stay out.
@@ -65,20 +66,20 @@ def prepare_assets(settings):
         path = game / relative
         if digest(path) != expected:
             raise ValueError(f'Unexpected official resource: {relative}')
-    validate(ROOT, 'classic')
+    validate(ROOT, edition)
     for relative in files:
         target = RUNTIME / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(game / relative, target)
     (RUNTIME / 'mods/Stranded II/saves').mkdir(exist_ok=True)
     (RUNTIME / 'core').mkdir(exist_ok=True)
-    shutil.copy2(ROOT / 'config/modern.ini', RUNTIME / 'core/modern.ini')
-    _, report = prepare(ROOT, game, RUNTIME, 'classic')
-    for relative, source in override_files(ROOT, 'classic').items():
+    shutil.copy2(ROOT / profile.defaults, RUNTIME / 'core/modern.ini')
+    _, report = prepare(ROOT, game, RUNTIME, edition)
+    for relative, source in override_files(ROOT, edition).items():
         target = RUNTIME / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
-    report.update(refresh(ROOT, RUNTIME, font, 'classic'))
+    report.update(refresh(ROOT, RUNTIME, font, edition))
     shutil.copytree(ROOT / 'licenses', RUNTIME / 'licenses', dirs_exist_ok=True)
     write(BUILD / 'setup-report.json', report)
     return report
@@ -105,19 +106,20 @@ def localize(args):
     print('Refreshed web language packs; run build --platform web to repack.')
 
 
-def asset_files():
+def asset_files(edition='classic'):
     """Allowlist official/prepared assets; never enumerate player-data folders."""
     names = set(read(ROOT / 'config/game-files.json'))
-    names.update(override_files(ROOT, 'classic'))
+    names.update(override_files(ROOT, edition))
     names.update(('core/modern.ini', 'core/version.json', 'core/version.txt', 'core/locales/languages.dat'))
     if (RUNTIME / 'core/development.flag').is_file():names.add('core/development.flag')
     for code in languages(ROOT):
         names.add(f'core/locales/{code}.tsv')
-        directory = RUNTIME / 'core/locales' / code
-        names.update(path.relative_to(RUNTIME).as_posix() for path in directory.glob('*.bmp'))
-        names.add(f'core/locales/{code}/glyphs.dat')
-        names.update(p.relative_to(RUNTIME).as_posix() for p in directory.glob('*.ttf'))
+        names.update(prepared_font_files(RUNTIME, code))
     names.update(path.relative_to(RUNTIME).as_posix() for path in (RUNTIME / 'licenses').rglob('*') if path.is_file())
+    aliases = 'mods/Stranded II/sys/ko_aliases.dat'
+    if not (RUNTIME / aliases).is_file():
+        raise ValueError(f'Missing display aliases: {aliases}. Run setup to regenerate them.')
+    names.add(aliases)
     result = []
     for name in sorted(names):
         relative = Path(name)
@@ -126,15 +128,32 @@ def asset_files():
         if relative.suffix.lower() in ('.exe', '.dll', '.sav', '.bak', '.bkp', '.tmp', '.log', '.cache'):
             continue
         path = RUNTIME / relative
-        if path.is_file():
-            result.append((path, '/game/' + relative.as_posix()))
+        if not path.is_file():
+            raise ValueError(f'Missing prepared web resource: {name}. Run setup before building.')
+        result.append((path, '/game/' + relative.as_posix()))
+    fallback = '/game/mods/Stranded II/gfx/cour.ttf'
+    if not any(target.casefold() == fallback.casefold() for _, target in result):
+        result.append((engine_toolchain.library('imgui') / 'misc/fonts/ProggyClean.ttf', fallback))
     return result
 
 
-def pack_assets(env):
+def verify_asset_inputs(allowed, expected):
+    if expected is None:
+        raise ValueError('Missing prepared resource hashes. Rebuild the web or Studio package.')
+    current = {target for _, target in allowed}
+    if current != expected.keys():
+        changed = sorted(current.symmetric_difference(expected))[0]
+        raise ValueError(f'Prepared resource list changed: {changed}. Rebuild the package.')
+    for path, target in allowed:
+        if digest(path) != expected[target]:
+            raise ValueError(f'Prepared resource changed: {target}. Rebuild the package.')
+
+
+def pack_assets(env, edition='classic'):
     sdk = web_toolchain.paths()[1]
     SITE.mkdir(parents=True, exist_ok=True)
-    allowed = asset_files()
+    allowed = asset_files(edition)
+    inputs = {target: digest(path) for path, target in allowed}
     from web_audio import prepare as prepare_audio
     audio = prepare_audio(allowed, BUILD / 'audio')
     command = [sys.executable, sdk / 'upstream/emscripten/tools/file_packager.py', SITE / 'assets.data',
@@ -145,19 +164,39 @@ def pack_assets(env):
     for old in package.rglob('*') if package.exists() else ():
         if old.is_file() and old.relative_to(package).as_posix() not in expected:
             old.unlink()
+    font_sources = {}
+    font_copies = []
     for path, target in allowed:
         destination = package / target.removeprefix('/game/')
         destination.parent.mkdir(parents=True, exist_ok=True)
+        if target.startswith('/game/core/locales/') and (path.suffix.lower() in ('.bmp', '.ttf') or path.name == 'glyphs.dat'):
+            original = font_sources.setdefault(digest(path), target)
+            if original != target:
+                destination.write_bytes(b'')
+                font_copies.append((original, target))
+                continue
         shutil.copy2(audio.get(target, path), destination)
     # Emscripten uses @ as its source/destination separator. Escape actual @ in
     # checkout paths, otherwise e.g. /work/@src would select the parent folder.
     command += [str(package).replace('@', '@@') + '@/game']
     web_toolchain.run(command, env=env)
+    if font_copies:
+        with (SITE / 'assets.js').open('a', encoding='utf8', newline='\n') as loader:
+            loader.write("""\n((ready, copies) => {
+  Module['onRuntimeInitialized'] = function (...args) {
+    const fs = Module['FS'];
+    for (const [source, target] of copies) {
+      fs.writeFile(target, fs.readFile(source), {canOwn: true});
+    }
+    return ready?.apply(this, args);
+  };
+})(Module['onRuntimeInitialized'], """ + json.dumps(font_copies) + ");\n")
     writable = [target for path, target in allowed
                 if path.suffix.lower() == '.cfg' or path.name in ('modern.ini', 'settings.inf')]
     writable.extend(('/game/mods/Stranded II/sys/settings.cfg', '/game/core/settings.inf'))
     write(SITE / 'defaults.json', {'files': sorted(set(writable)),
           'languages': [{'code': code, 'name': metadata['name']} for code, metadata in languages(ROOT).items()]})
+    return inputs
 
 
 def build(args):
@@ -200,14 +239,14 @@ def build(args):
     env = compiler_environment(env)
     web_toolchain.run([upstream.BLITZCC, '-target', 'emscripten', '-o', SITE / 'game', ENTRY],
                       cwd=ROOT / 'src/engine', env=env)
-    pack_assets(env)
+    asset_inputs = pack_assets(env)
     (SITE / 'game.html').unlink() # The custom index owns storage and startup.
     for name in ('index.html', 'shell.js', 'debugui.js'):
         shutil.copy2(ROOT / 'src/web' / name, SITE / name)
     write(SITE / 'version.json', info)
     write(BUILD / 'build-report.json', dict(info, platform='web', toolchain=web_toolchain.config(),
           source_sha256=source_hashes(ROOT, 'classic', 'web'),
-          implementation_sha256=implementation_hashes(),
+          implementation_sha256=implementation_hashes(), asset_input_sha256=asset_inputs,
           files={name: digest(SITE / name) for name in SITE_FILES}))
     print('Built WebGPU preview:', SITE / 'index.html')
 
@@ -258,7 +297,7 @@ def run(args):
 
 def implementation_hashes():
     paths = [ROOT / name for name in ('src/devtools/web_build.py', 'src/devtools/web_toolchain.py',
-             'src/devtools/web_audio.py', 'config/web-toolchain.json', 'src/native/web/bridge.cpp', 'src/web/shell.js', 'src/web/debugui.js', 'src/web/index.html')]
+             'src/devtools/web_audio.py', 'src/devtools/language_pack.py', 'config/web-toolchain.json', 'src/native/web/bridge.cpp', 'src/web/shell.js', 'src/web/debugui.js', 'src/web/index.html')]
     return {**{path.relative_to(ROOT).as_posix(): digest(path) for path in paths}, **engine_toolchain.sources()}
 
 
@@ -280,11 +319,15 @@ def check(args):
     subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', 'src/tests', '-p', 'test_web*.py'],
                    cwd=ROOT, check=True)
     from web_audio import verify as verify_audio
-    audio_count = verify_audio(asset_files(), BUILD / 'package', BUILD / 'audio')
+    allowed = asset_files()
+    verify_asset_inputs(allowed, report.get('asset_input_sha256'))
+    audio_count = verify_audio(allowed, BUILD / 'package', BUILD / 'audio')
     print('Verified converted web audio:', audio_count)
     from verify_web import verify_semantics
     semantics = verify_semantics()
-    verification.update(web_check='passed', windows_wasm_parity=read(semantics / 'report.json'),
+    parity = read(semantics / 'report.json')
+    verification[parity['native_host'] + '_wasm_parity'] = parity
+    verification.update(web_check='passed',
         semantics_report=semantics.relative_to(ROOT).as_posix() + '/report.json',
         web_audio={'verified_pcm_files': audio_count, 'playback': 'not tested'},
         browser_storage_bridge='passed with real Emscripten VFS and simulated transactions')
