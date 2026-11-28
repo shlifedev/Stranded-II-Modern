@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"566b01a6d0f25455162abde979adc90b271c4c369463fd66cd38d159269b45e7"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"2165a9960fba9dc4bcc08947614304eb313f27155b430daf578437c49d862ca8"} -->
 
 # Stranded II Studio
 
@@ -41,7 +41,7 @@ Create a project in an empty folder or open an existing project on the start scr
 | Terrain | Choose raise, lower, flatten or smooth, then click terrain. Adjust radius and strength; strength applies to raise/lower. Opposite map edges share terrain vertices. Painting a boundary vertex changes it on both edges. |
 | Content | Browse items, objects, units, map information, buildings and recipes by their actual icons. Select one to enlarge it in the inspector. Clone definitions, edit properties/materials, and import models, images or audio. |
 | Scripts | Edit definition, entity-event or global-map scripts, or bind `.s2s` files. Multiple file tabs, text search, event lists, command completion and hover help are available. |
-| Resources | Saved definition, model, translation and font changes display **Resources pending**. **Apply resources** applies them together and restores camera, selection and tool. Until then, the scene uses the last applied appearance. |
+| Resources | Saved definition, model, translation and font changes display **Resources pending**. This includes new characters in inline map or entity scripts that the base font lacks. **Apply resources** applies them together and restores camera, selection and tool. Until then, the scene uses the last applied appearance. |
 | Test | Validate the latest saved files and automatically apply changed resources. Click the viewport to capture the mouse, Esc to release, and **Stop** to restore the editor map and camera. Play-session changes do not enter the project. |
 | Diagnostics | Check content references, script brackets, strings and file references. View runtime events/errors and read-only global/selected-entity variables. |
 

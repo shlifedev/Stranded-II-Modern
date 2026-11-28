@@ -50,6 +50,7 @@ def encode_patch(before, after):
 def preview(project, map_name, since=None):
     from .project import MOD, encode, safe
     from .scripts import resources as script_resources, source_map, version
+    from .fonts import extra_map_glyphs
     cache = safe(project.root, '.studio/previews')
     previous = None
     if since:
@@ -64,9 +65,15 @@ def preview(project, map_name, since=None):
         previous = json.loads(cached)
         if previous['map'] != map_name:
             raise ValueError('Preview token belongs to a different map')
-    resources = hashlib.sha256(encode({'files':script_resources(project), **{k:project.data[k] for k in ('assets','locales')}})).hexdigest()
     raw = project.map_bytes(map_name)
     model = EditableMap(raw)
+    inputs = {'files':script_resources(project), **{k:project.data[k] for k in ('assets','locales')}}
+    # Inline map and entity scripts can introduce glyphs absent from the loaded
+    # atlases. Ordinary scene edits can keep using the current renderer.
+    extra = extra_map_glyphs(project, model)
+    if extra:
+        inputs['mapGlyphs'] = extra
+    resources = hashlib.sha256(encode(inputs)).hexdigest()
     available = previous['available'] if previous else [f'{r.kind}/{r.identifier}' for r in project.catalog()]
     required = any(f'{e["kind"]}/{e["type"]}' not in available for e in model.entities)
     baseline = previous['resources'] if previous else resources
