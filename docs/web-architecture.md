@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"ed4789856442e810a781a92e7d36b29a29a1c24cb7fa01748366933a195bee4c"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"8f83fd47931c0f9923ec5c3df3ff4f2c2263f0b931ccbc8534b92d34fb27d1c0"} -->
 
 # How the web version works
 
@@ -95,6 +95,8 @@ The game's save and settings paths are connected to this storage area with symbo
 **Writing a file in memory does not mean its IndexedDB write has finished.** Closing a settings file tracks the change and schedules synchronization. Important save-file replacements wait for `FS.syncfs` to complete before returning success. Synchronization requests run in sequence; if synchronization fails during replacement, the previous in-memory save contents are restored and the game receives a failure result.
 
 Where Web Locks is available, it prevents two tabs from using the same site's storage simultaneously. Saves belong to a browser, profile, and site address (scheme, host, and port). Clearing site data deletes saves. They are not automatically transferred to another browser, a local development address, Windows, or the macOS app.
+
+Use **Save files** beside the fullscreen control to download a saved game as a `.sav` file. To move it to another WebPlay profile, choose that file under **Import a WebPlay save as a new slot**, then reopen the game’s Load menu. Imports accept saves up to 128 MiB, check the save header and trailer, and add a numbered copy when the name already exists. Settings stay with the current profile.
 
 ## 5. Input, fullscreen, and audio use browser facilities
 

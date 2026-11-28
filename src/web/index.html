@@ -14,7 +14,14 @@
   button { font: inherit; padding: .7rem 1.2rem; border-radius: .3rem; border: 1px solid #65796b }
   button { cursor: pointer; color: #101b20; background: #cedab0 }
   button:disabled { cursor: wait; opacity: .55 }
-  #fullscreen { position: absolute; top: .75rem; right: .75rem; z-index: 3; padding: .5rem .8rem; font-size: .85rem }
+  #web-actions { position: absolute; top: .75rem; right: .75rem; z-index: 3; display: flex; align-items: flex-start; gap: .5rem; max-width: calc(100% - 1.5rem) }
+  #save-files { position: static; max-width: min(26rem, 85vw); padding: .5rem .75rem; background: #101b20f2; border-radius: .3rem; font-size: .85rem }
+  #save-files summary { cursor: pointer }
+  #save-files label { display: block; margin-top: .75rem }
+  #save-files select, #save-files input { max-width: 100%; font: inherit }
+  #save-files button { padding: .25rem .6rem }
+  #save-transfer-status { margin: .5rem 0 0 }
+  #fullscreen { white-space: nowrap; padding: .5rem .8rem; font-size: .85rem }
   #input-hint { position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); max-width: 80%; margin: 0; padding: .45rem .8rem; background: #101b20c9; border-radius: .3rem; text-align: center; font-size: .85rem; pointer-events: none }
   #warning { position: absolute; bottom: .5rem; left: 1rem; right: 1rem; color: #fff; background: #812d24; padding: .7rem; z-index: 4 }
   #search { position: absolute; box-sizing: border-box; background: #eee; color: #111; border: 1px solid #777; font: 16px system-ui; z-index: 2 }
@@ -27,7 +34,17 @@
   <section id="cover">
     <p id="status" role="status">Preparing the game…</p>
   </section>
-  <button id="fullscreen" type="button" aria-pressed="false" title="Alt+Enter" hidden>Full screen</button>
+  <div id="web-actions">
+    <details id="save-files" hidden>
+      <summary>Save files</summary>
+      <label for="save-slot">Download a saved game</label>
+      <select id="save-slot"></select> <button id="save-download" type="button">Download</button>
+      <label for="save-import">Import a WebPlay save as a new slot</label>
+      <input id="save-import" type="file" accept=".sav">
+      <p id="save-transfer-status" role="status"></p>
+    </details>
+    <button id="fullscreen" type="button" aria-pressed="false" title="Alt+Enter" hidden>Full screen</button>
+  </div>
   <p id="input-hint" role="status" hidden></p>
   <p id="warning" role="alert" hidden></p>
   <details><summary>Log</summary><pre id="log"></pre></details>
