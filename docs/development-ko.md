@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"3db2d705896e9d1ab5a74fa9defa8c97efa551456eef979778fb585d3ae5ded3"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"326609ccd67e7b0af84e93c7caf879d4aaf6fa1ebdca9b752c378499984fa751"} -->
 
 # 개발 가이드
 
@@ -191,6 +191,8 @@ python3 -m venv .venv
 .venv/bin/python src/devtools/macos_package.py
 .venv/bin/python src/devtools/dev.py run --platform macos
 ```
+
+로컬 앱 패키징이 중단되면 빌드를 다시 실행하세요. 서명과 보고서 작성이 끝난 뒤 최종 앱이 나타납니다. 같은 앱을 동시에 빌드하면 완성된 결과를 함께 사용합니다.
 
 `build`는 로컬 서명한 `build/macos/apps/<build-id>/Stranded II.app` 경로를 출력하고 `build/macos/build-report.json`에 기록합니다. 앱을 더블클릭하면 `~/Library/Application Support/Stranded II Native Preview/`에 리소스를 준비하고 설정·세이브를 저장합니다. 리소스를 갱신해도 기존 설정·세이브를 유지합니다. `run --platform macos`는 같은 앱을 격리된 `build/macos/runtime/` 프로필로 실행합니다. 두 경로 모두 Windows·브라우저 데이터를 가져오지 않습니다. 새 프로필은 1280×720 창 모드로 시작합니다. `localize --platform macos`는 개발용 언어팩을 갱신하며, 앱에 반영하려면 다시 빌드합니다. 지원하지 않는 원본 WAV 인코딩은 네이티브 실행 폴더에서 PCM으로 변환하고 원본 파일은 보존합니다.
 

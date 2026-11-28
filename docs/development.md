@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"1c5109327645aed4d9d6f916d5395f12a05e9c9dbc95287abd2b277200945b65"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"en","syncedHash":"3e958d7be25a4e650b71817ded0ea420dd9b68e069b20b7a02f3e5bb1c1a6655"} -->
 
 # Development guide
 
@@ -191,6 +191,8 @@ python3 -m venv .venv
 .venv/bin/python src/devtools/macos_package.py
 .venv/bin/python src/devtools/dev.py run --platform macos
 ```
+
+If local app packaging is interrupted, rerun the build. The final app appears after signing and report creation, and concurrent builds of the same app share the completed output.
 
 `build` prints the locally signed `build/macos/apps/<build-id>/Stranded II.app` path and records it in `build/macos/build-report.json`. Double-clicking the app prepares its resources and stores settings/saves in `~/Library/Application Support/Stranded II Native Preview/`. Existing settings and saves survive resource refreshes. `run --platform macos` uses the app with the isolated `build/macos/runtime/` profile instead. Neither path imports Windows or browser data. Fresh profiles start windowed at 1280×720. `localize --platform macos` refreshes development language packs; rebuild to update the app. Unsupported source WAV encodings are converted to PCM in the native runtime; original files are preserved.
 

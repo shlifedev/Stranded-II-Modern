@@ -16,6 +16,8 @@ import unicodedata
 
 from locales import languages
 
+from file_lock import exclusive_lock
+
 from . import content, scripts
 from .maps import EditableMap, new_map, number, CLASSES
 
@@ -103,24 +105,8 @@ def check_new_resource_name(names, name):
 def locked(root):
     directory = safe(root, '.studio')
     directory.mkdir(exist_ok=True)
-    with (directory / 'lock').open('a+b') as stream:
-        if os.name == 'nt':
-            import msvcrt
-            stream.seek(0)
-            if not stream.read(1):
-                stream.write(b'0'); stream.flush()
-            stream.seek(0)
-            msvcrt.locking(stream.fileno(), msvcrt.LK_LOCK, 1)
-        else:
-            import fcntl
-            fcntl.flock(stream, fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            if os.name == 'nt':
-                stream.seek(0); msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
-            else:
-                fcntl.flock(stream, fcntl.LOCK_UN)
+    with exclusive_lock(directory / 'lock'):
+        yield
 
 
 class Project:
