@@ -295,10 +295,10 @@ def workspace(project, query=''):
     return {'version':version(project.script_files),'files':files,'bindings':bindings,'diagnostics':diagnostics,'matches':matches}
 
 
-def source_map(project, map_name):
-    from .maps import EditableMap, CLASSES
+def source_map(project, map_name, model):
+    from .maps import CLASSES
     from .project import digest
-    records=[]; model=EditableMap(project.map_bytes(map_name))
+    records=[]
     for path,text in project.script_files.items():
         records.append({'path':path,'lines':text.splitlines(),'hash':digest(text.encode('utf8'))})
     return {'files':records,'bindings':[{'target':json.loads(k),'path':p} for k,p in project.data.get('scriptBindings',{}).items()],

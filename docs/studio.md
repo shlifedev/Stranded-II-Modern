@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"ed85a15995d47d621cecdbc53600e67e89ba647fa64ee482176f5745b702bca5"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"20353bf4a81cad6556be76f26729f8f612af49193af8b53e92ac361917bf85f1"} -->
 
 # Stranded II Studio
 
@@ -109,7 +109,7 @@ python src/devtools/studio.py export build/studio-example --out build/studio-exa
 
 `entities.move` accepts `selection: [{"kind":"unit","id":100}, ...]`, a world-space `delta: {"x":64,"y":0,"z":0}`, and optional `terrain: true`. Vertical movement is rejected when the group includes objects.
 
-`preview PROJECT --map NAME` returns full files and a `token`. Passing `--since TOKEN` then returns a binary `patch` between that token’s scene and the current saved state, the latest native map, and pending-resource status. Advance the baseline token only after the engine acknowledges application. If preview preparation fails, retry with the same token. Deltas exclude definitions, assets and language files; scenes requiring new definitions report `resourcesRequired`. Expired/damaged tokens and engine application failures never trigger an automatic reload; use **Apply resources** to reconnect explicitly.
+`preview PROJECT --map NAME` returns full files and a `token`. Use `--no-sources` to omit script source locations when a client only draws the scene. Passing `--since TOKEN` then returns a binary `patch` between that token’s scene and the current saved state, the latest native map, and pending-resource status. Advance the baseline token only after the engine acknowledges application. If preview preparation fails, retry with the same token. Deltas exclude definitions, assets and language files; scenes requiring new definitions report `resourcesRequired`. Expired/damaged tokens and engine application failures never trigger an automatic reload; use **Apply resources** to reconnect explicitly.
 
 Give maps and imported assets distinct output names across case and Unicode normalization. For example, `Island` and `island` occupy the same map slot on a case-insensitive filesystem. To replace an imported asset, reuse its exact resource path.
 

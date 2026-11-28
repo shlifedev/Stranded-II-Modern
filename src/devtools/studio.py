@@ -43,6 +43,7 @@ SCHEMA = {
               'Properties accept a string/number, a list for repeated properties, or null to remove',
               'Validation diagnostics can be fixed in subsequent edits; export requires no errors',
               'preview --since TOKEN returns a delta from the last acknowledged token; omit since for explicit full/resource load',
+              'preview includes debugger sources by default; pass includeSources=false (CLI: --no-sources) for scene-only clients',
               'Preview runs real Blitz code; use no GUI for CLI validation'],
 }
 
@@ -102,7 +103,7 @@ def dispatch(request):
         return project.undo(command=='redo', request.get('expectRevision'))
     if command == 'preview':
         return project.preview(request['map'], ROOT/'build/studio/runtime', request.get('since'),
-                               request.get('expectRevision'), request.get('expectScriptsVersion'))
+                               request.get('expectRevision'), request.get('expectScriptsVersion'), request.get('includeSources', True))
     raise ValueError(f'Unknown command: {command}')
 
 
@@ -143,6 +144,7 @@ def main():
             p.add_argument('--path')
             p.add_argument('--query', default='')
         if name == 'preview':
+            p.add_argument('--no-sources', dest='includeSources', action='store_false', help='Omit script debugger source locations')
             p.add_argument('--since', help='Last token acknowledged by the viewport; omit for explicit full load')
         if name in ('inspect','preview'):
             p.add_argument('--map',required=name=='preview')

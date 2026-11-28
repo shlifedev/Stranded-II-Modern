@@ -175,6 +175,18 @@ class ScriptWorkspace(TestCase):
         retry = self.p.preview('island', since=preview['token'])
         self.assertEqual(retry['changes']['upserted'], 1)
 
+    def test_viewport_can_skip_debug_sources_without_changing_the_scene(self):
+        self.write('on:start {}')
+        self.bind()
+        initial = self.p.preview('island')
+        delta = self.p.preview('island', since=initial['token'])
+        sources = delta.pop('sources')
+        self.assertEqual(sources, initial['sources'])
+        self.assertEqual(sources['files'][0]['lines'], ['on:start {}'])
+        with mock.patch.object(scripts, 'source_map', side_effect=AssertionError('unused debugger data')):
+            compact = self.p.preview('island', since=initial['token'], include_sources=False)
+        self.assertEqual(compact, delta)
+
     def test_preview_rechecks_expected_versions_after_loading_under_lock(self):
         self.write('on:start {}');self.bind()
         revision=self.p.data['revision'];version=scripts.version(self.p.script_files)
