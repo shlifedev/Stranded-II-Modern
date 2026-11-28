@@ -15,22 +15,37 @@ from .maps import CLASSES, FIELDS, EditableMap, string
 MAX_BASELINES = 128
 
 
+def changed_heights(before, after):
+    size = after.size + 1
+    row_bytes = size * 4
+    length = size * row_bytes
+    new = memoryview(after.data)[after.heights_start:after.heights_start + length]
+    # startswith compares a buffer at an offset without copying the terrain.
+    if before.data.startswith(new, before.heights_start):
+        return []
+
+    old = memoryview(before.data)
+    changes = []
+    for gx in range(1, size):
+        offset = gx * row_bytes
+        row = new[offset + 4:offset + row_bytes]
+        start = before.heights_start + offset + 4
+        if before.data.startswith(row, start):
+            continue
+        previous = struct.iter_unpack('<f', old[start:start + len(row)])
+        current = struct.iter_unpack('<f', row)
+        for gz, (old_height, new_height) in enumerate(zip(previous, current), start=1):
+            if old_height != new_height:
+                changes.append((gx, gz, new_height[0]))
+    return changes
+
+
 def encode_patch(before, after):
     old = {(e['kind'], e['id']): e for e in before.entities}
     new = {(e['kind'], e['id']): e for e in after.entities}
     removed = [key for key in old if key not in new or old[key]['type'] != new[key]['type']]
     changed = [e for key, e in new.items() if old.get(key) != e]
-    size = after.size+1
-    old_heights = before.data[before.heights_start:before.heights_start+size*size*4]
-    new_heights = after.data[after.heights_start:after.heights_start+size*size*4]
-    heights = []
-    if old_heights != new_heights:
-        for index,(old_h,new_h) in enumerate(zip(struct.iter_unpack('<f',old_heights),struct.iter_unpack('<f',new_heights))):
-            if old_h != new_h:
-                gx, gz = divmod(index, size)
-                # Loading a complete map overwrites zero edges with the final edges.
-                if gx and gz:
-                    heights.append((gx, gz, new_h[0]))
+    heights = changed_heights(before, after)
     data = bytearray(struct.pack('<ii', 1, len(removed)))
     for kind, identifier in removed:
         data += struct.pack('<Bi', CLASSES[kind], identifier)

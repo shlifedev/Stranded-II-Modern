@@ -122,6 +122,22 @@ class NativeMaps(TestCase):
         self.assertEqual(wide.height(0,0), .5 + .25*.75)
         self.assertEqual(wide.height(16,16), wide.height(0,0))
 
+    def test_terrain_patch_handles_shifted_sections_and_numeric_equality(self):
+        from studio_core.preview import encode_patch
+        before = EditableMap(self.raw)
+        shifted = EditableMap(before.apply({'op':'map.script', 'text':'on:start { msg "island"; }'}))
+        self.assertNotEqual(before.heights_start, shifted.heights_start)
+        def samples(model, updates):
+            raw = bytearray(model.data)
+            for x, z, height in updates:
+                struct.pack_into('<f', raw, model.heights_start + (x*17+z)*4, height)
+            return EditableMap(bytes(raw))
+        old = samples(before, [(3,4,0.0), (7,1,0.0)])
+        new = samples(shifted, [(3,4,-0.0), (7,1,-0.0), (7,8,.75), (13,4,.25)])
+        patch, counts = encode_patch(old, new)
+        self.assertEqual(counts['heights'], 2)
+        self.assertEqual(list(struct.iter_unpack('<iif',patch[12:-4])), [(7,8,.75),(13,4,.25)])
+
     def test_global_script_preserves_attachments_and_numeric_bytes(self):
         name = bytes(255-b for b in b'custom.inf')+b'\r\n'
         attachment = name+struct.pack('<i',5)+bytes(255-b for b in b'hello')
