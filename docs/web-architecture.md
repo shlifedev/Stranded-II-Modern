@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"8f83fd47931c0f9923ec5c3df3ff4f2c2263f0b931ccbc8534b92d34fb27d1c0"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"en","syncedHash":"fe9992c2e2c3062a65c6a297b03858ced81086408ea99edc67f3f460de26b531"} -->
 
 # How the web version works
 
@@ -67,7 +67,7 @@ Opening the page starts this sequence:
 
 1. Check `navigator.gpu`, `WebAssembly.Suspending`, and an available GPU adapter.
 2. Load `assets.js` and `game.js`, preparing the WASM runtime and resources.
-3. Restore existing IndexedDB data into the virtual filesystem and connect settings/save paths.
+3. In browsers with Web Locks, wait for any other WebPlay tab using this site’s saves to close. Then restore IndexedDB data into the virtual filesystem and connect settings/save paths.
 4. Automatically run the shared game with `Module.callMain([])`.
 
 There is no separate start button or web language-selection screen. Select a language in the original game's Settings and restart to apply it. The first canvas click enables mouse controls and audio.

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"ca59adf18d208f0bd1266d4ed6c47037406d6b9b43b4ba4ed4388099424849d0"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/web-architecture.md","language":"ko","syncedHash":"68a1df863a5b5dcb3fb7e796e575bd16e434ff7bc2008f94c17f916af99f6127"} -->
 
 # 웹 버전 구현 원리
 
@@ -67,7 +67,7 @@ flowchart LR
 
 1. `navigator.gpu`, `WebAssembly.Suspending`, 사용 가능한 GPU adapter를 확인합니다.
 2. `assets.js`·`game.js`를 불러오고, WASM 런타임과 리소스를 준비합니다.
-3. 기존 IndexedDB 데이터를 가상 파일시스템에 복원하고 설정·세이브 경로를 연결합니다.
+3. Web Locks를 지원하는 브라우저에서는 같은 사이트의 세이브를 사용 중인 다른 WebPlay 탭이 닫힐 때까지 기다립니다. 이어서 IndexedDB 데이터를 가상 파일시스템에 복원하고 설정·세이브 경로를 연결합니다.
 4. `Module.callMain([])`로 공통 게임을 자동 실행합니다.
 
 별도 시작 버튼이나 웹 언어 선택 화면은 없습니다. 게임 언어는 원래 게임의 설정에서 선택하고 재시작하면 적용됩니다. 첫 화면 클릭은 마우스 제어와 오디오 활성화에 사용합니다.

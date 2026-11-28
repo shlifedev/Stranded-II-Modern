@@ -100,13 +100,14 @@ async function prepareStorage() {
   const FS = Module.FS;
   // A second tab must not restore an old snapshot and overwrite the first tab.
   if (navigator.locks) {
+    statusText.textContent = 'Opening saved games… If Stranded II is open in another tab, close it to continue here.';
     await new Promise((resolve, reject) => {
-      navigator.locks.request('stranded-ii-classic-storage', {ifAvailable: true}, lock => {
-        if (!lock) { reject(new Error('Close the other Stranded II tab first.')); return; }
+      navigator.locks.request('stranded-ii-classic-storage', () => {
         resolve();
         return new Promise(() => {}); // The browser releases this lock when the page closes.
       }).catch(reject);
     });
+    statusText.textContent = 'Loading saved games…';
   }
   mkdir('/persist');
   FS.mount(FS.filesystems.IDBFS, {}, '/persist');
@@ -442,7 +443,7 @@ var Module = {
     }
   },
   print: log, printErr: log, onAbort: fail,
-  setStatus: text => { if (!started) statusText.textContent = text; },
+  setStatus: text => { if (!bootPromise) statusText.textContent = text; },
   onRuntimeInitialized: bootGame
 };
 
