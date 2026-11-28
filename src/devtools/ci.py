@@ -26,12 +26,16 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def file_bytes(base, relative):
+def input_file(base, relative):
     base = base.resolve()
     path = base / relative
     if not path.resolve().is_relative_to(base) or not path.is_file():
         raise ValueError(f'Missing file or path outside input directory: {path}')
-    return path.read_bytes()
+    return path
+
+
+def file_bytes(base, relative):
+    return input_file(base, relative).read_bytes()
 
 
 def checked_bytes(base, relative, expected):
@@ -49,19 +53,37 @@ def license_members():
     return members
 
 
-def dependency_members(game, blitz, font):
-    members = {}
+def dependency_inputs(game, blitz, font):
     for prefix, base, manifest in (
             ('game', game, 'game-files.json'),
             ('blitz', blitz, 'toolchain-files.json')):
         for relative, expected in read_json(ROOT / 'config' / manifest).items():
-            members[f'{prefix}/{relative}'] = checked_bytes(base, relative, expected)
-    expected = read_json(ROOT / 'config/dependencies.json')['font_sha256']
-    members['fonts/NotoSansKR.ttf'] = checked_bytes(font.parent, font.name, expected)
+            yield f'{prefix}/{relative}', base, relative, expected
+    yield 'fonts/NotoSansKR.ttf', font.parent, font.name, read_json(ROOT / 'config/dependencies.json')['font_sha256']
     # Archive inputs stay fixed when the release gains new third-party notices.
     for relative, expected in read_json(ROOT / 'config/dependency-license-files.json').items():
-        members[relative] = checked_bytes(ROOT, relative, expected)
-    return members
+        yield relative, ROOT, relative, expected
+
+
+def dependency_members(game, blitz, font):
+    return {name: checked_bytes(base, relative, expected)
+            for name, base, relative, expected in dependency_inputs(game, blitz, font)}
+
+
+def verify_dependency_files(destination, paths):
+    remaining = {p.relative_to(destination).as_posix() for p in destination.rglob('*') if p.is_file()}
+    for name, base, relative, expected in dependency_inputs(**paths):
+        if name not in remaining:
+            raise ValueError(f'Dependency bundle contains unexpected or changed files: {name}')
+        remaining.remove(name)
+        source = input_file(base, relative)
+        if engine.digest(source) != expected:
+            raise ValueError(f'Unexpected SHA-256: {source}')
+        # License pins also cover the checkout copy used to create the archive.
+        if source != destination / name and engine.digest(input_file(destination, name)) != expected:
+            raise ValueError(f'Dependency bundle contains unexpected or changed files: {name}')
+    if remaining:
+        raise ValueError(f'Dependency bundle contains unexpected or changed files: {min(remaining)}')
 
 
 def write_archive(path, members):
@@ -153,7 +175,8 @@ def config(args):
 
 def dependencies(args):
     expected = ci_config()['sha256']
-    checked_bytes(args.archive.parent, args.archive.name, expected)
+    if engine.digest(input_file(args.archive.parent, args.archive.name)) != expected:
+        raise ValueError(f'Unexpected SHA-256: {args.archive}')
     destination = args.destination.resolve()
     if destination.exists():
         raise ValueError(f'Use a new dependency directory: {destination}')
@@ -163,11 +186,7 @@ def dependencies(args):
         staged = Path(temporary) / 'dependencies'
         staged.mkdir()
         extract_archive(args.archive, staged)
-        members = dependency_members(**{key: staged / relative for key, relative in inputs.items()})
-        actual = {p.relative_to(staged).as_posix(): p.read_bytes()
-                  for p in staged.rglob('*') if p.is_file()}
-        if actual != members:
-            raise ValueError('Dependency bundle contains unexpected or changed files')
+        verify_dependency_files(staged, {key: staged / relative for key, relative in inputs.items()})
         if destination.exists():
             raise ValueError(f'Use a new dependency directory: {destination}')
         staged.rename(destination)

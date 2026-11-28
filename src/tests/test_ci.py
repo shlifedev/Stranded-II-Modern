@@ -180,6 +180,23 @@ class CIPackagingTests(unittest.TestCase):
                                             github_output=None))
         self.assertFalse(destination.exists())
 
+    def test_extracted_and_checkout_copies_of_pinned_license_are_both_verified(self):
+        members = ci.dependency_members(self.game, self.blitz, self.font)
+        for change in ('archive', 'checkout'):
+            with self.subTest(change=change):
+                altered = dict(members)
+                name = 'licenses/LICENSE.txt'
+                if change == 'archive':
+                    altered[name] = b'other license'
+                else:
+                    self.put(self.root / name, b'changed checkout license')
+                archive = self.root / (change + '.zip')
+                checksum = ci.write_archive(archive, altered)
+                self.put(self.root / 'config/ci-dependencies.json', json.dumps({
+                    'release':'ci-deps-v1', 'asset':archive.name, 'sha256':checksum}).encode())
+                with self.assertRaisesRegex(ValueError, 'license|LICENSE'):
+                    ci.dependencies(SimpleNamespace(archive=archive, destination=self.root/change, github_output=None))
+
     def test_new_release_licenses_preserve_pinned_bundle_and_ship_in_release(self):
         archive = self.bundle()
         original = ci.dependency_members(self.game, self.blitz, self.font)
