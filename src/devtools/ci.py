@@ -8,7 +8,6 @@ import os
 import re
 import shutil
 import stat
-import struct
 import sys
 import tempfile
 import zipfile
@@ -213,7 +212,7 @@ def release_members(runtime, game, edition='classic'):
     profile = Edition(edition)
     info = runtime_info(runtime)
     if info['edition'] != edition:raise ValueError('Runtime belongs to another edition')
-    from language_pack import registry
+    from language_pack import bitmap_pages, registry
     from locales import languages, catalog_text
     members = {}
     manifest = read_json(ROOT / 'config/game-files.json')
@@ -269,22 +268,14 @@ def release_members(runtime, game, edition='classic'):
         members[relative] = catalog
         relative = f'core/locales/{code}/glyphs.dat'
         glyphs = file_bytes(runtime, relative)
-        if len(glyphs) < 16:
-            raise ValueError(f'Invalid font metadata: {code}')
-        magic, count, width, height = struct.unpack_from('<4sIII', glyphs)
-        if (magic != b'FNT2' or count == 0 or len(glyphs) != 16 + count * 28 or
-                not 0 < width <= 64 or height != 19):
-            raise ValueError(f'Invalid font metadata: {code}')
         members[relative] = glyphs
         relative = f'core/locales/{code}/ui.ttf'
         members[relative] = file_bytes(runtime, relative)
         for name in ('fallback.ttf','fallback-extra.ttf'):
             fallback = f'core/locales/{code}/{name}'
             if (runtime / fallback).is_file():members[fallback] = file_bytes(runtime, fallback)
-        for style in range(7):
-            for page in range((count + 1023) // 1024):
-                relative = f'core/locales/{code}/{style}_{page}.bmp'
-                members[relative] = file_bytes(runtime, relative)
+        for relative in bitmap_pages(code, glyphs):
+            members[relative] = file_bytes(runtime, relative)
     members[default_name('core/modern.ini')] = file_bytes(ROOT, profile.defaults)
     members.update(license_members())
     for name, path in engine.license_sources().items():

@@ -67,7 +67,7 @@ def source_hashes():
 def implementation_hashes():
     paths = [ROOT/'src/studio/engine/index.html',ROOT/'src/studio/engine/studio.js',ROOT/'src/studio/engine/gizmo.js',ROOT/'src/web/debugui.js',Path(__file__),
              ROOT/'src/devtools/web_build.py',ROOT/'src/devtools/web_toolchain.py',ROOT/'src/devtools/web_audio.py',
-             ROOT/'config/web-toolchain.json',ROOT/'src/native/web/bridge.cpp']
+             ROOT/'src/devtools/language_pack.py',ROOT/'config/web-toolchain.json',ROOT/'src/native/web/bridge.cpp']
     return {**{p.relative_to(ROOT).as_posix():web_build.digest(p) for p in paths}, **engine_toolchain.sources()}
 
 
