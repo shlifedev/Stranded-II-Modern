@@ -73,6 +73,23 @@ class ScriptWorkspace(TestCase):
         self.bind({'scope':'definition','kind':'item','id':'1'})
         self.assertEqual(scripts.binding(self.p,{'scope':'definition','kind':'item','id':1}),self.path)
 
+    def test_definition_overlay_keeps_source_spans_and_skips_ambiguous_ids(self):
+        first = "id=1\r\nname=Wood\r\nscript=start\r\nold\r\nscript=end\r\n"
+        middle = "id=2\r\n# duplicate in another file\r\n"
+        last = "id=3\r\nname=Leaf"
+        files = {'items.inf': first + middle + last, 'items_extra.inf': 'id=2\nname=Stone\n'}
+        originals = dict(files)
+        for identifier, body in ((3, ''), (2, 'unused'), (1, 'on:use {\n id=42\n}')):
+            path = f'scripts/{identifier}.s2s'
+            self.p.script_files[path] = body
+            key = scripts.target_key({'scope': 'definition', 'kind': 'item', 'id': identifier})
+            self.p.data.setdefault('scriptBindings', {})[key] = path
+        result = scripts.overlay_definitions(self.p, files)
+        self.assertEqual(result['items_extra.inf'], originals['items_extra.inf'])
+        self.assertEqual(result['items.inf'],
+                         'id=1\r\nname=Wood\r\nscript=start\non:use {\n id=42\n}\nscript=end\n'
+                         + middle + last + '\nscript=start\n\nscript=end\n')
+
     def test_binding_and_write_batch_undo_redo_and_external_conflict(self):
         self.p.apply([{'op':'script.write','path':self.path,'text':'on:start {}','expectedHash':None},
                       {'op':'script.bind','path':self.path,'target':self.target}])

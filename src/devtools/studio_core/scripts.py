@@ -163,14 +163,36 @@ def route_write(project, operation):
 
 def overlay_definitions(project, files):
     from . import content
+    bindings = {}
     for key, path in project.data.get('scriptBindings', {}).items():
         target = json.loads(key)
-        if target['scope'] != 'definition' or path not in project.script_files: continue
-        matches = [r for name,text in files.items() for r in content.records(name,text)
-                   if r.kind == target['kind'] and str(r.identifier) == str(target['id'])]
-        if len(matches) != 1: continue  # A diagnostic reports a removed target.
-        r = matches[0]; text = files[r.path]
-        files[r.path] = text[:r.start]+content.edit(r.text, {'script':project.script_files[path]})+text[r.end:]
+        if target['scope'] == 'definition' and path in project.script_files:
+            bindings[target['kind'], str(target['id'])] = project.script_files[path]
+    if not bindings:
+        return files
+
+    matches = {}
+    for name, text in files.items():
+        for record in content.records(name, text):
+            key = record.kind, str(record.identifier)
+            if key in bindings:
+                # An ambiguous target is diagnosed by the workspace.
+                matches[key] = record if key not in matches else None
+
+    edits = {}
+    for key, record in matches.items():
+        if record is not None:
+            edits.setdefault(record.path, []).append((record, bindings[key]))
+    for name, replacements in edits.items():
+        text = files[name]
+        parts = []
+        end = 0
+        # Matches retain source order, so offsets refer to the original file.
+        for record, script in replacements:
+            parts.extend((text[end:record.start], content.edit(record.text, {'script': script})))
+            end = record.end
+        parts.append(text[end:])
+        files[name] = ''.join(parts)
     return files
 
 
