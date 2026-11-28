@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"e43246dea61a6a134a2820b48e84c2bfe0767134196288a9aae68420fb8a3459"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"ko","syncedHash":"cb3fa545d3addc31a7edda853d901a99823e7fe96573fd731eb97c5308125fc8"} -->
 
 # macOS 구현 원리
 
@@ -89,7 +89,7 @@ macOS 런타임은 **정수·실수를 32비트로 유지하고, 내부 포인�
 
 ### 앱과 사용자 데이터는 따로 보관합니다
 
-앱은 실행할 때 번들의 리소스 목록과 리소스 식별값을 읽고, 쓰기 가능한 데이터 폴더에 필요한 리소스를 준비한 뒤 게임을 시작합니다. 식별값은 포함된 파일들의 해시로 계산합니다.
+앱은 실행할 때 번들의 리소스 목록과 리소스 식별값을 읽고, 쓰기 가능한 데이터 폴더에 필요한 리소스를 준비한 뒤 게임을 시작합니다. 식별값은 포함된 파일들의 해시로 계산합니다. 같은 데이터 폴더를 쓰는 앱 두 개를 동시에 실행하면 두 번째 앱은 첫 번째 앱의 리소스 설치가 끝난 뒤 식별값을 확인합니다.
 
 | 용도 | 위치 |
 | --- | --- |

@@ -1,4 +1,5 @@
 """Native ARM64 compatibility, actual Metal rendering and isolated game checks."""
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import json
 import os
@@ -134,7 +135,11 @@ def check_bundle(compiler, output):
     save.write_bytes(b'player data must survive native resource refresh')
     expected = save.read_bytes()
     (profile / '.native-assets').write_text('previous-app-version\n', encoding='ascii')
-    execute(app / 'Contents/MacOS/StrandedII', output, output / 'bootstrap-second.log', env=env)
+    with ThreadPoolExecutor(max_workers=2) as launches:
+        checks = [launches.submit(execute, app / 'Contents/MacOS/StrandedII', output,
+                                  output / f'bootstrap-refresh-{i}.log', env=env) for i in range(2)]
+        for check in checks:
+            check.result()
     if settings.read_bytes() != selected or save.read_bytes() != expected:
         raise AssertionError('App bootstrap changed saved settings or player data.')
     return {'fresh_profile': 'pass', 'resource_refresh_preserves_settings_and_saves': 'pass'}
