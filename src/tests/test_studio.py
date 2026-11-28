@@ -193,6 +193,21 @@ class Definitions(TestCase):
         changed=content.edit(records[0].text,{'name':'섬 아이템'})
         self.assertEqual(changed.replace('name=섬 아이템','name=Original'),records[0].text)
 
+    def test_recipe_spans_exclude_gaps_and_keep_script_delimiters(self):
+        path = 'combinations_custom.inf'
+        first = 'combi=start\r\nscript=start\r\ncombi=end\r\nscript=end\r\nreq=24,1\r\ncombi=end\r\n'
+        second = 'combi=start\r\nreq=25,1\r\ncombi=end'
+        gap = '# comment outside both recipes\r\ngen=999,1\r\n'
+        text = 'author=custom\r\n' + first + gap + second
+        records = content.records(path, text)
+        self.assertEqual([r.identifier for r in records], [path+'#0', path+'#1'])
+        self.assertEqual([text[r.start:r.end] for r in records], [first, second])
+        self.assertEqual([r.text for r in records], [first, second])
+        self.assertEqual(records[0].properties, {'script':['combi=end'], 'req':['24,1']})
+        self.assertEqual(records[1].properties, {'req':['25,1']})
+        with self.assertRaisesRegex(ValueError, 'unterminated combination'):
+            content.records(path, 'combi=start\n' + second)
+
     def test_recipe_repeats_remain_before_end_marker(self):
         text='combi=start\nreq=1,1\nreq=2,1\ncombi=end\n'
         changed=content.edit(text,{'req':['1,3','2,2'],'gen':['3,1'],'script':'on:use { msg "x"; }'})
