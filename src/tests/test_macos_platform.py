@@ -6,8 +6,10 @@ import copy
 import hashlib
 import json
 import plistlib
+import shutil
 import subprocess
 import sys
+import wave
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'src/devtools'))
@@ -102,6 +104,44 @@ class ResourceBoundaries(TestCase):
                 with self.assertRaisesRegex(ValueError, 'Official default preferences changed'):
                     build.asset_payload()
             self.assertEqual((runtime / name).read_bytes(), b'private preferences')
+
+    def test_audio_preparation_uses_selected_overrides_and_preserves_sources(self):
+        if not (shutil.which('ffmpeg') and shutil.which('ffprobe')):
+            self.skipTest('Native audio conversion requires FFmpeg')
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            game, runtime = root/'game', root/'runtime'
+            shared = 'mods/Stranded II/sfx/shared.wav'
+            extra = 'mods/Stranded II/sfx/extra.wav'
+
+            def wav(path, width, rate):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                with wave.open(str(path), 'wb') as stream:
+                    stream.setparams((1, width, rate, 0, 'NONE', 'not compressed'))
+                    stream.writeframes(bytes(width * 64))
+                return path.read_bytes()
+
+            original = wav(game/shared, 3, 11025)
+            replacement = wav(root/'overrides'/shared, 2, 16000)
+            addition = wav(root/'overrides'/extra, 3, 8000)
+            build.write(root/'config/game-files.json', {shared:hashlib.sha256(original).hexdigest()})
+            font = root/'font.ttf'
+            font.write_bytes(b'fixture')
+            build.write(root/'config/dependencies.json', {'font_sha256':build.digest(font)})
+            (root/'licenses').mkdir()
+            with mock.patch.multiple(build, ROOT=root, RUNTIME=runtime, BUILD=root/'build'), \
+                 mock.patch.object(build, 'validate'), mock.patch.object(build, 'prepare', return_value=({}, {})), \
+                 mock.patch.object(build, 'refresh', return_value={}), mock.patch.object(build, 'default_ini', return_value=''), \
+                 mock.patch.object(build, 'override_files', return_value={n:root/'overrides'/n for n in (shared, extra)}):
+                build.prepare_assets({'game':str(game), 'font':str(font)})
+            self.assertEqual((runtime/shared).read_bytes(), replacement)
+            with wave.open(str(runtime/extra), 'rb') as stream:
+                self.assertEqual((stream.getframerate(), stream.getsampwidth(), stream.getnframes()), (8000, 2, 64))
+            report = build.read(root/'build/audio-report.json')
+            self.assertEqual(report, {extra:{'source_sha256': hashlib.sha256(addition).hexdigest(),
+                                             'runtime_sha256': build.digest(runtime/extra)}})
+            self.assertEqual((game/shared).read_bytes(), original)
+            self.assertEqual((root/'overrides'/extra).read_bytes(), addition)
 
     def test_asset_allowlist_excludes_saves_screenshots_and_unknown_licenses(self):
         with TemporaryDirectory() as directory:

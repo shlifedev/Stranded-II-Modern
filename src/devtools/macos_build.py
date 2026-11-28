@@ -73,31 +73,33 @@ def prepare_assets(settings):
         # Keep this experiment windowed and bounded on high-resolution screens.
         (RUNTIME / 'core/modern.ini').write_text(default_ini(), encoding='utf8')
     _, report = prepare(ROOT, game, RUNTIME, 'classic')
-    for relative, source in override_files(ROOT, 'classic').items():
+    overrides = override_files(ROOT, 'classic')
+    for relative, source in overrides.items():
         target = RUNTIME / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
     report.update(refresh(ROOT, RUNTIME, font, 'classic'))
-    report['converted_audio'] = prepare_audio(game, files)
+    report['converted_audio'] = prepare_audio(files.keys() | overrides.keys())
     shutil.copytree(ROOT / 'licenses', RUNTIME / 'licenses', dirs_exist_ok=True)
     write(BUILD / 'setup-report.json', report)
 
 
-def prepare_audio(game, files):
+def prepare_audio(files):
     from web_audio import supported_wav
-    candidates = [name for name in files if Path(name).suffix.lower() == '.wav'
-                  and not supported_wav(game / name)]
+    candidates = [name for name in sorted(files) if Path(name).suffix.lower() == '.wav'
+                  and not supported_wav(RUNTIME / name)]
     ffmpeg, ffprobe = shutil.which('ffmpeg'), shutil.which('ffprobe')
     if candidates and (not ffmpeg or not ffprobe):
         raise ValueError('Native audio preparation requires ffmpeg and ffprobe on PATH.')
     records = {}
     for name in candidates:
-        source, target = game / name, RUNTIME / name
+        target = RUNTIME / name
+        source_hash = digest(target)
         info = json.loads(subprocess.check_output([ffprobe, '-v', 'error', '-select_streams', 'a:0',
-            '-show_entries', 'stream=sample_rate,channels', '-of', 'json', str(source)], text=True))['streams'][0]
+            '-show_entries', 'stream=sample_rate,channels', '-of', 'json', str(target)], text=True))['streams'][0]
         temporary = target.with_suffix('.wav.tmp')
         subprocess.run([ffmpeg, '-nostdin', '-hide_banner', '-loglevel', 'error', '-xerror', '-y',
-            '-i', str(source), '-map', '0:a:0', '-map_metadata', '-1', '-fflags', '+bitexact',
+            '-i', str(target), '-map', '0:a:0', '-map_metadata', '-1', '-fflags', '+bitexact',
             '-flags:a', '+bitexact', '-c:a', 'pcm_s16le', '-f', 'wav', str(temporary)], check=True)
         with wave.open(str(temporary), 'rb') as audio:
             if (audio.getframerate() != int(info['sample_rate']) or audio.getnchannels() != info['channels']
@@ -106,7 +108,7 @@ def prepare_audio(game, files):
         if not supported_wav(temporary):
             raise ValueError(f'Unsupported decoded native audio: {name}')
         os.replace(temporary, target)
-        records[name] = {'source_sha256': digest(source), 'runtime_sha256': digest(target)}
+        records[name] = {'source_sha256': source_hash, 'runtime_sha256': digest(target)}
     write(BUILD / 'audio-report.json', records)
     return len(records)
 
