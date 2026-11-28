@@ -291,25 +291,26 @@ async function bridge(request) {
       } catch (error) { fail(error); return 0; }
     case 'move': {
       const source = filePath(args[0]), destination = filePath(args[1]);
-      let previous, staged;
+      let previous;
       try {
-        staged = FS.readFile(source);
-        if (exists(destination)) previous = FS.readFile(destination);
-        // Both resolved paths belong to the same IDBFS mount, including config staging links.
+        // A missing leaf is a first save. Any other lookup or read failure
+        // must stop the operation before the current save is replaced.
+        if (FS.lookupPath(destination, {follow: true, noent_okay: true}).node) {
+          previous = FS.readFile(destination);
+        }
         FS.rename(source, destination);
+      } catch (error) { fail(error); return 0; }
+
+      try {
         timestamp(destination);
         dirty = true;
         await sync();
         return 1;
       } catch (error) {
-        // A failed transaction must not leave the active in-memory save replaced.
-        if (staged) {
-          try {
-            FS.writeFile(source, staged);
-            if (previous) FS.writeFile(destination, previous);
-            else if (exists(destination)) FS.unlink(destination);
-          } catch (restoreError) { fail(restoreError); }
-        }
+        try {
+          FS.rename(destination, source);
+          if (previous !== undefined) FS.writeFile(destination, previous);
+        } catch (restoreError) { fail(restoreError); }
         clearTimeout(syncTimer);
         fail(error);
         return 0;
