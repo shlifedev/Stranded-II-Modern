@@ -65,6 +65,28 @@ class NativeMaps(TestCase):
         self.assertAlmostEqual(EditableMap(changed).height(8,8)-model.height(8,8),.02)
         self.assertEqual(EditableMap(changed).height(0,0),model.height(0,0))
 
+    def test_edge_brush_persists_the_cell_rendered_by_the_game(self):
+        from studio_core.preview import encode_patch
+        raw = bytearray(self.raw)
+        base = EditableMap(raw)
+        struct.pack_into('<f', raw, base.heights_start + (16*17+16)*4, .75)
+        before = EditableMap(bytes(raw))
+        self.assertEqual(before.apply({'op':'terrain.brush', 'x':0, 'z':0,
+                                       'radius':1, 'strength':0}), bytes(raw))
+        after = EditableMap(before.apply({'op':'terrain.brush','mode':'lower',
+                                          'x':0,'z':0,'radius':1,'strength':.25}))
+        for gx in (0, 16):
+            for gz in (0, 16):
+                self.assertEqual(after.height(gx, gz), .5)
+        for previous, following, height in ((before, after, .5), (after, before, .75)):
+            packet, counts = encode_patch(previous, following)
+            self.assertEqual(counts['heights'], 1)
+            self.assertEqual(struct.unpack_from('<iif', packet, 12), (16, 16, height))
+        # The shared vertex receives the nearest weight once, even for a large brush.
+        wide = EditableMap(after.apply({'op':'terrain.brush','x':4,'z':0,'radius':16,'strength':.25}))
+        self.assertEqual(wide.height(0,0), .5 + .25*.75)
+        self.assertEqual(wide.height(16,16), wide.height(0,0))
+
     def test_global_script_preserves_attachments_and_numeric_bytes(self):
         name = bytes(255-b for b in b'custom.inf')+b'\r\n'
         attachment = name+struct.pack('<i',5)+bytes(255-b for b in b'hello')

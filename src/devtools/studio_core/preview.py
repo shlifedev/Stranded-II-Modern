@@ -27,7 +27,10 @@ def encode_patch(before, after):
     if old_heights != new_heights:
         for index,(old_h,new_h) in enumerate(zip(struct.iter_unpack('<f',old_heights),struct.iter_unpack('<f',new_heights))):
             if old_h != new_h:
-                heights.append((index//size,index%size,new_h[0]))
+                gx, gz = divmod(index, size)
+                # Loading a complete map overwrites zero edges with the final edges.
+                if gx and gz:
+                    heights.append((gx, gz, new_h[0]))
     data = bytearray(struct.pack('<ii', 1, len(removed)))
     for kind, identifier in removed:
         data += struct.pack('<Bi', CLASSES[kind], identifier)

@@ -201,22 +201,46 @@ class EditableMap:
             mode = operation.get('mode', 'raise')
             if mode not in ('raise', 'lower', 'flatten', 'smooth'):
                 raise ValueError('Brush mode: raise, lower, flatten or smooth')
-            level = number(operation.get('height', self.height(round(x), round(z))), 'height', 0, 1)
+            def brush_height(gx, gz):
+                # The last row/column loaded from the file owns each shared edge.
+                gx = max(0, min(self.size, gx)) or self.size
+                gz = max(0, min(self.size, gz)) or self.size
+                return self.height(gx, gz)
+
+            def brush_axis(center):
+                low = max(0, math.floor(center-radius))
+                high = min(self.size, math.ceil(center+radius))
+                # When both endpoints are in range, keep the nearer one's weight.
+                if low == 0 and high == self.size:
+                    if center <= self.size / 2:
+                        high -= 1
+                    else:
+                        low += 1
+                return range(low, high+1)
+
+            level = number(operation.get('height', brush_height(round(x), round(z))), 'height', 0, 1)
             out = bytearray(self.data)
-            for gx in range(max(0, math.floor(x-radius)), min(self.size, math.ceil(x+radius))+1):
-                for gz in range(max(0, math.floor(z-radius)), min(self.size, math.ceil(z+radius))+1):
+            xs, zs = brush_axis(x), brush_axis(z)
+            for gx in xs:
+                for gz in zs:
                     weight = max(0, 1 - math.hypot(gx-x, gz-z) / radius)
                     if weight == 0:
                         continue
-                    h = self.height(gx, gz)
+                    current = h = brush_height(gx, gz)
                     if mode == 'flatten':
                         h += (level - h) * weight
                     elif mode == 'smooth':
-                        average = sum(self.height(gx+dx, gz+dz) for dx in (-1,0,1) for dz in (-1,0,1))/9
+                        average = sum(brush_height(gx+dx, gz+dz) for dx in (-1,0,1) for dz in (-1,0,1))/9
                         h += (average-h) * weight
                     else:
                         h += abs(strength) * weight * (1 if mode == 'raise' else -1)
-                    struct.pack_into('<f', out, self.heights_start+(gx*(self.size+1)+gz)*4, min(1, max(0, h)))
+                    height = min(1, max(0, h))
+                    if height == current:
+                        continue
+                    for sx in ((0, self.size) if gx in (0, self.size) else (gx,)):
+                        for sz in ((0, self.size) if gz in (0, self.size) else (gz,)):
+                            offset = self.heights_start + (sx*(self.size+1) + sz)*4
+                            struct.pack_into('<f', out, offset, height)
             return bytes(out)
         if not op.startswith('entity.'):
             raise ValueError(f'Unsupported map operation: {op}')
