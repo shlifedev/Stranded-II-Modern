@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"177f28cd607bfb87ac6e656426cee054423fbfe315c8d0a60d09880abef7e4e5"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/macos-architecture.md","language":"en","syncedHash":"5b5cb15b55db88db5e87d6db5725437eb9607ba34bd5ced18493471f23419339"} -->
 
 # How the macOS version works
 
@@ -85,7 +85,7 @@ Functions outside graphics use these layers:
 | File saving and replacement | POSIX file functions and macOS synchronization facilities: `rename` for save replacement, and `fsync` and `F_FULLFSYNC` for write synchronization. |
 | Audio | The native OpenAL module, with streaming audio updated during SDL runtime event processing. |
 
-[`services.bb`](../src/engine/platforms/macos/services.bb) and [`services.mm`](../src/native/macos/services.mm) connect shared game code to the operating system. After applying shared and base-game overrides, preparation uses FFmpeg to convert unsupported WAV encodings in the selected files to PCM. Supported replacements keep their original bytes. Original files are preserved, and FFmpeg is not needed to play.
+[`services.bb`](../src/engine/platforms/macos/services.bb) and [`services.mm`](../src/native/macos/services.mm) connect shared game code to the operating system. After applying shared and base-game overrides, preparation uses FFmpeg to convert unsupported WAV encodings in the selected files to 16-bit PCM at their original sample rate. Mono and stereo retain their channel count. Surround audio is mixed to stereo. Supported replacements keep their original bytes. Original files are preserved, and FFmpeg is not needed to play.
 
 ### The app and player data are stored separately
 

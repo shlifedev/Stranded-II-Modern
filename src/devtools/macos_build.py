@@ -8,7 +8,6 @@ import plistlib
 import shutil
 import subprocess
 import tempfile
-import wave
 
 from file_lock import exclusive_lock
 from editions import source_hashes, override_files
@@ -85,7 +84,7 @@ def prepare_assets(settings):
 
 
 def prepare_audio(files):
-    from web_audio import supported_wav
+    from web_audio import convert_wav, supported_wav
     candidates = [name for name in sorted(files) if Path(name).suffix.lower() == '.wav'
                   and not supported_wav(RUNTIME / name)]
     ffmpeg, ffprobe = shutil.which('ffmpeg'), shutil.which('ffprobe')
@@ -95,19 +94,7 @@ def prepare_audio(files):
     for name in candidates:
         target = RUNTIME / name
         source_hash = digest(target)
-        info = json.loads(subprocess.check_output([ffprobe, '-v', 'error', '-select_streams', 'a:0',
-            '-show_entries', 'stream=sample_rate,channels', '-of', 'json', str(target)], text=True))['streams'][0]
-        temporary = target.with_suffix('.wav.tmp')
-        subprocess.run([ffmpeg, '-nostdin', '-hide_banner', '-loglevel', 'error', '-xerror', '-y',
-            '-i', str(target), '-map', '0:a:0', '-map_metadata', '-1', '-fflags', '+bitexact',
-            '-flags:a', '+bitexact', '-c:a', 'pcm_s16le', '-f', 'wav', str(temporary)], check=True)
-        with wave.open(str(temporary), 'rb') as audio:
-            if (audio.getframerate() != int(info['sample_rate']) or audio.getnchannels() != info['channels']
-                    or audio.getsampwidth() != 2 or audio.getnframes() <= 0):
-                raise ValueError(f'Invalid decoded native audio: {name}')
-        if not supported_wav(temporary):
-            raise ValueError(f'Unsupported decoded native audio: {name}')
-        os.replace(temporary, target)
+        convert_wav(target, target, ffmpeg, ffprobe)
         records[name] = {'source_sha256': source_hash, 'runtime_sha256': digest(target)}
     write(BUILD / 'audio-report.json', records)
     return len(records)
