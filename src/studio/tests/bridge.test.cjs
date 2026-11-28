@@ -11,10 +11,12 @@ function viewport(){
   const overlay={innerHTML:'',addEventListener:(name,fn)=>overlayListeners[name]=fn,setPointerCapture(){},hasPointerCapture:()=>false};
   const canvas={focus(){document.activeElement=this;},setPointerCapture(){},width:1280,height:800,style:{},addEventListener:(name,fn)=>canvasListeners[name]=fn,
     getBoundingClientRect:()=>({left:20,top:30,width:640,height:400})};
+  const search=Object.assign(new EventTarget(),{hidden:true,style:{},focus(){document.activeElement=this;}});
+  canvas.requestPointerLock=()=>{document.pointerLockElement=canvas;return Promise.resolve();};
   const document=Object.assign(new EventTarget(),{
     hidden:false,activeElement:null,pointerLockElement:null,body:{append(){}},
     createElement:()=>Object.assign(new EventTarget(),{style:{},setAttribute(){},focus(){document.activeElement=this;}}),
-    exitPointerLock(){this.pointerLockElement=null;},getElementById:id=>id==='canvas'?canvas:id==='gizmo'?overlay:{style:{}}
+    exitPointerLock(){this.pointerLockElement=null;},getElementById:id=>id==='canvas'?canvas:id==='gizmo'?overlay:id==='search'?search:{style:{}}
   });
   const window={addEventListener(name,fn){
     const previous=listeners[name];
@@ -28,7 +30,7 @@ function viewport(){
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../engine/studio.js'),'utf8'),context);
   context.Module.FS={mkdirTree(){},writeFile:(name,data)=>writes.push({name,data}),cwd:()=>'/game'};
   const send=(value,sender=parent,from=origin)=>listeners.message({source:sender,origin:from,data:{source:'studio-ui',...value}});
-  return {context,document,canvas,overlay,messages,writes,send,canvasListeners,overlayListeners,listeners,bridge:context.Module.s2Bridge};
+  return {context,document,canvas,overlay,search,messages,writes,send,canvasListeners,overlayListeners,listeners,bridge:context.Module.s2Bridge};
 }
 
 test('debug overlay owns text focus and pauses editor shortcuts until closed',()=>{
@@ -48,6 +50,32 @@ test('debug overlay owns text focus and pauses editor shortcuts until closed',()
   assert.equal(h.document.activeElement,h.canvas);
   h.listeners.keydown({code:'Delete',preventDefault(){}});
   assert.equal(h.messages.at(-1).key,'delete');
+});
+
+test('playtest recipe search follows the virtual cursor, resize and IME focus',async()=>{
+  const h=viewport();
+  await h.bridge('studio-event\x1floaded\x1f1\x1f32');
+  await h.bridge('search-open\x1f나무');
+  await h.bridge(['search-position',100,60,200,40].join('\x1f'));
+  h.canvas.requestPointerLock();h.canvas.focus();
+  h.context.Module.s2SearchClick(300,70);
+  assert.equal(h.document.activeElement,h.canvas);
+  h.context.Module.s2SearchClick(105,65);
+  assert.equal(h.document.activeElement,h.search);
+  assert.equal(h.document.pointerLockElement,null);
+  assert.equal(await h.bridge('control-focus'),2);
+  assert.equal(await h.bridge('search-text'),'나무');
+  h.canvas.getBoundingClientRect=()=>({left:32,top:12,width:1280,height:800});
+  h.listeners.resize();
+  assert.deepEqual(h.search.style,{left:'132px',top:'72px',width:'200px',height:'40px'});
+  const keydown=isComposing=>Object.assign(new Event('keydown',{cancelable:true}),{key:'Enter',isComposing});
+  assert.equal(h.search.dispatchEvent(keydown(true)),true);
+  assert.equal(h.document.activeElement,h.search);
+  assert.equal(h.search.dispatchEvent(keydown(false)),false);
+  assert.equal(h.document.pointerLockElement,h.canvas);
+  await h.bridge('search-close');
+  h.context.Module.s2SearchClick(105,65);
+  assert.equal(h.document.activeElement,h.canvas);
 });
 
 test('runtime records preserve Unicode, source separators and read-only variables',async()=>{

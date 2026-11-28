@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"45b8cd980c728f4fb7c46a5f1172fdaee24e532d692d2e700c4edf374c7ae08b"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"ed85a15995d47d621cecdbc53600e67e89ba647fa64ee482176f5745b702bca5"} -->
 
 # Stranded II Studio
 
@@ -44,7 +44,7 @@ Create a project in an empty folder or open an existing project on the start scr
 | Content | Browse items, objects, units, map information, buildings and recipes by their actual icons. Select one to enlarge it in the inspector. Clone definitions, edit properties/materials, and import models, images or audio. |
 | Scripts | Edit definition, entity-event or global-map scripts, or bind `.s2s` files. Multiple file tabs, text search, event lists, command completion and hover help are available. |
 | Resources | Saved definition, model, translation and font changes display **Resources pending**. This includes new characters in inline map or entity scripts that the base font lacks. **Apply resources** applies them together and restores camera, selection and tool. Until then, the scene uses the last applied appearance. |
-| Test | Validate the latest saved files and automatically apply changed resources. Click the viewport to capture the mouse, Esc to release, and **Stop** to restore the editor map and camera. Play-session changes do not enter the project. |
+| Test | Validate the latest saved files and automatically apply changed resources. Click the viewport to capture the mouse, Esc to release, and **Stop** to restore the editor map and camera. Click the recipe search field to type, then press Enter to return to the game. Play-session changes do not enter the project. |
 | Diagnostics | Check content references, script brackets, strings and file references. View runtime events/errors and read-only global/selected-entity variables. |
 
 Content icons fit a 64px tile and expand to at most 160px in the inspector, preserving their aspect ratio. Most originals are 40×40; enlargement does not add detail. Buildings show their completed result, and recipes show the first output item with `+N` for additional outputs. Map information uses the game's icon frames. Missing or unreadable images display a fallback symbol and a reason.

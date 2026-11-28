@@ -9,7 +9,7 @@ let pitch=25,yaw=0,pickSerial=0,lastX=0,lastY=0,snapshotPending=null;
 let acknowledged=null,inFlight=null,requested=false,wantSync=false,syncFailed=false,resourceBlocked=false,mapSize=0;
 let selected=[],revision=0,snap=0,projection=null,drag=null,dragSerial=0,transient=null,editorPose=null;
 let firstFrame=false,transition=null,playRequest=null,playId=0,stopPending=false;
-let placement=null,pointer=null;
+let placement=null,pointer=null,searchBounds=null;
 
 const send=(type,value={})=>parent.postMessage({source:'blitz-studio',type,...value},location.origin);
 const command=(...parts)=>queue.push(parts.join(SEP));
@@ -100,12 +100,13 @@ async function bridge(request){
     case 'copy':try{const dst=normalize(args[1]);if(Number(args[2])&&FS.analyzePath(dst).exists)return 0;FS.writeFile(dst,FS.readFile(normalize(args[0])));return 1;}catch{return 0;}
     case 'move':try{FS.rename(normalize(args[0]),normalize(args[1]));return 1;}catch{return 0;}
     case 'stamp':try{return words(FS.stat(normalize(args[0])).mtime.getTime()*10000);}catch{return '';}
-    case 'search-open':search.style.display='block';search.value=args[0];return 1;
-    case 'search-close':search.style.display='none';return 1;
+    case 'search-open':search.hidden=false;search.value=args[0];return 1;
+    case 'search-close':
+      search.hidden=true;if(document.activeElement===search)canvas.focus();return 1;
     case 'search-text':return search.value;
     case 'search-set':search.value=args[0];return 1;
-    case 'search-position':{const rect=canvas.getBoundingClientRect();Object.assign(search.style,{left:(rect.left+Number(args[0])*rect.width/canvas.width)+'px',top:(rect.top+Number(args[1])*rect.height/canvas.height)+'px',width:(Number(args[2])*rect.width/canvas.width)+'px',height:(Number(args[3])*rect.height/canvas.height)+'px'});return 1;}
-    case 'search-focus':Number(args[0])===2?search.focus():canvas.focus();return 1;
+    case 'search-position':searchBounds=args.map(Number);positionSearch();return 1;
+    case 'search-focus':if(Number(args[0])===2)focusSearch();else canvas.focus();return 1;
     case 'control-focus':return document.activeElement===search?2:1;
     // Read the latest pointer once per rendered frame; pointermove never queues
     // picks or allocates map entities, so camera/patch commands cannot starve.
@@ -195,7 +196,23 @@ async function bridge(request){
     default:throw new Error('Unknown engine service: '+op);
   }
 }
-var Module={canvas,noInitialRun:true,s2Bridge:bridge,locateFile:name=>'/engine/'+name,
+function positionSearch(){
+  if(!searchBounds)return;
+  const [x,y,width,height]=searchBounds,rect=canvas.getBoundingClientRect();
+  const sx=rect.width/canvas.width,sy=rect.height/canvas.height;
+  Object.assign(search.style,{left:(rect.left+x*sx)+'px',top:(rect.top+y*sy)+'px',
+    width:width*sx+'px',height:height*sy+'px'});
+}
+function focusSearch(){
+  search.focus();
+  if(document.pointerLockElement===canvas)document.exitPointerLock();
+}
+function searchClick(x,y){
+  if(!playing||debugUiOpen||search.hidden||!searchBounds)return;
+  const [left,top,width,height]=searchBounds;
+  if(x>=left&&x<left+width&&y>=top&&y<top+height)focusSearch();
+}
+var Module={canvas,noInitialRun:true,s2Bridge:bridge,s2SearchClick:searchClick,locateFile:name=>'/engine/'+name,
   print:message=>send('log',{message:String(message)}),printErr:message=>send('log',{message:String(message)}),onAbort:fail,
   setStatus:text=>{if(!loaded)statusText.textContent=text;},
   onRuntimeInitialized:async()=>{
@@ -377,6 +394,13 @@ window.addEventListener('keydown',event=>{
 });
 window.addEventListener('keyup',event=>keys.delete(event.code));
 window.addEventListener('blur',()=>{pointer=null;keys.clear();rotating=dragging=false;if(!drag?.finishing)cancelDrag();});
+search.addEventListener('keydown',event=>{
+  event.stopPropagation();
+  if(event.isComposing||!['Enter','Escape','Tab'].includes(event.key))return;
+  event.preventDefault();canvas.focus();
+  if(playing&&!debugUiOpen)canvas.requestPointerLock()?.catch(error=>send('log',{message:String(error)}));
+});
+for(const type of ['keyup','keypress'])search.addEventListener(type,event=>event.stopPropagation());
 canvas.addEventListener('contextmenu',event=>event.preventDefault());
 canvas.addEventListener('dragover',event=>{if(!playing&&!transition&&event.dataTransfer.types.includes('application/s2-content')){event.preventDefault();event.dataTransfer.dropEffect='copy';}});
 canvas.addEventListener('drop',event=>{
@@ -386,8 +410,12 @@ canvas.addEventListener('drop',event=>{
 function fitCanvas(){
   const ratio=Math.min(innerWidth/(canvas.width||1280),innerHeight/(canvas.height||800));
   canvas.style.width=((canvas.width||1280)*ratio)+'px';canvas.style.height=((canvas.height||800)*ratio)+'px';
+  positionSearch();
 }
 window.addEventListener('resize',()=>{fitCanvas();drawGizmo();});
+if(typeof MutationObserver!=='undefined'){
+  new MutationObserver(fitCanvas).observe(canvas,{attributes:true,attributeFilter:['width','height']});
+}
 window.addEventListener('error',event=>fail(event.error||event.message));
 window.addEventListener('unhandledrejection',event=>fail(event.reason));
 s2InstallDebugUi(Module,canvas,open=>{debugUiOpen=open;keys.clear();rotating=dragging=false;pointer=null;transient=null;if(!drag?.finishing)cancelDrag();drawGizmo();});
