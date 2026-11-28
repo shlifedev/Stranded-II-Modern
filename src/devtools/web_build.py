@@ -311,7 +311,9 @@ def check(args):
     print('Verified converted web audio:', audio_count)
     from verify_web import verify_semantics
     semantics = verify_semantics()
-    verification.update(web_check='passed', windows_wasm_parity=read(semantics / 'report.json'),
+    parity = read(semantics / 'report.json')
+    verification[parity['native_host'] + '_wasm_parity'] = parity
+    verification.update(web_check='passed',
         semantics_report=semantics.relative_to(ROOT).as_posix() + '/report.json',
         web_audio={'verified_pcm_files': audio_count, 'playback': 'not tested'},
         browser_storage_bridge='passed with real Emscripten VFS and simulated transactions')

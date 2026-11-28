@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"84d20d47ebdcec05dc63f2848f3975ce44f49e4b4994411810f68b40a4d518b1"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/development.md","language":"ko","syncedHash":"32cc7016f42619941c57d8606c2cbb0565ab43776a92e946668eed6af80c971b"} -->
 
 # 개발 가이드
 
@@ -125,7 +125,7 @@ Windows에서 선택한 에디션의 실행 환경을 준비한 뒤 격리된 �
 
 `src/engine/StrandedIIWeb.bb`는 공통 게임과 브라우저 서비스를 포함합니다. Windows·웹·macOS·Studio가 모두 `src/blitz3d/`의 수정 가능한 엔진을 빌드하며 웹 타깃은 [Emscripten](../config/web-toolchain.json)을 사용합니다. 엔진 소스를 직접 수정한 뒤 다시 빌드합니다. WASM·WebGPU·JSPI·브라우저 저장은 [웹 버전 구현 원리](web-architecture-ko.md)를 참고하세요.
 
-웹 개발에는 Git도 필요합니다. 준비 과정은 `deps/blitz3d/`, `deps/emsdk/`, `deps/ffmpeg-web/`에 고정 의존성을 받으므로 첫 빌드에는 시간과 디스크 공간이 필요합니다. 먼저 Windows 준비를 마친 뒤 실행합니다.
+웹 개발에는 Git도 필요합니다. 준비 과정은 `deps/blitz3d/`, `deps/emsdk/`, `deps/ffmpeg-web/`에 고정 의존성을 받으므로 첫 빌드에는 시간과 디스크 공간이 필요합니다. Windows에서는 Windows 준비를 마친 뒤 아래 명령을 실행합니다. Apple Silicon에서는 macOS 빌드 도구를 준비하고 FFmpeg와 ffprobe를 PATH에 둡니다. 같은 명령을 `.venv/bin/python`으로 실행하며, 웹 환경을 처음 준비할 때 `--game 경로 --font 경로`를 지정합니다.
 
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 src/devtools/dev.py setup --platform web
@@ -144,7 +144,7 @@ Windows에서 선택한 에디션의 실행 환경을 준비한 뒤 격리된 �
 
 저장·설정은 브라우저의 IndexedDB에 기본판 전용으로 보관합니다. 저장 교체와 백업은 기록 완료를 기다리며, 설정은 첫 실행 때만 기본값을 적용합니다. 같은 브라우저·프로필·주소·포트로 접속해야 같은 저장소를 사용합니다. 사이트 데이터를 지우면 저장도 삭제됩니다. 같은 주소에서 두 탭이 동시에 저장소를 사용하지 못하도록 잠급니다.
 
-`check --platform web`는 산출물·소스 해시, 배포 리소스 경계, 변환 오디오, Windows/wasm 숫자·문자열·바이너리 일치, 실제 메뉴·인트로 스크립트의 줄 분리와 웹 파일시스템의 저장 교체·실패 복구를 검사합니다. CPU 버퍼 검사에서는 실제 지형 색상 생성 함수에 고정된 높이 구간을 입력해 색상을 확인하고, 전체 버퍼 전송 횟수를 제한해 픽셀마다 GPU를 동기화하는 문제를 방지합니다. 자동 시작, 신규 영어 설정·기존 한국어 설정 보존, 입력·전체화면 상태 전환은 모의 DOM으로 검사합니다. 결과는 `build/web/verification.json`에 기록합니다. CPU 검사·모의 DOM·저장 거래 검사는 실제 GPU·브라우저·IndexedDB 검증을 대신하지 않습니다.
+`check --platform web`는 산출물·소스 해시, 배포 리소스 경계, 변환 오디오, WASM과 네이티브 호스트(CI에서는 Windows, Apple Silicon에서는 macOS)의 숫자·문자열·바이너리 일치, 실제 메뉴·인트로 스크립트의 줄 분리와 웹 파일시스템의 저장 교체·실패 복구를 검사합니다. CPU 버퍼 검사에서는 실제 지형 색상 생성 함수에 고정된 높이 구간을 입력해 색상을 확인하고, 전체 버퍼 전송 횟수를 제한해 픽셀마다 GPU를 동기화하는 문제를 방지합니다. 자동 시작, 신규 영어 설정·기존 한국어 설정 보존, 입력·전체화면 상태 전환은 모의 DOM으로 검사합니다. 결과는 `build/web/verification.json`에 기록합니다. CPU 검사·모의 DOM·저장 거래 검사는 실제 GPU·브라우저·IndexedDB 검증을 대신하지 않습니다.
 
 실제 엔진 비교는 웹 빌드 후 아래 명령으로 준비합니다. 별도 복사본에서 Windows 기준 검사를 실행하며 현재 게임과 저장을 사용하지 않습니다. 오디오 비교에는 양쪽 모두 웹용으로 준비한 파일을 사용합니다. 웹 서버의 `/checks/`를 열고 검사 버튼을 누르면 같은 시나리오의 WebGPU 결과를 비교합니다. 한글 비트맵·이미지 투명색, 화면 복사와 모션 블러의 상하 방향, 오디오 디코딩, 에디터·랜덤 섬 초기화(지형·풀 색상, 플레이어 생성, 월드별 실제 소요 시간 30초 제한), 메뉴 카메라 반복, 원본 인트로의 배·카메라·이벤트, 첫 섬 전환과 건너뛰기를 검사합니다. 인위적으로 진행시킨 시퀀스 시간은 실제 재생 속도나 FPS 검증을 대신하지 않습니다.
 

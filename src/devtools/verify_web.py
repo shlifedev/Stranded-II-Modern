@@ -1,4 +1,4 @@
-"""Run the same numeric/binary fixture in the Windows and wasm runtimes (no GUI)."""
+"""Run the same numeric/binary fixture in the host-native and wasm runtimes (no GUI)."""
 from pathlib import Path
 import os
 import subprocess
@@ -75,19 +75,26 @@ def colormap_fixture():
 
 def verify_semantics():
     output = Path(tempfile.mkdtemp(prefix='semantics-', dir=BUILD))
-    windows = output / 'windows'
-    windows.mkdir()
-    engine.build_native(False)
-    from verify_engine import check_abi
-    check_abi(output / 'original-reference')
+    host = engine.host()
+    native = output / host
+    native.mkdir()
+    reference = output / 'original-reference'
+    reference.mkdir()
+    if host == 'macos':
+        from verify_macos import check_abi
+    else:
+        engine.build_native(False)
+        from verify_engine import check_abi
+    check_abi(reference)
     script_checks, fixture = script_fixture(output)
     source = output / 'semantics.bb'
     source.write_text((ROOT / 'src/tests/web_semantics.bb').read_text('utf8')
                       .replace('; SCRIPT_CHECKS', script_checks)
                       .replace('; COLORMAP_CHECKS', colormap_fixture()), encoding='utf8')
-    shutil.copytree(fixture, windows / 'fixtures')
-    engine.compile_test(source, windows / 'test.exe', cwd=windows, graphics=False)
-    subprocess.run([str(windows / 'test.exe')], cwd=windows, check=True, timeout=30)
+    shutil.copytree(fixture, native / 'fixtures')
+    executable = native / ('test.exe' if host == 'windows' else 'test')
+    engine.compile_test(source, executable, cwd=native, graphics=False)
+    subprocess.run([str(executable)], cwd=native, check=True, timeout=30)
     env = compiler_environment()
     pre = output / 'pre.js'
     pre.write_text('''var Module = {
@@ -110,24 +117,24 @@ def verify_semantics():
     env['SCPCB_EMCC_EXTRA'] += f' --pre-js "{pre}" --embed-file "{fixture}@/game/fixtures"'
     web_toolchain.run([web_toolchain.upstream().BLITZCC, '-target', 'emscripten', '-r', 'test',
                       '-o', output / 'test', source], cwd=output, env=env)
-    node = next((web_toolchain.paths()[1] / 'node').glob('*/node.exe'))
+    node = next((web_toolchain.paths()[1] / 'node').glob('*/node.exe' if host == 'windows' else '*/bin/node'))
     env['S2_SEMANTICS_OUTPUT'] = str(output / 'semantics.bin')
     env['S2_STORAGE_HARNESS'] = str(ROOT / 'src/tests/web_storage.cjs')
     env['S2_WEB_SHELL'] = str(ROOT / 'src/web/shell.js')
     for saved_language in ('', 'ko'):
         env['S2_WEB_TEST_SAVED_LANGUAGE'] = saved_language
         web_toolchain.run([node, '--experimental-wasm-jspi', output / 'test.js'], cwd=output, env=env, timeout=60)
-    expected, actual = (windows / 'semantics.bin').read_bytes(), (output / 'semantics.bin').read_bytes()
+    expected, actual = (native / 'semantics.bin').read_bytes(), (output / 'semantics.bin').read_bytes()
     if actual != expected:
         differences = [(i, a, b) for i, (a, b) in enumerate(zip(expected, actual)) if a != b]
-        raise ValueError(f'Windows/wasm numeric or binary mismatch in {output}; lengths {len(expected)}/{len(actual)}, first differences: {differences[:12]}')
+        raise ValueError(f'{host}/wasm numeric or binary mismatch in {output}; lengths {len(expected)}/{len(actual)}, first differences: {differences[:12]}')
     transfers, writes, invalid, colours, locks, buffer = struct.unpack('<6i', actual[-24:])
     if not (0 < transfers <= 4 and writes == 128 * 128 and (invalid, colours, locks, buffer) == (0, 0, 0, 2)):
         raise ValueError(f'Terrain colour map regression: transfers={transfers}, writes={writes}, '
                          f'invalid={invalid}, colour_errors={colours}, locks={locks}, buffer={buffer}')
     print(f'Terrain colour map: {writes} pixels, {transfers} full-buffer transfers, colour bands passed (CPU fixture).')
-    print(f'Windows/wasm binary parity passed ({len(actual)} bytes): {output}')
-    (output / 'report.json').write_text(json.dumps({'windows_wasm_parity': 'pass',
+    print(f'{host}/wasm binary parity passed ({len(actual)} bytes): {output}')
+    (output / 'report.json').write_text(json.dumps({'native_host': host, f'{host}_wasm_parity': 'pass',
         'bytes': len(actual), 'scripts': ['menu', 'map01', 'intro'],
         'colormap_cpu_fixture': {'pixels': writes, 'full_buffer_transfers': transfers},
         'rendering_and_gameplay': 'not tested'}, indent=2) + '\n', encoding='utf8')
