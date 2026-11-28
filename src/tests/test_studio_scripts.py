@@ -152,6 +152,38 @@ class ScriptWorkspace(TestCase):
         self.p.export(self.root/'out')
         self.p.undo();self.assertEqual(self.p.script_files,{})
 
+    def test_duplicate_template_keys_preserve_existing_recipes_and_translations(self):
+        op = {'op':'template.create','template':'recipe','slug':'meal','name':'First meal','result':1}
+        self.p.apply([op])
+        before = self.p.path.read_bytes()
+        for dry in (True, False):
+            with self.assertRaisesRegex(ValueError, 'studio.meal.recipe'):
+                self.p.apply([dict(op, name='New meal')], dry_run=dry)
+            self.assertEqual(self.p.path.read_bytes(), before)
+        recipes = [record['name'] for record in self.p.public_catalog('en') if record['kind']=='recipe']
+        self.assertEqual(recipes, ['First meal'])
+
+        # An existing translation can also belong to the base, even in only one language.
+        base = self.base / 'core/locales/ko.tsv'
+        base.parent.mkdir(parents=True, exist_ok=True)
+        base.write_text('studio.story.greeting\t기존 인사\n', encoding='utf8')
+        with self.assertRaisesRegex(ValueError, 'studio.story.greeting'):
+            self.p.apply([{'op':'template.create','template':'scenario','slug':'story','result':1}])
+        self.assertEqual(self.p.path.read_bytes(), before)
+        self.assertEqual(self.p.script_files, {})
+        self.assertFalse((self.p.root / 'scripts/story').exists())
+
+    def test_template_with_no_source_returns_a_command_error(self):
+        (self.base / MOD / 'sys/units.inf').unlink()
+        before = self.p.path.read_bytes()
+        request = {'command':'apply','project':str(self.p.root),'operations':[
+            {'op':'template.create','template':'npc','slug':'visitor'}]}
+        answer = studio.response(request)
+        self.assertFalse(answer['ok'])
+        self.assertIn('existing unit definition', answer['error']['message'])
+        self.assertEqual(self.p.path.read_bytes(), before)
+        self.assertTrue(studio.response({'command':'revision','project':str(self.p.root)})['ok'])
+
     def test_cli_scripts_contract(self):
         self.write('on:start {}')
         response=studio.response({'command':'scripts','project':str(self.p.root),'path':self.path})

@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"17c6ea25d99dba8f4005bbb84360d46c932f6805577778734d2a366b7dfbf4e5"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"754fb088123a44bfa439f8bcd55a6a161a78ba3f47e54356bc9de489744fa99e"} -->
 
 # Stranded II Studio
 
@@ -69,7 +69,7 @@ Save UTF-8 without BOM and use ASCII letters, numbers, `_`, `-` and `.` in paths
 
 Export embeds bound text in native definitions/maps and includes the files under `sys/scripts/studio/`. For example, reference `scripts/story/reward.s2s` with `extendscript 0,0,"sys/scripts/studio/story/reward.s2s";`. Static checks do not guarantee execution semantics. Runtime errors link to the original line only when saved source and parser contents match unambiguously; dynamic or duplicated code shows entity/event/parser-row context. The log retains 300 events; variables show up to 256 entries and the first 1,024 characters of each value. Select the watched entity before starting a test.
 
-Use **Templates** in Content to create a healing item, recipe, building, NPC or tonic-delivery scenario. **Preview changes**, then **Create** allocates IDs, references, files and English/Korean translations in one transaction. The scenario follows nearby ingredient collection → tonic crafting → NPC delivery → reward → completion. Apply the [CLI example](../src/studio/examples/tonic-scenario.json) to a new project.
+Use **Templates** in Content to create a healing item, recipe, building, NPC or tonic-delivery scenario. **Preview changes**, then **Create** allocates IDs, references, files and English/Korean translations in one transaction. Choose a new slug if a generated translation key already exists. Item and NPC templates need an existing definition of the corresponding kind to clone. The scenario follows nearby ingredient collection → tonic crafting → NPC delivery → reward → completion. Apply the [CLI example](../src/studio/examples/tonic-scenario.json) to a new project.
 
 ```sh
 python src/devtools/studio.py scripts PROJECT

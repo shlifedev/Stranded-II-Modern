@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"2b93e9e4cf3f1f84543e46dc95e152e0a5d90fb61a358630aec0bdb3807df33b"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"ko","syncedHash":"429245b41332deb704dac479aeaf45fa0368980c5304266fa71785524b470500"} -->
 
 # Stranded II Studio
 
@@ -69,7 +69,7 @@ Ctrl/Cmd+Z는 실행 취소, Ctrl/Cmd+Shift+Z는 다시 실행, Ctrl/Cmd+D는 �
 
 내보낼 때 연결 내용을 네이티브 정의·맵에 반영하고 파일도 `sys/scripts/studio/`에 포함합니다. 예를 들어 `scripts/story/reward.s2s`는 `extendscript 0,0,"sys/scripts/studio/story/reward.s2s";`로 참조할 수 있습니다. 정적 검사는 실행 의미를 보장하지 않습니다. 실행 오류는 저장본과 파서 내용을 유일하게 대응할 수 있을 때 원본 행으로 이동하며, 동적·중복 코드는 개체/이벤트/파서 행 문맥만 표시합니다. 실행 이벤트는 최근 300개, 변수는 최대 256개와 값의 앞 1,024자를 표시합니다. 선택 개체는 테스트 시작 전에 선택하세요.
 
-콘텐츠의 **템플릿**에서 회복 아이템·제작법·건축·NPC·치료제 전달 시나리오를 선택하세요. **변경 미리보기** 후 **생성**하면 ID·참조·파일·영어/한국어 번역을 한 트랜잭션으로 만듭니다. 시나리오는 근처 재료 수집 → 치료제 제작 → NPC 전달 → 보상 → 완료 흐름입니다. [CLI 예제](../src/studio/examples/tonic-scenario.json)는 새 프로젝트에 적용할 수 있습니다.
+콘텐츠의 **템플릿**에서 회복 아이템·제작법·건축·NPC·치료제 전달 시나리오를 선택하세요. **변경 미리보기** 후 **생성**하면 ID·참조·파일·영어/한국어 번역을 한 트랜잭션으로 만듭니다. 생성할 번역 키가 이미 있으면 다른 식별자를 사용하세요. 아이템·NPC 템플릿에는 복제할 아이템·유닛 정의가 각각 필요합니다. 시나리오는 근처 재료 수집 → 치료제 제작 → NPC 전달 → 보상 → 완료 흐름입니다. [CLI 예제](../src/studio/examples/tonic-scenario.json)는 새 프로젝트에 적용할 수 있습니다.
 
 ```sh
 python src/devtools/studio.py scripts PROJECT
