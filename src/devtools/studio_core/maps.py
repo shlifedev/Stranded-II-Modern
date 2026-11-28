@@ -142,9 +142,17 @@ class EditableMap:
 
     def summary(self):
         script = self.fields['global_script'].data.decode('utf8').replace('\x1f', '\n')
+        scripts = {}
+        for _, _, parent, mode, values in self.extensions:
+            if mode == 0:
+                scripts.setdefault(parent, values[1])
+        entities = []
+        for entity in self.entities:
+            parent = (CLASSES[entity['kind']], entity['id'])
+            source = scripts.get(parent, b'').decode('utf8').replace('\x1f', '\n')
+            entities.append(dict(entity, script=source))
         return {'size': self.size, 'worldSize': self.size * WORLD_SIZE,
-                'entities': [dict(entity, script=next((e[4][1].decode('utf8').replace('\x1f','\n') for e in self.extensions
-                     if e[2] == (CLASSES[entity['kind']],entity['id']) and e[3] == 0), '')) for entity in self.entities], 'script': script,
+                'entities': entities, 'script': script,
                 'attachments': [f.key for f in self.source.fields if f.kind == 'attachment']}
 
     def apply(self, operation):
