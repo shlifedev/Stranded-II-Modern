@@ -1,4 +1,4 @@
-<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"a6287bb52fd19e13164cb43719df12b4ddb0dd681bf702be1eba59c5d5b7683f"} -->
+<!-- dev-docs-ai-translation: {"document":"docs/studio.md","language":"en","syncedHash":"96cd659a11dbc56859f55deb57411ed0858f6ac79070cf219d5ba8c69a1cae70"} -->
 
 # Stranded II Studio
 
@@ -57,7 +57,7 @@ Use **Cancel start** during the transition. **Stop** reloads the saved map and p
 
 Placement, properties, deletion, terrain, undo, redo and CLI edits update the scene through deltas without reloading the map. Hierarchy scroll, camera, selection and tool are retained. Dragging displays a transient position; release saves once, producing one undo entry. Multiple selections share a movement delta; the center handle preserves each entity’s height offset above terrain. External changes wait during a drag. A revision conflict cancels the transient move and reconciles the latest saved state.
 
-Applied commands are saved immediately. Unapplied property and script drafts are stored separately by the app and survive selection changes and restarts. Applying an old draft is rejected if another operation or CLI edit changed the revision. Copy anything needed, use **Discard draft** to reload current values, then edit again.
+Applied commands are saved immediately. Unapplied property and script drafts survive selection changes and restarts. Studio saves each draft separately, so two open instances can edit different drafts in the same profile. Existing drafts remain available after updating. Applying an old draft is rejected if another operation or CLI edit changed the revision. Copy anything needed, use **Discard draft** to reload current values, then edit again.
 
 Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z redoes, Ctrl/Cmd+D duplicates entities and Delete removes them. The script editor prioritizes its own text undo. Entity duplication copies placement properties and event scripts, but not attached states or stored items. Deletion rejects entities with attached states, stored items or scripts. Applying an empty script detaches it.
 

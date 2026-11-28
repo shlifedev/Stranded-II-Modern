@@ -6,8 +6,8 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const {root, python} = require('./python.cjs');
+const {openDraftStore} = require('./drafts.cjs');
 let window, backend, server, sequence = 0, origin;
-let saved = {}, storagePath;
 const pending = new Map();
 const allowed = new Set(['schema','commands','revision','init','inspect','catalog','thumbnail','scripts','templates','apply','validate','export','undo','redo','preview']);
 
@@ -61,21 +61,12 @@ function startServer() {
   return new Promise(resolve => server.listen(0,'127.0.0.1',() => {origin=`http://127.0.0.1:${server.address().port}`;resolve();}));
 }
 app.whenReady().then(async () => {
-  storagePath = path.join(app.getPath('userData'),'authoring-drafts.json');
-  if(fs.existsSync(storagePath)) saved=JSON.parse(fs.readFileSync(storagePath,'utf8'));
-  // The HTTP port changes between sessions; Electron owns persistent drafts so
-  // their lifetime does not depend on the renderer's temporary origin.
+  const accessDraft = openDraftStore(app.getPath('userData'));
   ipcMain.on('studio:storage',(event,action,key,value) => {
     try{
       trusted(event);
-      if(typeof key!=='string'||!key.startsWith('studio.'))throw new Error('Invalid storage key');
-      if(action==='get'){event.returnValue={ok:true,value:saved[key]??null};return;}
-      if(action==='remove')delete saved[key];
-      else if(action==='set'&&typeof value==='string')saved[key]=value;
-      else throw new Error('Invalid storage action');
-      const temporary=storagePath+'.tmp';
-      fs.writeFileSync(temporary,JSON.stringify(saved));fs.renameSync(temporary,storagePath);
-      event.returnValue={ok:true};
+      const stored = accessDraft(action, key, value);
+      event.returnValue = action === 'get' ? {ok:true, value:stored} : {ok:true};
     }catch(error){event.returnValue={ok:false,error:error.message};}
   });
   startBackend(); await startServer();
